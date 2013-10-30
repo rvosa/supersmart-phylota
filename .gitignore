@@ -1,5 +1,6 @@
 *.gz
 *.dmp
+*.tsv
 Makefile
 *.komodoproject
 data/GBIF/taxonomy-search-*
@@ -11,4 +12,5 @@ results/primates/*
 results/specieslists/*
 results/alcids/*
 results/alcids_bak/*
+results/sea/*
 data/FOSSILS/*

@@ -30,11 +30,12 @@ import that in MySQL.
 =cut comment
 
 # process command line arguments
-my ( $verbosity, $expand, $infile ) = ( WARN, 'zcat' );
+my ( $verbosity, $expand, $tag, $infile ) = ( WARN, 'zcat', 'misc_RNA' );
 GetOptions(
 	'verbose+'  => \$verbosity,
 	'infile=s'  => \$infile,
 	'expand=s'  => \$expand,
+	'tag=s'     => \$tag,
 );
 
 # instantiate helper objects
@@ -81,7 +82,7 @@ SEQ: while ( my $seq = $reader->next_seq ) {
 			my $primary_tag = $feat->primary_tag;
 			
 			# some types of features we should skip as they're useless
-			next FEATURE if $primary_tag ne 'misc_RNA';
+			next FEATURE if $primary_tag ne $tag;
 			next SEQ if not $feat->has_tag('product');
 			my ($product) = $feat->get_tag_values('product');
 			

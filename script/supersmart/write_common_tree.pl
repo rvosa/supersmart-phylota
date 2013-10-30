@@ -7,11 +7,11 @@ use Bio::Phylo::Util::Logger ':levels';
 use Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector;
 
 # process command line arguments
-my $template   = '${get_guid}';  # by default, the node label is taxon_name
+my $template   = '${get_guid}';  # by default, the node label is the NCBI taxon ID
 my @properties = qw(get_guid); # additional column values to use in template
 my $infile     = '-'; # read from STDIN by default
 my $outformat  = 'newick'; # write newick by default
-my $nodelabels = 1; # no internal node labels by default
+my $nodelabels = 1; # write internal node labels by default
 my $verbosity  = WARN; # low verbosity
 GetOptions(
 	'template=s'  => \$template,

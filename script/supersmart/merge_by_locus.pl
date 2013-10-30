@@ -5,6 +5,7 @@ use Getopt::Long;
 use List::Util 'sum';
 use Bio::Phylo::PhyLoTA::Config;
 use Bio::Phylo::Util::Logger ':levels';
+use Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa;
 
 # instantiate config object
 my $conf = Bio::Phylo::PhyLoTA::Config->new;
@@ -30,6 +31,7 @@ my $log = Bio::Phylo::Util::Logger->new(
     '-class' => 'main',
     '-level' => $verbosity,
 );
+my $mts = Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa->new;
 
 # read alignments file
 my @alignments;
@@ -47,8 +49,8 @@ ALN: for my $aln ( @alignments ) {
     my $muscle = $conf->MUSCLE_BIN;
     
     # compute length and gaps for both input files
-    my ($l1,$g1) = length_and_gaps( simple_fasta( read_string( $seed ) ) );
-    my ($l2,$g2) = length_and_gaps( simple_fasta( read_string( $aln ) ) );
+    my ($l1,$g1) = length_and_gaps( $mts->parse_fasta_file( $seed ) );
+    my ($l2,$g2) = length_and_gaps( $mts->parse_fasta_file( $aln ) );
     
     # maybe skip?
     if ( $g1 > $gaps ) {
@@ -64,7 +66,7 @@ ALN: for my $aln ( @alignments ) {
     my $profile = `$muscle -quiet -profile -in1 $seed -in2 $aln`;
     
     # now assess the result
-    my ( $l3,$g3 ) = length_and_gaps( simple_fasta( $profile ) );
+    my ( $l3,$g3 ) = length_and_gaps( $mts->parse_fasta_file( $profile ) );
     my @lengths = sort { $a <=> $b } $l1, $l2;
     if ( $g3 > $gaps ) {
         $log->warn("result of $seed and $aln became too gappy ($g3 > $gaps), skipping");
@@ -100,24 +102,3 @@ sub write_string {
     print $fh $string;
     close $fh;
 }
-
-sub simple_fasta {
-    my $string = shift;
-    my @lines = split /\n/, $string;
-    my %fasta;
-    my $current;
-    for my $line ( @lines ) {
-        chomp $line;
-        if ( $line =~ /^>(.+)/ ) {
-            $current = $1;
-            if ( exists $fasta{$current} ) {
-                $log->warn("already seen definition line $current");
-                $fasta{$current} = '';
-            }            
-        }
-        else {
-            $fasta{$current} .= $line;
-        }
-    }
-    return %fasta;
-} 

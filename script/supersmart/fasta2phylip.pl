@@ -1,10 +1,10 @@
 #!/usr/bin/perl
 use strict;
 use warnings;
+use Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa;
 
 my $fasta = shift;
-open my $fh, '<', $fasta or die $!;
-my %fasta   = simple_fasta( do { local $/; <$fh> } );
+my %fasta   = Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa->parse_fasta_file($fasta);
 my $ntax    = scalar keys %fasta;
 my ($nchar) = map { length($_) } values %fasta;
 
@@ -14,26 +14,4 @@ for my $defline ( keys %fasta ) {
 		my $name = $1;
 		print $name, ' ' x ( 10 - length($name) ), $fasta{$defline}, "\n";
 	}
-}
-
-# reads a FASTA string, returns a hash keyed on definition line (sans '>'
-# prefix), value is concatenated seq
-sub simple_fasta {
-    my $string = shift;
-    my @lines = split /\n/, $string;
-    my %fasta;
-    my $current;
-    for my $line ( @lines ) {
-        chomp $line;
-        if ( $line =~ /^>(.+)/ ) {
-            $current = $1;
-            if ( exists $fasta{$current} ) {
-                $fasta{$current} = '';
-            }            
-        }
-        else {
-            $fasta{$current} .= $line;
-        }
-    }
-    return %fasta;
 }

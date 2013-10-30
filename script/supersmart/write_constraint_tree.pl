@@ -4,16 +4,19 @@ use warnings;
 use Getopt::Long;
 use Bio::Phylo::IO 'parse';
 use Bio::Phylo::Util::Logger;
+use Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa;
 
 # process command line arguments
-my ( $treefile, $seqfile, $verbosity );
+my ( $fasta, $treefile, $seqfile, $verbosity );
 GetOptions(
 	'treefile=s' => \$treefile,
 	'seqfile=s'  => \$seqfile,
 	'verbose+'   => \$verbosity,
+	'fasta'      => \$fasta,
 );
 
-# instantiate logger
+# instantiate helper objects
+my $mts = Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa->new;
 my $log = Bio::Phylo::Util::Logger->new(
 	'-class' => 'main',
 	'-level' => $verbosity,
@@ -21,7 +24,16 @@ my $log = Bio::Phylo::Util::Logger->new(
 
 # array of tip names to keep
 my @keep;
-{
+
+# optionally we can extract the taxon identifiers from
+# custom-formatted FASTA definition lines
+if ( $fasta ) {
+	my %fasta = $mts->parse_fasta_file($seqfile);
+	@keep = $mts->get_taxa_from_fasta(%fasta);
+}
+
+# by default we parse it out of a PHYLIP file
+else {
 	my $header;
 	open my $fh, '<', $seqfile or die $!;
 	LINE: while(<$fh>){
@@ -42,13 +54,10 @@ my $tree = parse(
 	'-file'   => $treefile,
 )->first;
 
-# prefix t to tip labels
-#$tree->visit(sub{
-#	my $node = shift;
-#	if ( my $name = $node->get_name ) {
-#		$node->set_name( "t$name" );
-#	}
-#});
-
 # remove unbranched internal nodes, keep tips of interest, serialize
-print $tree->remove_unbranched_internals->keep_tips(\@keep)->resolve->to_newick;
+print $tree
+	->remove_unbranched_internals
+	->keep_tips(\@keep)
+	->resolve
+	->deroot
+	->to_newick;

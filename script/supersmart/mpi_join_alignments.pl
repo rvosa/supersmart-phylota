@@ -11,13 +11,15 @@ use constant FASTA_FILES => 1;
 use constant MATRICES => 2;
 
 # process command line arguments
-my ( $verbosity, $divergence, $mergedlist, $chunkfile, $workdir ) = ( WARN, 0.25 );
+my ( $verbosity, $divergence, $overlap, $gappiness, $mergedlist, $chunkfile, $workdir ) = ( WARN, 0.20, 0.3, 8 );
 GetOptions(
 	'mergedlist=s' => \$mergedlist,
 	'workdir=s'    => \$workdir,
 	'verbose+'     => \$verbosity,
 	'chunkfile=s'  => \$chunkfile,
 	'divergence=f' => \$divergence,
+	'overlap=f'    => \$overlap,
+	'gappiness=i'  => \$gappiness,
 );
 
 # instantiate helper objects
@@ -148,7 +150,7 @@ if ( $rank == 0 ) {
 		my ( $nchar, %degapped ) = degap_matrix(%supermatrix);
 		
 		# now write the supermatrix in PHYLIP format
-		open my $fh, '>', "${workdir}/${higher_taxon}.phy" or die $!;
+		open my $fh, '>', "${workdir}/${higher_taxon}.phy" or die "Can't open ${workdir}/${higher_taxon}.phy : $!";
 		print $fh hash_to_phylip(%degapped);
 		print "${workdir}/${higher_taxon}.phy\n";
 		
@@ -167,7 +169,7 @@ else {
 	my @result;
 	for my $file ( @{ $subset } ) {
 		my %matrix = process_fasta($file);		
-		push @result, \%matrix;
+		push @result, \%matrix if scalar keys %matrix;
 	}
 	
 	# return result
@@ -210,6 +212,23 @@ sub process_fasta {
 	$log->info("remove gap-only columns from $fasta");
 	my ( $nchar, %degapped ) = degap_matrix(%reduced);
 	
+	# count mean number of contiguous stretches. if an alignment has a
+	# high number here it is because we did a profile alignment that didn't
+	# work so well (perhaps actually not orthologous?) so we should omit it
+	if ( scalar keys %degapped ) {
+		$log->info("assess gappiness of profile alignment");
+		my $gaps = 0;
+		for my $key ( keys %degapped ) {
+			my $row = $degapped{$key};
+			my @stretches = split /-+/, $row;
+			$gaps += scalar @stretches;
+		}
+		if ( ( $gaps / scalar keys %degapped ) > $gappiness ) {
+			$log->warn("FASTA file $fasta is too gappy to include");
+			%degapped = ();
+		}
+	}
+
 	return %degapped;
 }
 
@@ -221,10 +240,12 @@ sub degap_matrix {
 	
 	my $i = 0;
 	my $nchar = 0;
+	my $ntax = scalar(keys(%matrix));
 	DEGAP: while(1) {
+		last DEGAP if $ntax == 0;
 		
 		# detect gaps at column $i
-		my $gaponly = 1;
+		my $columns_with_data = 0;
 		for my $id ( keys %matrix ) {
 			
 			# this is how we break out the infinite loop
@@ -234,13 +255,13 @@ sub degap_matrix {
 			
 			# the flag is switched when at least one token is not - or ?
 			if ( $token ne '-' and $token ne '?' ) {
-				$gaponly = 0;
+				$columns_with_data++;
 			}
 		}
 		
 		# skip or grow degapped matrix
-		if ( $gaponly ) {
-			$log->debug("only gaps at column $i");
+		if ( ( $columns_with_data / $ntax ) < $overlap ) {
+			$log->debug("not enough data at column $i");
 		}
 		else {
 			for my $id ( keys %matrix ) {
@@ -270,8 +291,9 @@ sub read_chunked {
 	open my $fh, '<', $infile or die $!;
 	
 	# iterate over lines
-	while(<$fh>) {
+	LINE: while(<$fh>) {
 		chomp; # strip line ending
+		next LINE unless /\t/;
 		
 		# split the line on tab character into key and value
 		my ( $k, $v ) = split /\t/, $_;
@@ -396,7 +418,12 @@ sub reduce_matrix {
 		}
 		else {
 			# we sort in ascending order from fewer to more gaps
-			my @sorted = sort { $a =~ tr/-/-/ <=> $b =~ tr/-/-/ } @sequences;
+			my %gapcount;
+			for my $s ( @sequences ) {
+				my @regions = split /-+/, $s;
+				$gapcount{$s} = scalar @regions;
+			}
+			my @sorted = sort { $gapcount{$a} <=> $gapcount{$b} } @sequences;
 			$matrix{$taxon_id} = [ split //, $sorted[0] ];
 		}
 	}
