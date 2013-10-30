@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # template for looking up variables in the config file
-PRINTVAL="perl -Ilib -MBio::Phylo::PhyLoTA::Config=printval -e printval"
+PRINTVAL="perl -MBio::Phylo::PhyLoTA::Config=printval -e printval"
 
 # config vars, optionally change by setting env var with SUPERSMART prefix, e.g.
 # $ export SUPERSMART_WORK_DIR=/tmp
@@ -23,7 +23,7 @@ GUNZIP=`$PRINTVAL GUNZIP_BIN`
 
 # shorthand for running the perl scripts without having to specify the added
 # search path (the lib folder) and the location of the scripts
-PERLSCRIPT="$PERL -Ilib script/supersmart"
+PERLSCRIPT="$PERL $PHYLOTA_HOME/script/supersmart"
 
 # names for intermediate files within the working directory
 SPECIESTABLE=$WORKDIR/species.tsv
