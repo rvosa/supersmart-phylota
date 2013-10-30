@@ -3,7 +3,10 @@ package Bio::Phylo::PhyLoTA::Config;
 use strict;
 use warnings;
 use Config::Tiny;
+use Exporter;
 
+our @ISA = qw(Exporter);
+our @EXPORT_OK = qw(printval);
 our $AUTOLOAD;
 my $SINGLETON;
 
@@ -14,6 +17,12 @@ sub new {
     else {
         return $SINGLETON;
     }
+}
+
+sub printval {
+	my $key  = shift @ARGV;
+	my $self = __PACKAGE__->new;
+	print $self->$key;
 }
 
 sub read {
@@ -69,6 +78,9 @@ sub AUTOLOAD {
     my $root = $self->{'_conf'}->{'_'};
     my $key = $AUTOLOAD;
     $key =~ s/.+://;
+    if ( exists $ENV{"SUPERSMART_${key}"} ) {
+    	return $ENV{"SUPERSMART_${key}"};
+    }
     if ( exists $root->{$key} ) {
         $root->{$key} = shift if @_;
         
