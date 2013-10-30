@@ -606,6 +606,22 @@ sub compute_median_seq_length {
     return $most_seen_length;
 }
 
+sub get_aligned_locus_indices {
+	my ( $self, $gi, $locus, $seq ) = @_;
+	my $feat   = $self->single_feature({ gene => $locus, gi => $gi });
+	my $start  = $feat->codon_start;
+	my $length = $feat->length;
+	my $end    = $start + $length;
+	my $nucs   = 0;
+	my @seq    = split //, $seq;
+        my @indices;
+	for my $i ( 0 .. $#seq ) {
+		$nucs++ if $seq[$i] ne '-';
+		push @indices, $i if $nucs >= $start && $nucs <= $end;
+	}
+	return @indices;
+}
+
 =item filter_seq_set
 
 This method filters out duplicate sequences per taxon, and prefers to keep a

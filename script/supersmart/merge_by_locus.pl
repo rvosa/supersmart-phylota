@@ -63,10 +63,11 @@ ALN: for my $aln ( @alignments ) {
     }
     
     # do the alignment
+    $log->info("running profile alignment of $seed and $aln");
     my $profile = `$muscle -quiet -profile -in1 $seed -in2 $aln`;
     
     # now assess the result
-    my ( $l3,$g3 ) = length_and_gaps( $mts->parse_fasta_file( $profile ) );
+    my ( $l3,$g3 ) = length_and_gaps( $mts->parse_fasta_string( $profile ) );
     my @lengths = sort { $a <=> $b } $l1, $l2;
     if ( $g3 > $gaps ) {
         $log->warn("result of $seed and $aln became too gappy ($g3 > $gaps), skipping");
@@ -77,6 +78,7 @@ ALN: for my $aln ( @alignments ) {
         next ALN;
     }
     else {
+	$log->info("writing profile to $outfile");
         write_string( $profile, $outfile );
         $seed = $outfile;
     }

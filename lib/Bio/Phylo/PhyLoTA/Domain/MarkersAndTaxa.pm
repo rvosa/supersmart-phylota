@@ -49,6 +49,18 @@ sub get_taxa_from_fasta {
     return @taxa;
 }
 
+sub keep_taxa {
+	my ( $class, $taxa, $fasta ) = @_;
+	my %result;
+	my %taxa = map { $_ => 1 } @{ $taxa };
+	for my $defline ( keys %{ $fasta } ) {
+		if ( $defline =~ /taxon\|(\d+)/ ) {
+			my $taxon = $1;
+			$result{$defline} = $fasta->{$defline} if $taxa{$taxon};
+		}
+	}
+	return %result;
+}
 
 1;
 
