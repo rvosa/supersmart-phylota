@@ -24,7 +24,7 @@ GetOptions(
 );
 
 # instantiate helper objects
-my $log = Bio::Phylo::Util::Logger->new(
+Bio::Phylo::Util::Logger->VERBOSE(
 	'-class' => [
 		'main',
 		'Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector',
@@ -48,7 +48,7 @@ if ( $rank == 0 ) {
     # MPI_Comm_size returns the total number of nodes. Because we have one
     # head node this needs to be - 1
     my $nworkers = MPI_Comm_size(MPI_COMM_WORLD) - 1;
-    $log->info("we have $nworkers nodes available");
+    INFO "we have $nworkers nodes available";
     
     # first look up the InParanoid protein ID for the seed GIs
     my @result = dispatch_job( $nworkers, ALIGNMENT_FILES_SUBSET, PROTID_FOR_SEED_GI, @list );
@@ -71,7 +71,7 @@ if ( $rank == 0 ) {
             
             # for all protein IDs we also store a lookup of all their orthologs, for later use
             if ( not $orthologs_for_protid{$protid} ) {
-                $log->info("looking up orthologs for protein ID $protid");
+                INFO "looking up orthologs for protein ID $protid";
                 my %orthologs = map { $_ => 1 } $sg->get_orthologs_for_protein_id($protid);
                 $orthologs_for_protid{$protid} = \%orthologs;
             }
@@ -108,38 +108,38 @@ else {
     
     # lookup InParanoid protein IDs for seed GIs
     my $subset = MPI_Recv(0,ALIGNMENT_FILES_SUBSET,MPI_COMM_WORLD);
-    $log->info("worker $rank has received ".scalar(@$subset)." files to analyse");
+    INFO "worker $rank has received ".scalar(@$subset)." files to analyse";
     my %result;
     for my $file ( @{ $subset } ) {
         if ( $file =~ /(\d+)\.fa/ ) {
             my $seed_gi = $1;
             if ( my $protid = $sg->get_protid_for_seed_gi($seed_gi) ) {
                 $result{$file} = $protid;
-                $log->info("worker $rank found protein ID $protid for seed GI $seed_gi");
+                INFO "worker $rank found protein ID $protid for seed GI $seed_gi";
             }
             else {
-                $log->warn("worker $rank found no protein ID for seed GI $seed_gi");
+                WARN "worker $rank found no protein ID for seed GI $seed_gi";
             }
         }
         else {
-            $log->warn("worker $rank couldn't parse seed GI from file name $file");
+            WARN "worker $rank couldn't parse seed GI from file name $file";
         }
     }
     MPI_Send(\%result,HEAD_NODE,PROTID_FOR_SEED_GI,MPI_COMM_WORLD);
 
     # perform recursive profile alignment
     my $clusters = MPI_Recv(0,CLUSTER_SUBSET,MPI_COMM_WORLD);
-    $log->info("worker $rank has received ".scalar(@$clusters)." clusters to align");
+    INFO "worker $rank has received ".scalar(@$clusters)." clusters to align";
     my @result;
     my $counter = 1;
     for my $cluster ( @{ $clusters } ) {
-        $log->info("worker $rank will align cluster $counter");
+        INFO "worker $rank will align cluster $counter";
         my @files = @{ $cluster };
         my $outfile = "$stem-$rank-$counter.fa";
         copy(shift @files, $outfile);
         if ( @files ) {
 	    for my $i ( 0 .. $#files ) {
-                $log->info("worker $rank is aligning file ".($i+2)." of cluster $counter");
+                INFO "worker $rank is aligning file ".($i+2)." of cluster $counter";
                 my $result = $sg->profile_align_files($outfile,$files[$i]);
                 open my $fh, '>', $outfile or die $!;
                 print $fh $result;
@@ -213,7 +213,7 @@ sub dispatch_job {
     
     # for each worker we dispatch an approximately equal chunk of list elements.
     my $nfiles = int( scalar(@list) / $nworkers );
-    $log->info("each worker will process about $nfiles elements");
+    INFO "each worker will process about $nfiles elements";
     
     # this is the starting index of the subset
     my $start = 0;
@@ -227,7 +227,7 @@ sub dispatch_job {
 	
 	# create subset
 	my @subset = @list[ $start .. $end ];
-	$log->info("dispatching ".scalar(@subset)." names (index: $start .. $end) to worker $worker");
+	INFO "dispatching ".scalar(@subset)." names (index: $start .. $end) to worker $worker";
 	MPI_Send(\@subset,$worker,$send_tag,MPI_COMM_WORLD);
 	
 	# increment starting index
@@ -241,7 +241,7 @@ sub dispatch_job {
 	# get the result
 	my $result = MPI_Recv($worker,$return_tag,MPI_COMM_WORLD);
         push @results, $result;
-	$log->info("received results from worker $worker");	        
+	INFO "received results from worker $worker";	        
     }
     return @results;
 }
@@ -259,11 +259,11 @@ sub read_file {
     # may also read from STDIN, this so that we can pipe 
     if ( $list eq '-' ) {
             $fh = \*STDIN;
-            $log->debug("going to read file names from STDIN");
+            DEBUG "going to read file names from STDIN";
     }
     else {
             open $fh, '<', $list or die $!;
-            $log->debug("going to read file names from $list");
+            DEBUG "going to read file names from $list";
     }
     
     # read lines into array
