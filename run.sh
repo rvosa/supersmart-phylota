@@ -65,7 +65,7 @@ fi
 
 # join alignments by taxon
 if [ ! -e $SUPERMATRIX ]; then
-	$PERLSCRIPT/join_alignments.pl -l $MERGEDLIST $VERBOSE --nexus > $SUPERMATRIX
+	$PERLSCRIPT/join_alignments.pl -l $MERGEDLIST $VERBOSE > $SUPERMATRIX
 fi
 
 # compresses the supermatrix into binary format
