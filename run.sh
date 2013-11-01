@@ -4,22 +4,19 @@
 PRINTVAL="perl -MBio::Phylo::PhyLoTA::Config=printval -e printval"
 
 # config vars, optionally change by setting env var with SUPERSMART prefix, e.g.
-# $ export SUPERSMART_WORK_DIR=/tmp
-WORKDIR=`$PRINTVAL WORK_DIR`
-NAMELIST=`$PRINTVAL NAME_LIST_FILE`
-VERBOSE=`$PRINTVAL VERBOSITY`
-PARSER=`$PRINTVAL PARSER_BIN`
-MYSQL=`$PRINTVAL MYSQL_BIN`
-PERL=`$PRINTVAL PERL_BIN`
-CURL=`$PRINTVAL CURL_BIN`
-WGET=`$PRINTVAL WGET_BIN`
-MPIBIN=`$PRINTVAL MPIRUN_BIN`
-NODES=`$PRINTVAL NODES`
-MPIRUN="$MPIBIN -np $NODES"
-EXAMLBIN=`$PRINTVAL EXAML_BIN`
-EXAMLARGS=`$PRINTVAL EXAML_ARGS`
-EXAML="$EXAMLBIN $EXAMLARGS"
-GUNZIP=`$PRINTVAL GUNZIP_BIN`
+# $ SUPERSMART_WORK_DIR=/tmp
+WORKDIR=`$PRINTVAL WORK_DIR`        # working directory for intermediate files
+NAMELIST=`$PRINTVAL NAME_LIST_FILE` # input list of taxon names
+VERBOSE=`$PRINTVAL VERBOSITY`       # global verbosity level
+PARSER=`$PRINTVAL PARSER_BIN`       # converts phylip to examl input files
+PERL=`$PRINTVAL PERL_BIN`           # the perl interpreter
+MPIBIN=`$PRINTVAL MPIRUN_BIN`       # MPI job dispatcher, 'mpirun' or 'mpiexec'
+NODES=`$PRINTVAL NODES`             # number of nodes and/or threads
+MPIRUN="$MPIBIN -np $NODES"         # invocation for parallel jobs
+EXAMLBIN=`$PRINTVAL EXAML_BIN`      # location of examl
+EXAMLARGS=`$PRINTVAL EXAML_ARGS`    # command line arguments for examl
+EXAML="$EXAMLBIN $EXAMLARGS"        # invocation of examl
+TREEPLBIN=`$PRINTVAL TREEPL_BIN`    # location of treePL
 
 # shorthand for running the perl scripts without having to specify the added
 # search path (the lib folder) and the location of the scripts
@@ -42,7 +39,8 @@ MEGATREE=megatree.dnd
 # creates a table where the first column has the input species
 # names and subsequent columns have the species ID and higher taxon IDs
 if [ ! -e $SPECIESTABLE ]; then
-	$MPIRUN $PERLSCRIPT/mpi_write_taxa_table.pl -i $NAMELIST $VERBOSE > $SPECIESTABLE
+	$MPIRUN $PERLSCRIPT/mpi_write_taxa_table.pl -i $NAMELIST \
+	$VERBOSE > $SPECIESTABLE
 fi
 
 # creates the NCBI common tree from an input species table
@@ -70,7 +68,9 @@ fi
 
 # compresses the supermatrix into binary format
 if [ ! -e "$WORKDIR/${BINARYMATRIX}.binary" ]; then
-	cd $WORKDIR/ && $PARSER -s supermatrix.phy -n supermatrix-bin -m DNA && cd -
+	cd $WORKDIR
+	$PARSER -s supermatrix.phy -n $BINARYMATRIX -m DNA
+	cd -
 fi
 
 # create input tree for examl
@@ -81,6 +81,8 @@ fi
 
 # run examl
 if [ ! -e "$WORKDIR/$MEGATREE" ]; then
-	cd $WORKDIR/ && $EXAML -s "${BINARYMATRIX}.binary" -t $USERTREE -n $MEGATREE && cd -
+	cd $WORKDIR
+	$EXAML -s "${BINARYMATRIX}.binary" -t $USERTREE -n $MEGATREE
+	cd -
 fi
 
