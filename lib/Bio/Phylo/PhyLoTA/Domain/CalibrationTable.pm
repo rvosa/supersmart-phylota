@@ -3,6 +3,7 @@
 package Bio::Phylo::PhyLoTA::Domain::CalibrationTable;
 use strict;
 use warnings;
+use Bio::Phylo::PhyLoTA::Domain::CalibrationPoint;
 
 sub new {
     my $class = shift;
@@ -12,7 +13,12 @@ sub new {
 
 sub add_row {
     my ( $self, %args ) = @_;
-    push @{ $self }, \%args;
+    push @{ $self }, Bio::Phylo::PhyLoTA::Domain::CalibrationPoint->new(%args);
+}
+    
+sub get_rows {
+    my $self = shift;
+    return @{ $self };
 }
 
 sub to_string {
