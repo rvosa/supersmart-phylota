@@ -4,6 +4,7 @@ use warnings;
 use Getopt::Long;
 use Bio::Phylo::IO 'parse_tree';
 use Bio::Phylo::Util::Logger ':levels';
+use Bio::Phylo::PhyLoTA::Config;
 use Bio::Phylo::PhyLoTA::Service::FossilDataGetter;
 use Bio::Phylo::PhyLoTA::Service::CalibrationTableCreator;
 
@@ -23,11 +24,9 @@ GetOptions(
 	'smooth=i'      => \$smooth,
 );
 
-# configure logging
-Bio::Phylo::Util::Logger->VERBOSE( 
-	'-level' => $verbosity, 
-	'-class' => 'main',
-);
+# set up helper objects
+Bio::Phylo::Util::Logger->VERBOSE( '-level' => $verbosity, '-class' => 'main' );
+my $config = Bio::Phylo::PhyLoTA::Config->new;
 
 # read the ML tree from newick (one tree in this file)
 INFO "reading tree from file $readtree";
@@ -68,6 +67,9 @@ for my $row ( $table->get_rows ) {
 	INFO "minimum age is " . $row->min_age;
 	INFO "maximum age is " . $row->max_age;
 }
+
+# we run treePL in parallel using MPI
+print "nthreads = " . $config->NODES . "\n";
 
 # we do a "thorough" analysis, see the treePL wiki on github
 print "thorough\n";
