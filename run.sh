@@ -17,6 +17,8 @@ EXAMLBIN=`$PRINTVAL EXAML_BIN`      # location of examl
 EXAMLARGS=`$PRINTVAL EXAML_ARGS`    # command line arguments for examl
 EXAML="$EXAMLBIN $EXAMLARGS"        # invocation of examl
 TREEPLBIN=`$PRINTVAL TREEPL_BIN`    # location of treePL
+FOSSILTABLE=`$PRINTVAL FOSSIL_TABLE_FILE`
+TREEPLSMOOTH=`$PRINTVAL TREEPL_SMOOTH`
 
 # shorthand for running the perl scripts without having to specify the added
 # search path (the lib folder) and the location of the scripts
@@ -35,6 +37,8 @@ CHUNKTABLE=$WORKDIR/chunks.tsv
 CHUNKLIST=$WORKDIR/chunks.txt
 BINARYMATRIX=supermatrix-bin
 MEGATREE=megatree.dnd
+CHRONOGRAM=$WORKDIR/chronogram.dnd
+TREEPLCONF=$WORKDIR/treePL.conf
 
 # creates a table where the first column has the input species
 # names and subsequent columns have the species ID and higher taxon IDs
@@ -84,5 +88,17 @@ if [ ! -e "$WORKDIR/$MEGATREE" ]; then
 	cd $WORKDIR
 	$EXAML -s "${BINARYMATRIX}.binary" -t $USERTREE -n $MEGATREE
 	cd -
+fi
+
+# create treePL config file
+if [ ! -e $TREEPLCONF ]; then
+	NUMSITES=`head -1 $SUPERMATRIX | cut -f 2 -d ' '`
+	$PERLSCRIPT/write_treepl_config.pl -f $FOSSILTABLE -r "$WORKDIR/$MEGATREE" \
+	-s $TREEPLSMOOTH -w $CHRONOGRAM $VERBOSE -n $NUMSITES > $TREEPLCONF
+fi
+
+# run treePL
+if [ ! -e $CHRONOGRAM ]; then
+	$TREEPLBIN $TREEPLCONF
 fi
 
