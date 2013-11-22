@@ -1,46 +1,23 @@
-# these are variables that are defined in the config file, and perhaps should be
-# configurable at runtime, i.e. "perl Makefile.PL WORKDIR=<dir>"
-WORKDIR=[% conf.WORK_DIR %]
-NAMELIST=[% conf.NAME_LIST_FILE %]
-VERBOSE=[% conf.VERBOSITY %]
-PARSER=[% conf.PARSER_BIN %]
+# these are variables that are defined in the config file. they can be over-
+# written at run time by setting an environment variable with the SUPERSMART
+# prefix, e.g. conf.MYSQL_BIN becomes SUPERSMART_MYSQL_BIN
 MYSQL=[% conf.MYSQL_BIN %]
 PERL=[% conf.PERL_BIN %]
 CURL=[% conf.CURL_BIN %]
 WGET=[% conf.WGET_BIN %]
-MPIRUN=[% conf.MPIRUN_BIN %] -np [% conf.NODES %]
-EXAML=[% conf.EXAML_BIN %] [% conf.EXAML_ARGS %]
 GUNZIP=[% conf.GUNZIP_BIN %]
+FORMATDB=[% conf.FORMATDB_BIN %]
 
 # this file is just used to check whether the InParanoid SQL tables were
 # downloaded
 INPARANOID_DL=[% conf.INPARANOID_SQL_DIR %]/robots.txt
-
-# shorthand for running the perl scripts without having to specify the added
-# search path (the lib folder) and the location of the scripts
-PERLSCRIPT=$(PERL) -Ilib script/supersmart
-
-# names for intermediate files within the working directory
-SPECIESTABLE=$(WORKDIR)/species.tsv
-COMMONTREE=$(WORKDIR)/common.dnd
-USERTREE=$(WORKDIR)/user.dnd
-ALIGNMENTLIST=$(WORKDIR)/aligned.txt
-ALIGNMENTSTEM=$(WORKDIR)/aligned.fa.
-MERGEDLIST=$(WORKDIR)/merged.txt
-MERGEDSTEM=$(WORKDIR)/merged.fa.
-SUPERMATRIX=$(WORKDIR)/supermatrix.phy
-CHUNKTABLE=$(WORKDIR)/chunks.tsv
-CHUNKLIST=$(WORKDIR)/chunks.txt
-BINARYMATRIX=supermatrix-bin
-MEGATREE=megatree.dnd
 
 # these are targets that have names, so that we can do things such as 'make
 # tnrs'. They need to be listed here as 'phony' targets because the name of the
 # target doesn't imply the creation of a file by that name. In other words,
 # 'make tnrs' doesn't result in a file called tnrs, and we need to tell the make
 # program about this so that it doesn't think files need to be re-generated.
-.PHONY : setup database dao tnrs commontree alignments supermatrix constraint \
-		megatree chronogram manuscript inparanoid_blast
+.PHONY : setup database download inparanoid_blast
 
 # eventually this target should result in all the pre-work being done, so that
 # users can do "perl Makefile.PL && make && make setup && make test"
@@ -78,82 +55,8 @@ database : [% conf.DUMP_IN_FILE %]
 	$(MYSQL) -u [% conf.USER %] -p[% conf.PASS %] [% conf.DATABASE %] -e "alter table ci_gi_[% conf.currentGBRelease %] add index(ti_of_gi);"
 	@echo "Database initialized succesfully"
 
-# generates the DAO classes from the database schema
-dao :
-	$(PERL) -MDBIx::Class::Schema::Loader=make_schema_at,dump_to_dir:./lib \
-		-e 'make_schema_at("Bio::Phylo::PhyLoTA::DAO", \
-		{ db_schema => "phylota", overwrite_modifications => 1 }, \
-		[ "dbi:[% conf.RDBMS %]:dbname=[% conf.DATABASE %]", "[% conf.USER %]", "[% conf.PASS %]" ])'
-
-# creates a table where the first column has the input species
-# names and subsequent columns have the species ID and higher taxon IDs
-$(SPECIESTABLE) : $(NAMELIST)
-	$(MPIRUN) $(PERLSCRIPT)/mpi_write_taxa_table.pl -i $< $(VERBOSE) > $@
-
-tnrs : $(SPECIESTABLE)
-
-# writes nested chunks of taxon IDs
-$(CHUNKTABLE) : $(SPECIESTABLE)
-	$(PERLSCRIPT)/partition_tree.pl -i $< $(VERBOSE) -c [% conf.CHUNKSIZE %] > $@
-
-chunks : $(CHUNKTABLE)
-
-# creates the NCBI common tree from an input species table
-$(COMMONTREE) : $(SPECIESTABLE)
-	$(PERLSCRIPT)/write_common_tree.pl --nodelabels -i $< $(VERBOSE) > $@
-
-commontree : $(COMMONTREE)
-
-# create alignments from an input species table
-$(ALIGNMENTLIST) : $(SPECIESTABLE)
-	$(MPIRUN) $(PERLSCRIPT)/mpi_write_alignments.pl -i $< $(VERBOSE) -w $(WORKDIR) > $@
-
-alignments : $(ALIGNMENTLIST)
-
-# merge alignments by orthology 
-$(MERGEDLIST) : $(ALIGNMENTLIST)
-	$(MPIRUN) $(PERLSCRIPT)/mpi_merge_alignments.pl -l $< $(VERBOSE) -s $(MERGEDSTEM) > $@
-
-# join alignments by taxon
-$(SUPERMATRIX) : $(MERGEDLIST)
-	$(PERLSCRIPT)/join_alignments.pl -l $< $(VERBOSE) --nexus > $@
-
-supermatrix : $(SUPERMATRIX)
-
-# join alignments on exemplars
-$(CHUNKLIST) : $(CHUNKTABLE) $(MERGEDLIST)
-	$(MPIRUN) $(PERLSCRIPT)/mpi_join_alignments.pl -m $(MERGEDLIST) \
-        -w $(WORKDIR) $(VERBOSE) -c $(CHUNKTABLE) > $@
-
-chunkjoin : $(CHUNKLIST)
-
-# compresses the supermatrix into binary format
-$(WORKDIR)/$(BINARYMATRIX).binary : $(SUPERMATRIX)
-	cd $(WORKDIR)/ && $(PARSER) -s $(<F) -n $(BINARYMATRIX) -m DNA
-
-# create input tree for examl
-$(USERTREE) : $(COMMONTREE) $(SUPERMATRIX)
-	$(PERLSCRIPT)/write_constraint_tree.pl -t $(COMMONTREE) -s $(SUPERMATRIX) $(VERBOSE) > $@
-
-constraint : $(USERTREE)
-
-# run examl
-$(WORKDIR)/$(MEGATREE) : $(USERTREE) $(WORKDIR)/$(BINARYMATRIX).binary
-	cd $(WORKDIR)/ && $(EXAML) -s $(BINARYMATRIX).binary -t $(USERTREE) -n $(@F)
-
-megatree : $(WORKDIR)/$(MEGATREE)
-
-chronogram : 
-	@echo "Chronogram: not implemented yet"
-
-# create the manuscript with LaTeX
-[% conf.DOC_DIR %][% conf.DOC_OUT_FILE %] : [% conf.DOC_DIR %][% conf.DOC_IN_FILE %]
-	cd [% conf.DOC_DIR %] && latex [% conf.DOC_IN_FILE %]
-
-manuscript : [% conf.DOC_DIR %][% conf.DOC_OUT_FILE %]
-
 # index the InParanoid BLAST database
 [% conf.INPARANOID_LOG_FILE %] : [% conf.INPARANOID_SEQ_FILE %]
-	formatdb -i $< -l [% conf.INPARANOID_LOG_FILE %] -p T -o T
+	$(FORMATDB) -i $< -l [% conf.INPARANOID_LOG_FILE %] -p T -o T
 
 inparanoid_blast : [% conf.INPARANOID_LOG_FILE %]
