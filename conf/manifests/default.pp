@@ -92,6 +92,7 @@ exec {
 		command => "curl http://phylota.net/pb/Download/184/pb.bu.rel184.4.10.2012.parta{a,b,c,d,e} > pb.bu.rel184.4.10.2012.gz",
 		cwd     => "/usr/share/supersmart",
 		creates => "/usr/share/supersmart/pb.bu.rel184.4.10.2012.gz",
+		timeout => 0,
 		require => [ File[ 'data_dir' ], Package[ 'curl' ] ];
 	"dl_inparanoid_seq":
 		command => "curl http://inparanoid.sbc.su.se/download/current/sequences/processed/FASTA -o inparanoid.fa",
@@ -116,10 +117,12 @@ exec {
 	"phylota_load":
 		command => "gunzip -c /usr/share/supersmart/pb.bu.rel184.4.10.2012.gz | mysql phylota",
 		creates => "/var/lib/mysql/phylota/seq.frm",
+		timeout => 0,		
 		require => Exec['phylota_db','dl_phylota_dump'];
 	"phylota_patch":
 		command => "mysql phylota -e 'alter table ci_gi_184 add index(ti_of_gi);' -v > /usr/local/src/supersmart/sql/ci_gi_184.log",
 		creates => "/usr/local/src/supersmart/sql/ci_gi_184.log",
+		timeout => 0,		
 		require => Exec['phylota_load'];		
 
 	# make inparanoid blast db
@@ -127,7 +130,7 @@ exec {
 		command => "makeblastdb -in inparanoid.fa -logfile inparanoid-blast.log -dbtype prot -parse_seqids",
 		cwd     => "/usr/share/supersmart",
 		creates => "/usr/share/supersmart/inparanoid-blast.log",
-		timeout => 0,		
+		timeout => 0,
 		require => [ Exec[ 'dl_inparanoid_seq' ], Package[ 'ncbi-blast+.x86_64' ] ];		
 
 	# make profile.d files
