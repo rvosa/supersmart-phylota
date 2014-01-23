@@ -1,37 +1,6 @@
 # This manifest installs the supersmart pipeline, 
 # for more information http://www.supersmart-project.org
 
-# 
-# copy over the global mysql config file	
-# 	file { "/var/lib/mysql/my.cnf":
-# 		owner   => "mysql", 
-# 		group   => "mysql",
-# 		source  => "puppet:///mysql/my.cnf",
-# 		notify  => Service["mysqld"],
-# 		require => Package["mysql-server"],
-# 	}
-# 	
-# install the mysql config file
-# 	file { "/etc/my.cnf":
-# 		require => File["/var/lib/mysql/my.cnf"],
-# 		ensure  => "/var/lib/mysql/my.cnf",
-# 	}
-# 
-# set the mysql root password
-# 	exec { "set-mysql-password":
-# 		unless  => "mysqladmin -uroot -p$mysql_password status",
-# 		path    => ["/bin", "/usr/bin"],
-# 		command => "mysqladmin -uroot password $mysql_password",
-# 		require => Service["mysqld"],
-# 	}
-# vcsrepo { 
-# 	"/usr/local/src/supersmart":
-# 		ensure   => latest,
-# 		provider => git,
-# 		source   => 'https://github.com/naturalis/supersmart.git';
-# 
-# }
-
 # update the $PATH environment variable for the Exec tasks.
 Exec {
 	path => [ 
@@ -67,6 +36,8 @@ package {
 	"automake":                 ensure => installed;
 	"libtool":                  ensure => installed;
 	"gcc-c++":                  ensure => installed;	
+	"curl":                     ensure => installed;
+	"gzip":                     ensure => installed;
 }
 
 # set up the mysql daemon process
@@ -77,7 +48,7 @@ service {
 		require => Package["mysql-server"],
 }
 
-# create symbol links for executables
+# create links for executables and data directories
 file {
 	"muscle_link":
 		path    => "/usr/local/bin/muscle",
@@ -104,10 +75,70 @@ file {
 		ensure  => link,
 		target  => "/usr/local/src/treePL/src/treePL",
 		require => Exec["compile_treepl"];
+	"data_dir":
+		path    => "/usr/share/supersmart",
+		ensure  => directory;
+	"inparanoid_dir":
+		path    => "/usr/share/supersmart/inparanoid",
+		ensure  => directory;
+		
 }
 
 # command line tasks
 exec {
+
+	# download data	
+	"dl_phylota_dump":
+		command => "curl http://phylota.net/pb/Download/184/pb.bu.rel184.4.10.2012.parta{a,b,c,d,e} > pb.bu.rel184.4.10.2012.gz",
+		cwd     => "/usr/share/supersmart",
+		creates => "/usr/share/supersmart/pb.bu.rel184.4.10.2012.gz",
+		require => [ File[ 'data_dir' ], Package[ 'curl' ] ];
+	"dl_inparanoid_seq":
+		command => "curl http://inparanoid.sbc.su.se/download/current/sequences/processed/FASTA -o inparanoid.fa",
+		cwd     => "/usr/share/supersmart",
+		creates => "/usr/share/supersmart/inparanoid.fa",
+		require => [ File[ 'data_dir' ], Package[ 'curl' ] ];
+	"dl_inparanoid_tables":
+		command => "wget http://inparanoid.sbc.su.se/download/old_versions/data_7.0/sqltables.tgz",
+		cwd     => "/usr/share/supersmart/inparanoid",
+		creates => "/usr/share/supersmart/inparanoid/sqltables.tgz",
+		require => [ File[ 'inparanoid_dir' ], Package[ 'wget' ] ];
+	
+	# make phylota db
+	"phylota_db":
+		command => "mysql -e 'create database phylota;'",
+		creates => "/var/lib/mysql/phylota",
+		require => [ Package[ 'mysql', 'mysql-server' ], Service[ 'mysqld' ] ];		
+	"inparanoid_sql":
+		command => "mysql phylota < /usr/local/src/supersmart/sql/inparanoid.sql",
+		creates => "/var/lib/mysql/phylota/inparanoid.frm",
+		require => Exec['phylota_db','clone_supersmart'];
+	"phylota_load":
+		command => "gunzip -c /usr/share/supersmart/pb.bu.rel184.4.10.2012.gz | mysql phylota",
+		creates => "/var/lib/mysql/phylota/seq.frm",
+		require => Exec['phylota_db','dl_phylota_dump'];
+	"phylota_patch":
+		command => "mysql phylota -e 'alter table ci_gi_184 add index(ti_of_gi);' -v > /usr/local/src/supersmart/sql/ci_gi_184.log",
+		creates => "/usr/local/src/supersmart/sql/ci_gi_184.log",
+		require => Exec['phylota_load'];		
+
+	# make inparanoid blast db
+	"inparanoid_formatdb":
+		command => "makeblastdb -in inparanoid.fa -logfile inparanoid-blast.log -dbtype prot -parse_seqids",
+		cwd     => "/usr/share/supersmart",
+		creates => "/usr/share/supersmart/inparanoid-blast.log",
+		timeout => 0,		
+		require => [ Exec[ 'dl_inparanoid_seq' ], Package[ 'ncbi-blast+.x86_64' ] ];		
+
+	# make profile.d files
+	"make_supersmart_sh":
+		command => "echo 'export LD_LIBRARY_PATH=/usr/lib' > supersmart.sh",
+		cwd     => "/etc/profile.d",
+		creates => "/etc/profile.d/supersmart.sh";
+	"make_supersmart_csh":
+		command => "echo 'setenv LD_LIBRARY_PATH /usr/lib' > supersmart.csh",
+		cwd     => "/etc/profile.d",
+		creates => "/etc/profile.d/supersmart.csh";
 
 	# install muscle multiple sequence alignment
 	"download_muscle":
@@ -194,6 +225,13 @@ exec {
 		cwd     => "/usr/local/src/ExaML/parser",
 		creates => "/usr/local/src/ExaML/parser/parser",
 		require => Exec["clone_examl","install_openmpi"];
+		
+	# install supersmart
+	"clone_supersmart":
+		command => "git clone https://github.com/naturalis/supersmart.git",
+		cwd     => "/usr/local/src",
+		creates => "/usr/local/src/supersmart",
+		require => Package[ 'git' ];
 	
 	# install treePL
 	"clone_treepl":
