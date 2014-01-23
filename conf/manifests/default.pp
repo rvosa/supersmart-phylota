@@ -1,12 +1,6 @@
 # This manifest installs the supersmart pipeline, 
 # for more information http://www.supersmart-project.org
 
-# set up the mysql daemon process
-# 	service { "mysqld":
-# 		enable  => true,
-# 		ensure  => running,
-# 		require => Package["mysql-server"],
-# 	}
 # 
 # copy over the global mysql config file	
 # 	file { "/var/lib/mysql/my.cnf":
@@ -38,6 +32,7 @@
 # 
 # }
 
+# update the $PATH environment variable for the Exec tasks.
 Exec {
 	path => [ 
 		"/usr/local/sbin", 
@@ -46,10 +41,10 @@ Exec {
 		"/usr/bin",
 		"/sbin",
 		"/bin",
-		"/usr/lib64/openmpi/bin/",
 	]
 }
 
+# install packages. most likely this is done with yum.
 package {
 	"mysql-server":             ensure => installed;
 	"mysql":                    ensure => installed;
@@ -66,9 +61,7 @@ package {
 	"perl-HTML-Parser":         ensure => installed;
 	"perl-Config-Tiny":         ensure => installed;
 	"perl-bioperl":             ensure => installed;
-	"openmpi":                  ensure => installed;
 	"git":                      ensure => installed;
-	"openmpi-devel":            ensure => installed;
 	"zlib-devel":               ensure => installed;
 	"autoconf":                 ensure => installed;
 	"automake":                 ensure => installed;
@@ -76,6 +69,15 @@ package {
 	"gcc-c++":                  ensure => installed;	
 }
 
+# set up the mysql daemon process
+service { 
+	"mysqld":
+		enable  => true,
+		ensure  => running,
+		require => Package["mysql-server"],
+}
+
+# create symbol links for executables
 file {
 	"muscle_link":
 		path    => "/usr/local/bin/muscle",
@@ -104,6 +106,7 @@ file {
 		require => Exec["compile_treepl"];
 }
 
+# command line tasks
 exec {
 
 	# install muscle multiple sequence alignment
@@ -123,22 +126,40 @@ exec {
 		command => "wget http://search.cpan.org/CPAN/authors/id/A/AJ/AJGOUGH/Parallel-MPI-Simple-0.10.tar.gz",
 		cwd     => "/usr/local/src",
 		creates => "/usr/local/src/Parallel-MPI-Simple-0.10.tar.gz",
-		require => Package[ 'wget', 'tar', 'openmpi', 'openmpi-devel' ];		
+		require => Package[ 'wget', 'tar' ];		
 	"unzip_parallel_mpi_simple":
 		command => "tar -xzvf /usr/local/src/Parallel-MPI-Simple-0.10.tar.gz",
 		cwd     => "/usr/local/src",		
 		creates => "/usr/local/src/Parallel-MPI-Simple-0.10/Makefile.PL",
 		require => Exec["download_parallel_mpi_simple"];
 	"make_makefile_parallel_mpi_simple":
-		command => "perl Makefile.PL CCFLAGS='-I/usr/include/openmpi-x86_64/'",
+		command => "perl Makefile.PL CCFLAGS='-I/usr/include' LDFLAGS='-L/usr/lib/ -lmpi' CC=mpicc LD=mpicc",
 		cwd     => "/usr/local/src/Parallel-MPI-Simple-0.10/",
 		creates => "/usr/local/src/Parallel-MPI-Simple-0.10/Makefile",
-		require => Exec["unzip_parallel_mpi_simple"];
+		require => Exec["unzip_parallel_mpi_simple","install_openmpi"];
 	"make_install_parallel_mpi_simple":
-		command => "make install",
+		command => "make install LD_LIBRARY_PATH=/usr/lib",
 		cwd     => "/usr/local/src/Parallel-MPI-Simple-0.10/",		
 		creates => "/usr/local/src/Parallel-MPI-Simple-0.10/Simple.so",
-		require => Exec["make_makefile_parallel_mpi_simple"];		
+		require => Exec["make_makefile_parallel_mpi_simple"];	
+		
+	# install openmpi
+	"download_openmpi":
+		command => "wget http://www.open-mpi.org/software/ompi/v1.6/downloads/openmpi-1.6.5.tar.gz",
+		cwd     => "/usr/local/src",
+		creates => "/usr/local/src/openmpi-1.6.5.tar.gz",
+		require => Package[ 'wget', 'tar' ];
+	"unzip_openmpi":
+		command => "tar -xvzf openmpi-1.6.5.tar.gz",
+		cwd     => "/usr/local/src",
+		creates => "/usr/local/src/openmpi-1.6.5",
+		require => Exec['download_openmpi'];
+	"install_openmpi":
+		command => "/usr/local/src/openmpi-1.6.5/configure --prefix=/usr --disable-dlopen && make install",
+		creates => "/usr/bin/mpicc",
+		cwd     => "/usr/local/src/openmpi-1.6.5",
+		timeout => 0,
+		require => Exec['unzip_openmpi'];
 	
 	# install phylip
 	"download_phylip":
@@ -162,17 +183,17 @@ exec {
 		command => "git clone https://github.com/stamatak/ExaML.git",
 		cwd     => "/usr/local/src",
 		creates => "/usr/local/src/ExaML/",
-		require => Package[ 'git', 'openmpi-devel', 'zlib-devel' ];
+		require => Package[ 'git', 'zlib-devel' ];
 	"compile_examl":
-		command => "make -f Makefile.SSE3.gcc",
+		command => "make -f Makefile.SSE3.gcc LD_LIBRARY_PATH=/usr/lib",
 		cwd     => "/usr/local/src/ExaML/examl",
 		creates => "/usr/local/src/ExaML/examl/examl",
-		require => Exec["clone_examl"];
+		require => Exec["clone_examl","install_openmpi"];
 	"compile_parser":
 		command => "make -f Makefile.SSE3.gcc",
 		cwd     => "/usr/local/src/ExaML/parser",
 		creates => "/usr/local/src/ExaML/parser/parser",
-		require => Exec["clone_examl"];
+		require => Exec["clone_examl","install_openmpi"];
 	
 	# install treePL
 	"clone_treepl":
@@ -184,7 +205,7 @@ exec {
 		command => "tar -xvzf adol-c_git_saved.tar.gz",
 		cwd     => "/usr/local/src/treePL/deps",
 		creates => "/usr/local/src/treePL/deps/adol-c",
-		require => Exec["clone_treepl"];
+		require => Exec["clone_treepl","install_openmpi"];
 	"autoreconf_adolc":
 		command => "autoreconf -fi",
 		cwd     => "/usr/local/src/treePL/deps/adol-c",
@@ -199,7 +220,7 @@ exec {
 		command => "tar -xzvf nlopt-2.2.4.tar.gz",
 		cwd     => "/usr/local/src/treePL/deps",
 		creates => "/usr/local/src/treePL/deps/nlopt-2.2.4",
-		require => Exec["clone_treepl"];
+		require => Exec["clone_treepl","install_openmpi"];
 	"install_nlopt":
 		command => "/usr/local/src/treePL/deps/nlopt-2.2.4/configure && make install",
 		cwd		=> "/usr/local/src/treePL/deps/nlopt-2.2.4",
