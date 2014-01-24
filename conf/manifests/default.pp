@@ -89,41 +89,42 @@ exec {
 
 	# download data	
 	"dl_phylota_dump":
-		command => "curl http://phylota.net/pb/Download/184/pb.bu.rel184.4.10.2012.parta{a,b,c,d,e} > pb.bu.rel184.4.10.2012.gz",
+		command => "wget https://dl.dropboxusercontent.com/u/4180059/phylota.tar.gz",
 		cwd     => "/usr/share/supersmart",
-		creates => "/usr/share/supersmart/pb.bu.rel184.4.10.2012.gz",
+		creates => "/usr/share/supersmart/phylota.tar.gz",
 		timeout => 0,
-		require => [ File[ 'data_dir' ], Package[ 'curl' ] ];
+		require => [ File[ 'data_dir' ], Package[ 'wget' ] ];
 	"dl_inparanoid_seq":
 		command => "curl http://inparanoid.sbc.su.se/download/current/sequences/processed/FASTA -o inparanoid.fa",
 		cwd     => "/usr/share/supersmart",
 		creates => "/usr/share/supersmart/inparanoid.fa",
 		require => [ File[ 'data_dir' ], Package[ 'curl' ] ];
-	"dl_inparanoid_tables":
-		command => "wget http://inparanoid.sbc.su.se/download/old_versions/data_7.0/sqltables.tgz",
-		cwd     => "/usr/share/supersmart/inparanoid",
-		creates => "/usr/share/supersmart/inparanoid/sqltables.tgz",
-		require => [ File[ 'inparanoid_dir' ], Package[ 'wget' ] ];
 	
 	# make phylota db
-	"phylota_db":
-		command => "mysql -e 'create database phylota;'",
-		creates => "/var/lib/mysql/phylota",
-		require => [ Package[ 'mysql', 'mysql-server' ], Service[ 'mysqld' ] ];		
-	"inparanoid_sql":
-		command => "mysql phylota < /usr/local/src/supersmart/sql/inparanoid.sql",
-		creates => "/var/lib/mysql/phylota/inparanoid.frm",
-		require => Exec['phylota_db','clone_supersmart'];
-	"phylota_load":
-		command => "gunzip -c /usr/share/supersmart/pb.bu.rel184.4.10.2012.gz | mysql phylota",
-		creates => "/var/lib/mysql/phylota/seq.frm",
-		timeout => 0,		
-		require => Exec['phylota_db','dl_phylota_dump'];
-	"phylota_patch":
-		command => "mysql phylota -e 'alter table ci_gi_184 add index(ti_of_gi);' -v > /usr/local/src/supersmart/sql/ci_gi_184.log",
-		creates => "/usr/local/src/supersmart/sql/ci_gi_184.log",
-		timeout => 0,		
-		require => Exec['phylota_load'];		
+
+# need to resize manually: http://www.ifusio.com/blog/resize-your-sda1-disk-of-your-vagrant-virtualbox-vm
+# 	"phylota_db":
+# 		command => "mysql -e 'create database phylota;'",
+# 		creates => "/var/lib/mysql/phylota",
+# 		require => [ Package[ 'mysql', 'mysql-server' ], Service[ 'mysqld' ] ];
+# 	"unzip_phylota_dump":
+# 		command => "tar -xzvf phylota.tar.gz",
+# 		creates => "/usr/share/supersmart/phylota",
+# 		cwd     => "/usr/share/supersmart/",
+# 		require => Exec[ 'dl_phylota_dump', 'phylota_db' ];
+# 	"move_phylota_dump":
+# 		command => "mv -f -t /var/lib/mysql/phylota/ *",
+# 		creates => "/var/lib/mysql/phylota/seq.frm",
+# 		cwd     => "/usr/share/supersmart/phylota",
+# 		require => Exec[ 'unzip_phylota_dump' ];
+# 	"chown_phylota_dump":
+# 		command => "chown mysql *",
+# 		cwd     => "/var/lib/mysql/phylota/",
+# 		require => Exec[ 'move_phylota_dump' ];
+# 	"chgrp_phylota_dump":
+# 		command => "chgrp mysql *",
+# 		cwd     => "/var/lib/mysql/phylota/",
+# 		require => Exec[ 'move_phylota_dump' ];		
 
 	# make inparanoid blast db
 	"inparanoid_formatdb":
