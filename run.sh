@@ -1,5 +1,10 @@
 #!/bin/bash
 
+# trhis shell script documents the steps of the pipeline in order. the idea
+# is that there will be a smarter way of managing the workflow, e.g. using
+# galaxy or taverna, so this is not the definitive pipeline. it's meant to
+# show how things are supposed to fit together.
+
 # template for looking up variables in the config file
 PRINTVAL="perl -MBio::Phylo::PhyLoTA::Config=printval -e printval"
 
