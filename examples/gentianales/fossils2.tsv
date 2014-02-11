@@ -1,0 +1,16 @@
+species	genus	family	order	informal_group	min_age	max_age	crown_stem	MRCA_of_tax1	MRCA_of_tax2	MRCA_of_tax3	MRCA_of_tax4	MRCA_of_tax5
+			gentianales		83.6	125	stem					
+		apocynaceae			41.3	125	stem					
+	alstonia	apocynaceae			27.3	125	stem					
+	raulvolfia	apocynaceae			23	125	stem					
+	nerium	apocynaceae			5.3	125	stem					
+		gentianaceae			41.3	125	stem					
+	strychnos	loganiaceae			28.1	125	stem					
+		rubiaceae		ixoroideae_cinchonoideae	41.3	125	crown	Cinchona_pubescens	Ixora_ferrea			
+		rubiaceae		ixoroideae	33.9	125	crown	Mussaenda_arcuata	Canthium_inerme	Bathysa_peruviana	Sabicea_aspera	Sipanea_hispida
+		rubiaceae		rubioidae	33.9	125	crown					
+	coprosma	rubiaceae			23	125	stem					
+	pinckneya	rubiaceae			23	125	stem					
+	macrosphyra	rubiaceae			23	125	stem					
+	guettarda	rubiaceae			23	125	stem					
+	mitragyna	rubiaceae			23	125	stem					
