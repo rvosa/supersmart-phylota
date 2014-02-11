@@ -20,8 +20,9 @@ sub find_calibration_point {
     my $mts = Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector->new;
     
     # search for the family and the genus of the fossil datum
-    my ( $family ) = $mts->get_nodes_for_names( $fd->family );
-    my ( $genus  ) = $mts->get_nodes_for_names( $fd->genus  );
+    my ( $genus, $family );    
+    ( $family ) = $mts->get_nodes_for_names( $fd->family ) if $fd->family;
+    ( $genus  ) = $mts->get_nodes_for_names( $fd->genus  ) if $fd->genus;
     
     # if they are indeed nested and it's a stem fossil, attach the genus
     # node as the calibration point
