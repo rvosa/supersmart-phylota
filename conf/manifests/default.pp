@@ -104,13 +104,14 @@ exec {
 
 # need to resize manually: http://www.ifusio.com/blog/resize-your-sda1-disk-of-your-vagrant-virtualbox-vm
 # 	"phylota_db":
-# 		command => "mysql -e 'create database phylota;'",
+# 		command => "mysql -e 'create database phylota; grant all on phylota.* to mysql@localhost'", 
 # 		creates => "/var/lib/mysql/phylota",
 # 		require => [ Package[ 'mysql', 'mysql-server' ], Service[ 'mysqld' ] ];
 # 	"unzip_phylota_dump":
 # 		command => "tar -xzvf phylota.tar.gz",
 # 		creates => "/usr/share/supersmart/phylota",
 # 		cwd     => "/usr/share/supersmart/",
+#                timeout => 0,
 # 		require => Exec[ 'dl_phylota_dump', 'phylota_db' ];
 # 	"move_phylota_dump":
 # 		command => "mv -f -t /var/lib/mysql/phylota/ *",
@@ -155,8 +156,30 @@ exec {
 		cwd     => "/usr/local/src",		
 		creates => "/usr/local/src/muscle3.8.31_i86linux64",
 		require => Exec["download_muscle"];
-		
-	# install perl package Parallel::MPI::Simple
+
+        #install perl package Bio::Phylo
+        "download_bio_phylo":
+                command => "wget http://search.cpan.org/CPAN/authors/id/R/RV/RVOSA/Bio-Phylo-0.56.tar.gz",
+                cwd => "/usr/local/src",
+                creates => "/usr/local/src/Bio-Phylo-0.56.tar.gz",
+                require => Package[ 'wget', 'tar' ];
+        "unzip_bio_phylo":
+                command => "tar -xzvf /usr/local/src/Bio-Phylo-0.56.tar.gz",
+                cwd     => "/usr/local/src",
+                creates => "/usr/local/src/Bio-Phylo-0.56/Makefile.PL",
+                require => Exec["download_bio_phylo"];
+        "make_makefile_bio_phylo":
+                command => "perl Makefile.PL",
+		cwd     => "/usr/local/src/Bio-Phylo-0.56/",
+		creates => "/usr/local/src/Bio-Phylo-0.56/Makefile",
+		require => Exec["unzip_bio_phylo"];
+	"make_install_bio_phylo":
+		command => "make install",
+		cwd     => "/usr/local/src/Bio-Phylo-0.56/",		
+		creates => "/usr/local/share/perl5/Bio/Phylo.pm",
+		require => Exec["make_makefile_bio_phylo"];	
+
+        # install perl package Parallel::MPI::Simple
 	"download_parallel_mpi_simple":
 		command => "wget http://search.cpan.org/CPAN/authors/id/A/AJ/AJGOUGH/Parallel-MPI-Simple-0.10.tar.gz",
 		cwd     => "/usr/local/src",
