@@ -1,7 +1,8 @@
+#!/usr/bin/perl
 use strict;
 use warnings;
 use Test::More 'no_plan';
-use Data::Dumper;
+use FindBin '$Bin';
 
 my $ctc_class = 'Bio::Phylo::PhyLoTA::Service::CalibrationTableCreator';
 my $fdg_class = 'Bio::Phylo::PhyLoTA::Service::FossilDataGetter';
@@ -18,20 +19,20 @@ my $fdg = new_ok($fdg_class);
 my $config = $ctc->config;
 isa_ok( $config, 'Bio::Phylo::PhyLoTA::Config' );
 
-# test to see if a fossil table file has been defined
-my $file = $config->FOSSIL_TABLE_FILE;
-ok( -e $file );
+# test to see if a fossil table file can be found
+my $file = "$Bin/../examples/gentianales/fossils2.tsv";
+ok( -e $file, "$file exists" );
 
-# read the calibration table file
+# read the fossil table
 my @fossils = $fdg->read_fossil_table( $file );
-ok( @fossils );
+ok( scalar(@fossils), "read ".scalar(@fossils)." fossils" );
 
 # find calibration points
 my @points;
-for ( @fossils ) {
-    if ( my $n = $ctc->find_calibration_point($_) ) {
+for my $f ( @fossils ) {
+    if ( my $n = $ctc->find_calibration_point($f) ) {
         isa_ok( $n, 'Bio::Phylo::PhyLoTA::Domain::FossilData' );
         push @points, $n;
     }
 }
-ok( @points );
+ok( scalar(@points), "converted to ".scalar(@points)." points" );
