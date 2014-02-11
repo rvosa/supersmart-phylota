@@ -8,8 +8,8 @@ our $AUTOLOAD;
 
 sub new {
     my $class = shift;
-    my $self = shift || bless {}, $class;
-    return $self;
+    my $self = shift || {};
+    return bless $self, $class;
 }
 
 sub AUTOLOAD {
