@@ -1,40 +1,52 @@
-# this is a unit test
+#!/usr/bin/perl
 use Test::More 'no_plan';
 use Net::Ping;
+use Config;
+use File::Spec;
 
 BEGIN { use_ok('Bio::Phylo::PhyLoTA::Config'); }
 my $config = new_ok('Bio::Phylo::PhyLoTA::Config');
 
-# verify these directories exist
-my @dirs = qw(
-	GB_FLATFILE_DIR
-	GB_TAXONOMY_DIR
-	FASTA_FILE_DIR
-	SLAVE_DATA_DIR
-	SLAVE_WORKING_DIR
-	SCRIPT_DIR
-	HEAD_WORKING_DIR
-	BLAST_DIR
-);
-for my $dir ( @dirs ) {
-	SKIP : {
-		skip "no head/slave config yet", 2 if $dir =~ /^SLAVE_/;
-		ok( $config->$dir, "directory $dir is defined" );
-		ok( -d $config->$dir, "directory $dir exists" );
-	};
-}
-
 # verify these files exist
 my @files = qw(
 	GB_RELNUM_FILE
-	GB_RELNUM_DATE_FILE
-	BLAST2BLINKSIMPLE
-	BLAST2BLINKOVERLAP
+	INPARANOID_SEQ_FILE
 );
 for my $file ( @files ) {
 	ok( $config->$file, "file $file is defined" );
 	ok( -f $config->$file, "file $file exists" );
 }
+
+# verify these binaries can be found
+my @bins = qw(
+	EXAML_BIN
+	PARSER_BIN
+	BLASTALL_BIN
+	FORMATDB_BIN
+	MUSCLE_BIN
+	CONSENSE_BIN
+	TREEPL_BIN
+);
+BIN: for my $var ( @bins ) {
+	my $bin = $config->$var;
+	if ( -x $bin ) {
+		ok( -x $bin, "$bin is a path" );
+	}
+	else {
+		for my $dir ( split /$Config{path_sep}/, $ENV{'PATH'} ) {
+			my $file = File::Spec->catfile( $dir, $bin . $Config{'_exe'} );
+			if ( -x $file ) {
+				ok( -x $file, "$file found on PATH" );
+				next BIN;
+			}
+			else {
+				#warn "$file doesn't exist";
+			}
+		}
+		ok( 0, "$bin not found" ); # will evaluate to failure
+	}
+}
+
 
 # verify these servers are reachable
 my @servers = qw(HOST SERVER);
