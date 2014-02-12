@@ -263,6 +263,7 @@ sub run_blast_search {
 			}
 		}
 	}
+	$log->debug("found ".scalar(@hits)." hits");
 	return @hits;	
 }
 
