@@ -714,21 +714,16 @@ sub align_sequences{
     # ARE compatible, so that we can pass those into the muscle wrapper
     my @convertedseqs;
     for my $seq(@seq){
-	my $converted=$fac->create_datum(
-	    -type => 'dna',
-	    -name => $seq->gi,
-	    -char => $seq->seq,
-	);
-	push @convertedseqs,$converted;
+		my $converted=$fac->create_datum(
+			'-type' => 'dna',
+			'-name' => $seq->gi,
+			'-char' => $seq->seq,
+		);
+		push @convertedseqs,$converted;
     }
     
-    # this is a dirty, dirty hack: the bioperl wrapper for muscle craps out
-    # when 'profile' is one of its hardcoded @MUSCLE_SWITCHES with our version
-    # of the muscle command line program, so we filter out that switch here
-    @Bio::Tools::Run::Alignment::Muscle::MUSCLE_SWITCHES = grep { $_ ne 'profile' } @Bio::Tools::Run::Alignment::Muscle::MUSCLE_SWITCHES;
-    
     # TODO: make this more flexible? E.g. also allow using clustal, or t-coffee or whatever...?
-    my $muscle = Bio::Tools::Run::Alignment::Muscle->new;
+    my $muscle = Bio::Tools::Run::Alignment::Muscle->new( 'quiet' => 1 );
     my $align=$muscle->align(\@convertedseqs);
     return $align;
 }
