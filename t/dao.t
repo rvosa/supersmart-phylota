@@ -1,4 +1,3 @@
-# this is a unit test
 #!/usr/bin/perl
 use strict;
 use warnings;
