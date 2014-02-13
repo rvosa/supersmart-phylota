@@ -33,6 +33,26 @@ has 'file' => (
 	}
 );
 
+=head1 NAME
+
+Bio::Phylo::PhyLoTA::Service::GbifReader - reads GBIF data
+
+=head1 DESCRIPTION
+
+XXX: this package will be retired.
+
+=head1 METHODS
+
+=over
+
+=item next_species
+
+Returns the next L<Bio::Species> object from the underlying GBIF data file.
+
+=back
+
+=cut
+
 sub next_species {
 	my $self = shift;
 	

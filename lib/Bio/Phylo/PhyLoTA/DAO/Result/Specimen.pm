@@ -106,6 +106,14 @@ __PACKAGE__->belongs_to(
 
 # You can replace this text with custom content, and it will be preserved on regeneration
 use Bio::Phylo::PhyLoTA::Config;
+
+=head2 table
+
+Getter/setter that maps this ORM class onto the correct version (184) of the underlying
+database table.
+
+=cut
+
 sub table {
 	my $class = shift;
 	my $table = shift;

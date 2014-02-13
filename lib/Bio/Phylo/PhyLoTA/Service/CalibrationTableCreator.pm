@@ -9,11 +9,38 @@ use Bio::Phylo::PhyLoTA::Domain::CalibrationTable;
 
 extends 'Bio::Phylo::PhyLoTA::Service';
 
+=head1 NAME
+
+Bio::Phylo::PhyLoTA::Service::CalibrationTableCreator - creates sets of calibration points
+
+=head1 DESCRIPTION
+
+Creates a L<Bio::Phylo::PhyLoTA::Domain::CalibrationTable> object by placing
+L<Bio::Phylo::PhyLoTA::Domain::FossilData> objects on a taxonomy.
+
+=head1 METHODS
+
+=over
+
+=item new
+
+The constructor takes no arguments.
+
+=cut
+
 sub new {
     my $class = shift;
     my $self = bless {}, $class;
     return $self;
 }
+
+=item find_calibration_point
+
+Given a L<Bio::Phylo::PhyLoTA::Domain::FossilData>, queries for any nested instances
+of genus and family in the taxonomy that match those of the fossil. If found, attaches
+the genus as the point which the fossil calibrates.
+
+=cut
 
 sub find_calibration_point {
     my ( $self, $fd ) = @_;
@@ -31,6 +58,13 @@ sub find_calibration_point {
     }
     return $fd;
 }
+
+=item create_calibration_table
+
+Given a tree and an array of fossils, creates a 
+L<Bio::Phylo::PhyLoTA::Domain::CalibrationTable>.
+
+=cut
 
 sub create_calibration_table {
     my ( $self, $tree, @fossildata ) = @_;
@@ -71,20 +105,8 @@ sub create_calibration_table {
     return $table;
 }
 
-
-1;
-
-
-=head1 NAME
-
-Bio::Phylo::PhyLoTA::Service::CalibrationTableCreator - Calibration Table Creator
-
-=head1 DESCRIPTION
-
-Queries the FossilTable for each genus received. Retrieves all fossil records for each taxon. 
-Identifies the minimum age of each taxa. Returnes table containing: taxon, minimal_age, all_ages 
-[1...g], prior, include [y/n]. The purpose is to create a table with suitable calibration points 
-for the dating analysis.
+=back
 
 =cut
 
+1;

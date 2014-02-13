@@ -120,19 +120,43 @@ use Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector;
 
 my $mts = Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector->new;
 
+=head2 get_id
+
+Alias for C<gi>
+
+=cut
+
 sub get_id {
 	shift->gi;
 }
 
+=head2 id
+
+Alias for C<gi>
+
+=cut
+
 sub id {
 	shift->gi;
 }
+
+=head2 get_taxon
+
+Returns associated taxon, i.e. L<Bio::Phylo::PhyLoTA::DAO::Result::Node>
+
+=cut
 
 sub get_taxon {
 	my $self = shift;
 	my $ti = $self->ti;
 	return $mts->find_node($ti);
 }
+
+=head2 get_char
+
+Returns raw sequence data, depending on context as an array or a string.
+
+=cut
 
 sub get_char {
 	my $self = shift;
@@ -145,10 +169,22 @@ sub get_char {
 	}
 }
 
+=head2 get_entities
+
+Returns raw sequence data as an array reference.
+
+=cut
+
 sub get_entities {
 	my @char = shift->get_char;
 	return \@char;
 }
+
+=head2 get_name
+
+Alias for C<def>
+
+=cut
 
 sub get_name { shift->def }
 

@@ -10,6 +10,40 @@ our @EXPORT_OK = qw(printval);
 our $AUTOLOAD;
 my $SINGLETON;
 
+=head1 NAME
+
+Bio::Phylo::PhyLoTA::Config - manager of runtime configuration variables
+
+=head1 SYNOPSYS
+
+ use Bio::Phylo::PhyLoTA::Config; 
+ 
+ # instantiate the singleton config object
+ my $conf = Bio::Phylo::PhyLoTA::Config->new;
+ 
+ # fetch the value of a variable in phylota.ini
+ my $examl = $conf->EXAML_BIN;
+
+=head1 DESCRIPTION
+
+The config object holds the values of variables that are needed when running the
+pipeline. Most commonly, these are the locations of executables that the pipeline
+invokes. The values of these variables are defined in C<conf/phylota.ini>, although
+you can override these using environment variables. For example, to define an
+alternate location for EXAML_BIN, create an environment variable called 
+SUPERSMART_EXAML_BIN, whose value will be used in lieu of that in the config file.
+
+=head1 METHODS
+
+=over
+
+=item new
+
+The constructor optionally takes the location of a configuration file in INI
+syntax. By default this is C<conf/phylota.ini>.
+
+=cut
+
 sub new {
     if ( not $SINGLETON ) {
         return $SINGLETON = shift->read(@_);    
@@ -19,11 +53,27 @@ sub new {
     }
 }
 
+=item printval
+
+Prints the value of a variable to STDOUT. Example on the shell:
+
+ $ perl -MBio::Phylo::PhyLoTA::Config=printval -e 'printval "EXAML_BIN"'
+
+=cut
+
 sub printval {
 	my $key  = shift @ARGV;
 	my $self = __PACKAGE__->new;
 	print $self->$key;
 }
+
+=item read
+
+Reads a configuration file in INI syntax, populates the config object 
+with the values therein. Optional argument is an alternate location
+for the config file.
+
+=cut
 
 sub read {
     my $self = shift;
@@ -43,7 +93,19 @@ sub read {
     return $self;
 }
 
+=item currentConfigFile
+
+Returns the location of the currently used configuration file.
+
+=cut
+
 sub currentConfigFile { shift->{'_file'} }
+
+=item currentGBRelease
+
+Returns the currently used GenBank release number (i.e., 184).
+
+=cut
 
 sub currentGBRelease {
     my $self = shift;
@@ -58,6 +120,12 @@ sub currentGBRelease {
     }
     return $self->GB_RELNUM;
 }
+
+=item currentGBReleaseDate
+
+Returns the date stamp for the currently used GenBank release.
+
+=cut
 
 sub currentGBReleaseDate {    
     my $self = shift;
@@ -96,5 +164,9 @@ sub AUTOLOAD {
         warn "Unknown key: $key" unless $key =~ /^[A-Z]+$/;
     }
 }
+
+=back
+
+=cut
 
 1;

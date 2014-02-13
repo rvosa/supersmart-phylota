@@ -27,10 +27,22 @@ GBIF's RESTful web service. This is done by passing a filename or URL into
 store_gbif_occurrences such as
 http://data.gbif.org/ws/rest/occurrence/list?taxonconceptkey=106015799
 
+XXX: this package will be retired.
+
+=head1 METHODS
+
+=over
+
 =cut
 
 # URL stem for requests of occurrence records
 my $GBIF_REST = 'http://data.gbif.org/ws/rest/occurrence/list?taxonconceptkey=';
+
+=item store_gbif_occurrences
+
+XXX: irrelevant.
+
+=cut
 
 sub store_gbif_occurrences {
     my ( $self, $resource ) = @_;
@@ -78,6 +90,12 @@ sub store_gbif_occurrences {
     $twig->$method($resource);
     $self->logger->info("done reading from $resource");
 }
+
+=item store_gbif_ids
+
+XXX: irrelevant
+
+=cut
 
 sub store_gbif_ids {
     my ( $self, $file, $fetch_occurrences ) = @_;
@@ -144,15 +162,8 @@ sub store_gbif_ids {
     }
 }
 
-
-1;
-
-=head1 NAME
-
-Bio::Phylo::PhyLoTA::Service::LocalityTaxonomyGetter - Locality Taxonomy Getter
-
-=head1 DESCRIPTION
-
-Downloads species distribution data from GBIF (www.gbif.org).
+=back
 
 =cut
+
+1;

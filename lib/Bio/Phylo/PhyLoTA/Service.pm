@@ -11,11 +11,50 @@ my $config = Bio::Phylo::PhyLoTA::Config->new;
 my $schema = Bio::Phylo::PhyLoTA::DAO->new;
 my $logger = Bio::Phylo::Util::Logger->new;
 
+=head1 NAME
+
+Bio::Phylo::PhyLoTA::Service - base class for the service layer
+
+=head1 DESCRIPTION
+
+The functionality of the pipeline is primarily implemented by the service layer, i.e.
+by packages inside this namespace. The package will be subdivided by domain, e.g.
+having to do with sequences, taxa, trees, and fossils, but they will share functionality,
+which is implemented here.
+
+=head1 METHODS
+
+=over
+
+=item schema
+
+Returns the L<Bio::Phylo::PhyLoTA::DAO> singleton
+
+=cut
+
 sub schema { $schema }
+
+=item config
+
+Returns the L<Bio::Phylo::PhyLoTA::Config> singleton
+
+=cut
 
 sub config { $config }
 
+=item logger
+
+Returns the L<Bio::Phylo::Util::Logger> singleton
+
+=cut
+
 sub logger { $logger }
+
+=item find_seq
+
+Given a sequence GI, returns the L<Bio::Phylo::PhyLoTA::DAO::Result::Seq> object.
+
+=cut
 
 sub find_seq {
 	my ( $self, $gi ) = @_;
@@ -32,6 +71,13 @@ sub find_seq {
 	return $result;
 }
 
+=item search_seq
+
+Given a search clause, returns the matching L<Bio::Phylo::PhyLoTA::DAO::Result::Seq> 
+objects.
+
+=cut
+
 sub search_seq {
 	my ( $self, $clause ) = @_;
 	my $result;
@@ -46,6 +92,13 @@ sub search_seq {
 	}
 	return $result;	
 }
+
+=item single_seq
+
+Given a search clause, returns the matching single 
+L<Bio::Phylo::PhyLoTA::DAO::Result::Seq> object.
+
+=cut
 
 sub single_seq {
 	my ( $self, $clause ) = @_;
@@ -62,6 +115,12 @@ sub single_seq {
 	return $result;	
 }
 
+=item find_node
+
+Given a taxon ID, returns the matching L<Bio::Phylo::PhyLoTA::DAO::Result::Node> object.
+
+=cut
+
 sub find_node {
 	my ( $self, $ti ) = @_;
 	my $result;
@@ -76,6 +135,13 @@ sub find_node {
 	}
 	return $result;	
 }
+
+=item search_node
+
+Given a search clause, returns the matching L<Bio::Phylo::PhyLoTA::DAO::Result::Node> 
+objects.
+
+=cut
 
 sub search_node {
 	my ( $self, $clause ) = @_;
@@ -92,6 +158,13 @@ sub search_node {
 	return $result;	
 }
 
+=item single_node
+
+Given a search clause, returns the single matching 
+L<Bio::Phylo::PhyLoTA::DAO::Result::Node> object.
+
+=cut
+
 sub single_node {
 	my ( $self, $clause ) = @_;
 	my $result;
@@ -106,6 +179,13 @@ sub single_node {
 	}
 	return $result;	
 }
+
+=item search_feature
+
+Given a search clause, returns the matching 
+L<Bio::Phylo::PhyLoTA::DAO::Result::Feature> objects.
+
+=cut
 
 sub search_feature {
 	my ( $self, $clause ) = @_;
@@ -122,6 +202,13 @@ sub search_feature {
 	return $result;
 }
 
+=item single_feature
+
+Given a search clause, returns the single matching 
+L<Bio::Phylo::PhyLoTA::DAO::Result::Feature> object.
+
+=cut
+
 sub single_feature {
         my ( $self, $clause ) = @_;
         my $result;
@@ -137,6 +224,12 @@ sub single_feature {
 	return $result;
 }
 
+=item search_cluster
+
+Given a search clause, returns the matching 
+L<Bio::Phylo::PhyLoTA::DAO::Result::Cluster> objects.
+
+=cut
 
 sub search_cluster {
 	my ( $self, $clause ) = @_;
@@ -152,6 +245,13 @@ sub search_cluster {
 	}
 	return $result;	
 }
+
+=item single_cluster
+
+Given a search clause, returns the single matching 
+L<Bio::Phylo::PhyLoTA::DAO::Result::Cluster> object.
+
+=cut
 
 sub single_cluster {
 	my ( $self, $clause ) = @_;
@@ -187,6 +287,13 @@ sub single_cluster {
 	return $result;	
 }
 
+=item search_ci_gi
+
+Given a search clause, returns the matching 
+L<Bio::Phylo::PhyLoTA::DAO::Result::CiGi> objects.
+
+=cut
+
 sub search_ci_gi {
 	my ( $self, $clause ) = @_;
 	
@@ -221,6 +328,13 @@ sub search_ci_gi {
 	return $result;	
 }
 
+=item search_inparanoid
+
+Given a search clause, returns the matching 
+L<Bio::Phylo::PhyLoTA::DAO::Result::Inparanoid> objects.
+
+=cut
+
 sub search_inparanoid {
 	my ( $self, $clause ) = @_;
 	my $result;
@@ -235,5 +349,9 @@ sub search_inparanoid {
 	}
 	return $result;	
 }
+
+=back
+
+=cut
 
 1;

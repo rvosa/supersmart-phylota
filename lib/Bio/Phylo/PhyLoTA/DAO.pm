@@ -42,23 +42,31 @@ Bio::Phylo::PhyLoTA::DAO - The database schema
 
 =head1 DESCRIPTION
 
-We use a relational schema implemented in MySQL with a small number of tables.
-The 'seqs' table is used across all releases of the database. Other tables have
-a suffix consisting of '_xx' indicating the GenBank release number.
+The pipeline uses a relational schema implemented in MySQL with a small number of tables.
+These tables are mapped to object classes inside the Bio::Phylo::PhyLoTA::DAO::* 
+namespace, principally using the code generator from L<DBIx::Class>. This package
+represents the schema as a whole, through which different tables can be queried, as
+shown in the SYNOPSIS. Note that this provides a fairly verbose API, and that a more
+concise equivalent one is provided by L<Bio::Phylo::PhyLoTA::Service>, which delegates
+to this one.
 
-The 'nodes_xx' table is constructed in part from NCBI's taxonomy flatfiles and
-in part from calculations and summaries built by us. The 'seqs' table is data
-taken directly from GenBank sequence flatfiles. The 'clusters_xx' contains
-summary information obtained by the clustering pipeline, and information about
-individual clusters is stored in 'cigi_xx'. Summary statistics on the entire
-cluster set are calculated and stored in 'summary_stats'.
+=head1 METHODS
+
+=over
+
+=item new
+
+The constructor returns a singleton object and takes no arguments.
+
+=back
 
 =cut
 
 use Bio::Phylo::PhyLoTA::DBH;
 my $SINGLETON;
+my %args = ( 'limit_dialect' => 'LimitXY' );
 sub new {
-	$SINGLETON ||= shift->connect( sub { Bio::Phylo::PhyLoTA::DBH->new }, { limit_dialect => 'LimitXY' } );
+	$SINGLETON ||= shift->connect( sub { Bio::Phylo::PhyLoTA::DBH->new }, \%args );
 	return $SINGLETON;
 }
 1;

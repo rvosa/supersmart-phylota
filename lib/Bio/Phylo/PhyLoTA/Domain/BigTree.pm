@@ -14,11 +14,40 @@ my $conf = Bio::Phylo::PhyLoTA::Config->new;
 my $log  = Bio::Phylo::Util::Logger->new;
 my $cwd  = getcwd();
 
+=head1 NAME
+
+Bio::Phylo::PhyLoTA::Domain::BigTree - Big Tree
+
+=head1 DESCRIPTION
+
+Represents a Very Large Phylogeny. The idea, tentatively, is that there might be 
+situations where commonly-used memory-based tree classes (e.g. 
+L<Bio::Phylo::Forest::Tree> or L<Bio::Tree::TreeI>) are not scalable enough for the 
+pipeline's needs, so this package would provide some kind of file-based way of interacting 
+with big trees. In fact, this idea hasn't really come to fruition yet.
+
+=head1 METHODS
+
+=over
+
+=item new
+
+The constructor takes no arguments.
+
+=cut
+
 sub new {
     my $class = shift;
     my $self = bless {}, $class;
     return $self;
 }
+
+=item build_tree
+
+Infers a tree, returns the location of the produced tree file. XXX: this functionality
+should be moved to a subclass of L<Bio::Phylo::PhyLoTA::Service>.
+
+=cut
 
 sub build_tree {
     my $self = shift;
@@ -71,17 +100,9 @@ sub build_tree {
     return "$work_dir/ExaML_result.$outfile";
 }
 
-
-1;
-
-=head1 NAME
-
-Bio::Phylo::PhyLoTA::Domain::BigTree - Big Tree
-
-=head1 DESCRIPTION
-
-Tree (string) in Newick format having support values and node ages. Taxon ID’s for 
-genera as leaf labels.
+=back
 
 =cut
 
+
+1;

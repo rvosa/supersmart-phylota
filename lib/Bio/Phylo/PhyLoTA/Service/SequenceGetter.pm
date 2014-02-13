@@ -18,6 +18,19 @@ extends 'Bio::Phylo::PhyLoTA::Service';
 
 my $fac = Bio::Phylo::Factory->new;
 
+=head1 NAME
+
+Bio::Phylo::PhyLoTA::Service::SequenceGetter - Sequence Getter
+
+=head1 DESCRIPTION
+
+This package interacts with sequence data and clusters. XXX: this should probably
+become something like SequenceService, or AlignmentService.
+
+=head1 METHODS
+
+=over
+
 =item store_genbank_sequences
 
 This stores genbank sequences from a file.
@@ -607,6 +620,13 @@ sub compute_median_seq_length {
     return $most_seen_length;
 }
 
+=item get_aligned_locus_indices
+
+Given a GI, a locus name and an aligned sequence string, returns an array of zero-based 
+indices that specify columns that occur inside a named locus.
+
+=cut
+
 sub get_aligned_locus_indices {
 	my ( $self, $gi, $locus, $seq ) = @_;
 	my $feat   = $self->single_feature({ gene => $locus, gi => $gi });
@@ -752,15 +772,8 @@ sub _temp_fasta {
     return $filename;
 }
 
-1;
-
-=head1 NAME
-
-Bio::Phylo::PhyLoTA::Service::SequenceGetter - Sequence Getter
-
-=head1 DESCRIPTION
-
-This fetches the smallest containing cluster for a provided gi from phylota, computes the median sequence
-length to filter out duplicates, and align the sequences with a bioperl wrapper for muscle.
+=back
 
 =cut
+
+1;

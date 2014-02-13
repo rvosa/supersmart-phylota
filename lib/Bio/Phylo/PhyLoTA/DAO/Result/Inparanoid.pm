@@ -77,6 +77,13 @@ __PACKAGE__->add_columns(
 
 # You can replace this text with custom content, and it will be preserved on regeneration
 
+=head2 is_orthologous
+
+Given another Inparanoid database record, determine if the two are orthologous. This is
+done by comparing the identity of their id, guid and bootstrap fields.
+
+=cut
+
 sub is_orthologous {
 	my ( $self, $other ) = @_;
 	return
