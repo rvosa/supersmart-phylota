@@ -4,6 +4,22 @@ use warnings;
 use Getopt::Long;
 use Bio::Phylo::Util::Logger ':levels';
 
+=head1 NAME
+
+join_alignments.pl - joins alignments by taxon id
+
+=head1 SYNOPSYS
+
+ $ join_alignments.pl --list=<file> --format=<nexus|fasta|phylip> > <outfile>
+
+=head1 DESCRIPTION
+
+Given a text file that contains a list of file locations (one per line), produces an
+output that joins these files on their taxon identifiers. The output is written to
+STDOUT in either FASTA, NEXUS or PHYLIP format.
+
+=cut
+
 # process command line arguments
 my $verbosity = WARN;
 my ( $list, $format );

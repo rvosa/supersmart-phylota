@@ -13,6 +13,23 @@ use constant CLUSTER_SUBSET => 1;
 use constant ALIGNMENTS_SUBSET => 2;
 use constant NODE_MAP => 3;
 
+=head1 NAME
+
+mpi_write_alignments.pl - writes phylogenetically informative clusters for taxa
+
+=head1 SYNOPSYS
+
+ $ mpi_write_alignments.pl --infile=<taxa table> --workdir=<dir> > <outfile>
+
+=head1 DESCRIPTION
+
+Given a table of reconciled taxon names (with NCBI taxon IDs), writes all the 
+phylogenetically informative clusters for those taxa as multiple sequence alignments
+to the working directory. Prints the produced file names to STDOUT, to be 
+re-directed to a file.
+
+=cut
+
 # process command line arguments
 my $verbosity = WARN;
 my ( $infile, $workdir );

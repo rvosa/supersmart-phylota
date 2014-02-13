@@ -14,6 +14,21 @@ use constant PROTID_FOR_SEED_GI => 2;
 use constant CLUSTER_SUBSET => 3;
 use constant PROFILE_ALIGNMENTS => 4;
 
+=head1 NAME
+
+mpi_merge_alignments.pl - merges alignments by various means
+
+=head1 SYNOPSYS
+
+ $ mpi_merge_alignments.pl --list=<file> --stem=<base_name> > <outfile>
+
+=head1 DESCRIPTION
+
+Given a file containing a list of alignments, merges these alignments into orthologous
+sets. Writes the names of the newly created, merged alignment files to STDOUT.
+
+=cut
+
 # process command line arguments
 my ( $list, $stem );
 my $verbosity = WARN;

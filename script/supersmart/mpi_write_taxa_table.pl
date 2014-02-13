@@ -9,6 +9,21 @@ use constant DIRTY_NAMES_SUBSET => 1;
 use constant CLEAN_NAMES_SUBSET => 2;
 use constant HEAD_NODE => 0;
 
+=head1 NAME
+
+mpi_write_taxa_table.pl - reconciles taxon labels with a taxonomy
+
+=head1 SYNOPSYS
+
+ $ mpi_write_taxa_table.pl --infile=<file> > <outfile>
+
+=head1 DESCRIPTION
+
+Given a file with putative taxon names, attempts to link these to the pipeline's
+underlying taxonomy. Writes the results as a tab-separated file to STDOUT.
+
+=cut
+
 # process command line arguments
 my $verbosity = WARN;
 my @levels = qw[species genus family order class phylum kingdom];

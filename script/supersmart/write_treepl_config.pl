@@ -8,6 +8,24 @@ use Bio::Phylo::PhyLoTA::Config;
 use Bio::Phylo::PhyLoTA::Service::FossilDataGetter;
 use Bio::Phylo::PhyLoTA::Service::CalibrationTableCreator;
 
+=head1 NAME
+
+write_treepl_config.pl - writes config file for treePL
+
+=head1 SYNOPSYS
+
+ $ write_treepl_config.pl --fossiltable=<file> --readtree=<file> --writetree=<file> \
+ 	--numsites=<number of sites> --smooth=<PL smoothing value> > <outfile>
+ 
+=head1 DESCRIPTION
+
+Given a spreadsheet of fossils and an input tree, writes a file with instructions for
+treePL to perform tree calibration using penalized likelihood. The treePL algorithm
+requires a smoothing parameter and number of sites, which must be provided as
+arguments.
+
+=cut
+
 # process command line arguments
 my $fossiltable;  # tab-separated spreadsheet, as in data/FOSSILS/
 my $readtree;     # the maximum likelihood tree to smooth

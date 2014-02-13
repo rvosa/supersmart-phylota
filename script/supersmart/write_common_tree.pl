@@ -6,6 +6,23 @@ use Bio::Phylo::IO 'unparse';
 use Bio::Phylo::Util::Logger ':levels';
 use Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector;
 
+=head1 NAME
+
+write_common_tree.pl - writes polytomous taxonomy tree
+
+=head1 SYNOPSYS
+
+ $ write_common_tree.pl --infile=<taxa table> > <outfile>
+
+=head1 DESCRIPTION
+
+Given a table of reconciled taxa, writes the 'common tree' that connects these taxa
+in the underlying taxonomy. The resulting tree description is written to STDOUT. By
+default this is in Newick syntax, with labels on interior nodes (including all available
+taxonomic levels up to the root), and with the taxon IDs as terminal labels.
+
+=cut
+
 # process command line arguments
 my $template   = '${get_guid}';  # by default, the node label is the NCBI taxon ID
 my @properties = qw(get_guid); # additional column values to use in template

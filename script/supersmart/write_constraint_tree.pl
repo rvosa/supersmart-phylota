@@ -6,6 +6,22 @@ use Bio::Phylo::IO 'parse';
 use Bio::Phylo::Util::Logger;
 use Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa;
 
+=head1 NAME
+
+write_constraint_tree.pl - writes a randomly resolved input tree
+
+=head1 SYNOPSYS
+
+ $ write_constraint_tree.pl --treefile=<file> --seqfile=<file> [--fasta] > <outfile>
+
+=head1 DESCRIPTION
+
+Given a classification tree (i.e. with polytomies and labeled, unbranched interior 
+nodes) and an alignment file, writes a randomly resolved tree that only includes the
+taxa in the alignment, which are a subset of those in the classification tree.
+
+=cut
+
 # process command line arguments
 my ( $fasta, $treefile, $seqfile, $verbosity );
 GetOptions(
