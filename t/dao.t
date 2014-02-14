@@ -6,9 +6,8 @@ use Bio::Phylo::PhyLoTA::Service;
 use Bio::Phylo::Util::Logger ':levels';
 
 my $log = Bio::Phylo::Util::Logger->new(
-	'-level' => INFO,
-	'-class' => [ 'Bio::Phylo::PhyLoTA::DBH', 'Bio::Phylo::PhyLoTA::DAO' ],
-);
+        '-level' => INFO,
+        '-class' => 'Bio::Phylo::PhyLoTA::DAO');
 
 # this is a unit test
 BEGIN{ use_ok('Bio::Phylo::PhyLoTA::DAO'); }
