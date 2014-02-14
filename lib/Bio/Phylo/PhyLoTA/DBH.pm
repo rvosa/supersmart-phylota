@@ -55,22 +55,36 @@ sub new {
     my $class = shift;
     my %args  = @_;
     if ( not $SINGLETON ) {
+    	$log->info("first call to constructor, creating singleton");
+    	
+    	# instantiate config singleton, use its values for blank ones in %args
         my $config   = Bio::Phylo::PhyLoTA::Config->new;
         $args{'-rdbms'}    ||= $config->RDBMS;
         $args{'-database'} ||= $config->DATABASE;
         $args{'-host'}     ||= $config->HOST;
         $args{'-user'}     ||= $config->USER;
-	my $dsn_tmpl  = 'DBI:%s:database=%s;host=%s';
+        
+        # create "dsn string" template, insert values
+		my $dsn_tmpl  = 'DBI:%s:database=%s;host=%s';
         $args{'-dsn'} = sprintf($dsn_tmpl, @args{qw[-rdbms -database -host]});
-        $args{'-dbh'} = DBI->connect($args{'-dsn'},@args{qw[-user]}, undef, { RaiseError => 1 });
+        
+        # open database connection. the 'undef' is for the blank password.
+        # somehow the RaiseError is lost
+        $args{'-dbh'} = DBI->connect($args{'-dsn'},$args{'-user'}, undef, { RaiseError => 1 });
+        
+        # create singleton
         $SINGLETON = \%args;
         bless $SINGLETON, $class;
+    }
+    else {
+    	$log->info("additional, no-op call to constructor, will return singleton");
     }
     return $SINGLETON;
 }
 
 sub DESTROY {
     my $self = shift;
+    $log->info("disconnecting");
     $self->disconnect if $self->dbh;
 }
 
@@ -78,10 +92,17 @@ sub AUTOLOAD {
     my $self = shift;
     my $method = $AUTOLOAD;
     $method =~ s/.+://;
+    
+    # looking up an existing property
     if ( exists $self->{"-$method"} ) {
+    	$log->info("fetching $method");
         return $self->{"-$method"};
     }
+    
+    # do not know $method, will delegate to wrapped database handle
     else {
+    
+    	# ensure we are still connected
         if ( not $self->dbh->ping ) {
             $log->warn("handle was disconnected, reconnecting...");
             $self->{'-dbh'} = DBI->connect($self->dsn,$self->user, undef, { RaiseError => 1 });

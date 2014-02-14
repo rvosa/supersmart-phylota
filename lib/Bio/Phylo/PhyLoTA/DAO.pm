@@ -63,10 +63,29 @@ The constructor returns a singleton object and takes no arguments.
 =cut
 
 use Bio::Phylo::PhyLoTA::DBH;
+use Bio::Phylo::Util::Logger ':levels';
+
 my $SINGLETON;
+my $log = Bio::Phylo::Util::Logger->new;
 my %args = ( 'limit_dialect' => 'LimitXY' );
+
 sub new {
-	$SINGLETON ||= shift->connect( sub { Bio::Phylo::PhyLoTA::DBH->new }, \%args );
+	my $package = shift;
+	if ( not $SINGLETON ) {
+		$log->info("first call to constructor");
+	
+		# the SUPER::connect method can be passed a code reference
+		my $sub = sub {
+			$log->info("executing code ref that returns database handle");
+			return Bio::Phylo::PhyLoTA::DBH->new;
+		};
+		
+		# create the singleton
+		$SINGLETON = $package->connect( $sub, \%args );
+	}
+	else {
+		$log->info("additional, no-op call to singleton constuctor");
+	}	
 	return $SINGLETON;
 }
 1;
