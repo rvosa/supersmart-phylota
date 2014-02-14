@@ -9,7 +9,7 @@ my $dbh = new_ok('Bio::Phylo::PhyLoTA::DBH');
 
 ok( $dbh->ping, "connected to database" );
 
-for my $field ( qw(host dsn database rdbms user pass) ) {
+for my $field ( qw(host dsn database rdbms user) ) {
 	ok( $dbh->$field, "$field is defined" );
 }
 
