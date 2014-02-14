@@ -98,13 +98,7 @@ exec {
 		cwd     => "/usr/share/supersmart",
 		creates => "/usr/share/supersmart/inparanoid.fa",
 		require => [ File[ 'data_dir' ], Package[ 'curl' ] ];
-	
-	# make phylota db
- 	"phylota_db":
- 		command => "mysql -e 'create database phylota;'", 
- 		creates => "/var/lib/mysql/phylota",
- 		require => [ Package[ 'mysql', 'mysql-server' ], Service[ 'mysqld' ] ];
- 	"unzip_phylota_dump":
+	"unzip_phylota_dump":
  		command => "tar -xzvf phylota.tar.gz",
  		creates => "/usr/share/supersmart/phylota",
  		cwd     => "/usr/share/supersmart/",
@@ -113,7 +107,7 @@ exec {
  	"symlink_phylota_dump":
  		command => "ln -s /usr/share/supersmart/phylota",
  		creates => "/var/lib/mysql/phylota/seq.frm",
- 		cwd     => "/var/lib/mysql/phylota",
+ 		cwd     => "/var/lib/mysql/",
  		require => Exec[ 'unzip_phylota_dump' ];
  	"chown_phylota_db":
  		command => "chown -R -h mysql:mysql phylota/",
