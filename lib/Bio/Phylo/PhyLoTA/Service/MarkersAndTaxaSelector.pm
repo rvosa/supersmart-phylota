@@ -320,7 +320,16 @@ sub _do_tnrs_search {
     my $result = _fetch_url( $TNRS_URL . '?query=' . uri_escape( $name ) );
     return if not $result;
     $log->debug("raw result: $result");
-    my $obj = decode_json($result);
+    
+    # sometimes there are UTF-8 encoding errors, which the JSON parser
+    # chokes on. the best we can do is try to trap these and give up.
+    my $obj;
+    eval { $obj = decode_json($result); };
+    if ( $@ ) {
+    	$log->warn( "error decoding JSON $result: $@" );
+    	return;
+    }    
+    
     $log->debug("parsed response: ".Dumper($obj));
     
     # start polling
