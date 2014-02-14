@@ -23,12 +23,14 @@ Bio::Phylo::PhyLoTA::DBH - persistent singleton database handle
 =head1 DESCRIPTION
 
 This package provides a database handle that configures itself based on the values
-provided by L<Bio::Phylo::PhyLoTA::Config>. The handle tries to stay-alive, and 
-reconnects to the database if the connection goes down. The handle is a singleton
-object, the idea being that this might prevent concurrency issues when running 
-parallel jobs (whether this is the right approach is not determined). The handle is
-used by the L<Bio::Phylo::PhyLoTA::DAO> package, there is no direct usage of it
-elsewhere in the code.
+provided by L<Bio::Phylo::PhyLoTA::Config>, such as database name, user and host. 
+Note that no password is used for database connection, since supersmart runs on
+a virtual host using a local copy of the public phylota database, therefore privacy
+is not an issue. The handle tries to stay-alive, and reconnects to the database if the 
+connection goes down. The handle is a singleton object, the idea being that this 
+might prevent concurrency issues when running parallel jobs (whether this is the 
+right approach is not determined). The handle is used by the L<Bio::Phylo::PhyLoTA::DAO> 
+package, there is no direct usage of it elsewhere in the code. 
 
 =head1 METHODS
 
@@ -42,7 +44,6 @@ The constructor takes the following optional, named arguments:
  -database => <database name>
  -host     => <location of database server, e.g. localhost>
  -user     => <user name>
- -pass     => <password>
  -dsn      => <dsn string>
  -dbh      => <underlying handle>
 
@@ -59,10 +60,9 @@ sub new {
         $args{'-database'} ||= $config->DATABASE;
         $args{'-host'}     ||= $config->HOST;
         $args{'-user'}     ||= $config->USER;
-        $args{'-pass'}     ||= $config->PASS;
-        my $dsn_tmpl  = 'DBI:%s:database=%s;host=%s';
+	my $dsn_tmpl  = 'DBI:%s:database=%s;host=%s';
         $args{'-dsn'} = sprintf($dsn_tmpl, @args{qw[-rdbms -database -host]});
-        $args{'-dbh'} = DBI->connect($args{'-dsn'},@args{qw[-user -pass]},{ RaiseError => 1 });
+        $args{'-dbh'} = DBI->connect($args{'-dsn'},@args{qw[-user]}, undef, { RaiseError => 1 });
         $SINGLETON = \%args;
         bless $SINGLETON, $class;
     }
@@ -84,7 +84,7 @@ sub AUTOLOAD {
     else {
         if ( not $self->dbh->ping ) {
             $log->warn("handle was disconnected, reconnecting...");
-            $self->{'-dbh'} = DBI->connect($self->dsn,$self->user,$self->pass,{ RaiseError => 1 });
+            $self->{'-dbh'} = DBI->connect($self->dsn,$self->user, undef, { RaiseError => 1 });
         }
         $self->dbh->$method(@_);
     }    
