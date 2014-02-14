@@ -8,7 +8,6 @@ use Data::Dumper;
 use File::Temp 'tempfile';
 use Bio::SeqIO;
 use Bio::DB::GenBank;
-use Bio::Tools::Run::Alignment::Muscle;
 use Bio::Tools::Run::StandAloneBlast;
 use Bio::Phylo::Factory;
 use Bio::Phylo::Util::Exceptions 'throw';
@@ -743,10 +742,60 @@ sub align_sequences{
 		push @convertedseqs,$converted;
     }
     
-    # TODO: make this more flexible? E.g. also allow using clustal, or t-coffee or whatever...?
-    my $muscle = Bio::Tools::Run::Alignment::Muscle->new( 'quiet' => 1 );
-    my $align=$muscle->align(\@convertedseqs);
-    return $align;
+    # instantiate using factory, to address milestone issue #4
+	my $aligner = $self->_make_aligner;
+    my $alignment = $aligner->align(\@convertedseqs);
+    return $alignment;
+}
+
+sub _muscle {
+	my $muscle = shift;
+	my @in = @Bio::Tools::Run::Alignment::Muscle::MUSCLE_SWITCHES;
+	my @out = grep { $_ ne 'profile' } @in;
+	@Bio::Tools::Run::Alignment::Muscle::MUSCLE_SWITCHES = @out;
+	$muscle->quiet(1);
+}
+
+sub _quiet { shift->quiet(1) }
+
+sub _verbose { shift->verbose(-1) }
+
+sub _make_aligner {
+	my $self = shift;
+	
+	# load the package
+	my %map = (
+		'clustalw'  => 'Clustalw',
+		'kalign'    => 'Kalign',
+		'mafft'     => 'MAFFT',
+		'muscle'    => 'Muscle',
+		'probalign' => 'Probalign',
+		'probcons'  => 'Probcons',
+		'tcoffee'   => 'TCoffee',
+		'amap'      => 'Amap',
+	);
+	my $config  = $self->config;
+	my $aligner = lc $config->MSA_TOOL || 'muscle';
+	my $package = 'Bio::Tools::Run::Alignment::' . $map{$aligner};
+	eval "require $package";
+	$self->logger->error("couldn't load $package: $@") if $@;
+	
+	# instantiate
+	my $instance = $package->new;
+	
+	# run post-processing
+	my %pp = (
+		'muscle'    => \&_muscle,
+		'mafft'     => \&_quiet,
+		'clustalw'  => \&_quiet,
+		'kalign'    => \&_quiet,
+		'probalign' => \&_verbose,
+		'probcons'  => \&_verbose,
+		'tcoffee'   => \&_quiet,
+		'amap'      => \&_verbose,
+	);
+	$pp{$aligner}->($instance) if $pp{$aligner};
+	return $instance;
 }
 
 =item profile_align_files

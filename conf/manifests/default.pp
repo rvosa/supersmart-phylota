@@ -23,7 +23,6 @@ package {
 	"perl-DBI":                 ensure => installed;
 	"perl-DBD-MySQL":           ensure => installed;
 	"perl-DBIx-Class":          ensure => installed;
-	"perl-Template-Toolkit":    ensure => installed;
 	"perl-JSON":                ensure => installed;
 	"perl-Moose":               ensure => installed;
 	"perl-XML-Twig":            ensure => installed;
@@ -113,6 +112,23 @@ exec {
  		command => "chown -R -h mysql:mysql phylota/",
  		cwd     => "/var/lib/mysql/",
  		require => Exec[ 'symlink_phylota_dump' ];
+ 		
+ 	# install mafft
+ 	"dl_mafft":
+ 		command => "wget http://mafft.cbrc.jp/alignment/software/mafft-7.130-without-extensions-src.tgz",
+ 		cwd     => "/usr/share/supersmart",
+ 		creates => "/usr/share/supersmart/mafft-7.130-without-extensions-src.tgz",
+		require => [ Package[ 'wget' ] ]; 		
+	"unzip_mafft":
+		command => "tar -xzvf mafft-7.130-without-extensions-src.tgz",
+ 		cwd     => "/usr/share/supersmart",
+ 		creates => "/usr/share/supersmart/mafft-7.130-without-extensions",		
+ 		require => Exec[ 'dl_mafft' ];
+ 	"install_mafft":
+ 		command => "make install",
+ 		cwd     => "/usr/share/supersmart/mafft-7.130-without-extensions/core",		
+ 		require => Exec[ 'unzip_mafft' ],
+ 		creates => "/usr/local/bin/mafft"; 		
 
 	# make inparanoid blast db
 	"inparanoid_formatdb":
