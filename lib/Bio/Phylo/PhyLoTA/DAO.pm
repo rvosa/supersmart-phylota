@@ -75,13 +75,15 @@ sub new {
 		$log->info("first call to constructor");
 	
 		# the SUPER::connect method can be passed a code reference
-		my $sub = sub {
-			$log->info("executing code ref that returns database handle");
-			return Bio::Phylo::PhyLoTA::DBH->new;
-		};
+# 		my $sub = sub {
+# 			$log->info("executing code ref that returns database handle");
+# 			return Bio::Phylo::PhyLoTA::DBH->new;
+# 		};		
+		my $dbh = Bio::Phylo::PhyLoTA::DBH->new;
 		
 		# create the singleton
-		$SINGLETON = $package->connect( $sub, \%args );
+# 		$SINGLETON = $package->connect( $sub, \%args );
+		$SINGLETON = $package->connect( $dbh->dsn, $dbh->user, undef, \%args );
 	}
 	else {
 		$log->info("additional, no-op call to singleton constuctor");
