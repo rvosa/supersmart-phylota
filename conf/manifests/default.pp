@@ -23,7 +23,6 @@ package {
 	"perl-DBI":                 ensure => installed;
 	"perl-DBD-MySQL":           ensure => installed;
 	"perl-DBIx-Class":          ensure => installed;
-	"perl-Template-Toolkit":    ensure => installed;
 	"perl-JSON":                ensure => installed;
 	"perl-Moose":               ensure => installed;
 	"perl-XML-Twig":            ensure => installed;
