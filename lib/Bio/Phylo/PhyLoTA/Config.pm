@@ -77,7 +77,7 @@ for the config file.
 
 sub read {
     my $self = shift;
-    my $file = shift || "$ENV{PHYLOTA_HOME}/conf/phylota.ini";
+    my $file = shift || "$ENV{SUPERSMART_HOME}/conf/phylota.ini";
     my $conf = Config::Tiny->read($file);
     if ( my $error = Config::Tiny->errstr ) {
         die $error;
@@ -154,8 +154,8 @@ sub AUTOLOAD {
         
         # make paths absolute if that resolves an otherwise non-existant path
         if ( $key =~ /(?:FILE|DIR)$/ ) {
-            if ( not -e $root->{$key} and -e $ENV{PHYLOTA_HOME} . '/' . $root->{$key} ) {
-                return $ENV{PHYLOTA_HOME} . '/' . $root->{$key};
+            if ( not -e $root->{$key} and -e $ENV{SUPERSMART_HOME} . '/' . $root->{$key} ) {
+                return $ENV{SUPERSMART_HOME} . '/' . $root->{$key};
             }            
         }        
         return $root->{$key};

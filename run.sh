@@ -5,13 +5,16 @@
 # galaxy or taverna, so this is not the definitive pipeline. it's meant to
 # show how things are supposed to fit together.
 
+# project-specific variables
+WORKDIR=examples/gentianales        # working directory for intermediate files
+NAMELIST=$WORKDIR/gentianales.txt   # input list of taxon names
+FOSSILTABLE=$WORKDIR/fossils2.tsv
+
 # template for looking up variables in the config file
 PRINTVAL="perl -MBio::Phylo::PhyLoTA::Config=printval -e printval"
 
 # config vars, optionally change by setting env var with SUPERSMART prefix, e.g.
 # $ SUPERSMART_WORK_DIR=/tmp
-WORKDIR=`$PRINTVAL WORK_DIR`        # working directory for intermediate files
-NAMELIST=`$PRINTVAL NAME_LIST_FILE` # input list of taxon names
 VERBOSE=`$PRINTVAL VERBOSITY`       # global verbosity level
 PARSER=`$PRINTVAL PARSER_BIN`       # converts phylip to examl input files
 PERL=`$PRINTVAL PERL_BIN`           # the perl interpreter
@@ -22,12 +25,11 @@ EXAMLBIN=`$PRINTVAL EXAML_BIN`      # location of examl
 EXAMLARGS=`$PRINTVAL EXAML_ARGS`    # command line arguments for examl
 EXAML="$EXAMLBIN $EXAMLARGS"        # invocation of examl
 TREEPLBIN=`$PRINTVAL TREEPL_BIN`    # location of treePL
-FOSSILTABLE=`$PRINTVAL FOSSIL_TABLE_FILE`
 TREEPLSMOOTH=`$PRINTVAL TREEPL_SMOOTH`
 
 # shorthand for running the perl scripts without having to specify the added
 # search path (the lib folder) and the location of the scripts
-PERLSCRIPT="$PERL $PHYLOTA_HOME/script/supersmart"
+PERLSCRIPT="$PERL $SUPERSMART_HOME/script/supersmart"
 
 # names for intermediate files within the working directory
 SPECIESTABLE=$WORKDIR/species.tsv
