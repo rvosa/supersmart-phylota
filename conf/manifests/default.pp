@@ -81,7 +81,6 @@ file {
 	"inparanoid_dir":
 		path    => "/usr/share/supersmart/inparanoid",
 		ensure  => directory;
-		
 }
 
 # command line tasks
@@ -101,31 +100,25 @@ exec {
 		require => [ File[ 'data_dir' ], Package[ 'curl' ] ];
 	
 	# make phylota db
-
-# need to resize manually: http://www.ifusio.com/blog/resize-your-sda1-disk-of-your-vagrant-virtualbox-vm
-# 	"phylota_db":
-# 		command => "mysql -e 'create database phylota; grant all on phylota.* to mysql@localhost'", 
-# 		creates => "/var/lib/mysql/phylota",
-# 		require => [ Package[ 'mysql', 'mysql-server' ], Service[ 'mysqld' ] ];
-# 	"unzip_phylota_dump":
-# 		command => "tar -xzvf phylota.tar.gz",
-# 		creates => "/usr/share/supersmart/phylota",
-# 		cwd     => "/usr/share/supersmart/",
-#                timeout => 0,
-# 		require => Exec[ 'dl_phylota_dump', 'phylota_db' ];
-# 	"move_phylota_dump":
-# 		command => "mv -f -t /var/lib/mysql/phylota/ *",
-# 		creates => "/var/lib/mysql/phylota/seq.frm",
-# 		cwd     => "/usr/share/supersmart/phylota",
-# 		require => Exec[ 'unzip_phylota_dump' ];
-# 	"chown_phylota_dump":
-# 		command => "chown mysql *",
-# 		cwd     => "/var/lib/mysql/phylota/",
-# 		require => Exec[ 'move_phylota_dump' ];
-# 	"chgrp_phylota_dump":
-# 		command => "chgrp mysql *",
-# 		cwd     => "/var/lib/mysql/phylota/",
-# 		require => Exec[ 'move_phylota_dump' ];		
+ 	"phylota_db":
+ 		command => "mysql -e 'create database phylota;'", 
+ 		creates => "/var/lib/mysql/phylota",
+ 		require => [ Package[ 'mysql', 'mysql-server' ], Service[ 'mysqld' ] ];
+ 	"unzip_phylota_dump":
+ 		command => "tar -xzvf phylota.tar.gz",
+ 		creates => "/usr/share/supersmart/phylota",
+ 		cwd     => "/usr/share/supersmart/",
+                timeout => 0,
+ 		require => Exec[ 'dl_phylota_dump'];
+ 	"symlink_phylota_dump":
+ 		command => "ln -s /usr/share/supersmart/phylota",
+ 		creates => "/var/lib/mysql/phylota/seq.frm",
+ 		cwd     => "/var/lib/mysql/phylota",
+ 		require => Exec[ 'unzip_phylota_dump' ];
+ 	"chown_phylota_db":
+ 		command => "chown -R -h mysql:mysql phylota/",
+ 		cwd     => "/var/lib/mysql/",
+ 		require => Exec[ 'symlink_phylota_dump' ];
 
 	# make inparanoid blast db
 	"inparanoid_formatdb":
