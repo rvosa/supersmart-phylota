@@ -246,7 +246,8 @@ sub run_blast_search {
  		'-query'  => $filename,
 	);
 	
-	# these will be InParanoid database objects		
+	# these will be InParanoid database objects	
+	my @hits;	
 	while ( my $result = $report->next_result() ) {
 		$log->debug("iterating over result $result");
 		
