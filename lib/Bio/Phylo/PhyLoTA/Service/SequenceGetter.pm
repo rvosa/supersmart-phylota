@@ -8,9 +8,9 @@ use Data::Dumper;
 use File::Temp 'tempfile';
 use Bio::SeqIO;
 use Bio::DB::GenBank;
-use Bio::Tools::Run::StandAloneBlast;
 use Bio::Phylo::Factory;
 use Bio::Phylo::Util::Exceptions 'throw';
+use Bio::Tools::Run::StandAloneBlastPlus;
 use Bio::Phylo::IO 'parse_matrix';
 
 extends 'Bio::Phylo::PhyLoTA::Service';
@@ -238,27 +238,15 @@ sub run_blast_search {
 	print $fh ">DUMMY\n$seq\n";
 	close $fh;
 	
-	# construct blastall command line arguments
-	my @cmd = (
-		$self->config->BLASTALL_BIN,
-		'-i' => $filename,
-		'-p' => $args{'-program'}  || 'blastp',
-		'-d' => $args{'-database'} || $self->config->INPARANOID_SEQ_FILE,
-		'2>' => '/dev/null',
+	# run blast+
+	my $report = Bio::Tools::Run::StandAloneBlastPlus->new(
+		'-db_name' => $args{'-database'} || $self->config->INPARANOID_SEQ_FILE,
+ 	)->run(
+ 		'-method' => args{'-program'}  || 'blastp',
+ 		'-query'  => $filename,
 	);
-	$log->debug("will run blast as '@cmd'");
 	
-	# now run blast
-	my $result = `@cmd`;
-	unlink $filename;
-	$log->debug("ran blast with result $result");
-	
-	# open a handle so we can instantiate Bio::SearchIO
-	open my $out, '<', \$result;
-		
 	# these will be InParanoid database objects		
-	my @hits;
-	my $report = Bio::SearchIO->new( '-format' => 'blast', '-fh' => $out );
 	while ( my $result = $report->next_result() ) {
 		$log->debug("iterating over result $result");
 		
