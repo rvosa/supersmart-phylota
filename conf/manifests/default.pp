@@ -173,7 +173,7 @@ exec {
 	
 	# install bioperl-live
 	"clone_bioperl_live":
-		command => "git clone -b v1.6x https://github.com/bioperl/bioperl-live.git",
+		command => "git clone -b v1.6.x https://github.com/bioperl/bioperl-live.git",
 		cwd     => "/usr/local/src",
 		creates => "/usr/local/src/bioperl-live",
 		require => Package[ 'git' ];		
