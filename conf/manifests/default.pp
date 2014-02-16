@@ -28,7 +28,8 @@ package {
 	"perl-XML-Twig":            ensure => installed;
 	"perl-HTML-Parser":         ensure => installed;
 	"perl-Config-Tiny":         ensure => installed;
-	"perl-bioperl":             ensure => installed;
+	"perl-bioperl":             ensure => installed; # XXX we will need to do this by hand
+	"perl-bioperl-run":         ensure => installed; # XXX we will need to do this by hand
 	"git":                      ensure => installed;
 	"zlib-devel":               ensure => installed;
 	"autoconf":                 ensure => installed;
