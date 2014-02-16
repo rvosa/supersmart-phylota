@@ -7,6 +7,7 @@ use Moose;
 use Data::Dumper;
 use File::Temp 'tempfile';
 use Bio::SeqIO;
+use Bio::SearchIO;
 use Bio::DB::GenBank;
 use Bio::Phylo::Factory;
 use Bio::Phylo::Util::Exceptions 'throw';
