@@ -240,7 +240,7 @@ sub run_blast_search {
 	
 	# run blast+
 	my $report = Bio::Tools::Run::StandAloneBlastPlus->new(
-		'-db_name' => $args{'-database'} || $self->config->INPARANOID_SEQ_FILE,
+		'-db_data' => $args{'-database'} || $self->config->INPARANOID_SEQ_FILE,
  	)->run(
  		'-method' => args{'-program'}  || 'blastp',
  		'-query'  => $filename,
