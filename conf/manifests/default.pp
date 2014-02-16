@@ -96,12 +96,13 @@ exec {
 		command => "curl http://inparanoid.sbc.su.se/download/current/sequences/processed/FASTA -o inparanoid.fa",
 		cwd     => "/usr/share/supersmart",
 		creates => "/usr/share/supersmart/inparanoid.fa",
+		timeout => 0,		
 		require => [ File[ 'data_dir' ], Package[ 'curl' ] ];
 	"unzip_phylota_dump":
  		command => "tar -xzvf phylota.tar.gz",
  		creates => "/usr/share/supersmart/phylota",
  		cwd     => "/usr/share/supersmart/",
-                timeout => 0,
+        timeout => 0,
  		require => Exec[ 'dl_phylota_dump'];
  	"symlink_phylota_dump":
  		command => "ln -s /usr/share/supersmart/phylota",
@@ -140,11 +141,11 @@ exec {
 
 	# make profile.d files
 	"make_supersmart_sh":
-		command => "echo 'export LD_LIBRARY_PATH=/usr/lib' > supersmart.sh",
+		command => "echo 'export LD_LIBRARY_PATH=/usr/lib' > supersmart.sh && echo 'export SUPERSMART_HOME=/usr/local/src/supersmart' >> supersmart.sh",
 		cwd     => "/etc/profile.d",
 		creates => "/etc/profile.d/supersmart.sh";
 	"make_supersmart_csh":
-		command => "echo 'setenv LD_LIBRARY_PATH /usr/lib' > supersmart.csh",
+		command => "echo 'setenv LD_LIBRARY_PATH /usr/lib' > supersmart.csh && echo 'setenv SUPERSMART_HOME /usr/local/src/supersmart' >> supersmart.csh",
 		cwd     => "/etc/profile.d",
 		creates => "/etc/profile.d/supersmart.csh";
 
@@ -160,19 +161,19 @@ exec {
 		creates => "/usr/local/src/muscle3.8.31_i86linux64",
 		require => Exec["download_muscle"];
 
-        #install perl package Bio::Phylo
-        "download_bio_phylo":
-                command => "wget http://search.cpan.org/CPAN/authors/id/R/RV/RVOSA/Bio-Phylo-0.56.tar.gz",
-                cwd => "/usr/local/src",
-                creates => "/usr/local/src/Bio-Phylo-0.56.tar.gz",
-                require => Package[ 'wget', 'tar' ];
-        "unzip_bio_phylo":
-                command => "tar -xzvf /usr/local/src/Bio-Phylo-0.56.tar.gz",
-                cwd     => "/usr/local/src",
-                creates => "/usr/local/src/Bio-Phylo-0.56/Makefile.PL",
-                require => Exec["download_bio_phylo"];
-        "make_makefile_bio_phylo":
-                command => "perl Makefile.PL",
+    # install perl package Bio::Phylo
+	"download_bio_phylo":
+		command => "wget http://search.cpan.org/CPAN/authors/id/R/RV/RVOSA/Bio-Phylo-0.56.tar.gz",
+		cwd => "/usr/local/src",
+		creates => "/usr/local/src/Bio-Phylo-0.56.tar.gz",
+		require => Package[ 'wget', 'tar' ];
+	"unzip_bio_phylo":
+		command => "tar -xzvf /usr/local/src/Bio-Phylo-0.56.tar.gz",
+		cwd     => "/usr/local/src",
+		creates => "/usr/local/src/Bio-Phylo-0.56/Makefile.PL",
+		require => Exec["download_bio_phylo"];
+	"make_makefile_bio_phylo":
+		command => "perl Makefile.PL",
 		cwd     => "/usr/local/src/Bio-Phylo-0.56/",
 		creates => "/usr/local/src/Bio-Phylo-0.56/Makefile",
 		require => Exec["unzip_bio_phylo"];
@@ -182,7 +183,7 @@ exec {
 		creates => "/usr/local/share/perl5/Bio/Phylo.pm",
 		require => Exec["make_makefile_bio_phylo"];	
 
-        # install perl package Parallel::MPI::Simple
+    # install perl package Parallel::MPI::Simple
 	"download_parallel_mpi_simple":
 		command => "wget http://search.cpan.org/CPAN/authors/id/A/AJ/AJGOUGH/Parallel-MPI-Simple-0.10.tar.gz",
 		cwd     => "/usr/local/src",
