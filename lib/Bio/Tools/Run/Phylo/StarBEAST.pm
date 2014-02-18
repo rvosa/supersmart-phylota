@@ -1,18 +1,27 @@
 package Bio::Tools::Run::Phylo::StarBEAST;
 use strict;
 use XML::Twig;
-use base qw(Bio::Root::Root Bio::Tools::Run::PhyloBase);
+use Bio::Phylo::IO 'parse';
+use Bio::Tools::Run::Phylo::PhyloBase;
+use base qw(Bio::Tools::Run::Phylo::PhyloBase);
 
 our $PROGRAM_NAME = 'beast';
 our @beast_PARAMS = qw(mc3_chains mc3_delta mc3_temperatures mc3_swap seed threshold);
 our @beast_SWITCHES = qw(verbose warnings strict);
 
-sub alignments {
-	my $self = shift;
-	if ( @_ ) {
-		$self->{alignments} = \@_;
+sub _alignment {
+	my ( $self, $thing, $format ) = @_;
+	if ( -e $thing ) {
+		$self->{'_alignment'} = parse(
+			'-format'     => $format,
+			'-file'       => $thing,
+			'-as_project' => 1,
+		);
 	}
-	ref $self->{alignments} ? @{ $self->{alignments} } : ();
+	elsif ( ref $thing ) {
+		$self->{'_alignment'} = $thing;
+	}
+	$self->{'_alignment'};
 }
 
 sub _escape {
@@ -37,8 +46,8 @@ sub _make_taxa_xml {
 
 sub _make_sequence_xml {
 	my ( $self, $seq ) = @_;
-	my $sequence = _elt( 'sequence', $seq->seq );
-	my $name  = $seq->species->binomial('FULL');
+	my $sequence = _elt( 'sequence', $seq->get_char );
+	my $name  = $seq->get_name;
 	my $taxon = _elt( 'taxon', { 'idref' => _escape($name) } );
 	$taxon->paste($sequence);
 	return $sequence;
@@ -46,9 +55,9 @@ sub _make_sequence_xml {
 
 sub _make_alignment_xml {
 	my ( $self, $aln ) = @_;
-	my $id = $aln->id;
+	my $id = $aln->get_name;
 	my $alignment = _elt( 'alignment', { 'id' => $id, 'dataType' => 'nucleotide' } );
-	for my $seq ( $aln->each_seq ) {
+	for my $seq ( @{ $aln->get_entities } ) {
 		my $sequence = $self->_make_sequence_xml($seq);
 		$sequence->paste( 'last_child' => $alignment );
 	}
@@ -57,7 +66,7 @@ sub _make_alignment_xml {
 
 sub _make_patterns_xml {
 	my ( $self, $aln ) = @_;
-	my $id = $aln->id;
+	my $id = $aln->get_name;
 	my $patterns  = _elt( 'patterns',  { 'id'    => "${id}.patterns", 'from' => 1 } );
 	my $alignment = _elt( 'alignment', { 'idref' => $id } );
 	$alignment->paste($patterns);
@@ -83,7 +92,7 @@ sub _make_constant_size_xml {
 
 sub _make_coalescent_tree_xml {
 	my ( $self, $aln, $rootHeight ) = @_;
-	my $id = $aln->id;
+	my $id = $aln->get_name;
 	my $coalescentTree = _elt( 
 		'coalescentTree' => { 
 			'id'         => "${id}.startingTree",
@@ -97,7 +106,7 @@ sub _make_coalescent_tree_xml {
 
 sub _make_tree_model_xml {
 	my ( $self, $aln ) = @_;
-	my $id = $aln->id;
+	my $id = $aln->get_name;
 	my $model = "${id}.treeModel";
 	my $treeModel = _elt( 'treeModel', { 'id' => $model } );
 	
@@ -128,11 +137,11 @@ sub _make_tree_model_xml {
 	return $treeModel;
 }
 
-sub _make_string_clock_branch_rates_xml {
-	my ( $self, $aln ) = @_;
-	my $id = $aln->id;
+sub _make_strict_clock_branch_rates_xml {
+	my ( $self, $aln, %args ) = @_;
+	my $id = $aln->get_name;
 	my $scbr = _elt( 'strictClockBranchRates', { 'id' => "${id}.branchRates" } );
-	my $parm = _elt( 'parameter', { 'id' => "${id}.clock.rate", 'value' => '1.0' } );
+	my $parm = _elt( 'parameter', { 'id' => "${id}.clock.rate", 'value' => '1.0', %args } );
 	my $rate = _elt( 'rate' );
 	$parm->paste($rate);
 	$rate->paste($scbr);
@@ -141,30 +150,41 @@ sub _make_string_clock_branch_rates_xml {
 
 sub _make_hky_model_xml {
 	my ( $self, $aln ) = @_;
-	my $id = $aln->id;
-_parse(<<"HERE"
-<HKYModel id="${id}.hky">
-	<frequencies>
-		<frequencyModel dataType="nucleotide">
-			<frequencies>
-				<parameter id="${id}.frequencies" value="0.25 0.25 0.25 0.25"/>
-			</frequencies>
-		</frequencyModel>
-	</frequencies>
-	<kappa>
-		<parameter id="${id}.kappa" value="1.0" lower="1.0E-8" upper="Infinity"/>
-	</kappa>
-</HKYModel>
-HERE
-)
+	my $id = $aln->get_name;
+	my $HKYModel = _elt( 'HKYModel', { 'id' => "${id}.hky" } );
+	
+	# make frequencies
+	my $freq1 = _elt( 'frequencies' );
+	$freq1->paste( 'last_child' => $HKYModel );
+	my $frequencyModel = _elt( 'frequencyModel', { 'dataType' => 'nucleotide' } );
+	$frequencyModel->paste($freq1);
+	my $freq2 = _elt( 'frequencies' );
+	$freq2->paste( 'last_child' => $frequencyModel );
+	my $param1 = _elt( 'parameter', { 
+		'id'    => "${id}.frequencies", 
+		'value' => '0.25 0.25 0.25 0.25' } );
+	$param1->paste( 'last_child' => $freq2 );
+	
+	# make kappa
+	my $kappa = _elt( 'kappa' );
+	my $param2 = _elt( 'parameter', {
+		'id'    => "${id}.kappa", 
+		'value' => '1.0', 
+		'lower' => '1.0E-8', 
+		'upper' => 'Infinity' } );
+	$param2->paste( 'last_child' => $kappa );
+	$kappa->paste( 'last_child' => $HKYModel );
+	
+	# done
+	return $HKYModel;
 }
 
 sub _make_site_model_xml {
 	my ( $self, $aln ) = @_;
-	my $id = $aln->id;
+	my $id = $aln->get_name;
 	my $HKYModel = _elt( 'HKYModel', { 'idref' => "${id}.hky" } );
 	my $substitutionModel = _elt( 'substitutionModel' );
-	my $siteModel = elt( 'siteModel', { 'id' => "${id}.siteModel" } );
+	my $siteModel = _elt( 'siteModel', { 'id' => "${id}.siteModel" } );
 	$HKYModel->paste($substitutionModel);
 	$substitutionModel->paste($siteModel);
 	return $siteModel;
@@ -172,7 +192,7 @@ sub _make_site_model_xml {
 
 sub _make_tree_likelihood_xml {
 	my ( $self, $aln ) = @_;
-	my $id = $aln->id;
+	my $id = $aln->get_name;
 	my $tl = _elt( 'treeLikelihood',   { 'id' => "${id}.treeLikelihood", 'useAmbiguities' => 'false' } );
 	my $patterns  = _elt( 'patterns',  { 'idref' => "${id}.patterns"  } );
 	my $treeModel = _elt( 'treeModel', { 'idref' => "${id}.treeModel" } );
@@ -222,51 +242,57 @@ sub _make_species_xml {
 }
 
 sub _make_species_tree_xml {
-_parse(<<"HERE"
-	<speciesTree id="sptree" constantRoot="true">
-		<species idref="species"/>
-		<sppSplitPopulations value="0.02">
-			<parameter id="speciesTree.splitPopSize"/>
-		</sppSplitPopulations>
-	</speciesTree>
-HERE
-)
+	my $speciesTree = _elt( 'speciesTree', { 'id' => 'sptree', 'constantRoot' => 'true' } );
+	my $species = _elt( 'species', { 'idref' => 'species' } );
+	my $sppSplitPopulations = _elt( 'sppSplitPopulations', { 'value' => '0.02' } );
+	my $parameter = _elt( 'parameter', { 'id' => 'speciesTree.splitPopSize' } );
+	$parameter->paste($sppSplitPopulations);
+	$sppSplitPopulations->paste($speciesTree);
+	$species->paste($speciesTree);
+	return $speciesTree;
 }
 
 sub _make_birth_death_model_xml {
-_parse(<<'HERE'
-<birthDeathModel id="birthDeath" units="substitutions">
-	<birthMinusDeathRate>
-		<parameter 
-			id="species.birthDeath.meanGrowthRate" 
-			value="1.0" 
-			lower="0.0" 
-			upper="Infinity"/>
-	</birthMinusDeathRate>
-	<relativeDeathRate>
-		<parameter 
-			id="species.birthDeath.relativeDeathRate" 
-			value="0.5" 
-			lower="0.0" 
-			upper="1.0"/>
-	</relativeDeathRate>
-</birthDeathModel>
-HERE
-)
+	my $birthDeathModel = _elt( 'birthDeathModel', { 
+		'id'    => 'birthDeath',
+		'units' => 'substitutions',		
+	} );
+	my $birthMinusDeathRate = _elt( 'birthMinusDeathRate' );
+	$birthMinusDeathRate->paste($birthDeathModel);
+	my $parm1 = _elt( 'parameter', {
+		'id'    => 'species.birthDeath.meanGrowthRate',
+		'value' => '1.0',
+		'lower' => '0.0',
+		'upper' => 'Infinity',
+	} );
+	$parm1->paste($birthMinusDeathRate);
+	my $relativeDeathRate = _elt( 'relativeDeathRate' );
+	$relativeDeathRate->paste( 'last_child' => $birthDeathModel );
+	my $parm2 = _elt( 'parameter', {
+		'id'    => 'species.birthDeath.relativeDeathRate',
+		'value' => '0.5',
+		'lower' => '0.0',
+		'upper' => '1.0',
+	} );
+	$parm2->paste($relativeDeathRate);
+	return $birthDeathModel;
 }
 
 sub _make_speciation_likelihood_xml {
-_parse(<<'HERE'
-<speciationLikelihood id="speciation.likelihood">
-	<model>
-		<birthDeathModel idref="birthDeath"/>
-	</model>
-	<speciesTree>
-		<speciesTree idref="sptree"/>
-	</speciesTree>
-</speciationLikelihood>
-HERE
-)
+	my $speciationLikelihood = _elt( 'speciationLikelihood', { 
+		'id' => 'speciation.likelihood', 
+	} );
+	my $model = _elt( 'model' );
+	$model->paste( $speciationLikelihood );
+	my $birthDeathModel = _elt( 'birthDeathModel', {
+		'idref' => 'birthDeath',
+	} );
+	$birthDeathModel->paste( $model );
+	my $spec1 = _elt( 'speciesTree' );
+	my $spec2 = _elt( 'speciesTree', { 'idref' => 'sptree' } );
+	$spec2->paste( $spec1 );
+	$spec1->paste( 'last_child' => $speciationLikelihood );
+	return $speciationLikelihood;
 }
 
 sub _make_tmrca_statistic_xml {
@@ -287,13 +313,14 @@ sub _make_tmrca_statistic_xml {
 }
 
 sub _make_species_coalescent_xml {
-_parse(<<'HERE'
-<speciesCoalescent id="species.coalescent">
-	<species idref="species"/>
-	<speciesTree idref="sptree"/>
-</speciesCoalescent>
-HERE
-)
+	my $speciesCoalescent = _elt( 'speciesCoalescent', { 
+		'id' => 'species.coalescent',
+	} );
+	my $species = _elt( 'species', { 'idref' => 'species' } );
+	$species->paste($speciesCoalescent);
+	my $speciesTree = _elt( 'speciesTree', { 'idref' => 'sptree' } );
+	$speciesTree->paste( 'last_child' => $speciesCoalescent );
+	return $speciesCoalescent;
 }
 
 sub _make_mixed_distribution_likelihood_xml {
@@ -303,37 +330,57 @@ sub _make_mixed_distribution_likelihood_xml {
 	my @values;
 	push @values, 1 for 1 .. $ntax;
 	push @values, 0 for 1 .. ( $ntax + ( $ntax - 2 ) );
-_parse(<<"HERE"
-	<mixedDistributionLikelihood id="species.popSize">
-		<distribution0>
-			<gammaDistributionModel>
-				<shape>
-					2
-				</shape>
-				<scale>
-					<parameter id="species.popMean" value="0.02"/>
-				</scale>
-			</gammaDistributionModel>
-		</distribution0>
-		<distribution1>
-			<gammaDistributionModel>
-				<shape>
-					4
-				</shape>
-				<scale>
-					<parameter idref="species.popMean"/>
-				</scale>
-			</gammaDistributionModel>
-		</distribution1>
-		<data>
-			<parameter idref="speciesTree.splitPopSize"/>
-		</data>
-		<indicators>
-			<parameter value="@values"/>
-		</indicators>
-	</mixedDistributionLikelihood>
-HERE
-);
+	
+	# root element
+	my $mixedDistributionLikelihood = _elt( 'mixedDistributionLikelihood', {
+		'id' => 'species.popSize',
+	} );
+	
+	# distribution0 element structure
+	my $distribution0 = _elt( 'distribution0' );
+	$distribution0->paste( $mixedDistributionLikelihood );
+	my $gammaDistributionModel1 = _elt( 'gammaDistributionModel' );
+	$gammaDistributionModel1->paste($distribution0);
+	my $shape1 = _elt( 'shape' => 2 );
+	$shape1->paste( $gammaDistributionModel1 );
+	my $scale1 = _elt( 'scale' );
+	$scale1->paste( $gammaDistributionModel1 );
+	my $parm1 = _elt( 'parameter', {
+		'id'    => 'species.popMean',
+		'value' => '0.02',	
+	} );
+	$parm1->paste($scale1);
+	
+	# distribution1 element structure
+	my $distribution1 = _elt( 'distribution1' );
+	$distribution1->paste( $mixedDistributionLikelihood );
+	my $gammaDistributionModel2 = _elt( 'gammaDistributionModel' );
+	$gammaDistributionModel2->paste( $distribution1 );
+	my $shape2 = _elt( 'shape' => 4 );
+	$shape2->paste( $gammaDistributionModel2 );
+	my $scale2 = _elt( 'scale' );
+	$scale2->paste( 'last_child' => $gammaDistributionModel2 );
+	my $parm2 = _elt( 'parameter', {
+		'idref' => 'species.popMean',
+	} );
+	$parm2->paste( $scale2 );
+	
+	# data element structure
+	my $data = _elt( 'data' );
+	$data->paste( 'last_child' => $mixedDistributionLikelihood );
+	my $parm3 = _elt( 'parameter', {
+		'idref' => 'speciesTree.splitPopSize',
+	} );
+	$parm3->paste( $data );
+	
+	# indicators element structure
+	my $indicators = _elt( 'indicators' );
+	$indicators->paste( 'last_child' => $mixedDistributionLikelihood );
+	my $parm4 = _elt( 'parameter', { 'value' => "@values" } );
+	$parm4->paste( $indicators );
+	
+	# done
+	return $mixedDistributionLikelihood;
 }
 
 sub _make_scale_operator_xml {
@@ -341,11 +388,13 @@ sub _make_scale_operator_xml {
 	my $factor = $args{'factor'};
 	my $weight = $args{'weight'};
 	my $param  = $args{'param'};
-	_parse(qq(
-		<scaleOperator scaleFactor="$factor" weight="$weight">
-			<parameter idref="$param"/>
-		</scaleOperator>
-	));
+	my $scaleOperator = _elt( 'scaleOperator', {
+		'scaleFactor' => $factor,
+		'weight'      => $weight,
+	} );
+	my $parameter = _elt( 'parameter', { 'idref' => $param } );
+	$parameter->paste( $scaleOperator );
+	return $scaleOperator;
 }
 
 sub _make_delta_exchange_xml {
@@ -353,40 +402,44 @@ sub _make_delta_exchange_xml {
 	my $delta  = $args{'delta'};
 	my $weight = $args{'weight'};
 	my $param  = $args{'param'};
-	return _parse(qq(
-		<deltaExchange delta="$delta" weight="$weight">
-			<parameter idref="$param"/>
-		</deltaExchange>
-	));
+	my $deltaExchange = _elt( 'deltaExchange', {
+		'delta'  => $delta,
+		'weight' => $weight,
+	} );
+	my $parameter = _elt( 'parameter', { 'idref' => $param } );
+	$parameter->paste( $deltaExchange );
+	return $deltaExchange;
 }
 
 sub _make_treemodel_operators_xml {
 	my ( $self, $size, $treeModel ) = @_;
-	return 
-		_parse(qq(
-		<subtreeSlide size="$size" gaussian="true" weight="15">
-			<treeModel idref="$treeModel"/>
-		</subtreeSlide>)),
-		_parse(qq(
-		<narrowExchange weight="15">
-			<treeModel idref="$treeModel"/>
-		</narrowExchange>)),
-		_parse(qq(
-		<wideExchange weight="3">
-			<treeModel idref="$treeModel"/>
-		</wideExchange>)),
-		_parse(qq(
-		<wilsonBalding weight="3">
-			<treeModel idref="$treeModel"/>
-		</wilsonBalding>)),
-		_parse(qq(
-		<scaleOperator scaleFactor="0.75" weight="3">
-			<parameter idref="${treeModel}.rootHeight"/>
-		</scaleOperator>)),
-		_parse(qq(		
-		<uniformOperator weight="30">
-			<parameter idref="${treeModel}.internalNodeHeights"/>
-		</uniformOperator>));
+	my @result;
+	
+	# subtreeSlide
+	push @result, _elt('subtreeSlide',{'size'=>$size,'gaussian'=>'true','weight'=>'15'});
+	_elt( 'treeModel', { 'idref' => $treeModel } )->paste( $result[-1] );
+	
+	# narrowExchange
+	push @result, _elt( 'narrowExchange', { 'weight' => '15' } );
+	_elt( 'treeModel', { 'idref' => $treeModel } )->paste( $result[-1] );
+
+	# wideExchange
+	push @result, _elt( 'wideExchange', { 'weight' => '3' } );
+	_elt( 'treeModel', { 'idref' => $treeModel } )->paste( $result[-1] );
+	
+	# wilsonBalding
+	push @result, _elt( 'wilsonBalding', { 'weight' => '3' } );
+	_elt( 'treeModel', { 'idref' => $treeModel } )->paste( $result[-1] );
+	
+	# scaleOperator
+	push @result, _elt( 'scaleOperator', { 'scaleFactor' => '0.75', 'weight' => '3' } );
+	_elt( 'parameter', { 'idref' => "${treeModel}.rootHeight" } )->paste( $result[-1] );
+
+	# uniformOperator
+	push @result, _elt( 'uniformOperator', { 'weight' => '30' } );
+	_elt('parameter',{'idref'=>"${treeModel}.internalNodeHeights"})->paste($result[-1]);
+
+	return @result;
 }
 
 sub _make_updown_operator_xml {
@@ -421,11 +474,12 @@ sub _make_updown_operator_xml {
 
 sub _make_node_re_height_xml {
 	my ( $self, $weight ) = @_;
-	_parse(qq(
-		<nodeReHeight weight="$weight">
-			<species idref="species"/>
-			<speciesTree idref="sptree"/>
-		</nodeReHeight>));
+	my $nodeReHeight = _elt( 'nodeReHeight', { 'weight' => $weight } );
+	my $species = _elt( 'species', { 'idref' => 'species' } );
+	$species->paste($nodeReHeight);
+	my $speciesTree = _elt( 'speciesTree', { 'idref' => 'sptree' } );
+	$speciesTree->paste( 'last_child' => $nodeReHeight );
+	return $nodeReHeight;
 }
 
 sub _make_one_on_x_prior_xml {
@@ -447,92 +501,196 @@ sub _make_gamma_prior_xml {
 	return $gammaPrior;
 }
 
+sub _make_operators_xml {
+	my $self = shift;
+	my $operators = _elt( 'operators', { 'id' => 'operators' } );
+	my @id = map { $_->get_name } @{ $self->_alignment->get_matrices };
+
+	# scaleOperator
+	for my $id ( @id ) {
+		$self->_make_scale_operator_xml(
+			'factor' => '0.75',
+			'weight' => '1',
+			'param'  => "${id}.kappa"
+		)->paste( 'last_child' => $operators );
+		$self->_make_delta_exchange_xml(
+			'delta'  => '0.01',
+			'weight' => 1,
+			'param'  => "${id}.frequencies",
+		)->paste( 'last_child' => $operators );
+	}
+		
+	# scaleOperator
+	for my $id ( @id ) {
+		$self->_make_scale_operator_xml(
+			'factor' => '0.75',
+			'weight' => '3',
+			'param'  => "${id}.clock.rate",
+		)->paste( 'last_child' => $operators );
+	}	
+	
+	# upDownOperator
+	my @up = map { "${_}.clock.rate" } @id;
+	push @up, 'species.birthDeath.meanGrowthRate';
+	my @down = qw(species.popMean speciesTree.splitPopSize);
+	push @down, "${_}.treeModel.allInternalNodeHeights" for @id;
+	$self->_make_updown_operator_xml(
+		'up'          => [ reverse @up   ],
+		'down'        => [ reverse @down ],
+		'factor'      => '0.75',
+		'weight'      => '30',
+		'speciesTree' => 'sptree',
+	)->paste( 'last_child' => $operators );
+	
+	# tree operators
+	for my $id ( @id ) {
+		my $tm = "${id}.treeModel";
+		for my $elt ( $self->_make_treemodel_operators_xml( undef, $tm ) ) {
+			$elt->paste( 'last_child' => $operators );
+		}
+	}
+	
+	# upDownOperator
+	my $i = 0;
+	for my $id ( @id ) {
+		my @up;
+		@up = ( "${id}.clock.rate" ) if $i;
+		$self->_make_updown_operator_xml(
+			'factor' => '0.75',
+			'weight' => '3',
+			'down'   => [ "${id}.treeModel.allInternalNodeHeights" ],
+			'up'     => \@up,
+		)->paste( 'last_child' => $operators );
+		$i++;
+	}
+		
+	# scaleOperator species.popMean
+	$self->_make_scale_operator_xml(
+		'factor' => '0.9',
+		'weight' => '5',
+		'param'  => 'species.popMean',
+	)->paste( 'last_child' => $operators );		
+				
+	# scaleOperator species.birthDeath.meanGrowthRate
+	$self->_make_scale_operator_xml(
+		'factor' => '0.75',
+		'weight' => '3',
+		'param'  => 'species.birthDeath.meanGrowthRate',
+	)->paste( 'last_child' => $operators );
+	
+	# scaleOperator species.birthDeath.relativeDeathRate
+	$self->_make_scale_operator_xml(
+		'factor' => '0.75',
+		'weight' => '3',
+		'param'  => 'species.birthDeath.relativeDeathRate',
+	)->paste( 'last_child' => $operators );
+	
+	# scaleOperator speciesTree.splitPopSize
+	$self->_make_scale_operator_xml(
+		'factor' => '0.5',
+		'weight' => '94',
+		'param'  => 'speciesTree.splitPopSize',
+	)->paste( 'last_child' => $operators );
+	
+	# nodeReHeight
+	$self->_make_node_re_height_xml('94')->paste( 'last_child' => $operators );
+		
+	return $operators;
+}
+
 sub _make_beast_xml {
 	my $self = shift;
 	my $twig = XML::Twig->new( 'pretty_print' => 'indented' );
 	my $root = _elt('beast');
 	$twig->set_root($root);
+	my %paste = ( 'last_child' => $root );
 	
 	# gather binomial names across all alignments, make taxa element
-	my @labels;
-	for my $aln ( $self->alignments ) {
-		for my $seq ( $aln->each_seq ) {
-			push @labels, $seq->species->binomial('FULL');
+	my %labels;
+	for my $aln ( @{ $self->_alignment->get_matrices } ) {
+		for my $seq ( @{ $aln->get_entities } ) {
+			my $name = $seq->get_name;
+			$labels{$name}++;
 		}
 	}
-	$self->_make_taxa_xml('taxa'=>\@labels)->paste($root);
+	my @labels = keys %labels;	
+	$self->_make_taxa_xml('taxa'=>\@labels)->paste(%paste);
 	
 	# make alignment elements
-	my @alignments;
-	for my $aln ( $self->alignments ) {
-		push @alignments, $self->_make_alignment_xml($aln);
+	for my $aln ( @{ $self->_alignment->get_matrices } ) {
+		$self->_make_alignment_xml($aln)->paste(%paste);
 	}
 	
 	# make pattern elements
-	my @patterns;
-	for my $aln ( $self->alignments ) {
-		push @patterns, $self->_make_patterns_xml($aln);
+	for my $aln ( @{ $self->_alignment->get_matrices } ) {
+		$self->_make_patterns_xml($aln)->paste(%paste);
 	}
 	
 	# make constantSize element
-	my $constantSize = $self->_make_constant_size_xml;
+	$self->_make_constant_size_xml->paste(%paste);
 	
 	# make coalescentTree elements
-	my @coalescentTree;
-	for my $aln ( $self->alignments ) {
-		push @coalescentTree, $self->_make_coalescent_tree_xml($aln);
+	for my $aln ( @{ $self->_alignment->get_matrices } ) {
+		$self->_make_coalescent_tree_xml($aln)->paste(%paste);
 	}
 	
 	# make treeModel elements
 	my @treeModel;
-	for my $aln ( $self->alignments ) {
+	for my $aln ( @{ $self->_alignment->get_matrices } ) {
 		push @treeModel, $self->_make_tree_model_xml($aln);
+		$treeModel[-1]->paste(%paste);
 	}
 	
 	# make strictClockBranchRates elements
-	my @strictClockBranchRates;
-	for my $aln ( $self->alignments ) {
-		push @strictClockBranchRates, $self->_make_string_clock_branch_rates_xml($aln);
+	my $i = 0;
+	for my $aln ( @{ $self->_alignment->get_matrices } ) {
+		my %args;
+		%args = ( 'lower' => '0.0', 'upper' => 'Infinity' ) if $i;
+		$self->_make_strict_clock_branch_rates_xml($aln, %args)->paste(%paste);
+		$i++;
 	}
 	
 	# make HKYModel elements
-	my @HKYModel;
-	for my $aln ( $self->alignments ) {
-		push @HKYModel, $self->_make_hky_model_xml($aln);
+	for my $aln ( @{ $self->_alignment->get_matrices } ) {
+		$self->_make_hky_model_xml($aln)->paste(%paste);
 	}
 	
 	# make siteModel elements
-	my @siteModel;
-	for my $aln ( $self->alignments ) {
-		push @siteModel, $self->_make_site_model_xml($aln);
+	for my $aln ( @{ $self->_alignment->get_matrices } ) {
+		$self->_make_site_model_xml($aln)->paste(%paste);
 	}
 	
 	# make treeLikelihood elements
-	my @treeLikelihood;
-	for my $aln ( $self->alignments ) {
-		push @treeLikelihood, $self->_make_tree_likelihood_xml($aln);
+	for my $aln ( @{ $self->_alignment->get_matrices } ) {
+		$self->_make_tree_likelihood_xml($aln)->paste(%paste);
 	}
 	
 	# make species element
 	my $species = $self->_make_species_xml('taxa'=>\@labels,'treeModel'=>\@treeModel);
+	$species->paste(%paste);
 	
 	# make speciesTree element
-	my $speciesTree = $self->_make_species_tree_xml;
+	$self->_make_species_tree_xml->paste(%paste);
 	
 	# make birthDeathModel element
-	my $birthDeathModel = $self->_make_birth_death_model_xml;
+	$self->_make_birth_death_model_xml->paste(%paste);
 	
 	# make speciationLikelihood element
-	my $speciationLikelihood = $self->_make_speciation_likelihood_xml;
+	$self->_make_speciation_likelihood_xml->paste(%paste);
 	
 	# make tmrcaStatistic element
-	my $tmrcaStatistic = $self->_make_tmrca_statistic_xml;
+	$self->_make_tmrca_statistic_xml($species)->paste(%paste);
 	
 	# make speciesCoalescent element
-	my $speciesCoalescent = $self->_make_species_coalescent_xml;
+	$self->_make_species_coalescent_xml->paste(%paste);
 	
 	# make mixedDistributionLikelihood element
-	my $mixedDistributionLikelihood = $self->_make_mixed_distribution_likelihood_xml;
+	$self->_make_mixed_distribution_likelihood_xml($species)->paste(%paste);
+	
+	# make operators element
+	$self->_make_operators_xml->paste(%paste);
+	
+	return $twig;
 }
 
 1;
