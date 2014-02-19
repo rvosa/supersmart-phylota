@@ -1,13 +1,112 @@
 package Bio::Tools::Run::Phylo::StarBEAST;
 use strict;
+use version;
 use XML::Twig;
+use File::Temp 'tempfile';
+use Bio::AlignIO;
 use Bio::Phylo::IO 'parse';
+use Bio::Phylo::Forest::Tree;
+use Bio::Align::DNAStatistics;
+use Bio::Tree::DistanceFactory;
 use Bio::Tools::Run::Phylo::PhyloBase;
 use base qw(Bio::Tools::Run::Phylo::PhyloBase);
 
 our $PROGRAM_NAME = 'beast';
 our @beast_PARAMS = qw(mc3_chains mc3_delta mc3_temperatures mc3_swap seed threshold);
 our @beast_SWITCHES = qw(verbose warnings strict);
+my $beast_ns  = 'http://beast.bio.ed.ac.uk/BEAST_XML_Reference#';
+my $beast_pre = 'beast';
+
+sub chain_length {
+	my $self = shift;
+	$self->{'_chain_length'} = shift if @_;
+	return $self->{'_chain_length'};
+}
+
+sub sample_freq {
+	my $self = shift;
+	$self->{'_sample_freq'} = shift if @_;
+	return $self->{'_sample_freq'};
+}
+
+sub root_height {
+	my ( $self, $aln, $value ) = @_;
+	if ( defined $value ) {
+		$aln->set_namespaces( $beast_pre => $beast_ns );
+		$aln->set_meta_object( "${beast_pre}:rootHeight" => $value );
+	}
+	else {
+		$value = $aln->get_meta_object( "${beast_pre}:rootHeight" );
+		if ( not defined $value ) {
+		
+		    # write alignment to tempfile to create AlignI
+		    my ( $fh, $name ) = tempfile();
+		    my @names;
+		    $aln->visit(sub{
+		    	my $row  = shift;
+		    	my $name = $row->get_name;
+		    	my $seq  = $row->get_char;
+		    	print $fh '>', $name, "\n", $seq, "\n";
+		    	push @names, $name;
+		    });
+			my $alnin = Bio::AlignIO->new( '-format' => 'fasta', '-file' => $name );
+			my $alni = $alnin->next_aln;
+			
+			# compute distance matrix
+			my $stats = Bio::Align::DNAStatistics->new();   
+			my $jcmatrix = $stats->distance( 
+				'-align'  => $alni, 
+				'-method' => 'Jukes-Cantor' 
+			);
+			my $total;
+			my $count;
+			for my $i ( 0 .. ( $#names - 1 ) ) {
+				for my $j ( ( $i + 1 ) .. $#names ) {
+					$total += $jcmatrix->get_entry( $names[$i], $names[$j] );
+					$count++;
+				}
+			}
+
+			return $self->root_height( $aln => ( $total / $count ) );
+		}
+	}
+	return $value;
+}
+
+sub program_name { $PROGRAM_NAME }
+
+sub program_dir { undef }
+
+sub run {
+	my ($self,$nexml) = @_;
+	my $project = parse(
+		'-format' => 'nexml',
+		'-file'   => $nexml,
+		'-as_project' => 1,
+	);
+	$self->_alignment($project);
+	my $twig = $self->_make_beast_xml;
+	my ($fh, $filename) = tempfile();
+	$twig->print($fh);
+	my $exe = $self->executable;
+	my @command = ( $exe, qw(-verbose -warnings -strict -overwrite), $filename );
+    my $status  = system(@command);
+    my $outfile = $self->outfile_name();
+    if ( !-e $outfile || -z $outfile ) {
+        $self->warn("*BEAST call had status of $status: $? [command @command]\n");
+        return undef;
+    }
+	return $outfile;
+}
+
+sub version {
+    my ($self) = @_;
+    my $exe;
+    return undef unless $exe = $self->executable;
+    my $string = `$exe -version 2>&1`;
+    $string =~ /BEAST (v\d+\.\d+\.\d+)/;
+    return version->parse($1) || undef;
+}
 
 sub _alignment {
 	my ( $self, $thing, $format ) = @_;
@@ -338,7 +437,7 @@ sub _make_mixed_distribution_likelihood_xml {
 	
 	# distribution0 element structure
 	my $distribution0 = _elt( 'distribution0' );
-	$distribution0->paste( $mixedDistributionLikelihood );
+	$distribution0->paste( 'last_child' => $mixedDistributionLikelihood );
 	my $gammaDistributionModel1 = _elt( 'gammaDistributionModel' );
 	$gammaDistributionModel1->paste($distribution0);
 	my $shape1 = _elt( 'shape' => 2 );
@@ -353,7 +452,7 @@ sub _make_mixed_distribution_likelihood_xml {
 	
 	# distribution1 element structure
 	my $distribution1 = _elt( 'distribution1' );
-	$distribution1->paste( $mixedDistributionLikelihood );
+	$distribution1->paste( 'last_child' => $mixedDistributionLikelihood );
 	my $gammaDistributionModel2 = _elt( 'gammaDistributionModel' );
 	$gammaDistributionModel2->paste( $distribution1 );
 	my $shape2 = _elt( 'shape' => 4 );
@@ -504,7 +603,8 @@ sub _make_gamma_prior_xml {
 sub _make_operators_xml {
 	my $self = shift;
 	my $operators = _elt( 'operators', { 'id' => 'operators' } );
-	my @id = map { $_->get_name } @{ $self->_alignment->get_matrices };
+	my %height = map { $_->get_name => $self->root_height($_) } @{ $self->_alignment->get_matrices };
+	my @id = keys %height;
 
 	# scaleOperator
 	for my $id ( @id ) {
@@ -545,7 +645,7 @@ sub _make_operators_xml {
 	# tree operators
 	for my $id ( @id ) {
 		my $tm = "${id}.treeModel";
-		for my $elt ( $self->_make_treemodel_operators_xml( undef, $tm ) ) {
+		for my $elt ( $self->_make_treemodel_operators_xml( $height{$id} / 10 , $tm ) ) {
 			$elt->paste( 'last_child' => $operators );
 		}
 	}
@@ -598,6 +698,82 @@ sub _make_operators_xml {
 	return $operators;
 }
 
+sub _make_prior_xml {
+	my $self = shift;
+	my $prior = _elt( 'prior', { 'id' => 'prior' } );
+	
+	# speciesCoalescent "species.coalescent"
+	_elt('speciesCoalescent',{'idref'=>'species.coalescent'})->paste('last_child'=>$prior);
+	
+	# mixedDistributionLikelihood "species.popSize"
+	_elt('mixedDistributionLikelihood',{'idref'=>'species.popSize'})->paste('last_child'=>$prior);
+	
+	# speciationLikelihood "speciation.likelihood"
+	_elt('speciationLikelihood',{'idref'=>'speciation.likelihood'})->paste('last_child'=>$prior);
+	
+	# oneOnXPrior for kappa
+	my @id = map { $_->get_name } @{ $self->_alignment->get_matrices };
+	$self->_make_one_on_x_prior_xml("${_}.kappa")->paste('last_child'=>$prior) for @id;
+	
+	# gammaPrior for clock.rate
+	$self->_make_gamma_prior_xml("${_}.clock.rate")->paste('last_child'=>$prior) for @id;
+	
+	# oneOnXPrior for species.popMean
+	$self->_make_one_on_x_prior_xml('species.popMean')->paste('last_child'=>$prior);
+	
+	# oneOnXPrior for species.birthDeath.meanGrowthRate
+	$self->_make_one_on_x_prior_xml('species.birthDeath.meanGrowthRate')->paste('last_child'=>$prior);
+	
+	return $prior;
+
+}
+
+sub _make_likelihood_xml {
+	my $self = shift;
+	my $likelihood = _elt( 'likelihood', { 'id' => 'likelihood' } );
+	my @id = map { $_->get_name } @{ $self->_alignment->get_matrices };
+	my $tl = 'treeLikelihood';
+	for my $id ( @id ) {
+		_elt( $tl, { 'idref' => "${id}.${tl}" } )->paste( 'last_child' => $likelihood );
+	}
+	return $likelihood;
+}
+
+sub _make_posterior_xml {
+	my $self = shift;
+	my $posterior = _elt( 'posterior', { 'id' => 'posterior' } );
+	$self->_make_prior_xml->paste(      'last_child' => $posterior );
+	$self->_make_likelihood_xml->paste( 'last_child' => $posterior );
+	return $posterior;
+}
+
+sub _make_species_logtree_xml {
+	my $self = shift;
+	my $logTree = _elt( 'logTree', {
+		'id'                   => 'species.treeFileLog',
+		'logEvery'             => $self->sample_freq,
+		'nexusFormat'          => 'true',
+		'fileName'             => $self->outfile_name,
+		'sortTranslationTable' => 'true',
+	} );
+	_elt( 'speciesTree', { 'idref' => 'sptree' }  )->paste( 'last_child' => $logTree );
+	_elt( 'posterior', { 'idref' => 'posterior' } )->paste( 'last_child' => $logTree );
+	return $logTree;
+}
+
+sub _make_mcmc_xml {
+	my $self = shift;
+	my $mcmc = _elt( 'mcmc', {
+		'id'           => 'mcmc', 
+		'chainLength'  => $self->chain_length, 
+		'autoOptimize' => 'true',
+	} );
+	$self->_make_posterior_xml->paste( 'last_child' => $mcmc );
+	_elt( 'operators', { 'idref' => 'operators' } )->paste( 'last_child' => $mcmc );
+	$self->_make_species_logtree_xml->paste( 'last_child' => $mcmc );
+	return $mcmc;
+}
+
 sub _make_beast_xml {
 	my $self = shift;
 	my $twig = XML::Twig->new( 'pretty_print' => 'indented' );
@@ -631,7 +807,8 @@ sub _make_beast_xml {
 	
 	# make coalescentTree elements
 	for my $aln ( @{ $self->_alignment->get_matrices } ) {
-		$self->_make_coalescent_tree_xml($aln)->paste(%paste);
+		my $height = $self->root_height($aln);
+		$self->_make_coalescent_tree_xml( $aln => $height )->paste(%paste);
 	}
 	
 	# make treeModel elements
@@ -689,6 +866,9 @@ sub _make_beast_xml {
 	
 	# make operators element
 	$self->_make_operators_xml->paste(%paste);
+	
+	# make mcmc element
+	$self->_make_mcmc_xml->paste(%paste);
 	
 	return $twig;
 }
