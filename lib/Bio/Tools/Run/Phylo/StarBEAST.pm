@@ -19,7 +19,7 @@ my $beast_pre = 'beast';
 
 =head1 NAME
 
-Bio::Tools::Run::Phylo::StarBEAST - class for interface with the BEAST software 
+Bio::Tools::Run::Phylo::StarBEAST - module for interface with the BEAST software 
 
 =head1 SYNOPSYS
 
@@ -31,7 +31,7 @@ Bio::Tools::Run::Phylo::StarBEAST - class for interface with the BEAST software
  
 =head1 DESCRIPTION
 
-This class provides an interface to the  *BEAST software
+This module provides an interface to the  *BEAST software
 (http://beast.bio.ed.ac.uk) for inference of phylogenetic trees 
 using Markov-Chain Monte-Carlo methods.   
 
