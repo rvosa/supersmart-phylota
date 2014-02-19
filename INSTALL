@@ -1,3 +1,87 @@
-1. install Vagrant and VirtualBox
-2. cd into conf
-3. issue "vagrant up"
+Requirements 
+==================================
+
+-- an installation of 'VirtualBox'
+-- an installation of 'Vagrant'
+-- a connection to the internet
+-- an SSH client
+
+Quick installation guide 
+(see below for extended version) 
+==================================
+
+-- If not already installed, download and 
+   install VirtualBox (https://www.virtualbox.org/wiki/Downloads)
+-- If not already installed, download and
+   install Vagrant (http://www.vagrantup.com/downloads.html).
+-- Change to the configuration directory 'conf/'
+-- Issue command 'vagrant up'
+-- Log in to the virtual guest machine using 'vagrant ssh'
+-- SUPERSMART is installed in the directory '/usr/local/src/supersmart'
+
+
+Extended installation instructions
+==================================
+
+The SUPERSMART pipeline is designed to run on a virtual 
+guest operating system within the 'VirtualBox' software, 
+using the 'Vagrant' and 'puppet' environments. 
+This means that SUPERSMART is not actually installed on your machine
+but runs on a virtual linux guest machine which is downloaded
+from a remote server to your computer. Vagrant takes care of downloading
+the virtual image on which SUPERSMART runs. After downloading,
+not only SUPERSMART, but also all necessary dependencies 
+(e.g. external software and libraries, databases) for the  
+pipeline will be automatically installed. It is thereby ensured 
+that all software tools used in the pipeline run in a controlled
+environment. 
+
+You can download VirtualBox and Vagrant for all common operating systems 
+at https://www.virtualbox.org/wiki/Downloads 
+and http://www.vagrantup.com/downloads.html.
+You will find installation instructions on the respective websites.
+
+Once Vagrant and VirtualBox are installed
+on your system, open a terminal ('command prompt' on Windows) 
+and change to the SUPERSMART project directory (the location
+to which you downloaded the SUPERSMART project).
+Change then to the 'conf/' directory and run Vagrant.
+
+$ cd conf
+$ vagrant up
+
+Vagrant will now download the virtual machine and 
+SUPERSMART together with all necessary dependencies
+will be automatically installed by 'puppet'.
+Please not that this may take some time.
+When the installation is finished, you can
+log into the virtual machine and change to the
+SUPERSMART working directory.
+
+$ vagrant ssh 
+$ cd /usr/local/src/SUPERSMART
+
+For instructions on how to run the pipeline,
+please refer to the README file in the 'examples/'
+directory.
+
+
+Logging into the guest machine on WINDOWS
+==================================
+
+Please note that an ssh client is not
+installed by default installed on Windows
+systems. In order to log on to the virtual
+Linux guest machine, you need to download and
+run an ssh client, e.g. 'putty'; you will find
+a download link at http://www.putty.org/ .
+Putty does not require any installation steps,
+you can just double click on the downloaded
+file and a dialog window will open asking you for
+the connection details. 
+In the field 'Hostname (or IP address)',
+enter: 127.0.0.1
+In the field "Port", enter: 2222 and press
+'Open'. A command prompt will open and ask you
+for a user name and password. For both, username and
+password, enter 'vagrant' to log in.
