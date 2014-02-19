@@ -24,11 +24,14 @@ Bio::Tools::Run::Phylo::StarBEAST - module for interface with the BEAST software
 =head1 SYNOPSYS
 
  use Bio::Tools::Run::Phylo::StarBEAST;
- #use FindBin '$Bin';
+ use FindBin '$Bin';
  
- #my $beast = Bio::Tools::Run::Phylo::StarBEAST->new;
- #$beast->run( "$Bin/beast.xml" );
- 
+ my $beast = Bio::Tools::Run::Phylo::StarBEAST->new;
+ $beast->chain_length(100);
+ $beast->sample_freq(100);
+ $beast->run( "$Bin/beast.xml" );
+
+
 =head1 DESCRIPTION
 
 This module provides an interface to the  *BEAST software
@@ -42,6 +45,7 @@ using Markov-Chain Monte-Carlo methods.
 =item chain_length
 
 Returns the number of steps for the Markov chain for running *BEAST.
+If chain length is provided it is set to the given value.
 
 =cut
 
@@ -54,6 +58,7 @@ sub chain_length {
 =item sample_freq
 
 Returns the number determining how often the Markov Chain is sampled.
+If the sample frequence is provided it is set to the given value.
 
 =cut
 
