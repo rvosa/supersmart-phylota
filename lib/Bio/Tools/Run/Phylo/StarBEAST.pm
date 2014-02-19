@@ -17,17 +17,59 @@ our @beast_SWITCHES = qw(verbose warnings strict);
 my $beast_ns  = 'http://beast.bio.ed.ac.uk/BEAST_XML_Reference#';
 my $beast_pre = 'beast';
 
+=head1 NAME
+
+Bio::Tools::Run::Phylo::StarBEAST - class for interface with the BEAST software 
+
+=head1 SYNOPSYS
+
+ use Bio::Tools::Run::Phylo::StarBEAST;
+ #use FindBin '$Bin';
+ 
+ #my $beast = Bio::Tools::Run::Phylo::StarBEAST->new;
+ #$beast->run( "$Bin/beast.xml" );
+ 
+=head1 DESCRIPTION
+
+This class provides an interface to the  *BEAST software
+(http://beast.bio.ed.ac.uk) for inference of phylogenetic trees 
+using Markov-Chain Monte-Carlo methods.   
+
+=head1 METHODS
+
+=over
+
+=item chain_length
+
+Returns the number of steps for the Markov chain for running *BEAST.
+
+=cut
+
 sub chain_length {
 	my $self = shift;
 	$self->{'_chain_length'} = shift if @_;
 	return $self->{'_chain_length'};
 }
 
+=item sample_freq
+
+Returns the number determining how often the Markov Chain is sampled.
+
+=cut
+
 sub sample_freq {
 	my $self = shift;
 	$self->{'_sample_freq'} = shift if @_;
 	return $self->{'_sample_freq'};
 }
+
+=item root_height
+
+Sets the root height to provided value. If no value is given, the root height is
+computed from the distance matrix of the provided alignment.
+Returns the root height that was set.
+
+=cut 
 
 sub root_height {
 	my ( $self, $aln, $value ) = @_;
@@ -73,9 +115,28 @@ sub root_height {
 	return $value;
 }
 
+=item program_name
+
+Returns the name of the executable.
+
+=cut
+
 sub program_name { $PROGRAM_NAME }
 
+=item program_dir
+
+Not yet implemented.
+
+=cut
+
 sub program_dir { undef }
+
+=item run
+
+Runs *Beast using the data in the provided NeXML file. 
+Returns the output file generated from the *Beast run.
+
+=cut
 
 sub run {
 	my ($self,$nexml) = @_;
@@ -98,6 +159,12 @@ sub run {
     }
 	return $outfile;
 }
+
+=item version
+
+Returns the version number of *Beast used.
+
+=cut
 
 sub version {
     my ($self) = @_;
