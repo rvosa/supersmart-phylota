@@ -1,6 +1,7 @@
 #!/usr/bin/perl
 use strict;
 use warnings;
+use version;
 use FindBin '$Bin';
 use File::Temp 'tempdir';
 use Test::More 'no_plan';
@@ -16,7 +17,9 @@ my $examl = new_ok('Bio::Tools::Run::Phylo::ExaML');
 ok( $examl->outfile_name('out'), "out file" );
 ok( $examl->work_dir($wd), "work dir: $wd" );
 ok( $examl->executable( $config->EXAML_BIN ), "executable" );
+ok( $examl->version == qv(1.0.0), "version" );
 ok( $examl->parser( $config->PARSER_BIN ), "parser" );
 ok( $examl->m('GAMMA'), "model" );
 ok( $examl->quiet(1), "set quiet" );
 ok( -e $examl->run( "$Bin/testdata.xml" ) );
+
