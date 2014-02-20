@@ -15,4 +15,4 @@ ok( $beast->executable( $config->BEAST_BIN ), "executable" );
 ok( $beast->chain_length(100) == 100, "chain length" );
 ok( $beast->sample_freq(100) == 100, "sample_freq" );
 
-$beast->run( "$Bin/beast.xml" );
+$beast->run( "$Bin/testdata.xml" );
