@@ -1,6 +1,8 @@
 package Bio::Tools::Run::Phylo::ExaML;
 use strict;
 use version;
+use Cwd;
+use File::Spec;
 use File::Temp 'tempfile';
 use Bio::Phylo::Generator;
 use Bio::Phylo::IO 'parse';
@@ -9,7 +11,7 @@ use Bio::Phylo::Util::CONSTANT ':objecttypes';
 use base qw(Bio::Tools::Run::Phylo::PhyloBase);
 
 our $PROGRAM_NAME = 'examl';
-our @ExaML_PARAMS = qw(B c e f i);
+our @ExaML_PARAMS = qw(B c e f i m);
 our @ExaML_SWITCHES = qw(a D M Q S);
 
 sub new {
@@ -28,6 +30,23 @@ sub new {
 sub program_name { $PROGRAM_NAME }
 
 sub program_dir { undef }
+
+sub run_id {
+	my $self = shift;
+	if ( @_ ) {
+		$self->{'_run_id'} = shift;
+	}
+	return $self->{'_run_id'} || "examl-run-$$";
+}
+
+# intermediate files will be written here
+sub work_dir {
+	my $self = shift;
+	if ( @_ ) {
+		$self->{'_workdir'} = shift;
+	}
+	return $self->{'_workdir'} || '.';
+}
 
 # getter/setter for the parser program (which creates a compressed, binary representation
 # of the input alignment) that comes with examl
@@ -67,27 +86,63 @@ sub run {
 	my $binary = $self->_make_binary( $phylip );
 	
 	# execute
-	my $string = $self->_setparams($binary,$intree);
-	system( $self->executable => $string ) or $self->warn("Couldn't run ExaML: $?");
-	return $self->outfile_name;
+	my $string = $self->executable . $self->_setparams($binary,$intree);
+	my $curdir = getcwd;
+	chdir $self->work_dir;	
+	system($string) and $self->warn("Couldn't run ExaML: $?");
+	chdir $curdir;	
+	return $self->_cleanup;
+}
+
+sub _cleanup {
+	my $self = shift;
+	my $dir  = $self->work_dir;
+	my $out  = $self->outfile_name;
+	my $run  = $self->run_id;
+	opendir my $dh, $dir or die $!;
+	while( my $entry = readdir $dh ) {
+		if ( $entry =~ /^ExaML_binaryCheckpoint\.${out}_\d+$/ ) {
+			unlink "${dir}/${entry}";
+		}
+		elsif ( $entry =~ /^ExaML_(?:info|log).${out}$/ ) {
+			unlink "${dir}/${entry}";		
+		}
+		elsif ( $entry =~ /^${run}-dat\.binary$/ ) {
+			unlink "${dir}/${entry}";		
+		}
+		elsif ( $entry =~ /^${run}\.(?:dnd|phy)$/ ) {
+			unlink "${dir}/${entry}";		
+		}
+		elsif ( $entry =~ /^RAxML_info\.${run}-dat$/ ) {
+			unlink "${dir}/${entry}";		
+		}
+	}
+	return "${dir}/ExaML_result\.${out}";
 }
 
 sub _make_binary {
 	my ( $self, $phylip ) = @_;
-	my ( $binfh, $binfile ) = tempfile();
-    my $null = ($^O =~ m/mswin/i) ? 'NUL' : '/dev/null';	
-	system ( $self->parser, 
+	my $binfile = File::Spec->catfile( $self->work_dir, $self->run_id . '-dat' );
+	my ( $volume, $directories, $base ) = File::Spec->splitpath( $binfile );
+	my $curdir = getcwd;
+	chdir $self->work_dir;
+	my @command = ( $self->parser, 
 		'-m' => 'DNA', 
 		'-s' => $phylip, 
-		'-n' => $binfile, 
-		'2>' => $null  
-	) or $self->warn("Couldn't create $binfile: $?");
-	return $binfile;
+		'-n' => $base,
+		'>'  => File::Spec->devnull,		
+		'2>' => File::Spec->devnull,
+	);
+	my $string = join ' ', @command;
+	system($string) and $self->warn("Couldn't create $binfile: $?");
+	chdir $curdir;
+	return "${binfile}.binary";
 }
 
 sub _make_intree {
 	my ( $self, $taxa, $tree ) = @_;
-	my ( $treefh, $treefile )  = tempfile();
+	my $treefile = File::Spec->catfile( $self->work_dir, $self->run_id . '.dnd' );
+	open my $treefh, '>', $treefile or die $!;
 	if ( $tree ) {
 		print $treefh $tree->to_newick;
 	}
@@ -96,7 +151,7 @@ sub _make_intree {
 		# no tree was given in the nexml file. here we then simulate
 		# a BS tree shape.
 		my $gen = Bio::Phylo::Generator->new;
-		$tree = $gen->gen_equiprobable( '-tips' => $taxa->get_ntax );
+		$tree = $gen->gen_equiprobable( '-tips' => $taxa->get_ntax )->first;
 		my $i = 0;
 		$tree->visit(sub{
 			my $n = shift;
@@ -113,7 +168,8 @@ sub _make_phylip {
 	my ( $self, $taxa, @matrix ) = @_;
 	
 	# create phylip file for parser
-	my ( $phylipfh, $phylipfile ) = tempfile();
+	my $phylipfile = File::Spec->catfile( $self->work_dir, $self->run_id . '.phy' );
+	open my $phylipfh, '>', $phylipfile or die $!;
 	my %nchar_for_matrix;
 	my $ntax  = $taxa->get_ntax;
 	my $nchar = 0;
@@ -160,18 +216,22 @@ sub _setparams {
 
     # Set default output file if no explicit output file has been given
     if ( ! $self->outfile_name ) {
-        my ( $tfh, $outfile ) = $self->io->tempfile( '-dir' => $self->tempdir() );
+        my ( $tfh, $outfile ) = $self->io->tempfile( '-dir' => $self->work_dir );
         close $tfh;
         undef $tfh;
         $self->outfile_name($outfile);
     }
     
-    # set file names
-    $param_string .= " -t $intree -s $infile -n " . $self->outfile_name;
+    # set file names to local
+    my %path = ( '-t' => $intree, '-s' => $infile, '-n' => $self->outfile_name );
+	while( my ( $param, $path ) = each %path ) {
+		my ( $volume, $directories, $file ) = File::Spec->splitpath( $path );
+		$param_string .= " $param $file";
+	}
     
     # hide stderr
-    my $null = ($^O =~ m/mswin/i) ? 'NUL' : '/dev/null';
-    $param_string .= " 2> $null" if $self->quiet() || $self->verbose < 0;
+    my $null = File::Spec->devnull;
+    $param_string .= " > $null 2> $null" if $self->quiet() || $self->verbose < 0;
 
     return $param_string;
 }
