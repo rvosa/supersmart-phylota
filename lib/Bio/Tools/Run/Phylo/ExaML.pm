@@ -31,6 +31,9 @@ sub program_name { $PROGRAM_NAME }
 
 sub program_dir { undef }
 
+# getter/setter for an ID string for this run. by default based on the PID. this only has
+# to be unique during the runtime of this process, all files that have the run ID in them
+# are cleaned up afterwards.
 sub run_id {
 	my $self = shift;
 	if ( @_ ) {
@@ -117,7 +120,8 @@ sub _cleanup {
 			unlink "${dir}/${entry}";		
 		}
 	}
-	return "${dir}/ExaML_result\.${out}";
+	rename "${dir}/ExaML_result\.${out}", $self->outfile_name;
+	return $self->outfile_name;
 }
 
 sub _make_binary {
