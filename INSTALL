@@ -17,7 +17,7 @@ Quick installation guide
 -- Change to the configuration directory 'conf/'
 -- Issue command 'vagrant up'
 -- Log in to the virtual guest machine using 'vagrant ssh'
--- SUPERSMART is installed in the directory '/usr/local/src/supersmart'
+-- SUPERSMART is installed in the directory '/usr/local/src/supersmart', i.e. $SUPERSMART_HOME
 
 
 Extended installation instructions
