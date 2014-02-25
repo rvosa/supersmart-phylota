@@ -127,8 +127,8 @@ if ( $rank == 0 ) {
 		    my $outfile = $workdir
 				. '/'
 				. $alignment->{seed_gi}
-				. '.'
-				. $alignment->{gene}
+#				. '.'
+#				. $alignment->{gene}
 				. '.fa';
             
             # print name to stdout so we can make a list of produced files
@@ -199,12 +199,13 @@ else {
             });
 			
 			# fetch gene name, if any
-			my $features = $sg->search_feature( { 'gi' => $seed_gi } );
-			my @genes = grep { /\S/ } map { $_->gene } $features->all;
-			$log->info("genes for $seed_gi => '@genes'");
+#			my $features = $sg->search_feature( { 'gi' => $seed_gi } );
+#			my @genes = grep { /\S/ } map { $_->gene } $features->all;
+#			$log->info("genes for $seed_gi => '@genes'");
 			
 			# write intermediate result
-			my $filename = $workdir . '/' . $seed_gi . '.' . join('.',@genes) . '.fa';
+#			my $filename = $workdir . '/' . $seed_gi . '.' . join('.',@genes) . '.fa';
+			my $filename = $workdir . '/' . $seed_gi . '.fa';
 			open my $fh, '>', $filename or die $!;
 			for my $row ( @matrix ) {
 				print $fh $row->[0], "\n", $row->[1], "\n";
@@ -212,7 +213,7 @@ else {
 			
             push @result, {
 				'seed_gi' => $seed_gi,
-				'gene'    => join('.',@genes),
+#				'gene'    => join('.',@genes),
 				'matrix'  => \@matrix,
 			};
         }
