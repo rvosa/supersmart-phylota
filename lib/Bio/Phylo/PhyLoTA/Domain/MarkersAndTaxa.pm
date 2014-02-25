@@ -3,6 +3,7 @@
 package Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa;
 use strict;
 use warnings;
+use Bio::Phylo::Matrices::Datum;
 
 
 =head1 NAME
@@ -70,6 +71,46 @@ sub parse_fasta_string {
         }
     }
     return %fasta;    
+}
+
+=item calc_mean_distance
+
+Calculates the average pairwise distance within the alignment.
+
+=cut
+
+sub calc_mean_distance {
+	my ( $class, %fasta ) = @_;
+	my $dat  = 'Bio::Phylo::Matrices::Datum';
+	my @seqs = map { $dat->new( '-type' => 'dna', '-char' => $_ ) } values %fasta;
+	my $count = 0;
+	my $distance = 0;
+	for my $i ( 0 .. ( $#seqs - 1 ) ) {
+		for my $j ( ( $i + 1 ) .. $#seqs ) {
+			$count++;
+			$distance += $seqs[$i]->calc_distance($seqs[$j]);
+		}
+	}
+	return $distance / $count;
+}
+
+=item dedup
+
+Removes duplicate sequences (by GI)
+
+=cut
+
+sub dedup {
+	my ( $class, %fasta ) = @_;
+	my %seen;
+	my %result;
+	for my $defline ( keys %fasta ) {
+		if ( $defline =~ /gi\|(\d+)/ ) {
+			my $gi = $1;
+			$result{$defline} = $fasta{$defline} unless $seen{$gi}++;			
+		}
+	}
+	return %result;
 }
 
 =item parse_taxa_file
