@@ -59,7 +59,7 @@ log into the virtual machine and change to the
 SUPERSMART working directory.
 
 $ vagrant ssh 
-$ cd /usr/local/src/SUPERSMART
+$ cd $SUPERSMART_HOME
 
 For instructions on how to run the pipeline,
 please refer to the README file in the 'examples/'
