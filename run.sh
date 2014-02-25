@@ -6,8 +6,8 @@
 # show how things are supposed to fit together.
 
 # project-specific variables
-WORKDIR=examples/gentianales        # working directory for intermediate files
-NAMELIST=$WORKDIR/gentianales.txt   # input list of taxon names
+WORKDIR=examples/primates          # working directory for intermediate files
+NAMELIST=$WORKDIR/names.txt        # input list of taxon names
 FOSSILTABLE=$WORKDIR/fossils2.tsv
 
 # template for looking up variables in the config file
