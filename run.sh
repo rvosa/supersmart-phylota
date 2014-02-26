@@ -34,15 +34,9 @@ PERLSCRIPT="$PERL $SUPERSMART_HOME/script/supersmart"
 # names for intermediate files within the working directory
 SPECIESTABLE=$WORKDIR/species.tsv
 COMMONTREE=$WORKDIR/common.dnd
-USERTREE=$WORKDIR/user.dnd
 ALIGNMENTLIST=$WORKDIR/aligned.txt
-ALIGNMENTSTEM=$WORKDIR/aligned.fa.
 MERGEDLIST=$WORKDIR/merged.txt
-MERGEDSTEM=$WORKDIR/merged.fa.
 SUPERMATRIX=$WORKDIR/supermatrix.phy
-CHUNKTABLE=$WORKDIR/chunks.tsv
-CHUNKLIST=$WORKDIR/chunks.txt
-BINARYMATRIX=supermatrix-bin
 MEGATREE=megatree.dnd
 CHRONOGRAM=$WORKDIR/chronogram.dnd
 TREEPLCONF=$WORKDIR/treePL.conf
@@ -68,33 +62,19 @@ fi
 
 # merge alignments by orthology 
 if [ ! -e $MERGEDLIST ]; then
-	$MPIRUN $PERLSCRIPT/mpi_merge_alignments.pl -l $ALIGNMENTLIST \
-	$VERBOSE -s $MERGEDSTEM > $MERGEDLIST
+	$PERLSCRIPT/merge_alignments.pl -l $ALIGNMENTLIST -w $WORKDIR \
+	$VERBOSE > $MERGEDLIST
 fi
 
-# join alignments by taxon
+# create supermatrix for backbone taxa
 if [ ! -e $SUPERMATRIX ]; then
-	$PERLSCRIPT/join_alignments.pl -l $MERGEDLIST $VERBOSE > $SUPERMATRIX
+	$PERLSCRIPT/pick_exemplars.pl -l $MERGEDLIST -t $SPECIESTABLE $VERBOSE > $SUPERMATRIX
 fi
 
-# compresses the supermatrix into binary format
-if [ ! -e "$WORKDIR/${BINARYMATRIX}.binary" ]; then
-	cd $WORKDIR
-	$PARSER -s supermatrix.phy -n $BINARYMATRIX -m DNA
-	cd -
-fi
-
-# create input tree for examl
-if [ ! -e $USERTREE ]; then
-	$PERLSCRIPT/write_constraint_tree.pl -t $COMMONTREE -s $SUPERMATRIX \
-	$VERBOSE > $USERTREE
-fi
-
-# run examl
+# infer backbone tree
 if [ ! -e "$WORKDIR/$MEGATREE" ]; then
-	cd $WORKDIR
-	$EXAML -s "${BINARYMATRIX}.binary" -t $USERTREE -n $MEGATREE
-	cd -
+	$PERLSCRIPT/infer_backbone.pl -o "$WORKDIR/$MEGATREE" -w $WORKDIR -c $COMMONTREE \
+	-s $SUPERMATRIX $VERBOSE
 fi
 
 # create treePL config file
