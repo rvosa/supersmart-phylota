@@ -91,7 +91,10 @@ $log->info("going to run all vs all BLAST search on $dbname");
 );
 my $result = `@cmd`;
 
-# process results, this is all-vs-all so many results with many hits
+# process results, this is all-vs-all so many results with many hits. we will discard
+# all hits where the overlapping region is smaller than 0.51 of the length of both
+# query and hit
+my $overlap = $config->MERGE_OVERLAP;
 $log->info("going to process BLAST results");
 my %hits;
 my $q = 1;
@@ -99,14 +102,38 @@ open my $out, '<', \$result;
 my $report = Bio::SearchIO->new( '-format' => 'blast', '-fh' => $out );
 while ( my $result = $report->next_result ) {
 	my $query = $result->query_name;
+	my $q_l = length($service->find_seq($query)->seq);
 	$hits{$query} = [];
-	$log->info("query: $query ".$q++."/".scalar(@alignments));
+	
+	# iterate over hits for focal query
 	while ( my $hit = $result->next_hit ) {
 		if ( my $name = $hit->name ) {
-			push @{ $hits{$query} }, $name;
-			$log->debug("\thit: $name");
+			my $h_l = length($service->find_seq($name)->seq);
+			
+			# add up the lengths of the overlapping regions
+			my $q_hsp_l = 0;
+			my $h_hsp_l = 0;			
+			while( my $hsp = $hit->next_hsp ) {
+				$q_hsp_l += $hsp->length('query');
+				$h_hsp_l += $hsp->length('hit');
+			}
+			
+			# check if the overlapping regions are long enough
+			if ( ($q_hsp_l/$q_l) > $overlap and ($h_hsp_l/$h_l) > $overlap ) {
+				push @{ $hits{$query} }, $name;
+				$log->debug("\thit: $name");
+			}
+			else {
+				$log->debug("discarding hit $name for query $query");
+			}
 		}
-	}	
+	}
+	
+	# report progress
+	my $template = 'found %i hits for query %s (%i nt) - processed %i / %i';
+	my @args = ( scalar(@{$hits{$query}}), $query, $q_l, $q++, scalar(@alignments) );
+	my $message  = sprintf $template, @args;
+	$log->info($message);	
 }
 
 # make single linkage clusters
