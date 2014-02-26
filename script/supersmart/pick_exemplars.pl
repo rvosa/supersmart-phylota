@@ -20,11 +20,53 @@ pick_exemplars.pl - selects per-genus exemplar taxa from a set of alignments
 
 =head1 DESCRIPTION
 
-Given an input file that lists alignments (one on each line), traverses each genus in
-each alignment and picks the overall most divergent two species to represent their
-genus. The rationale is that these species will (likely) cross the root of their genus, 
-so that the genus-level tree can then be scaled to the same depth of that split and 
-be grafted onto the tree without (too many) negative branch lengths.
+Given an input file that lists alignment file locations (one on each line), traverses each 
+genus in each alignment and picks the most divergent two species to represent 
+their genus. The rationale is that these species will (likely) cross the root of their 
+genus, so that the below genus-level tree can then be scaled to the same depth of that 
+split and be grafted onto the tree without (too many) negative branch lengths.
+
+The way in which the overall two divergent species within the genus are selected is as 
+follows:
+
+=over
+
+=item * for each alignment, within each genus, make all pairwise comparisons and sort
+the pairs by decreasing sequence divergence.
+
+=item * pick the most distal pair and weight it in proportion to the number of pairs, 
+within that genus for that alignment, minus one. This means that singleton pairs are 
+discarded, and those from bigger samples are assumed to more accurately indicate which 
+taxa actually cross the root.
+
+=item * after having processed all alignments, pick the species pair that has the highest
+score. 
+
+=back
+
+Subsequently, the optimal combination of markers needs to be selected to best cover the
+exemplars. It is not optimal to just concatenate all alignments that cover any of the 
+taxa - this can result in monstrous, sparse, supermatrices. Instead we give the user the
+possibility of assembling a set of alignments such that all exemplar species are covered
+by at least some minimal value, (though relatively frequently studied species would exceed
+this). This is done as follows:
+
+=over
+
+=item * for each exemplar species, collect all alignments that include it and sort this
+collection in decreasing exemplar taxon coverage (i.e. the first alignment has the most
+exemplar species in it, the last alignment the fewest).
+
+=item * sort the exemplar species by increasing overall participation in the alignments
+(i.e. the first exemplar has been sequenced the fewest times, the last one the most).
+
+=item * iterate over the sorted list of exemplars, and for each exemplar add their 
+not-yet-seen, sorted alignments to the stack, one by one. After adding each alignment,
+update the coverage counts for all exemplar species that participate in that alignment.
+End the iterations when all exemplars have crossed their threshold or have no more 
+alignments available.
+
+=back
 
 B<Point of consideration>: the node depths on the exemplar tree will be underestimates
 relative to the genus-level tree (due to the node density effect), so it might be better
