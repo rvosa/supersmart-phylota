@@ -74,6 +74,7 @@ for my $genus ( $mt->get_distinct_taxa( 'genus' => @records ) ) {
 	my @species = $mt->get_species_for_taxon( 'genus' => $genus, @records );
 	$genera{$genus} = \@species;
 }
+$log->info("read ".scalar(keys(%genera))." genera");
 
 # here comes the convoluted logic:
 # 1. for each alignment, calculate all pairwise distances within each genus
@@ -83,10 +84,10 @@ for my $genus ( $mt->get_distinct_taxa( 'genus' => @records ) ) {
 my %pairs;
 my $dat = 'Bio::Phylo::Matrices::Datum';
 ALN: for my $aln ( @alignments ) {
-	$log->info("assessing exemplars in $aln");
+	$log->debug("assessing exemplars in $aln");
 	my %fasta = $mt->parse_fasta_file($aln);
 	GENUS: for my $genus ( keys %genera ) {
-		next GENUS if @{ $genera{$genus} } < 3;	
+		next GENUS if @{ $genera{$genus} } < 2;
 		$pairs{$genus} = {} if not $pairs{$genus};
 	
 		# lump instantiated sequence objects by species within this genus
@@ -143,7 +144,7 @@ ALN: for my $aln ( @alignments ) {
 
 # make the final set of exemplars
 my @exemplars;
-for my $genus ( keys %pairs ) {
+for my $genus ( keys %genera ) {
 
 	# there were 2 or fewer species in the genus
 	if ( not $pairs{$genus} ) {
@@ -156,6 +157,7 @@ for my $genus ( keys %pairs ) {
 		$log->debug(Dumper({ $genus => \%p }));
 	}
 }
+$log->info("identified ".scalar(@exemplars)." exemplars");
 
 # make the best set of alignments:
 # 1. map exemplar taxa to alignments and vice versa
@@ -173,19 +175,22 @@ for my $aln ( @alignments ) {
 		}
 	}
 }
-# 2. for each taxon, sort its alignments from more to less inclusive
+# 2. for each taxon, sort its alignments by decreasing taxon coverage
 for my $taxon ( @exemplars ) {
-	my @alignments = @{ $alns_for_taxon{$taxon} };
-	my @sorted = sort { scalar(@{$taxa_for_aln{$b}}) <=> scalar(@{$taxa_for_aln{$a}}) } @alignments;
-	$alns_for_taxon{$taxon} = \@alignments;
+	my @sorted = sort { scalar(@{$taxa_for_aln{$b}}) <=> scalar(@{$taxa_for_aln{$a}}) } @{ $alns_for_taxon{$taxon} };
+	$alns_for_taxon{$taxon} = \@sorted;
 }
-# 3. sort the taxa from less to more often encountered
+# 3. sort the taxa by increasing occurrence in alignments
 my @sorted_exemplars = sort { scalar(@{$alns_for_taxon{$a}}) <=> scalar(@{$alns_for_taxon{$b}}) } @exemplars;
 my %aln;
 my %seen;
 TAXON: for my $taxon ( @sorted_exemplars ) {
 	if ( $alns_for_taxon{$taxon} ) {
 		my $aln = shift @{ $alns_for_taxon{$taxon} };
+		if ( not $aln or not -e $aln ) {
+			$log->warn("no alignment available for exemplar $taxon");
+			next TAXON;
+		}
 		$aln{$aln}++;
 		for my $other_taxa ( @{ $taxa_for_aln{$aln} } ) {
 			delete $alns_for_taxon{$other_taxa} if ++$seen{$other_taxa} == $config->BACKBONE_MIN_COVERAGE;
