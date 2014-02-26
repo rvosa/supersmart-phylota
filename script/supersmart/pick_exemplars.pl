@@ -44,9 +44,10 @@ GetOptions(
 );
 
 # instantiate helper objects
+my $dat    = 'Bio::Phylo::Matrices::Datum';
 my $config = Bio::Phylo::PhyLoTA::Config->new;
-my $mt = Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa->new;
-my $log = Bio::Phylo::Util::Logger->new(
+my $mt     = Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa->new;
+my $log    = Bio::Phylo::Util::Logger->new(
 	'-class' => 'main',
 	'-level' => $verbosity,
 );
@@ -66,63 +67,55 @@ my @alignments;
 $log->info("going to read taxa table $taxa");
 my @records = $mt->parse_taxa_file($taxa);
 
-# extract and iterate over the distinct genera
-my %genera;
+# extract the distinct species for each genus
+my %species_for_genus;
 for my $genus ( $mt->get_distinct_taxa( 'genus' => @records ) ) {
 
 	# extract the distinct species for the focal genus
 	my @species = $mt->get_species_for_taxon( 'genus' => $genus, @records );
-	$genera{$genus} = \@species;
+	$species_for_genus{$genus} = \@species;
 }
-$log->info("read ".scalar(keys(%genera))." genera");
+$log->info("read ".scalar(keys(%species_for_genus))." genera");
 
-# here comes the convoluted logic:
-# 1. for each alignment, calculate all pairwise distances within each genus
-# 2. if multiple sequences for the same species, calculate the average distance
-# 3. sort the pairs by distance within each alignment
-# 4. assign the most distal pair a score that is proportional to the size of the sample
-my %pairs;
-my $dat = 'Bio::Phylo::Matrices::Datum';
+# this will store distances within each genus
+my %distance = map { $_ => {} } keys %species_for_genus;
+
+# iterate over alignments
 ALN: for my $aln ( @alignments ) {
 	$log->debug("assessing exemplars in $aln");
 	my %fasta = $mt->parse_fasta_file($aln);
-	GENUS: for my $genus ( keys %genera ) {
-		next GENUS if @{ $genera{$genus} } < 2;
-		$pairs{$genus} = {} if not $pairs{$genus};
 	
-		# lump instantiated sequence objects by species within this genus
-		my %seq;
-		my $sequence_count = 0;
-		for my $species ( @{ $genera{$genus} } ) {
+	# iterate over genera, skip those with fewer than three species
+	GENUS: for my $genus ( keys %species_for_genus ) {
+		next GENUS if scalar @{ $species_for_genus{$genus} } <= 2;
+	
+		# aggregate sequence objects by species within this genus
+		my %sequences_for_species;
+		for my $species ( @{ $species_for_genus{$genus} } ) {
 			if ( my @raw = $mt->get_sequences_for_taxon( $species, %fasta ) ) {
 				$log->debug("$aln contained ".scalar(@raw)." sequences for species $species");
 				my @seq = map { $dat->new( '-type' => 'dna', '-char' => $_ ) } @raw;
-				$seq{$species} = \@seq;
-				$sequence_count++;
+				$sequences_for_species{$species} = \@seq;
 			}
-			else {
-				$log->debug("$aln has no sequences for species $species");
-			}
-		}
-		if ( $sequence_count == 0 ) {
-			$log->debug("$aln has no sequences for genus $genus");
-			next GENUS;
 		}
 		
-		# calculate the distances within the genus
-		my %dist;
-		my @species = keys %seq;
-		if ( scalar(@species) < 2 ) {
+		# check if we've seen enough sequenced species
+		my @species = keys %sequences_for_species;
+		if ( scalar(@species) <= 2 ) {
 			$log->debug("not enough species for genus $genus in $aln");
 			next GENUS;
-		}
+		}		
+		
+		# calculate the distances within the genus, take the 
+		# average if species have multiple sequences
+		my %dist;
 		for my $i ( 0 .. ( $#species - 1 ) ) {
 			for my $j ( ( $i + 1 ) .. $#species ) {
 				my $sp1 = $species[$i];
 				my $sp2 = $species[$j];
 				$log->debug("going to compute average distance between $sp1 and $sp2");
-				my @seqs1 = @{ $seq{$sp1} };
-				my @seqs2 = @{ $seq{$sp2} };
+				my @seqs1 = @{ $sequences_for_species{$sp1} };
+				my @seqs2 = @{ $sequences_for_species{$sp2} };
 				my $dist;
 				for my $seq1 ( @seqs1 ) {
 					for my $seq2 ( @seqs2 ) {
@@ -135,73 +128,92 @@ ALN: for my $aln ( @alignments ) {
 			}
 		}
 		
-		# pick the most distal pair, increment its occurrence
+		# pick the most distal pair, weight it by number of pairs minus one
 		my ($farthest) = sort { $dist{$b} <=> $dist{$a} } keys %dist;
-		$pairs{$genus}->{$farthest} += sum( 0 .. (scalar(keys(%dist))-1) );
+		$distance{$genus}->{$farthest} += scalar(keys(%dist))-1;
 		$log->debug("most distal pair for genus $genus in $aln: $farthest");
 	}
 }
 
 # make the final set of exemplars
 my @exemplars;
-for my $genus ( keys %genera ) {
+for my $genus ( keys %species_for_genus ) {
 
-	# there were 2 or fewer species in the genus
-	if ( not $pairs{$genus} ) {
-		push @exemplars, @{ $genera{$genus} };
+	# there were 2 or fewer species in the genus, add all the species
+	# from the table
+	if ( not scalar keys %{ $distance{$genus} } ) {
+		push @exemplars, @{ $species_for_genus{$genus} };
 	}
 	else {
-		my %p = %{ $pairs{$genus} };
+		my %p = %{ $distance{$genus} };
 		my ($sp1,$sp2) = map { split /\|/, $_ } sort { $p{$b} <=> $p{$a} } keys %p;
 		push @exemplars, $sp1, $sp2;
 		$log->debug(Dumper({ $genus => \%p }));
 	}
 }
+
+# this includes species for which we may end up not having sequences after all
 $log->info("identified ".scalar(@exemplars)." exemplars");
 
 # make the best set of alignments:
 # 1. map exemplar taxa to alignments and vice versa
 my ( %taxa_for_aln, %alns_for_taxon, %nchar );
 for my $aln ( @alignments ) {
-	$taxa_for_aln{$aln} = [] if not $taxa_for_aln{$aln};
 	my %fasta = $mt->parse_fasta_file($aln);
-	$nchar{$aln} = $mt->get_nchar(%fasta);
+	$nchar{$aln} = $mt->get_nchar(%fasta);	
+	
+	# iterate over all exemplars
 	for my $taxon ( @exemplars ) {
-		$alns_for_taxon{$taxon} = [] if not $alns_for_taxon{$taxon};	
 		my ($seq) = $mt->get_sequences_for_taxon($taxon,%fasta);
+		
+		# if taxon participates in this alignment, store the mapping
 		if ( $seq ) {
+			$alns_for_taxon{$taxon} = [] if not $alns_for_taxon{$taxon};	
+			$taxa_for_aln{$aln} = [] if not $taxa_for_aln{$aln};				
 			push @{ $taxa_for_aln{$aln} }, $taxon;
 			push @{ $alns_for_taxon{$taxon} }, $aln;
 		}
 	}
 }
+
 # 2. for each taxon, sort its alignments by decreasing taxon coverage
 for my $taxon ( @exemplars ) {
-	my @sorted = sort { scalar(@{$taxa_for_aln{$b}}) <=> scalar(@{$taxa_for_aln{$a}}) } @{ $alns_for_taxon{$taxon} };
-	$alns_for_taxon{$taxon} = \@sorted;
+	if ( my $alns = $alns_for_taxon{$taxon} ) {
+		my @sorted = sort { scalar(@{$taxa_for_aln{$b}}) <=> scalar(@{$taxa_for_aln{$a}}) } @{ $alns };
+		$alns_for_taxon{$taxon} = \@sorted;
+	}
 }
-# 3. sort the taxa by increasing occurrence in alignments
-my @sorted_exemplars = sort { scalar(@{$alns_for_taxon{$a}}) <=> scalar(@{$alns_for_taxon{$b}}) } @exemplars;
-my %aln;
-my %seen;
+
+# 3. sort the taxa by increasing occurrence in alignments, so rarely sequenced species
+#    are treated preferentially by including their most speciose alignments first
+my @sorted_exemplars = sort { scalar(@{$alns_for_taxon{$a}}) <=> scalar(@{$alns_for_taxon{$b}}) } grep { $alns_for_taxon{$_} } @exemplars;
+
+# starting with the least well-represented taxa...
+my ( %aln, %seen );
 TAXON: for my $taxon ( @sorted_exemplars ) {
-	if ( $alns_for_taxon{$taxon} ) {
-		my $aln = shift @{ $alns_for_taxon{$taxon} };
+
+	# take all its not-yet-seen alignments...
+	my @alns = grep { ! $aln{$_} } @{ $alns_for_taxon{$taxon} };
+	$seen{$taxon} = 0 if not defined $seen{$taxon};
+	ALN: while( $seen{$taxon} < $config->BACKBONE_MIN_COVERAGE ) {
+	
+		# pick the most speciose alignments first
+		my $aln = shift @alns;
 		if ( not $aln or not -e $aln ) {
 			$log->warn("no alignment available for exemplar $taxon");
 			next TAXON;
 		}
 		$aln{$aln}++;
-		for my $other_taxa ( @{ $taxa_for_aln{$aln} } ) {
-			delete $alns_for_taxon{$other_taxa} if ++$seen{$other_taxa} == $config->BACKBONE_MIN_COVERAGE;
-		}
+		
+		# increment coverage count for all taxa in this alignment
+		$seen{$_}++ for @{ $taxa_for_aln{$aln} };
+		last ALN if not @alns;
 	}
-	last TAXON unless scalar keys %alns_for_taxon;
 }
-my @filtered_exemplars = grep { ! $alns_for_taxon{$_} } @sorted_exemplars;
+my @filtered_exemplars = keys %seen;
+my @sorted_alignments  = keys %aln;
 
 # produce interleaved phylip output
-my @sorted_alignments = keys %aln;
 my $nchar = sum( @nchar{@sorted_alignments} );
 my $ntax  = scalar(@filtered_exemplars);
 my $names_printed;
