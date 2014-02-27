@@ -68,7 +68,7 @@ sub to_string {
     my $self = shift;
     my $string = '';
     for my $row ( @{ $self } ) {
-        $string .= join(' ', @{ $row->{taxa} }, '|', $row->{min_age}, $row->{max_age} ) . "\n";
+        $string .= join(' ', @{ $row->{taxa} }, '|', $row->{min_age}) . "\n";
     }
     return $string;
 }
