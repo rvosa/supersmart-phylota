@@ -118,14 +118,13 @@ sub currentConfigFile { shift->{'_file'} }
 Returns the minimum best practice score for a fossil record 
 (FOSSIL_BEST_PRACTICE_CUTOFF) to be used as a 
 calibration point. If the cutoff is provided, it is set in the
-config singleton.
+config singleton object.
 
 =cut
     
 sub fossil_best_practice_cutoff {
     my $self = shift;
     $self->{'FOSSIL_BEST_PRACTICE_CUTOFF'} = shift if @_;
-    print "CUTOFF NOW : ".$self->{'FOSSIL_BEST_PRACTICE_CUTOFF'}."\n";
     return $self->{'FOSSIL_BEST_PRACTICE_CUTOFF'};
 }
 
