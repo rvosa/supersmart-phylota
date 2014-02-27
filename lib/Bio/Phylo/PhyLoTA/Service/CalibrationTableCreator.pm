@@ -78,7 +78,6 @@ sub create_calibration_table {
     my $logger = $self->logger;        
     my $table = Bio::Phylo::PhyLoTA::Domain::CalibrationTable->new;
     my $cutoff = $config->fossil_best_practice_cutoff();
-    print "Cutoff : $cutoff \n";
     for my $fd ( @fossildata ) {	
 	my @nodes = $fd->calibration_points();
 	my $score = $fd->best_practice_score || 0;
