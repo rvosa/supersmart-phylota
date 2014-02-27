@@ -259,14 +259,22 @@ my @sorted_alignments  = keys %aln;
 my $nchar = sum( @nchar{@sorted_alignments} );
 my $ntax  = scalar(@filtered_exemplars);
 my $names_printed;
-print $ntax, ' ', $nchar, "\n";
+print $ntax, ' ', $nchar, "\n"; # phylip header
 for my $aln ( @sorted_alignments ) {
 	$log->info("including $aln in supermatrix");
 	my %fasta = $mt->parse_fasta_file($aln);
 	for my $taxon ( @filtered_exemplars ) {
+	
+		# in interleaved phylip, only the first part of the sequences are
+		# preceded by their name, hence this flag:
+		# http://evolution.genetics.washington.edu/phylip/doc/sequence.html
 		if ( not $names_printed ) {
+		
+			# pad the names with spaces to make 10 characters
 			print $taxon, ' ' x ( 10 - length($taxon) );
 		}
+		
+		# write aligned sequence or missing data of the same length
 		my ( $seq ) = $mt->get_sequences_for_taxon($taxon,%fasta);
 		if ( $seq ) {
 			print $seq;
@@ -274,6 +282,10 @@ for my $aln ( @sorted_alignments ) {
 		else {
 			print '?' x $nchar{$aln};
 		}
+		
+		# note that optionally there could be an additional blank line
+		# between every chunk. We don't do that, this break is just
+		# to move on to the next taxon, not the next chunk.
 		print "\n";
 	}
 	$names_printed++;
