@@ -59,8 +59,8 @@ Given a sequence GI, returns the L<Bio::Phylo::PhyLoTA::DAO::Result::Seq> object
 sub find_seq {
 	my ( $self, $gi ) = @_;
 	my $result;
-	eval {
-		$result = $schema->resultset('Seq')->find($gi);
+	eval {	        	        
+	        $result = $schema->resultset('Seq')->find($gi);
 	};
 	if ( $@ ) {
 		throw 'BadArgs' => $@;
