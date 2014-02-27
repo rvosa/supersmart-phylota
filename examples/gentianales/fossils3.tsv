@@ -8,7 +8,6 @@ NFos	FossilName	CrownvsStem	CalibratedTaxon	MinAge	BestPracticeScore	NUsrcrFos	D
 7	+Banksieaeidites elongatus	stem	Banksieae	55.8	2.4	Hervé Sauquet	16-Sep-13
 8	+Triorites africaensis	stem	Proteaceae	93.5	2.4	Hervé Sauquet	16-Sep-13
 9	+Musgraveinanthus alcoensis	stem	Musgraveinae	33.9	1.6	Hervé Sauquet	16-Sep-13
-10	+Endressinia brasiliana	crown	Magnoliineae	113	4.8	Hervé Sauquet	03-Oct-13
 10	+Endressinia brasiliana	stem	Magnoliales	113	4.8	Hervé Sauquet	03-Oct-13
 11	+Potomacanthus lobatus	stem	Lauraceae	105.8	1.4	Fabien Condamine	03-Oct-13
 12	+Sinocarpus decussatus	crown	Eudicotyledonae	125	1.6	Fabien Condamine	03-Oct-13
@@ -17,42 +16,42 @@ NFos	FossilName	CrownvsStem	CalibratedTaxon	MinAge	BestPracticeScore	NUsrcrFos	D
 18	+Platanocarpus brookensis	stem	Platanaceae	105.8	1.4	Fabien Condamine	03-Oct-13
 19	+Spanomera marylandensis	stem	Buxales	99.6	1.4	Fabien Condamine	03-Oct-13
 25	+Cypselites	crown	Apocynaceae	44	4.6	Alexandre Antonelli	09-Dec-13
-26	+Scandianthus costatus	stem	Vahliaceae	83		Cajsa Lisa Anderson	11-Dec-13
-28	+Ctenolophonidites suigeneris	stem	Geissospermum	5.3		Cajsa Lisa Anderson	02-Jan-14
-30	+Polyporotetradites laevigatus	stem	Asclepiadoideae	23		Cajsa Lisa Anderson	02-Jan-14
-31	+Alstonia	stem	Alstonia	27.3		Cajsa Lisa Anderson	02-Jan-14
-32	+Margocolporites raulvolfia	stem	Rauvolfia	41.3		Cajsa Lisa Anderson	02-Jan-14
-33	+Nerium oleander		Nerium oleander	11.6		Cajsa Lisa Anderson	02-Jan-14
-35	+Periploca		Periploca	20		Cajsa Lisa Anderson	02-Jan-14
-36	+Voyrioseminites magnus	stem	Voyria	33.9		Cajsa Lisa Anderson	02-Jan-14
-37	+Lisiantheus		Gentianaceae	37		Cajsa Lisa Anderson	02-Jan-14
-38	+Gentiana	crown	Gentiana	1.8		Cajsa Lisa Anderson	02-Jan-14
-39	+Strychnos	stem	Strychnos	28.1		Cajsa Lisa Anderson	02-Jan-14
-40	+Emmenopterys dilcheri	stem	Ixoroideae	44		Cajsa Lisa Anderson	02-Jan-14
-42	+Naucleeae	crown	Cinchonoideae	33.9		Cajsa Lisa Anderson	02-Jan-14
-43	+Morinda chinensis	stem	Morinda	41.3		Cajsa Lisa Anderson	02-Jan-14
-44	+Rubipollis oblatus	stem	Canthium	33.9		Cajsa Lisa Anderson	02-Jan-14
-45	+Faramea	stem	Faramea	33.9		Cajsa Lisa Anderson	02-Jan-14
-46	+Coprosma-Opercularia	stem	Anthospermeae	30		Cajsa Lisa Anderson	02-Jan-14
-47	+Palaeocoprosmadites zelandiae	crown	Coprosma	23		Cajsa Lisa Anderson	02-Jan-14
-48	+Pinckneya dilcheri	stem	Pinckneya	33		Cajsa Lisa Anderson	02-Jan-14
-49	+Triporotetradites hoekeni	stem	Macrosphyra	23		Cajsa Lisa Anderson	02-Jan-14
-50	+Triporotetradites		Gardenia	11.6		Cajsa Lisa Anderson	02-Jan-14
-51	+Guettardidites	stem	Guettarda	41.3		Cajsa Lisa Anderson	02-Jan-14
-52	+Retibrevitricolpites hoornii	stem	Guettarda	41.3		Cajsa Lisa Anderson	02-Jan-14
-53	+Retitricolporites annulatus	stem	Mitragyna	23		Cajsa Lisa Anderson	02-Jan-14
-54	+Sabicea	stem	Sabicea	16		Cajsa Lisa Anderson	02-Jan-14
-55	+Galium	stem	Galium	5.3		Cajsa Lisa Anderson	02-Jan-14
-56	+Rubia		Rubia	5.3		Cajsa Lisa Anderson	02-Jan-14
-57	+Ixora cf. Casei	crown	Ixora	11.6		Cajsa Lisa Anderson	02-Jan-14
-58	+Retriporites boltenhagenii		Morelia	11.6		Cajsa Lisa Anderson	02-Jan-14
-59	+Mussaenda		Mussaenda	5.3		Cajsa Lisa Anderson	02-Jan-14
-60	+Scyphiphora cf. Hydrophyllacea	crown	Scyphiphora	11.6		Cajsa Lisa Anderson	02-Jan-14
-61	+Randia		Randia	16		Cajsa Lisa Anderson	02-Jan-14
-62	+Canthiumidites bellus		Randia	16		Cajsa Lisa Anderson	02-Jan-14
-63	+Cosmibuena	stem	Cosmibuena	5.3		Cajsa Lisa Anderson	02-Jan-14
-64	+Inaperturopollenites solimoensis		Psychotria	5.3		Cajsa Lisa Anderson	02-Jan-14
-65	+Alibertia		Alibertia	2.6		Cajsa Lisa Anderson	02-Jan-14
-66	+Pisonia		Pisonia	16		Cajsa Lisa Anderson	02-Jan-14
-67	+cf. Posoqueria		Posoqueria	5.3		Cajsa Lisa Anderson	02-Jan-14
-68	+cf. Timonius		Timonius	16		Cajsa Lisa Anderson	02-Jan-14
+26	+Scandianthus costatus	stem	Vahliaceae	83		  Cajsa Lisa Anderson	11-Dec-13
+28	+Ctenolophonidites suigeneris	stem	Geissospermum	5.3		     Cajsa Lisa Anderson	02-Jan-14
+30	+Polyporotetradites laevigatus	stem	Asclepiadoideae	23		     Cajsa Lisa Anderson	02-Jan-14
+31	+Alstonia	stem	Alstonia	27.3				     Cajsa Lisa Anderson	02-Jan-14
+32	+Margocolporites raulvolfia	stem	Rauvolfia	41.3		     Cajsa Lisa Anderson	02-Jan-14
+33	+Nerium oleander		Nerium oleander	11.6			     Cajsa Lisa Anderson	02-Jan-14
+35	+Periploca		Periploca	20				     Cajsa Lisa Anderson	02-Jan-14
+36	+Voyrioseminites magnus	stem	Voyria	33.9				     Cajsa Lisa Anderson	02-Jan-14
+37	+Lisiantheus		Gentianaceae	37				     Cajsa Lisa Anderson	02-Jan-14
+38	+Gentiana	crown	Gentiana	1.8				     Cajsa Lisa Anderson	02-Jan-14
+39	+Strychnos	stem	Strychnos	28.1				     Cajsa Lisa Anderson	02-Jan-14
+40	+Emmenopterys dilcheri	stem	Ixoroideae	44			     Cajsa Lisa Anderson	02-Jan-14
+42	+Naucleeae	crown	Cinchonoideae	33.9				     Cajsa Lisa Anderson	02-Jan-14
+43	+Morinda chinensis	stem	Morinda	41.3				     Cajsa Lisa Anderson	02-Jan-14
+44	+Rubipollis oblatus	stem	Canthium	33.9			     Cajsa Lisa Anderson	02-Jan-14
+45	+Faramea	stem	Faramea	33.9					     Cajsa Lisa Anderson	02-Jan-14
+46	+Coprosma-Opercularia	stem	Anthospermeae	30			     Cajsa Lisa Anderson	02-Jan-14
+47	+Palaeocoprosmadites zelandiae	crown	Coprosma	23		     Cajsa Lisa Anderson	02-Jan-14
+48	+Pinckneya dilcheri	stem	Pinckneya	33			     Cajsa Lisa Anderson	02-Jan-14
+49	+Triporotetradites hoekeni	stem	Macrosphyra	23		     Cajsa Lisa Anderson	02-Jan-14
+50	+Triporotetradites		Gardenia	11.6			     Cajsa Lisa Anderson	02-Jan-14
+51	+Guettardidites	stem	Guettarda	41.3				     Cajsa Lisa Anderson	02-Jan-14
+52	+Retibrevitricolpites hoornii	stem	Guettarda	41.3		     Cajsa Lisa Anderson	02-Jan-14
+53	+Retitricolporites annulatus	stem	Mitragyna	23		     Cajsa Lisa Anderson	02-Jan-14
+54	+Sabicea	stem	Sabicea	16			Cajsa Lisa Anderson	02-Jan-14
+55	+Galium	stem	Galium	5.3				Cajsa Lisa Anderson	02-Jan-14
+56	+Rubia		Rubia	5.3				Cajsa Lisa Anderson	02-Jan-14
+57	+Ixora cf. Casei	crown	Ixora	11.6		      Cajsa Lisa Anderson	02-Jan-14
+58	+Retriporites boltenhagenii		Morelia	11.6		    Cajsa Lisa Anderson	02-Jan-14
+59	+Mussaenda		Mussaenda	5.3			    Cajsa Lisa Anderson	02-Jan-14
+60	+Scyphiphora cf. Hydrophyllacea	crown	Scyphiphora	11.6		  Cajsa Lisa Anderson	02-Jan-14
+61	+Randia		Randia	16				Cajsa Lisa Anderson	02-Jan-14
+62	+Canthiumidites bellus		Randia	16		      Cajsa Lisa Anderson	02-Jan-14
+63	+Cosmibuena	stem	Cosmibuena	5.3		      Cajsa Lisa Anderson	02-Jan-14
+64	+Inaperturopollenites solimoensis		Psychotria	5.3			Cajsa Lisa Anderson	02-Jan-14
+65	+Alibertia		Alibertia	2.6			Cajsa Lisa Anderson	02-Jan-14
+66	+Pisonia		Pisonia	16				Cajsa Lisa Anderson	02-Jan-14
+67	+cf. Posoqueria		Posoqueria	5.3			Cajsa Lisa Anderson	02-Jan-14
+68	+cf. Timonius		Timonius	16			Cajsa Lisa Anderson	02-Jan-14
