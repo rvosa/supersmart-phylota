@@ -54,7 +54,7 @@ sub get_nodes_for_names {
     my ( $self, @names ) = @_;
     
     # Resulting nodes
-    my @nodes;
+    my @all_nodes;
     
     # iterate over supplied names
     NAME: for my $name ( @names ) {
@@ -65,15 +65,16 @@ sub get_nodes_for_names {
         $log->info("going to search for name '$name'");
         
         # do we have an exact match?
-    	my $node = $self->single_node( { taxon_name => $name } );
+	# caution: there might be multiple nodes for one taxon name 
+    	my @nodes = $self->search_node( { taxon_name => $name } )->all;
         
         # no exact match if ->single returns undef (i.e. false)
-        if ( not $node ) {
+        if ( scalar @nodes == 0) {
             $log->info("no exact match for '$name' in local database");
             
             # search the web service
             if ( my $id = $self->_do_tnrs_search($name) ) {
-               $node = $self->find_node($id);
+               @nodes = $self->search_node($id);
                $log->info("found match $id for $name through TNRS");
             }
             else {
@@ -81,15 +82,15 @@ sub get_nodes_for_names {
             }
         }
         else {
-            $log->info("found exact match for $name in local database");
+            $log->info("found  exact match(es) for $name in local database");
         }
         
         # store result
-        push @nodes, $node if $node;        
+        push @all_nodes, @nodes if scalar @nodes > 0;        
     }
     
     # return results
-    return @nodes;
+    return @all_nodes;
 }
 
 =item get_nodes_for_table
