@@ -8,11 +8,13 @@ use Bio::Phylo::Generator;
 use Bio::Phylo::IO 'parse';
 use Bio::Tools::Run::Phylo::PhyloBase;
 use Bio::Phylo::Util::CONSTANT ':objecttypes';
+use Bio::Phylo::Util::Logger;
 use base qw(Bio::Tools::Run::Phylo::PhyloBase);
 
 our $PROGRAM_NAME = 'examl';
 our @ExaML_PARAMS = qw(B c e f i m);
 our @ExaML_SWITCHES = qw(a D M Q S);
+my $log = Bio::Phylo::Util::Logger->new;
 
 sub new {
     my ( $class, @args ) = @_;
@@ -61,6 +63,24 @@ sub parser {
 	return $self->{'_parser'} || 'parser';
 }
 
+# getter/setter for the mpirun program for parallelized runs
+sub mpirun {
+	my ( $self, $mpirun ) = @_;
+	if ( $mpirun ) {
+		$self->{'_mpirun'} = $mpirun;
+	}
+	return $self->{'_mpirun'};
+}
+
+# getter/setter for number of mpi nodes
+sub nodes {
+	my ( $self, $nodes ) = @_;
+	if ( $nodes ) {
+		$self->{'_nodes'} = $nodes;
+	}
+	return $self->{'_nodes'};
+}
+
 sub version {
     my ($self) = @_;
     my $exe;
@@ -71,36 +91,58 @@ sub version {
 }
 
 sub run {
-	my ( $self, $nexml ) = @_;
+	my $self = shift;
+	my ( $phylip, $intree );
 	
-	# read nexml input
-	my $project = parse(
-		'-format'     => 'nexml',
-		'-file'       => $nexml,
-		'-as_project' => 1,
-	);
-	my ($tree) = @{ $project->get_items(_TREE_) };
-	my @matrix = @{ $project->get_items(_MATRIX_) };
-	my ($taxa) = @{ $project->get_items(_TAXA_) };
+	# one argument means it's a nexml file
+	if ( @_ == 1 ) {
+		my $nexml = shift;
 	
-	# create input files
-	my $phylip = $self->_make_phylip( $taxa, @matrix );
-	my $intree = $self->_make_intree( $taxa, $tree );
+		# read nexml input
+		my $project = parse(
+			'-format'     => 'nexml',
+			'-file'       => $nexml,
+			'-as_project' => 1,
+		);
+		my ($tree) = @{ $project->get_items(_TREE_) };
+		my @matrix = @{ $project->get_items(_MATRIX_) };
+		my ($taxa) = @{ $project->get_items(_TAXA_) };
+	
+		# create input files
+		$phylip = $self->_make_phylip( $taxa, @matrix );
+		$intree = $self->_make_intree( $taxa, $tree );		
+	}
+	else {
+		my %args = @_;
+		$phylip  = $args{'-phylip'} || die "Need -phylip arg";
+		$intree  = $args{'-intree'} || die "Need -intree arg";
+	}
 	my $binary = $self->_make_binary( $phylip );
 	
-	# execute
-	my $string = $self->executable . $self->_setparams($binary,$intree);
+	# compose argument string: add MPI commands, if any
+	my $string;
+	if ( $self->mpirun && $self->nodes ) {
+		$string = sprintf '%s -np %i ', $self->mpirun, $self->nodes;
+	}
+	
+	# add executable and parameters
+	$string .= $self->executable . $self->_setparams($binary,$intree);
+	
+	# examl wants to run inside the dir with data
 	my $curdir = getcwd;
 	chdir $self->work_dir;	
+	$log->info("going to run '$string' inside ".$self->work_dir);
 	system($string) and $self->warn("Couldn't run ExaML: $?");
-	chdir $curdir;	
+	chdir $curdir;
+	
+	# remove cruft
 	return $self->_cleanup;
 }
 
 sub _cleanup {
 	my $self = shift;
 	my $dir  = $self->work_dir;
-	my $out  = $self->outfile_name;
+	my ( $outv, $outd, $out ) = File::Spec->splitpath($self->outfile_name);
 	my $run  = $self->run_id;
 	opendir my $dh, $dir or die $!;
 	while( my $entry = readdir $dh ) {
@@ -127,17 +169,20 @@ sub _cleanup {
 sub _make_binary {
 	my ( $self, $phylip ) = @_;
 	my $binfile = File::Spec->catfile( $self->work_dir, $self->run_id . '-dat' );
-	my ( $volume, $directories, $base ) = File::Spec->splitpath( $binfile );
+	$log->info("going to make binary representation of $phylip => $binfile");	
+	my ( $binvolume, $bindirectories, $binbase ) = File::Spec->splitpath( $binfile );
+	my ( $phylipvolume, $phylipdirectories, $phylipbase ) = File::Spec->splitpath( $phylip );	
 	my $curdir = getcwd;
 	chdir $self->work_dir;
 	my @command = ( $self->parser, 
 		'-m' => 'DNA', 
-		'-s' => $phylip, 
-		'-n' => $base,
+		'-s' => $phylipbase, 
+		'-n' => $binbase,
 		'>'  => File::Spec->devnull,		
 		'2>' => File::Spec->devnull,
 	);
 	my $string = join ' ', @command;
+	$log->info("going to run '$string' inside ".$self->work_dir);
 	system($string) and $self->warn("Couldn't create $binfile: $?");
 	chdir $curdir;
 	return "${binfile}.binary";
