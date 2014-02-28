@@ -6,6 +6,24 @@ use Bio::Phylo::PhyLoTA::Config;
 use Bio::Tools::Run::Phylo::StarBEAST;
 use Bio::Phylo::Util::Logger ':levels';
 
+=head1 NAME
+
+infer_clade.pl - infers species-level subtree
+
+=head1 SYNOPSYS
+
+ $ perl infer_clade.pl -w <directory> -n <100000> -s <10000> [--verbose] [-f <file>]
+
+=head1 DESCRIPTION
+
+Infers a species-level phylogeny using the multi-species, multi-locus coalescent as
+implemented in *BEAST. Given a C<directory>, traverses it, looks for subdirectories
+and files that match the pattern C<clade\d+/clade\d+\.xml>. These must be NeXML files
+with one or more alignments that link to the same taxa block in them. Given a C<file>
+argument, analyses a single file.
+
+=cut
+
 # process command line objects
 my $verbosity = WARN;
 my ( $ngens, $sfreq ) = ( 100, 100 );

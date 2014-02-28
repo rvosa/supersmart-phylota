@@ -7,6 +7,22 @@ use Bio::Phylo::PhyLoTA::Service;
 use Bio::Phylo::IO 'parse_matrix';
 use Bio::Phylo::Util::Logger ':levels';
 
+=head1 NAME
+
+merge_clade_alignments.pl - creates a merged data file for species-level inference
+
+=head1 SYNOPSYS
+
+ $ perl merge_clade_alignments.pl -w <dir> [--verbose]
+
+=head1 DESCRIPTION
+
+Given a working directory, traverses it looking for subdirectories of the pattern
+C<clade\d+>. Perusing each of these, it merges the *.fa (FASTA) files in it and
+produces a single output file that can be analyses by the infer_clade.pl wrapper.
+
+=cut
+
 my $ns = 'http://www.supersmart-project.org/terms#';
 
 # process command line arguments
