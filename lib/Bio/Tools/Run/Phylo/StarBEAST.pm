@@ -68,9 +68,44 @@ using Markov-Chain Monte-Carlo methods.
 
 =head1 METHODS
 
+In addition to the methods described below, all named arguments described for the
+constructor are available as methods as well. For example, the argument C<-verbose>
+becomes:
+
+ $beast->verbose(1);
+
 =over
 
 =item new
+
+The constructor takes the following optional named arguments that require a numerical 
+value:
+
+	'-mc3_chains',       # number of chains
+	'-mc3_delta',        # temperature increment parameter
+	'-mc3_temperatures', # a comma-separated list of the hot chain temperatures
+	'-mc3_swap',         # frequency at which chains temperatures will be swapped
+	'-seed',             # Specify a random number generator seed
+	'-threshold',        # Full evaluation test threshold (default 1E-6)
+	'-beagle_order',     # set order of resource use
+	'-beagle_scaling',   # specify scaling scheme to use
+	'-beagle_rescale',   # frequency of rescaling (dynamic scaling only)	
+	'-beagle_instances', # divide site patterns amongst instances	
+
+In addition, the following named arguments that require a boolean are available:
+
+	'-verbose',          # Give verbose XML parsing messages
+	'-warnings',         # Show warning messages about BEAST XML file
+	'-strict',           # Fail on non-conforming BEAST XML file
+	'-beagle_CPU',       # use CPU instance		
+	'-beagle_GPU',       # use GPU instance if available
+	'-beagle_SSE',       # use SSE extensions if available
+	'-beagle_cuda',      # use CUDA parallization if available
+	'-beagle_opencl',    # use OpenCL parallization if available
+	'-beagle_single',    # use single precision if available
+	'-beagle_double',    # use double precision if available	
+	'-overwrite',        # Allow overwriting of log files
+
 
 =cut
 
