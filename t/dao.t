@@ -3,11 +3,6 @@ use strict;
 use warnings;
 use Test::More 'no_plan';
 use Bio::Phylo::PhyLoTA::Service;
-use Bio::Phylo::Util::Logger ':levels';
-
-my $log = Bio::Phylo::Util::Logger->new(
-        '-level' => INFO,
-        '-class' => 'Bio::Phylo::PhyLoTA::DAO');
 
 # this is a unit test
 BEGIN{ use_ok('Bio::Phylo::PhyLoTA::DAO'); }
@@ -17,6 +12,16 @@ my $schema = new_ok('Bio::Phylo::PhyLoTA::DAO');
 
 # get ID for taxon name 
 my $name = "Forsteronia refracta";
-my $node = $schema->resultset('Node')->find({ taxon_name => $name }); ##Hannes
+my $node = $schema->resultset('Node')->find({ taxon_name => $name }); 
+isa_ok($node, 'Bio::Phylo::PhyLoTA::DAO::Result::Node');
 my $id = $node->get_id();
 is($id, 387687, "test correct taxon id");
+
+# Taxon Periploca has more than one row in the nodes table
+$name = "Periploca";
+my @nodes = $schema->resultset('Node')->search({ taxon_name => $name })->all; 
+is (scalar @nodes, 2, "test retrieving multiple rows");
+
+for my $n ( @nodes ){
+    isa_ok( $n, 'Bio::Phylo::PhyLoTA::DAO::Result::Node');
+}

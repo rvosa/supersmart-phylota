@@ -205,8 +205,18 @@ exec {
 		creates => "/etc/profile.d/bioperl_run.csh",
 		require => Exec[ 'clone_bioperl_run' ];	
 		
-
-    # install perl package Parallel::MPI::Simple
+        #install perl package Math::Random
+        "download_math_random":
+                command => "wget http://search.cpan.org/CPAN/authors/id/G/GR/GROMMEL/Math-Random-0.70.tar.gz",
+                cwd     => "/usr/local/src",
+                creates => "/usr/local/src/Math-Random-0.70.tar.gz",
+                require => Package[ 'wget', 'tar' ];
+#        "unzip_math_random":
+#                command => "tar -xvzf /usr/local/src/Math-Random-0.70.tar.gz",
+#                creates => 
+          
+          
+        # install perl package Parallel::MPI::Simple
 	"download_parallel_mpi_simple":
 		command => "wget http://search.cpan.org/CPAN/authors/id/A/AJ/AJGOUGH/Parallel-MPI-Simple-0.10.tar.gz",
 		cwd     => "/usr/local/src",

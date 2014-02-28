@@ -24,6 +24,17 @@ Bio::Phylo::PhyLoTA::Config - manager of runtime configuration variables
  # fetch the value of a variable in phylota.ini
  my $examl = $conf->EXAML_BIN;
 
+
+
+
+ use Bio::Tools::Run::Phylo::StarBEAST
+ use FindBin '$Bin';
+
+ # Instntiate the singleton StarBEAST object
+ my $beast = Bio::Tools::Run::Phylo::StarBEAST->new;
+
+ $beast->run( "$Bin/beast.xml" );
+
 =head1 DESCRIPTION
 
 The config object holds the values of variables that are needed when running the
@@ -100,6 +111,22 @@ Returns the location of the currently used configuration file.
 =cut
 
 sub currentConfigFile { shift->{'_file'} }
+
+
+=item fossil_best_practice_cutoff
+    
+Returns the minimum best practice score for a fossil record 
+(FOSSIL_BEST_PRACTICE_CUTOFF) to be used as a 
+calibration point. If the cutoff is provided, it is set in the
+config singleton object.
+
+=cut
+    
+sub fossil_best_practice_cutoff {
+    my $self = shift;
+    $self->{'FOSSIL_BEST_PRACTICE_CUTOFF'} = shift if @_;
+    return $self->{'FOSSIL_BEST_PRACTICE_CUTOFF'};
+}
 
 =item currentGBRelease
 
