@@ -4,18 +4,46 @@ use version;
 use XML::Twig;
 use File::Temp 'tempfile';
 use Bio::AlignIO;
+use Bio::Phylo::Factory;
 use Bio::Phylo::IO 'parse';
 use Bio::Phylo::Forest::Tree;
 use Bio::Align::DNAStatistics;
 use Bio::Tree::DistanceFactory;
 use Bio::Tools::Run::Phylo::PhyloBase;
+use Bio::Phylo::Util::Logger ':levels';
+use Bio::Phylo::Util::CONSTANT ':objecttypes';
 use base qw(Bio::Tools::Run::Phylo::PhyloBase);
 
 our $PROGRAM_NAME = 'beast';
-our @beast_PARAMS = qw(mc3_chains mc3_delta mc3_temperatures mc3_swap seed threshold);
-our @beast_SWITCHES = qw(verbose warnings strict);
+our @beast_PARAMS = (
+	'mc3_chains',       # number of chains
+	'mc3_delta',        # temperature increment parameter
+	'mc3_temperatures', # a comma-separated list of the hot chain temperatures
+	'mc3_swap',         # frequency at which chains temperatures will be swapped
+	'seed',             # Specify a random number generator seed
+	'threshold',        # Full evaluation test threshold (default 1E-6)
+	'beagle_order',     # set order of resource use
+	'beagle_scaling',   # specify scaling scheme to use
+	'beagle_rescale',   # frequency of rescaling (dynamic scaling only)	
+	'beagle_instances', # divide site patterns amongst instances	
+);
+our @beast_SWITCHES = (
+	'verbose',          # Give verbose XML parsing messages
+	'warnings',         # Show warning messages about BEAST XML file
+	'strict',           # Fail on non-conforming BEAST XML file
+	'beagle_CPU',       # use CPU instance		
+	'beagle_GPU',       # use GPU instance if available
+	'beagle_SSE',       # use SSE extensions if available
+	'beagle_cuda',      # use CUDA parallization if available
+	'beagle_opencl',    # use OpenCL parallization if available
+	'beagle_single',    # use single precision if available
+	'beagle_double',    # use double precision if available	
+	'overwrite',        # Allow overwriting of log files
+);
 my $beast_ns  = 'http://beast.bio.ed.ac.uk/BEAST_XML_Reference#';
 my $beast_pre = 'beast';
+my $fac = Bio::Phylo::Factory->new;
+my $log = Bio::Phylo::Util::Logger->new;
 
 =head1 NAME
 
@@ -41,6 +69,57 @@ using Markov-Chain Monte-Carlo methods.
 =head1 METHODS
 
 =over
+
+=item new
+
+=cut
+
+sub new {
+    my ( $class, @args ) = @_;
+    my $self = $class->SUPER::new(@args);
+    $self->_set_from_args(
+        \@args,
+        '-methods' => [ @beast_PARAMS, @beast_SWITCHES ],
+        '-create'  => 1,
+    );
+    my ($out) = $self->SUPER::_rearrange( [qw(OUTFILE_NAME)], @args );
+    $self->outfile_name( $out || '' );
+    return $self;
+}
+
+sub _setparams {
+    my ( $self, $file ) = @_;
+    my $param_string = '';
+
+	# iterate over parameters and switches
+    for my $attr (@beast_PARAMS) {
+        my $value = $self->$attr();
+        next unless defined $value;
+        $param_string .= ' -' . $attr . ' ' . $value;
+    }
+    for my $attr (@beast_SWITCHES) {
+        my $value = $self->$attr();
+        next unless $value;
+        $param_string .= ' -' . $attr;
+    }
+
+    # Set default output file if no explicit output file has been given
+    if ( ! $self->outfile_name ) {
+        my ( $tfh, $outfile ) = $self->io->tempfile( '-dir' => $self->work_dir );
+        close $tfh;
+        undef $tfh;
+        $self->outfile_name($outfile);
+    }
+    
+    # set input file name
+	$param_string .= ' ' . $file;
+    
+    # hide stderr
+    my $null = File::Spec->devnull;
+    $param_string .= " > $null 2> $null" if $self->quiet() || $self->verbose < 0;
+
+    return $param_string;
+}
 
 =item chain_length
 
@@ -85,6 +164,9 @@ sub root_height {
 	else {
 		$value = $aln->get_meta_object( "${beast_pre}:rootHeight" );
 		if ( not defined $value ) {
+		
+			# XXX !!!
+			return $self->root_height( $aln => 1 );
 		
 		    # write alignment to tempfile to create AlignI
 		    my ( $fh, $name ) = tempfile();
@@ -145,21 +227,31 @@ Returns the output file generated from the *Beast run.
 
 sub run {
 	my ($self,$nexml) = @_;
-	my $project = parse(
+	
+	# parse the input file
+	$log->info("going to read nexml file $nexml");	
+	$self->_alignment( parse(
 		'-format' => 'nexml',
 		'-file'   => $nexml,
 		'-as_project' => 1,
-	);
-	$self->_alignment($project);
+	) );
+	
+	# generate BEAST xml
+	$log->info("going to generate beast xml");	
 	my $twig = $self->_make_beast_xml;
 	my ($fh, $filename) = tempfile();
 	$twig->print($fh);
-	my $exe = $self->executable;
-	my @command = ( $exe, qw(-verbose -warnings -strict -overwrite), $filename );
-    my $status  = system(@command);
+	$log->info("beast xml written to $filename");
+	
+	# create the invocation and run the command	
+	my $command = $self->executable . $self->_setparams($filename);
+	$log->info("going to execute '$command'");	
+    my $status  = system $command;
+    
+    # fetch the output file
     my $outfile = $self->outfile_name();
     if ( !-e $outfile || -z $outfile ) {
-        $self->warn("*BEAST call had status of $status: $? [command @command]\n");
+        $self->warn("*BEAST call had status of $status: $? [command $command]\n");
         return undef;
     }
 	return $outfile;
@@ -188,11 +280,40 @@ sub _alignment {
 			'-file'       => $thing,
 			'-as_project' => 1,
 		);
+		$self->_validate;
 	}
 	elsif ( ref $thing ) {
 		$self->{'_alignment'} = $thing;
+		$self->_validate;
 	}
 	$self->{'_alignment'};
+}
+
+sub _validate {
+	my $self = shift;
+	my $project = $self->{'_alignment'};
+	my ($taxa) = @{ $project->get_items(_TAXA_) };
+	my %taxon = map { $_->get_id => $_ } @{ $taxa->get_entities };
+	my $ntax = $taxa->get_ntax;
+	
+	# add missing rows to sparse matrices
+	MATRIX: for my $matrix ( @{ $project->get_items(_MATRIX_) } ) {
+		my @rows = @{ $matrix->get_entities };
+		next MATRIX if $ntax == scalar @rows;
+		my $nchar = $matrix->get_nchar;
+		my %seen;
+		$seen{ $_->get_taxon->get_id }++ for @rows;
+		my @missing = grep { ! $seen{$_} } keys %taxon;
+		my $to = $matrix->get_type_object;
+		for my $tid ( @missing ) {
+			$matrix->insert( $fac->create_datum( 
+				'-type_object' => $to,
+				'-name'        => $taxon{$tid}->get_name,
+				'-taxon'       => $taxon{$tid},
+				'-char'        => ( 'N' x $nchar ),
+			) );
+		}
+	}
 }
 
 sub _escape {
@@ -209,7 +330,7 @@ sub _make_taxa_xml {
 	my ( $self, %args ) = @_;
 	my $taxa = _elt( 'taxa', { 'id' => ( $args{'id'} || 'taxa' ) } );
 	for my $name ( @{ $args{'taxa'} } ) {
-		my $taxon = _elt( 'taxon', { 'id' => _escape($name) } );
+		my $taxon = _elt( 'taxon', { 'id' => _escape($name) . '_taxon' } );
 		$taxon->paste($taxa);
 	}
 	return $taxa;
@@ -219,7 +340,7 @@ sub _make_sequence_xml {
 	my ( $self, $seq ) = @_;
 	my $sequence = _elt( 'sequence', $seq->get_char );
 	my $name  = $seq->get_name;
-	my $taxon = _elt( 'taxon', { 'idref' => _escape($name) } );
+	my $taxon = _elt( 'taxon', { 'idref' => _escape($name) . '_taxon' } );
 	$taxon->paste($sequence);
 	return $sequence;
 }
@@ -402,10 +523,10 @@ sub _make_species_xml {
 	# make sp elements
 	for my $binomial ( keys %species ) {
 		my $id = $binomial;
-		$id .= '_species' if scalar @{ $species{$binomial} } == 1;
+		#$id .= '_species' if scalar @{ $species{$binomial} } == 1;
 		my $sp = _elt( 'sp', { 'id' => $id } );
 		for my $instance ( @{ $species{$binomial} } ) {
-			_elt( 'taxon', { 'idref' => $instance } )->paste($sp);
+			_elt( 'taxon', { 'idref' => $instance . '_taxon' } )->paste($sp);
 		}
 		$sp->paste($species);
 	}
