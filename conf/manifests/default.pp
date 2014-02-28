@@ -96,11 +96,11 @@ exec {
  		command => "tar -xzvf phylota.tar.gz",
  		creates => "/usr/share/supersmart/phylota",
  		cwd     => "/usr/share/supersmart/",
-        timeout => 0,
+                timeout => 0,
  		require => Exec[ 'dl_phylota_dump'];
  	"symlink_phylota_dump":
- 		command => "ln -s /usr/share/supersmart/phylota",
- 		creates => "/var/lib/mysql/phylota/seq.frm",
+ 	        command => "ln -s /usr/share/supersmart/phylota",
+ 		creates => "/var/lib/mysql/phylota/seqs.frm",
  		cwd     => "/var/lib/mysql/",
  		require => Exec[ 'unzip_phylota_dump' ];
  	"chown_phylota_db":
@@ -166,7 +166,7 @@ exec {
 		creates => "/etc/profile.d/biophylo.sh",
 		require => Exec[ 'clone_bio_phylo' ];
 	"make_bio_phylo_csh":
-		command => "echo 'setenv PERL5LIB \$PERL5LIB:/usr/local/src/bio-phylo/lib' > biophylo.csh",
+	  command => "echo 'setenv PERL5LIB \$PERL5LIB:/usr/local/src/bio-phylo/lib' > biophylo.csh",
 		cwd     => "/etc/profile.d",
 		creates => "/etc/profile.d/biophylo.csh",
 		require => Exec[ 'clone_bio_phylo' ];
@@ -211,10 +211,22 @@ exec {
                 cwd     => "/usr/local/src",
                 creates => "/usr/local/src/Math-Random-0.70.tar.gz",
                 require => Package[ 'wget', 'tar' ];
-#        "unzip_math_random":
-#                command => "tar -xvzf /usr/local/src/Math-Random-0.70.tar.gz",
-#                creates => 
-          
+        "unzip_math_random":
+                command => "tar -xvzf /usr/local/src/Math-Random-0.70.tar.gz",
+                creates => "/usr/local/src/Math-Random-0.70/Makefile.PL",
+                cwd     => "/usr/local/src",
+                require => Exec["download_math_random"];
+        "make_makefile_math_random":
+                command => "perl Makefile.PL",
+		cwd     => "/usr/local/src/Math-Random-0.70",
+		creates => "/usr/local/src/Math-Random-0.70/Makefile",
+		require => Exec["unzip_math_random"];
+        "make_install_math_random":
+		command => "make install LD_LIBRARY_PATH=/usr/lib",
+		cwd     => "/usr/local/src/Math-Random-0.70",		
+		creates => "/usr/local/lib64/perl5/Math/Random.pm",
+		require => Exec["make_makefile_math_random"];	
+
           
         # install perl package Parallel::MPI::Simple
 	"download_parallel_mpi_simple":
@@ -304,7 +316,11 @@ exec {
 		command => "echo 'setenv LD_LIBRARY_PATH /usr/lib' > supersmart.csh && echo 'setenv SUPERSMART_HOME /usr/local/src/supersmart' >> supersmart.csh && echo 'setenv PERL5LIB \$PERL5LIB:\$SUPERSMART_HOME/lib' >> supersmart.csh",
 		cwd     => "/etc/profile.d",
 		creates => "/etc/profile.d/supersmart.csh";		
-	
+        "chown_supersmart_examples":
+                command => "chown -R vagrant examples/",
+                cwd     => "/usr/local/src/supersmart",
+                require => Exec["clone_supersmart"];
+          
 	# install treePL
 	"clone_treepl":
 		command => "git clone https://github.com/blackrim/treePL.git",
