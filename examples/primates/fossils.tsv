@@ -1,10 +1,10 @@
 NFos	FossilName	CrownvsStem	CalibratedTaxon	MinAge	BestPracticeScore	NUsrcrFos	DcrFos
-1	F_1	stem	Catarrhini	32.8	NA	NA	NA			
-3	F_3	stem	Homininae	6.3	NA	NA	NA
-4	F_4	stem	Hominidae	15.2	NA	NA	NA		
-5	F_5	stem	Hominoidea	18.8	NA	NA	NA		
-6	F_6	stem	Simiiformes	49.8	NA	NA	NA		
-7	F_7	stem	Primates	77.5	NA	NA	NA			
-8	F_8	stem	Strepsirrhini	51.6	NA	NA	NA		
-9	F_9	stem	Cercopithecidae	16.8	NA	NA	NA		
+1	F_1	stem	Catarrhini	32.8						
+3	F_3	stem	Homininae	6.3			
+4	F_4	stem	Hominidae	15.2					
+5	F_5	stem	Hominoidea	18.8					
+6	F_6	stem	Simiiformes	49.8					
+7	F_7	stem	Primates	77.5						
+8	F_8	stem	Strepsirrhini	51.6					
+9	F_9	stem	Cercopithecidae	16.8					
 
