@@ -39,4 +39,8 @@ my $ct = $cs->create_calibration_table( $tree, @identified );
 isa_ok( $ct, 'Bio::Phylo::PhyLoTA::Domain::CalibrationTable' );
 
 # calibrate the tree
-my $chronogram = $cs->calibrate_tree($tree,$ct);
+my $chronogram = $cs->calibrate_tree(
+ 	'-tree'              => $tree,
+ 	'-numsites'          => 15498,
+ 	'-calibration_table' => $ct,
+);
