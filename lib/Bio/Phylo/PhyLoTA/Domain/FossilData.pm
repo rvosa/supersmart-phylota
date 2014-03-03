@@ -102,6 +102,18 @@ sub min_age {
     return $self->{'MinAge'};
 }
 
+=item min_age
+
+Getter/Setter for the maximum age of the fossil.
+
+=cut
+
+sub max_age {
+	my $self = shift;
+	$self->{'MaxAge'} = shift if @_;
+	return $self->{'MaxAge'} || $self->min_age;
+}
+
 =item best_practice_score
 
 Getter/Setter for the fossil best practice score.
@@ -149,7 +161,7 @@ possible calibration point, since taxa name are not unique.
 sub calibration_points {
     my $self = shift;    
     $self->{'calibration_points'} = [@_] if @_;
-    return defined($self->{'calibration_points'}) ? @{$self->{'calibration_points'}} : ();
+    return $self->{'calibration_points'} ? @{ $self->{'calibration_points'} } : ();
 }
 
 1;
