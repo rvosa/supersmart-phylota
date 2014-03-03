@@ -68,9 +68,44 @@ using Markov-Chain Monte-Carlo methods.
 
 =head1 METHODS
 
+In addition to the methods described below, all named arguments described for the
+constructor are available as methods as well. For example, the argument C<-verbose>
+becomes:
+
+ $beast->verbose(1);
+
 =over
 
 =item new
+
+The constructor takes the following optional named arguments that require a numerical 
+value:
+
+	'-mc3_chains',       # number of chains
+	'-mc3_delta',        # temperature increment parameter
+	'-mc3_temperatures', # a comma-separated list of the hot chain temperatures
+	'-mc3_swap',         # frequency at which chains temperatures will be swapped
+	'-seed',             # Specify a random number generator seed
+	'-threshold',        # Full evaluation test threshold (default 1E-6)
+	'-beagle_order',     # set order of resource use
+	'-beagle_scaling',   # specify scaling scheme to use
+	'-beagle_rescale',   # frequency of rescaling (dynamic scaling only)	
+	'-beagle_instances', # divide site patterns amongst instances	
+
+In addition, the following named arguments that require a boolean are available:
+
+	'-verbose',          # Give verbose XML parsing messages
+	'-warnings',         # Show warning messages about BEAST XML file
+	'-strict',           # Fail on non-conforming BEAST XML file
+	'-beagle_CPU',       # use CPU instance		
+	'-beagle_GPU',       # use GPU instance if available
+	'-beagle_SSE',       # use SSE extensions if available
+	'-beagle_cuda',      # use CUDA parallization if available
+	'-beagle_opencl',    # use OpenCL parallization if available
+	'-beagle_single',    # use single precision if available
+	'-beagle_double',    # use double precision if available	
+	'-overwrite',        # Allow overwriting of log files
+
 
 =cut
 
@@ -119,6 +154,33 @@ sub _setparams {
     $param_string .= " > $null 2> $null" if $self->quiet() || $self->verbose < 0;
 
     return $param_string;
+}
+
+=item logfile_name
+
+Getter/setter for the location of a log file that can be loaded in tracer
+to assess convergence and ESS
+
+=cut
+
+sub logfile_name {
+	my $self = shift;
+	$self->{'_logfile_name'} = shift if @_;
+	return $self->{'_logfile_name'};
+}
+
+=item log_freq
+
+Getter/setter for the logging frequency.
+
+=cut
+
+
+sub log_freq {
+	my $self = shift;
+	$self->{'_log_freq'} = shift if @_;
+	return $self->{'_log_freq'};
+
 }
 
 =item chain_length
@@ -299,7 +361,7 @@ sub _validate {
 	# add missing rows to sparse matrices
 	MATRIX: for my $matrix ( @{ $project->get_items(_MATRIX_) } ) {
 		my @rows = @{ $matrix->get_entities };
-		next MATRIX if $ntax == scalar @rows;
+		#next MATRIX if $ntax == scalar @rows;
 		my $nchar = $matrix->get_nchar;
 		my %seen;
 		$seen{ $_->get_taxon->get_id }++ for @rows;
@@ -954,6 +1016,68 @@ sub _make_species_logtree_xml {
 	return $logTree;
 }
 
+sub _make_logfile_xml {
+	my $self = shift;
+	my $file = $self->logfile_name;
+	my $freq = $self->log_freq || 1000;
+	
+	# create enclosing element
+	my $log = _elt( 'log', {
+		'logEvery' => $freq,
+		'fileName' => $file,
+	} );
+	
+	# create static columns
+	my %cols = (
+		'posterior'            => 'posterior',
+		'prior'                => 'prior',
+		'likelihood'           => 'likelihood',
+		'speciesCoalescent'    => 'species.coalescent',
+		'speciationLikelihood' => 'speciation.likelihood',
+		'tmrcaStatistic'       => 'speciesTree.rootHeight',
+	);
+	for my $col ( keys %cols ) {
+		_elt( $col, { 'idref' => $cols{$col} } )->paste( 'last_child' => $log );
+	}
+	
+	# create static parameters
+	my @params = qw(
+		species.popMean 
+		speciesTree.splitPopSize 
+		species.birthDeath.meanGrowthRate 
+		species.birthDeath.relativeDeathRate
+	);
+	for my $param ( @params ) {
+		_elt( 'parameter', { 'idref' => $param } )->paste( 'last_child' => $log );
+	}
+	
+	# create dynamic parameters
+	my @dynparam = qw(
+		treeModel.rootHeight
+		kappa
+		frequencies
+		clock.rate
+	);
+	for my $aln ( @{ $self->_alignment->get_matrices } ) {
+		my $id = $aln->get_name;
+		for my $param ( @dynparam ) {
+			my $idref = "${id}.${param}";
+			_elt( 'parameter', { 'idref' => $idref } )->paste( 'last_child' => $log );
+		}
+	}
+	
+	# create tree likelihoods
+	for my $aln ( @{ $self->_alignment->get_matrices } ) {
+		my $id = $aln->get_name;
+		my $tl = 'treeLikelihood';
+		my $idref = "${id}.${tl}";
+		_elt( $tl, { 'idref' => $idref } )->paste( 'last_child' => $log );
+	}	
+	
+	# done
+	return $log;
+}
+
 sub _make_mcmc_xml {
 	my $self = shift;
 	my $mcmc = _elt( 'mcmc', {
@@ -963,6 +1087,9 @@ sub _make_mcmc_xml {
 	} );
 	$self->_make_posterior_xml->paste( 'last_child' => $mcmc );
 	_elt( 'operators', { 'idref' => 'operators' } )->paste( 'last_child' => $mcmc );
+	if ( $self->logfile_name ) {
+		$self->_make_logfile_xml->paste( 'last_child' => $mcmc );
+	}	
 	$self->_make_species_logtree_xml->paste( 'last_child' => $mcmc );
 	return $mcmc;
 }

@@ -11,10 +11,87 @@ use Bio::Phylo::Util::CONSTANT ':objecttypes';
 use Bio::Phylo::Util::Logger;
 use base qw(Bio::Tools::Run::Phylo::PhyloBase);
 
+=head1 NAME
+
+Bio::Tools::Run::Phylo::ExaML - tree inference wrapper for ExaML
+
+=head1 SYNOPSYS
+
+ use Bio::Tools::Run::Phylo::ExaML;
+ my $examl Bio::Tools::Run::Phylo::ExaML->new;
+ $examl->outfile_name('out.tre');
+ $examl->work_dir('.');
+ $examl->m('GAMMA');
+ $examl->quiet(1);
+ $examl->run('infile.phy');
+
+=head1 DESCRIPTION
+
+Infers a large phylogeny using the ExaML program. Input files must be in PHYLIP format,
+(so far this has only been tested with interleaved PHYLIP), output file contains an
+unrooted tree in Newick format.
+
+=head1 METHODS
+
+B<Note:> in addition to the methods described below, all the arguments described for the
+constructor can be used as methods as well. For example, the argument C<-B> becomes:
+
+ $examl->B($num);
+
+=over
+
+=cut
+
 our $PROGRAM_NAME = 'examl';
 our @ExaML_PARAMS = qw(B c e f i m);
 our @ExaML_SWITCHES = qw(a D M Q S);
 my $log = Bio::Phylo::Util::Logger->new;
+
+=item new
+
+The constructor takes the following optional, named arguments that require appropriate 
+values:
+
+ '-B' # specify the number of best ML trees to save and print to file
+ '-c' # Specify number of distinct rate catgories for ExaML when modelOfEvolution
+        is set to GTRPSR. Individual per-site rates are categorized into 
+        numberOfCategories rate categories to accelerate computations. DEFAULT: 25
+ '-e' # set model optimization precision in log likelihood units for final
+        optimization of model parameters. DEFAULT: 0.1
+ '-f' # select algorithm: 
+ 			'-f' => 'd': new rapid hill-climbing DEFAULT: ON
+            '-f' => 'o': old and slower rapid hill-climbing without heuristic cutoff
+ '-i' # Initial rearrangement setting for the subsequent application of topological 
+        changes phase
+ '-m' # Model of rate heterogeneity:
+			'-m' => 'PSR' for the per-site rate category model (this used to be called 
+			        CAT in RAxML)
+			'-m' => 'GAMMA' for the gamma model of rate heterogeneity with 4 discrete 
+         	        rates
+
+In addition, the following optional, named arguments that require booleans are available:
+
+ '-a' # use the median for the discrete approximation of the GAMMA model of rate 
+        heterogeneity. DEFAULT: OFF
+ '-D' # ML search convergence criterion. This will break off ML searches if the relative 
+        Robinson-Foulds distance between the trees obtained from two consecutive lazy SPR 
+        cycles is smaller or equal to 1%. Usage recommended for very large datasets in 
+        terms of taxa. On trees with more than 500 taxa this will yield execution time 
+        improvements of approximately 50% while yielding only slightly worse trees.
+        DEFAULT: OFF
+ '-M' # Switch on estimation of individual per-partition branch lengths. Only has effect 
+        when used in combination with "-q". Branch lengths for individual partitions will 
+        be printed to separate files. A weighted average of the branch lengths is computed 
+        by using the respective partition lengths.
+ '-Q' # Enable alternative data/load distribution algorithm for datasets with many 
+        partitions. In particular under PSR this can lead to parallel performance 
+        improvements of up to factor 10!
+ '-S' # turn on memory saving option for gappy multi-gene alignments. For large and gappy 
+        datasets specify -S to save memory. This will produce slightly different 
+        likelihood values, may be a bit slower but can reduce memory consumption from 
+        70GB to 19GB on very large and gappy datasets.
+
+=cut
 
 sub new {
     my ( $class, @args ) = @_;
@@ -29,13 +106,30 @@ sub new {
     return $self;
 }
 
+=item program_name
+
+Returns the local name of the wrapped program, i.e. 'examl'.
+
+=cut
+
 sub program_name { $PROGRAM_NAME }
+
+=item program_dir
+
+(no-op)
+
+=cut
 
 sub program_dir { undef }
 
-# getter/setter for an ID string for this run. by default based on the PID. this only has
-# to be unique during the runtime of this process, all files that have the run ID in them
-# are cleaned up afterwards.
+=item run_id
+
+Getter/setter for an ID string for this run. by default based on the PID. this only has
+to be unique during the runtime of this process, all files that have the run ID in them
+are cleaned up afterwards.
+
+=cut
+
 sub run_id {
 	my $self = shift;
 	if ( @_ ) {
@@ -44,7 +138,12 @@ sub run_id {
 	return $self->{'_run_id'} || "examl-run-$$";
 }
 
-# intermediate files will be written here
+=item work_dir
+
+Getter/setter. Intermediate files will be written here.
+
+=cut
+
 sub work_dir {
 	my $self = shift;
 	if ( @_ ) {
@@ -53,8 +152,14 @@ sub work_dir {
 	return $self->{'_workdir'} || '.';
 }
 
-# getter/setter for the parser program (which creates a compressed, binary representation
-# of the input alignment) that comes with examl
+=item parser
+
+Getter/setter for the location of the parser program (which creates a compressed, binary 
+representation of the input alignment) that comes with examl. By default this is found
+on the PATH.
+
+=cut
+
 sub parser {
 	my ( $self, $parser ) = @_;
 	if ( $parser ) {
@@ -63,7 +168,13 @@ sub parser {
 	return $self->{'_parser'} || 'parser';
 }
 
-# getter/setter for the mpirun program for parallelized runs
+=item mpirun
+
+Getter/setter for the location of the mpirun program for parallelized runs. When unset,
+no parallelization is attempted.
+
+=cut
+
 sub mpirun {
 	my ( $self, $mpirun ) = @_;
 	if ( $mpirun ) {
@@ -72,7 +183,12 @@ sub mpirun {
 	return $self->{'_mpirun'};
 }
 
-# getter/setter for number of mpi nodes
+=item nodes
+
+Getter/setter for number of mpi nodes
+
+=cut
+
 sub nodes {
 	my ( $self, $nodes ) = @_;
 	if ( $nodes ) {
@@ -80,6 +196,12 @@ sub nodes {
 	}
 	return $self->{'_nodes'};
 }
+
+=item version
+
+Returns the version number of the ExaML executable.
+
+=cut
 
 sub version {
     my ($self) = @_;
@@ -89,6 +211,17 @@ sub version {
     $string =~ /ExaML version (\d+\.\d+\.\d+)/;
     return version->parse($1) || undef;
 }
+
+=item run
+
+Runs the analysis. Given a single argument, this is assumed to be the location of a
+NeXML file that contains both one or more alignments and a starting tree. Given the
+named arguments C<-phylip> and C<-intree> (both are required in combination), uses
+these as the data and starting tree.
+
+=back
+
+=cut
 
 sub run {
 	my $self = shift;

@@ -70,13 +70,13 @@ sub get_nodes_for_names {
         
         # no exact match if ->single returns undef (i.e. false)
         if ( scalar @nodes == 0) {
-            $log->info("no exact match for '$name' in local database");
+	    $log->info("no exact match for '$name' in local database");
             
             # search the web service
             if ( my $id = $self->_do_tnrs_search($name) ) {
-               @nodes = $self->search_node($id);
-               $log->info("found match $id for $name through TNRS");
-            }
+		@nodes = $self->search_node( {  ti => $id } )->all;
+		$log->info("found match $id for $name through TNRS");
+	    }
             else {
                 $log->warn("couldn't find name $name anywhere!");
             }
@@ -88,7 +88,6 @@ sub get_nodes_for_names {
         # store result
         push @all_nodes, @nodes if scalar @nodes > 0;        
     }
-    
     # return results
     return @all_nodes;
 }
