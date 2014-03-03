@@ -3,6 +3,9 @@ use strict;
 use warnings;
 use FindBin '$Bin';
 use Test::More 'no_plan';
+use Bio::Phylo::IO 'parse_tree';
+use Bio::Phylo::Util::Logger 'INFO';
+use Data::Dumper;
 
 BEGIN {
 	use_ok('Bio::Phylo::PhyLoTA::Service::CalibrationService');
@@ -24,9 +27,9 @@ for my $i ( @identified ) {
 }
 
 # read a newick tree
-my $tree = parse(
-	'-format' => 'newick',
-	'-file'   => 'tree.dnd',
+my $tree = parse_tree(
+	'-format'     => 'newick',
+	'-file'       => "$Bin/../examples/primates/supermatrix-cover1-rerooted-remapped.dnd",
 	'-as_project' => 1,
 );
 isa_ok( $tree, 'Bio::Tree::TreeI' );
@@ -36,4 +39,4 @@ my $ct = $cs->create_calibration_table( $tree, @identified );
 isa_ok( $ct, 'Bio::Phylo::PhyLoTA::Domain::CalibrationTable' );
 
 # calibrate the tree
-# my $chronogram = $cs->calibrate_tree($tree,$ct);
+my $chronogram = $cs->calibrate_tree($tree,$ct);
