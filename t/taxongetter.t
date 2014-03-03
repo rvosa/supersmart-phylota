@@ -39,3 +39,9 @@ $log->info("read species names from $file");
 # database and with webservices
 my @nodes = $mts->get_nodes_for_names(@names);
 ok( @nodes, "found nodes" );
+
+# test searching for taxon name that is not in database
+my $taxon = "Alouatta fusca";
+my @fusca_nodes = $mts->get_nodes_for_names($taxon);
+# after TNRS searching webservice, Alouatta guariba should be found. 
+is (@fusca_nodes[0]->taxon_name, "Alouatta guariba");
