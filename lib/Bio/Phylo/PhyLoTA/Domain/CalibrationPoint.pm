@@ -20,8 +20,8 @@ Represents a single record in a set of calibration points.
 
 The constructor is typically executed by the 
 L<Bio::Phylo::PhyLoTA::Domain::CalibrationTable>, which passes it the named arguments
-'min_age', 'max_age' and 'taxa' (i.e. the names of the subtended terminal taxa). These
-properties subsequently become available as object methods, i.e. $point->min_age and
+'min_age' and/or 'max_age' and 'taxa' (i.e. the names of the subtended terminal taxa). 
+These properties subsequently become available as object methods, i.e. $point->min_age and
 so on.
 
 =back
