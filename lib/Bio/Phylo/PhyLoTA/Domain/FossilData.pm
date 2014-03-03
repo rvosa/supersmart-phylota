@@ -13,15 +13,13 @@ Bio::Phylo::PhyLoTA::Domain::FossilData - Fossil Data
 =head1 DESCRIPTION
 
 Object that represents a fossil datum that is instantiated from a row in a file
-such as the tab-separated examples fossils1.tsv and fossils2.tsv. XXX: Note that, as per 
-one of the milestone issues L<https://github.com/naturalis/supersmart/issues/7> this 
-design may have to change.
+such as the tab-separated examples fossils1.tsv and fossils2.tsv.
 
 =head1 METHODS
 
 It is likely that each fossil will have at least the minimal methods that allow it
-to be placed on a taxonomy, i.e. the C<genus> and C<family>, and whether the fossil
-is a crown or a stem fossil (C<crown_stem>), and the age range for the fossil, i.e.
+to be placed on a taxonomy, i.e. the C<calibrated_taxon>, and whether the fossil
+is a crown or a stem fossil (C<crown_vs_stem>), and the age range for the fossil, i.e.
 C<min_age> and C<max_age>. In addition, the object will have a C<point> method whose
 value is a node in the taxonomy.
 
@@ -104,6 +102,18 @@ sub min_age {
     return $self->{'MinAge'};
 }
 
+=item min_age
+
+Getter/Setter for the maximum age of the fossil.
+
+=cut
+
+sub max_age {
+	my $self = shift;
+	$self->{'MaxAge'} = shift if @_;
+	return $self->{'MaxAge'} || $self->min_age;
+}
+
 =item best_practice_score
 
 Getter/Setter for the fossil best practice score.
@@ -151,7 +161,7 @@ possible calibration point, since taxa name are not unique.
 sub calibration_points {
     my $self = shift;    
     $self->{'calibration_points'} = [@_] if @_;
-    return defined($self->{'calibration_points'}) ? @{$self->{'calibration_points'}} : ();
+    return $self->{'calibration_points'} ? @{ $self->{'calibration_points'} } : ();
 }
 
 1;

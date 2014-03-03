@@ -56,9 +56,9 @@ sub get_rows {
 
 =item to_string
 
-Returns a string representation suitable for input into
-a tree calibration program. XXX: this needs to be fixed/enhanced to be able
-to provide the right representation for multiple programs (e.g. *BEAST, treePL).
+Returns a string representation suitable for input into a tree calibration program. At 
+present this simply means a serialization in the syntax that treePL uses for identifying
+and dating MRCAs.
 
 =back
 
@@ -67,9 +67,17 @@ to provide the right representation for multiple programs (e.g. *BEAST, treePL).
 sub to_string {
     my $self = shift;
     my $string = '';
-    for my $row ( @{ $self } ) {
-        $string .= join(' ', @{ $row->{taxa} }, '|', $row->{min_age}) . "\n";
-    }
+    
+	# write the mrca statements
+	my $counter;
+	for my $row ( $self->get_rows ) {
+		my @taxa = $row->taxa;
+		my $name = $row->name || 'clade' . ++$counter;
+		$string .= "mrca = $name @taxa\n";
+		$string .= "min = $name " . $row->min_age . "\n";
+		my $max = $row->max_age || $row->min_age;
+		$string .= "max = $name $max\n";		
+	}
     return $string;
 }
 
