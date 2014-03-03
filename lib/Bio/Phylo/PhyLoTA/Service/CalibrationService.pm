@@ -73,6 +73,7 @@ sub new {
 
 sub calibrate_tree {
 	my ($self,%args) = @_;
+	my $config    = $self->config;
 	my $smooth    = $args{'-treepl_smooth'}     || $config->TREEPL_SMOOTH;
 	my $numsites  = $args{'-numsites'}          || die "Need -numsites argument";
 	my $ct        = $args{'-calibration_table'} || die "Need -calibration_table argument";
