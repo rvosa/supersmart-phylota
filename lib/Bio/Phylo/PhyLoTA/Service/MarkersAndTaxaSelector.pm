@@ -88,7 +88,6 @@ sub get_nodes_for_names {
         # store result
         push @all_nodes, @nodes if scalar @nodes > 0;        
     }
-    my $n = @all_nodes[0];
     # return results
     return @all_nodes;
 }
