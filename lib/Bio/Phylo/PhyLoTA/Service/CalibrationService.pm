@@ -2,6 +2,7 @@ package Bio::Phylo::PhyLoTA::Service::CalibrationService;
 use strict;
 use warnings;
 use File::Temp 'tempfile';
+use Bio::Phylo::IO 'parse_tree';
 use Bio::Phylo::PhyLoTA::Service;
 use Bio::Phylo::PhyLoTA::Domain::FossilData;
 use Bio::Phylo::PhyLoTA::Domain::CalibrationTable;
@@ -97,7 +98,15 @@ HEADER
 
 	# print MRCA statements
 	print $tfh $ct->to_string, "thorough\n";
-
+	
+	# run treePL
+	close $tfh;
+	system( $config->TREEPL_BIN, $tplfile ) && die $?;
+	return parse_tree(
+		'-format' => 'newick',
+		'-file'   => $writetree,
+		'-as_project' => 1,
+	);
 }
 
 =item find_calibration_point
