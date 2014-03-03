@@ -74,8 +74,9 @@ sub to_string {
 		my @taxa = $row->taxa;
 		my $name = $row->name || 'clade' . ++$counter;
 		$string .= "mrca = $name @taxa\n";
-		$string .= "max = $name " . $row->max_age . "\n";
 		$string .= "min = $name " . $row->min_age . "\n";
+		my $max = $row->max_age || $row->min_age;
+		$string .= "max = $name $max\n";		
 	}
     return $string;
 }
