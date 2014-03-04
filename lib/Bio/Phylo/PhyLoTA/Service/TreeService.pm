@@ -11,6 +11,12 @@ sub write_tree {
 
 }
 
+# it appears (obviously) that midpoint rooting is going to fail in some
+# cases. How to automate this?
+sub reroot_tree {
+	
+}
+
 # -infile, -format, -outfile, -burnin
 sub consense_trees {
 	my ( $self, %args ) = @_;
