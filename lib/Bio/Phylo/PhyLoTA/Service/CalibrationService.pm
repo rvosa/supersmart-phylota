@@ -70,6 +70,14 @@ sub new {
 
 =item calibrate_tree
 
+Calibrates an additive tree using a CalibrationTable object, returns an ultrametric tree.
+Arguments:
+
+ -numsites => Number of sites in the alignment that induced the tree
+ -tree     => A Bio::Phylo::Forest::Tree object
+ -calibration_table => A Bio::Phylo::PhyLoTA::Domain::CalibrationTable object
+ -treepl_smooth     => (Optional) TreePL smoothing factor
+
 =cut
 
 sub calibrate_tree {
@@ -154,7 +162,7 @@ sub create_calibration_table {
     my $cutoff = $config->FOSSIL_BEST_PRACTICE_CUTOFF;
     my $mts    = Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector->new;
     
-    # created mapping from ti to fossil
+    # create mapping from fossil to all its subtended TIs
     $logger->info("going to map fossils to calibrated taxon IDs");
     my %fd_for_id;
     for my $fd ( @fossildata ) {
@@ -166,7 +174,7 @@ sub create_calibration_table {
 					my $id = $n->ti;
 					$fd_for_id{$id} = { 'fd' => $fd };
 					
-					# create mapping to descendant nodes
+					# traverse non-recursively
 					my %seen;
 					my @queue = @{ $n->get_children };
 					while(@queue) {
@@ -185,8 +193,7 @@ sub create_calibration_table {
 		}		   	
     }
     
-    # assign each tip to the most recent (i.e. least inclusive) calibrated
-    # mrca that subtends it
+    # assign each tip to all the fossils on its path to the root
     $logger->info("going to assign tree leaves to calibrated ancestral taxa");
     my %tips_for_id = map { $_ => [] } keys %fd_for_id;
     my @sorted = sort { scalar(keys(%{$fd_for_id{$a}->{'desc'}})) <=> scalar(keys(%{$fd_for_id{$b}->{'desc'}})) } keys %fd_for_id;
