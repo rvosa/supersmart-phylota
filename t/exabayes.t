@@ -23,10 +23,21 @@ ok( $exabayes->m('DNA'), "model" );
 ok( $exabayes->n('testrun'), "ruid" );
 ok( $exabayes->s(1), "seed");
 ok( $exabayes->w($wd), "working directory");
-ok( $exabayes->C(2), "number of chains");
-ok( $exabayes->R(2), "number of runs");
+ok( $exabayes->C(1), "number of chains");
+ok( $exabayes->R(1), "number of runs");
+ok( $exabayes->parser("/usr/local/src/exabayes-1.2.1/bin/parser"), "set parser");
 
-#$exabayes->run("$Bin/testdata.phy");
-$exabayes->run("$Bin/testdata.xml");
+my $phylip = "$Bin/supermatrix.phy";
+my $intree = "$Bin/common.dnd";
+
+#my $phylip = "$Bin/example.phy";
+#my $intree = "$Bin/example.dnd";
+
+my $parser = $exabayes->parser;
+print "Parser = $parser \n";
+
+
+$exabayes->run('-phylip'=> $phylip, '-intree'=> $intree);
+##$exabayes->run("$Bin/testdata.xml");
 
 print "Directory : $wd \n";
