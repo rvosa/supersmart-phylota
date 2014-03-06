@@ -2,7 +2,10 @@ package Bio::Phylo::PhyLoTA::Service::TreeService;
 use strict;
 use warnings;
 use File::Temp 'tempfile';
+use Bio::Phylo::IO 'parse_tree';
 use Bio::Phylo::PhyLoTA::Config;
+use Bio::Phylo::PhyLoTA::Service;
+use base 'Bio::Phylo::PhyLoTA::Service';
 
 my $config = Bio::Phylo::PhyLoTA::Config->new;
 
@@ -17,15 +20,106 @@ sub reroot_tree {
 	
 }
 
-# -infile, -format, -outfile, -burnin
+# -infile, (optional: -burnin)
 sub consense_trees {
 	my ( $self, %args ) = @_;
-
+	my $burnin = $args{'-burnin'} || $config->BURNIN;
+	my $infile = $args{'-infile'} || die "Need -infile argument!";
+	
+	# we first need to count the absolute number of trees in the file
+	# and multiply that by burnin to get the absolute number of trees to skip
+	my $counter = 0;
+	open my $fh, '<', $infile or die $!;
+	while(<$fh>) {
+		$counter++ if /^\s*tree\s/i;
+	}	
+	my $babs = int( $burnin * $counter );
+	
+	# create temporary outfile name
+	my ( $outfh, $outfile ) = tempfile();
+	close $outfh;
+	
+	# execute command
+	my $tmpl = '%s -burnin %i %s %s 2> /dev/null';
+	my $command = sprintf $tmpl, $config->TREEANNOTATOR_BIN, $babs, $infile, $outfile;
+	system($command) and die "Error building consensus: $?";
+	
+	# return the resulting tree
+	return parse_tree(
+		'-format' => 'nexus',
+		'-file'   => $outfile,
+		'-as_project' => 1,
+	);
 }
 
-# splices a clade tree into a backbone tree
-sub graft_trees {
-
+# grafts a clade tree into a backbone tree, returns backbone
+sub graft_tree {
+	my ( $self, $backbone, $clade ) = @_;
+	my $log = $self->logger;	
+	my @names = map { $_->get_name } @{ $clade->get_terminals };
+	$log->debug("@names");
+	
+	# retrieve the tips from the clade tree that also occur in the backbone, i.e. the 
+	# exemplars, and locate their MRCA on the backbone
+	my @exemplars;
+	for my $name ( @names ) {
+		if ( my $e = $backbone->get_by_name($name) ) {
+			$log->info("found $name in backbone: ".$e->get_name);
+			push @exemplars, $e;
+		}
+		else {
+			$log->debug("$name is not in the backbone tree");
+		}
+	}
+	$log->info("found ".scalar(@exemplars)." exemplars in backbone");
+	my @copy = @exemplars; # XXX ???	
+	my $bmrca = $backbone->get_mrca(\@copy);
+	
+	# find the exemplars in the clade tree and find *their* MRCA
+	my @clade_exemplars = map { $clade->get_by_name($_->get_name) } @exemplars;
+	my @ccopy = @clade_exemplars;
+	my $cmrca = $clade->get_mrca(\@ccopy);
+	$log->info("found equivalent ".scalar(@clade_exemplars)." exemplars in clade");
+	
+	# calculate the respective depths, scale the clade by the ratios of depths
+	my $cmrca_depth = $cmrca->calc_max_path_to_tips;
+	my $bmrca_depth = $bmrca->calc_max_path_to_tips;
+	$clade->visit(sub{
+		my $node = shift;
+		my $bl = $node->get_branch_length || 0; # zero for root
+		$node->set_branch_length( $bl * ( $bmrca_depth / $cmrca_depth ) );
+		$log->debug("adjusting branch length for ".$node->get_internal_name);
+	});
+	$log->info("re-scaled clade by $bmrca_depth / $cmrca_depth");
+	
+	# calculate the depth of the root in the clade, adjust backbone depth accordingly
+	my $crd  = $clade->get_root->calc_max_path_to_tips;
+	my $diff = $bmrca_depth - $crd;
+	$bmrca->set_branch_length( $bmrca->get_branch_length + $diff );
+	$log->info("adjusted backbone MRCA depth by $bmrca_depth - $crd");
+	
+	# now graft!
+	$bmrca->clear();
+	$clade->visit(
+		sub {
+			my $node = shift;
+			my $name = $node->get_internal_name;
+			if ( my $p = $node->get_parent ) {
+				if ( $p->is_root ) {
+					$log->info("grafted $name onto backbone MRCA");
+					$node->set_parent($bmrca);
+				}
+			}
+			if ( $node->is_root ) {
+				$log->info("replacing root $name with backbone MRCA");
+			}
+			else {
+				$log->debug("inserting $name into backbone");
+				$backbone->insert($node);
+			}
+		}
+	);
+	return $backbone;
 }
 
 # builds a tree using the configured tree inference method
