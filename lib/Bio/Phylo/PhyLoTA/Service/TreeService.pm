@@ -15,7 +15,8 @@ sub write_tree {
 }
 
 # it appears (obviously) that midpoint rooting is going to fail in some
-# cases. How to automate this?
+# cases. How to automate this? One possibility is that the common tree might
+# be of use.
 sub reroot_tree {
 	
 }
