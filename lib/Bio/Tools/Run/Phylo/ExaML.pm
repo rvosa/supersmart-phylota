@@ -225,7 +225,7 @@ these as the data and starting tree.
 
 sub run {
 	my $self = shift;
-	my ( $phylip, $intree );
+ 	my ( $phylip, $intree );
 	
 	# one argument means it's a nexml file
 	if ( @_ == 1 ) {
@@ -265,6 +265,7 @@ sub run {
 	my $curdir = getcwd;
 	chdir $self->work_dir;	
 	$log->info("going to run '$string' inside ".$self->work_dir);
+        print "going to run '$string' inside ".$self->work_dir."\n";
 	system($string) and $self->warn("Couldn't run ExaML: $?");
 	chdir $curdir;
 	
@@ -321,6 +322,7 @@ sub _make_binary {
 	return "${binfile}.binary";
 }
 
+
 sub _make_intree {
 	my ( $self, $taxa, $tree ) = @_;
 	my $treefile = File::Spec->catfile( $self->work_dir, $self->run_id . '.dnd' );
@@ -341,10 +343,11 @@ sub _make_intree {
 				$n->set_name( $taxa->get_by_index($i++)->get_name );
 			}
 		});
-		return $self->_make_intree( $taxa, $tree );
+                return $self->_make_intree( $taxa, $tree );
 	}
 	return $treefile;
 }
+
 
 sub _make_phylip {
 	my ( $self, $taxa, @matrix ) = @_;
