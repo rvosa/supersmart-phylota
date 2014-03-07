@@ -15,8 +15,7 @@ my $wd = tempdir( 'CLEANUP' => 0 );
 BEGIN { use_ok('Bio::Tools::Run::Phylo::ExaBayes'); }
 my $exabayes = new_ok('Bio::Tools::Run::Phylo::ExaBayes');
 
-#ok( $exabayes->work_dir($wd), "work dir: $wd" );
-#ok( $exabayes->executable( $config->EXABAYES_BIN ), "executable" );
+##ok( $exabayes->executable( $config->EXABAYES_BIN ), "executable" );
 
 ok( $exabayes->version == qv(1.2.1), "version" );
 ok( $exabayes->m('DNA'), "model" );
@@ -26,18 +25,19 @@ ok( $exabayes->w($wd), "working directory");
 ok( $exabayes->C(1), "number of chains");
 ok( $exabayes->R(1), "number of runs");
 ok( $exabayes->parser("/usr/local/src/exabayes-1.2.1/bin/parser"), "set parser");
+ok( $exabayes->z(1), "quiet mode");
+ok( $exabayes->d(1), "performing dry runs");
 
-my $phylip = "$Bin/supermatrix.phy";
-my $intree = "$Bin/common.dnd";
+# dry run very small example 
+my $phylip = "$Bin/example.phy";
+my $intree = "$Bin/example.dnd";
+ok( $exabayes->run('-phylip'=> $phylip, '-intree'=> $intree));
 
-#my $phylip = "$Bin/example.phy";
-#my $intree = "$Bin/example.dnd";
+# dry run larger example
+ok( $exabayes->run('-phylip'=> $phylip, '-intree'=> $intree));
+$phylip = "$Bin/supermatrix.phy";
+$intree = "$Bin/common.dnd";
+ok( $exabayes->run('-phylip'=> $phylip, '-intree'=> $intree));
 
-my $parser = $exabayes->parser;
-print "Parser = $parser \n";
-
-
-$exabayes->run('-phylip'=> $phylip, '-intree'=> $intree);
-##$exabayes->run("$Bin/testdata.xml");
-
-print "Directory : $wd \n";
+# dry run from nexml file
+ok( $exabayes->run("$Bin/testdata.xml"));
