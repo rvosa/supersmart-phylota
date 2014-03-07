@@ -132,4 +132,34 @@ sub infer_clade_tree {
 
 }
 
+# reads the supermatrix (phylip format) and returns the tip names from it
+sub read_tipnames {
+	my ($self, $supermatrix) = @_;
+        my $logger = $self->logger;	
+	my $ntax = 0;
+	my $line = 0;
+	my @result;	
+        open my $fh, '<', $supermatrix or die $!;
+	LINE: while(<$fh>) {
+		chomp;
+		my $word;                     
+		if ( /^(\S+)/ ) {                        
+			$word = $1;
+                }
+		if ( not $ntax ) {
+			$ntax = $word;
+                        print "Ntax : $ntax \n";
+			$logger->debug("$supermatrix has $ntax taxa");
+                        next LINE;
+                }
+		if ( $word ) {
+                        push @result, $word;
+                };
+		$logger->debug("adding taxon $word");
+		last LINE if ++$line == $ntax;
+	}
+	return @result;
+}
+
+
 1;
