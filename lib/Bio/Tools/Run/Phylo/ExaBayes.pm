@@ -9,12 +9,14 @@ use Bio::Phylo::IO 'parse';
 use Bio::Tools::Run::Phylo::PhyloBase;
 use Bio::Phylo::Util::CONSTANT ':objecttypes';
 use Bio::Phylo::Util::Logger;
+use Bio::Phylo::PhyLoTA::Service::TreeService;
 
 use Bio::Tools::Run::Phylo::ExaML;
 
 use base qw(Bio::Tools::Run::Phylo::PhyloBase);
 
 my $examl = Bio::Tools::Run::Phylo::ExaML->new;
+my $ts = Bio::Phylo::PhyLoTA::Service::TreeService->new;
 
 our $PROGRAM_NAME = 'yggdrasil';
 our $POSTPROCESS_PROGRAM_NAME = 'consense';
@@ -76,68 +78,6 @@ sub new {
     return $self;
 }
 
-#sub run {
-#    my $self = shift;
-#    my $phylip;
-#    if (@_ == 1){
-#	$phylip = shift;
-#    } else {
-#	die "Need phylip file";
-#    }
-#    print "PHYLIP : $phylip \n";
-
-    # compile command string with executable and parameters
-#    my $string = $self->executable . $self->_setparams($phylip, @ExaBayes_PARAMS, @ExaBayes_SWITCHES);       
-#    print "String : $string \n";
-#    
-#    my $curdir = getcwd;
-#    $log->info("going to run '$string' inside ".$self->w);
-#    print "going to run '$string' inside ".$self->w."\n";
-#    system($string) and $self->warn("Couldn't run ExaBayes: $?");
-
-    # compile command string for building the conensus tree
-    ##my $post_string = $POSTPROCESS_PROGRAM_NAME . 
-    
-#}
-
-=item 
-sub prepare_tree {
-        my $self = shift;
-        my ($intree, $phylip) = @_;
-        
-        my @tipnames = read_tipnames( $phylip );
-        my $tree = parse(
-                '-format' => 'newick',
-                '-file'   => $intree,
-            );
-        $tree -> keep_tips( @tipnames );
-        $tree -> resolve;
-        $tree -> remove_unbranched_internals;
-        $tree -> deroot;                                      
-        return($examl->_make_intree( $taxa, $tree ));
-} 
-=cut
-
-=item c
-sub run {
-	my $self = shift;	
-        my %args = @_;
-        my $phylip  = $args{'-phylip'} || die "Need -phylip arg";
-        my $intree  = $args{'-intree'} || die "Need -intree arg";
-        my $tree = parse(
-                '-format' => 'newick',
-                '-file'   => $intree,
-            );                
-        my $binary = $examl->_make_binary( $phylip );               
-        my $string = $self->executable . $self->_setparams($binary, $intree);       
-        print "String : $string \n";
-        
-        my $curdir = getcwd;
-        $log->info("going to run '$string' inside ".$self->w);
-        print "going to run '$string' inside ".$self->w."\n";
-        system($string) and $self->warn("Couldn't run ExaBayes: $?");
-} 
-=cut 
 
 sub run {
 	my $self = shift;
@@ -173,24 +113,28 @@ sub run {
                 $phylip = $examl->_make_phylip( $taxa, @matrix );
         }
         print "Phylip : $phylip \n";
+        
         my $binary = $examl->_make_binary( $phylip );
-        my @tipnames = read_tipnames( $phylip );
+        my @tipnames = $ts->read_tipnames( $phylip );
 
         
-        #for my $ti (@tipnames){
-        #        print "Ti : $ti \n";                
-        #}
+        for my $ti (@tipnames){
+                print "Ti : $ti \n";                
+        }
         my ($tree) = @{ $project->get_items(_TREE_) }; 
         my $intree = $self->_make_intree($taxa, $tree, \@tipnames );
         print "Tree ".ref($tree)."\n";
-
-        my $string = $self->executable . $self->_setparams($binary, $intree);       
+        print "Tree file ".$tree."\n";        
+        my $string = $self->executable . $self->_setparams($phylip, $intree);       
         print "String : $string \n";
-        
+        ##die();
         my $curdir = getcwd;
         $log->info("going to run '$string' inside ".$self->w);
         print "going to run '$string' inside ".$self->w."\n";
         system($string) and $self->warn("Couldn't run ExaBayes: $?");
+        
+        #return $self->_cleanup;
+        return(1);
 }
 
 
@@ -216,11 +160,11 @@ sub _make_intree {
 	my $treefile = File::Spec->catfile( $self->w, $self->n . '.dnd' );
 	open my $treefh, '>', $treefile or die $!;
 	if ( $tree ) {
-                ##for my $ti (@{$tipnames}){
-                        ##print "Ti2:$ti: \n";
-                ##}                                        
+                for my $ti (@{$tipnames}){
+                        print "Ti2:$ti: \n";
+                }                                        
                 $tree -> keep_tips( [@{$tipnames}] );
-                $tree -> resolve;
+                ##$tree -> resolve;
                 $tree -> remove_unbranched_internals;
                 $tree -> deroot;                                                              
                 print $treefh $tree->to_newick;
@@ -241,33 +185,6 @@ sub _make_intree {
                 return $self->_make_intree( $taxa, $tree, $tipnames);
 	}
 	return $treefile;
-}
-
-
-# reads the supermatrix (phylip format) and returns the tip names from it
-sub read_tipnames {
-	my $supermatrix = shift;
-	my $ntax = 0;
-	my $line = 0;
-	my @result;	
-        print "Supermatrix : $supermatrix \n";
-        open my $fh, '<', $supermatrix or die $!;
-	LINE: while(<$fh>) {
-		chomp;
-		my $word;
-		if ( /^(\S+)/ ) {
-			$word = $1;
-		}
-		if ( not $ntax ) {
-			$ntax = $word;
-			##$logger->debug("$supermatrix has $ntax taxa");
-			next LINE;
-		}
-		push @result, $word;
-		##$logger->debug("adding taxon $word");
-		last LINE if ++$line == $ntax;
-	}
-	return @result;
 }
 
 
