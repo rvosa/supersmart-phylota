@@ -275,6 +275,43 @@ sub get_tree_for_nodes {
     return $tree;
 }
 
+
+=item get_species_for_taxon
+
+Returns a list of species names for all descendent species of a given root taxon.
+
+=cut
+
+sub get_species_for_taxon {
+        my ($self, $root_taxon) = @_;
+        my @result = ();
+        my @nodes = $self->get_nodes_for_names($root_taxon);
+        my @tips;
+        my @queue = (@nodes);
+        while ( @queue ) {
+                my $node = shift @queue;
+                my @children = @{ $node->get_children };
+                if ( @children ) {
+                        push @queue, @children;
+                }
+                else {
+                        if ( $node->rank eq "species" ){
+                                my $tipname = $node->get_name;
+                                push @result, $tipname;
+                        }
+                }
+        }                         
+        # write results to file
+        #my $outfile = $root_taxon.".txt";
+        #open my $fh, '>', $outfile or die "Cannot open output.txt: $!";
+        #foreach ( sort @result ) {
+        #        print $fh "$_\n";
+        #}
+        #close $fh;
+        
+        return @result;
+}
+
 =item taxa_are_disjoint
 
 Computes whether two array references of taxon IDs are non-overlapping (i.e.
