@@ -23,6 +23,10 @@ $log->VERBOSE(
 	'-class' => 'Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector',
 );
 
+# get species for a given root taxon
+my @taxon_names = $mts->get_species_for_taxon("Gentianales");
+cmp_ok (scalar @taxon_names, '>=', 5000, "get species for root taxon");
+
 # we are going to read the text files in the results/specieslists dir,
 # so we first need its location based on the system config, see phylota.ini
 my $config = Bio::Phylo::PhyLoTA::Config->new;
