@@ -1,6 +1,7 @@
 package Bio::Phylo::PhyLoTA::Service::TreeService;
 use strict;
 use warnings;
+use Cwd;
 use File::Temp 'tempfile';
 use Bio::Phylo::IO 'parse_tree';
 use Bio::Phylo::PhyLoTA::Config;
@@ -8,6 +9,7 @@ use Bio::Phylo::PhyLoTA::Service;
 use base 'Bio::Phylo::PhyLoTA::Service';
 
 my $config = Bio::Phylo::PhyLoTA::Config->new;
+my $log = Bio::Phylo::PhyLoTA::Service->logger;	
 
 # writes a tree description that spans provided taxa/clade to file
 sub write_tree {
@@ -56,7 +58,6 @@ sub consense_trees {
 # grafts a clade tree into a backbone tree, returns backbone
 sub graft_tree {
 	my ( $self, $backbone, $clade ) = @_;
-	my $log = $self->logger;	
 	my @names = map { $_->get_name } @{ $clade->get_terminals };
 	$log->debug("@names");
 	
@@ -125,12 +126,68 @@ sub graft_tree {
 
 # builds a tree using the configured tree inference method
 sub infer_backbone_tree {
-
+        
 }
 
 sub infer_clade_tree {
-
+        
 }
+
+sub make_phylip_binary {
+	my ( $self, $phylip, $binfile, $parser, $work_dir) = @_;
+	$log->info("going to make binary representation of $phylip => $binfile");	
+        $log->info("using parser $parser");	
+	my ( $binvolume, $bindirectories, $binbase ) = File::Spec->splitpath( $binfile );
+        my $curdir = getcwd;
+	chdir $work_dir;        
+	my @command = ( $parser, 
+		'-m' => 'DNA', 
+		'-s' => $phylip, 
+		'-n' => $binfile,
+		'>'  => File::Spec->devnull,		
+		'2>' => File::Spec->devnull,
+	);
+	my $string = join ' ', @command;
+	$log->info("going to run '$string' inside " . $work_dir );
+	system($string) and $self->warn("Couldn't create $binfile: $?");        
+	chdir $curdir;
+        return "${binfile}.binary";
+}
+
+sub make_phylip_from_matrix {
+	my ( $self, $taxa, $phylipfile, @matrix ) = @_;
+	
+	# create phylip file for parser
+	open my $phylipfh, '>', $phylipfile or die $!;
+	my %nchar_for_matrix;
+	my $ntax  = $taxa->get_ntax;
+	my $nchar = 0;
+	for my $m ( @matrix ) {
+		my $mid = $m->get_id;
+		$nchar_for_matrix{$mid} = $m->get_nchar;
+		$nchar += $nchar_for_matrix{$mid};
+	}
+	print $phylipfh $ntax, ' ', $nchar, "\n";
+	$taxa->visit(sub{
+		my $t = shift;
+		my @d = @{ $t->get_data };
+		print $phylipfh $t->get_name, ' ';
+		for my $m ( @matrix ) {
+			my $mid = $m->get_id;
+			my ($row) = grep { $_->get_matrix->get_id == $mid } @d;
+			if ( $row ) {
+				print $phylipfh $row->get_char;
+			}
+			else {
+				print $phylipfh '?' x $nchar_for_matrix{$mid};
+			}
+		}
+		print $phylipfh "\n";
+	});	
+	return $phylipfile;
+}
+
+
 
 # reads the supermatrix (phylip format) and returns the tip names from it
 sub read_tipnames {
@@ -147,8 +204,7 @@ sub read_tipnames {
 			$word = $1;
                 }
 		if ( not $ntax ) {
-			$ntax = $word;
-                        print "Ntax : $ntax \n";
+			$ntax = $word;                        
 			$logger->debug("$supermatrix has $ntax taxa");
                         next LINE;
                 }
