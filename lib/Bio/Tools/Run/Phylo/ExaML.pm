@@ -9,6 +9,7 @@ use Bio::Phylo::IO 'parse';
 use Bio::Tools::Run::Phylo::PhyloBase;
 use Bio::Phylo::Util::CONSTANT ':objecttypes';
 use Bio::Phylo::Util::Logger;
+use Bio::Phylo::PhyLoTA::Service::TreeService;
 use base qw(Bio::Tools::Run::Phylo::PhyloBase);
 
 =head1 NAME
@@ -46,6 +47,7 @@ our $PROGRAM_NAME = 'examl';
 our @ExaML_PARAMS = qw(B c e f i m);
 our @ExaML_SWITCHES = qw(a D M Q S);
 my $log = Bio::Phylo::Util::Logger->new;
+my $treeservice = Bio::Phylo::PhyLoTA::Service::TreeService->new;
 
 =item new
 
@@ -242,15 +244,17 @@ sub run {
 		my ($taxa) = @{ $project->get_items(_TAXA_) };
 	
 		# create input files
-		$phylip = $self->_make_phylip( $taxa, @matrix );
+                my $phylipfile = File::Spec->catfile( $self->work_dir, $self->run_id . '.phy' );
+		$phylip = $treeservice->make_phylip_from_matrix( $taxa, $phylipfile, @matrix );
 		$intree = $self->_make_intree( $taxa, $tree );		
-	}
-	else {
+	} 
+        else {
 		my %args = @_;
 		$phylip  = $args{'-phylip'} || die "Need -phylip arg";
 		$intree  = $args{'-intree'} || die "Need -intree arg";
 	}
-	my $binary = $self->_make_binary( $phylip );
+        my $binary = $self->run_id . '-dat';
+	my $binary = $treeservice ->make_phylip_binary( $phylip, $binary, $self->parser, $self->work_dir);
 	
 	# compose argument string: add MPI commands, if any
 	my $string;
@@ -265,7 +269,7 @@ sub run {
 	my $curdir = getcwd;
 	chdir $self->work_dir;	
 	$log->info("going to run '$string' inside ".$self->work_dir);
-        print "going to run '$string' inside ".$self->work_dir."\n";
+        print "going to run '$string' inside " . $self->work_dir . "\n";
 	system($string) and $self->warn("Couldn't run ExaML: $?");
 	chdir $curdir;
 	
@@ -300,29 +304,6 @@ sub _cleanup {
 	return $self->outfile_name;
 }
 
-sub _make_binary {
-	my ( $self, $phylip ) = @_;
-	my $binfile = File::Spec->catfile( $self->work_dir, $self->run_id . '-dat' );
-	$log->info("going to make binary representation of $phylip => $binfile");	
-	my ( $binvolume, $bindirectories, $binbase ) = File::Spec->splitpath( $binfile );
-	my ( $phylipvolume, $phylipdirectories, $phylipbase ) = File::Spec->splitpath( $phylip );	
-	my $curdir = getcwd;
-	chdir $self->work_dir;
-	my @command = ( $self->parser, 
-		'-m' => 'DNA', 
-		'-s' => $phylipbase, 
-		'-n' => $binbase,
-		'>'  => File::Spec->devnull,		
-		'2>' => File::Spec->devnull,
-	);
-	my $string = join ' ', @command;
-	$log->info("going to run '$string' inside ".$self->work_dir);
-	system($string) and $self->warn("Couldn't create $binfile: $?");
-	chdir $curdir;
-	return "${binfile}.binary";
-}
-
-
 sub _make_intree {
 	my ( $self, $taxa, $tree ) = @_;
 	my $treefile = File::Spec->catfile( $self->work_dir, $self->run_id . '.dnd' );
@@ -348,40 +329,6 @@ sub _make_intree {
 	return $treefile;
 }
 
-
-sub _make_phylip {
-	my ( $self, $taxa, @matrix ) = @_;
-	
-	# create phylip file for parser
-	my $phylipfile = File::Spec->catfile( $self->work_dir, $self->run_id . '.phy' );
-	open my $phylipfh, '>', $phylipfile or die $!;
-	my %nchar_for_matrix;
-	my $ntax  = $taxa->get_ntax;
-	my $nchar = 0;
-	for my $m ( @matrix ) {
-		my $mid = $m->get_id;
-		$nchar_for_matrix{$mid} = $m->get_nchar;
-		$nchar += $nchar_for_matrix{$mid};
-	}
-	print $phylipfh $ntax, ' ', $nchar, "\n";
-	$taxa->visit(sub{
-		my $t = shift;
-		my @d = @{ $t->get_data };
-		print $phylipfh $t->get_name, ' ';
-		for my $m ( @matrix ) {
-			my $mid = $m->get_id;
-			my ($row) = grep { $_->get_matrix->get_id == $mid } @d;
-			if ( $row ) {
-				print $phylipfh $row->get_char;
-			}
-			else {
-				print $phylipfh '?' x $nchar_for_matrix{$mid};
-			}
-		}
-		print $phylipfh "\n";
-	});	
-	return $phylipfile;
-}
 
 sub _setparams {
     my ( $self, $infile, $intree ) = @_;
