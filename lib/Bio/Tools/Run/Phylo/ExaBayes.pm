@@ -11,14 +11,11 @@ use Bio::Phylo::Util::CONSTANT ':objecttypes';
 use Bio::Phylo::Util::Logger;
 use Bio::Phylo::PhyLoTA::Service::TreeService;
 
-use Bio::Tools::Run::Phylo::ExaML;
-
 use base qw(Bio::Tools::Run::Phylo::PhyloBase);
 
-my $examl = Bio::Tools::Run::Phylo::ExaML->new;
-my $ts = Bio::Phylo::PhyLoTA::Service::TreeService->new;
+my $treeservice = Bio::Phylo::PhyLoTA::Service::TreeService->new;
 
-our $PROGRAM_NAME = 'yggdrasil';
+our $PROGRAM_NAME = 'exabayes';
 our $POSTPROCESS_PROGRAM_NAME = 'consense';
 
 our @ExaBayes_PARAMS = (
@@ -34,6 +31,15 @@ our @ExaBayes_PARAMS = (
         'R',        # num:        number of runs (i.e., independent chains) to be executed in parallel
         'C',        # num:        number of chains (i.e., coupled chains) to be executed in parallel
         'M'         # mode:       memory versus runtime trade-off, value 0 (fastest) to 3 (most memory efficient)        
+    );
+
+our @ExaBayes_CONFIGFILE_PARAMS = (
+        # RUN parameters
+        'numRuns',           # number of independant runs
+        'numGen',            # number of generations to run. Defaults to 1e6
+
+        #MCMC parameters
+        'numCoupledChains'   # number of chains per independent run
     );
 
 our @Consense_PARAMS = (
@@ -61,16 +67,38 @@ our @ExaBayes_SWITCHES = (
     );
 
 
+# Create function aliases for (one letter) command line arguments and switches
+
+=item work_dir
+
+Getter/setter. Intermediate files will be written here.
+
+=cut
+
+*work_dir = *w;
+
+=item run_id
+
+Getter/setter for an ID string for this run. by default based on the PID. this only has
+to be unique during the runtime of this process, all files that have the run ID in them
+are cleaned up afterwards.
+
+=cut
+
+*run_id = *n;
+
+*config_file = *c;
+
+
 my $log = Bio::Phylo::Util::Logger->new;
 
-##*work_dir = *w;
 
 sub new {
     my ( $class, @args ) = @_;
     my $self = $class->SUPER::new(@args);
     $self->_set_from_args(
         \@args,
-        '-methods' => [ @ExaBayes_PARAMS, @ExaBayes_SWITCHES ],
+        '-methods' => [ @ExaBayes_PARAMS, @ExaBayes_SWITCHES, @ExaBayes_CONFIGFILE_PARAMS ],
         '-create'  => 1,
     );
     my ($out) = $self->SUPER::_rearrange( [qw(OUTFILE_NAME)], @args );
@@ -81,11 +109,11 @@ sub new {
 
 sub run {
 	my $self = shift;
- 	my ($project, $phylip);# $phylip, $intree );
+ 	my ($project, $phylip);
 	
 	# one argument means it's a nexml file
 	if ( @_ == 1 ) {
-                print "HIER\n";
+
                 my $nexml = shift;	
 		# read nexml input
 		$project = parse(
@@ -93,8 +121,8 @@ sub run {
 			'-file'       => $nexml,
 			'-as_project' => 1,
 		);	
-	}
-	else {
+	} 
+        else {
 		my %args = @_;
                 $project = parse(
 			'-format'     => 'newick',
@@ -103,46 +131,91 @@ sub run {
 		);
                 $phylip = $args{'-phylip'}
 	}
-        print "Project ".ref($project)."\n";
         my @matrix = @{ $project->get_items(_MATRIX_) };
         my ($taxa) = @{ $project->get_items(_TAXA_) };
-        print "Matrix ".ref(@matrix[0])."\n";        
-        print "Taxa ".ref($taxa)."\n";        
         
+        # Create phylip file if it does not exist yet
         if (! $phylip){                                
-                $phylip = $examl->_make_phylip( $taxa, @matrix );
+                my $phylip_filename = File::Spec->catfile( $self->work_dir, $self->run_id . '.phy' );
+                $phylip = $treeservice->make_phylip_from_matrix( $taxa, $phylip_filename, @matrix );
         }
-        print "Phylip : $phylip \n";
         
-        my $binary = $examl->_make_binary( $phylip );
-        my @tipnames = $ts->read_tipnames( $phylip );
-
+        my $binary = $self->run_id . '-dat' ;
+        $binary = $treeservice->make_phylip_binary( $phylip, $binary, $self->parser, $self->work_dir );
+                                               
+        my @tipnames = $treeservice->read_tipnames( $phylip );
         
-        for my $ti (@tipnames){
-                print "Ti : $ti \n";                
-        }
         my ($tree) = @{ $project->get_items(_TREE_) }; 
         my $intree = $self->_make_intree($taxa, $tree, \@tipnames );
-        print "Tree ".ref($tree)."\n";
-        print "Tree file ".$tree."\n";        
-        my $string = $self->executable . $self->_setparams($phylip, $intree);       
-        print "String : $string \n";
-        ##die();
+
+        # compose argument string: add MPI commands, if any
+        my $string;
+        print "MPIRUN : ".$self->mpirun." NODES: ".$self->nodes."\n"; 
+        if ( $self->mpirun && $self->nodes ) {
+		$string = sprintf '%s -np %i ', $self->mpirun, $self->nodes;
+	}
+
+        $string .= $self->executable . $self->_setparams($binary, $intree);       
+
         my $curdir = getcwd;
-        $log->info("going to run '$string' inside ".$self->w);
-        print "going to run '$string' inside ".$self->w."\n";
+	chdir $self->work_dir;	
+        
+        $log->info("going to run '$string' inside ".$self->work_dir);
+        print "going to run '$string' inside ".$self->work_dir."\n";
         system($string) and $self->warn("Couldn't run ExaBayes: $?");
+        
+        # It is not possible to specify an output file name for an Exabayes run. 
+        # We therefore move the ExBayes output topology file to the one specified
+        # by the user in 'outfile_name'
+        my ($volume, $directory, $file) = File::Spec->splitpath( $binary );
+        my $exabayes_outfile = "ExaBayes_topologies." . $self->run_id . ".0";
+        my $full_path = File::Spec->catpath( $volume, $self->work_dir, $exabayes_outfile );
+
+        chdir $curdir;
+
+        $string = "mv $full_path ".$self->outfile_name;
+        print "mv String : $string \n";
+        system($string) and $self->warn("Couldn't change name of outputile name to ".$self->outfile_name.": $?");
+        
+        
         
         #return $self->_cleanup;
         return(1);
 }
 
+=item mpirun
+
+Getter/setter for the location of the mpirun program for parallelized runs. When unset,
+no parallelization is attempted.
+
+=cut
+
+sub mpirun {
+        my ( $self, $mpirun ) = @_;
+        if ( $mpirun ) {
+		$self->{'_mpirun'} = $mpirun;
+	}
+	return $self->{'_mpirun'};
+}
+
+=item nodes
+
+Getter/setter for number of mpi nodes
+
+=cut
+
+sub nodes {
+	my ( $self, $nodes ) = @_;
+	if ( $nodes ) {
+		$self->{'_nodes'} = $nodes;
+	}
+	return $self->{'_nodes'};
+}
 
 =item parser
 
 Getter/setter for the location of the parser program (which creates a compressed, binary 
-representation of the input alignment) that comes with examl. By default this is found
-on the PATH.
+representation of the input alignment) that comes with ExaBayes. 
 
 =cut
 
@@ -154,17 +227,30 @@ sub parser {
 	return $self->{'_parser'} || 'parser';
 }
 
+sub _write_config_file {
+        my $self = shift;
+        my $conffile = File::Spec->catfile( $self->work_dir, $self->run_id . '.nex' );
+	open my $conffh, '>', $conffile or die $!;
+        print $conffh "#NEXUS\n";
+        print $conffh "begin run;\n";
+        for my $attr (@ExaBayes_CONFIGFILE_PARAMS) {
+                my $value = $self->$attr();
+                next unless defined $value;
+                print $conffh $attr . "\t" . $value . "\n";
+        }
+        print $conffh "end;\n";
+        close $conffh;
+        $self->config_file($conffile);
+        return $self->config_file;
+}
 
 sub _make_intree {
 	my ( $self, $taxa, $tree, $tipnames ) = @_;
-	my $treefile = File::Spec->catfile( $self->w, $self->n . '.dnd' );
+	my $treefile = File::Spec->catfile( $self->work_dir, $self->run_id . '.dnd' );
 	open my $treefh, '>', $treefile or die $!;
 	if ( $tree ) {
-                for my $ti (@{$tipnames}){
-                        print "Ti2:$ti: \n";
-                }                                        
                 $tree -> keep_tips( [@{$tipnames}] );
-                ##$tree -> resolve;
+                $tree -> resolve;
                 $tree -> remove_unbranched_internals;
                 $tree -> deroot;                                                              
                 print $treefh $tree->to_newick;
@@ -179,10 +265,10 @@ sub _make_intree {
 		$tree->visit(sub{
 			my $n = shift;
 			if ( $n->is_terminal ) {
-				$n->set_name( @{$tipnames}[$i++]);
+				$n->set_name( @{$tipnames}[$i++] );
 			}
 		});
-                return $self->_make_intree( $taxa, $tree, $tipnames);
+                return $self->_make_intree( $taxa, $tree, $tipnames );
 	}
 	return $treefile;
 }
@@ -192,6 +278,12 @@ sub _make_intree {
 sub _setparams {
     my ( $self, $infile, $intree ) = @_;
     my $param_string = '';
+
+    # add config file to parameters if not already existant
+    if (! $self->config_file){
+            $self->_write_config_file;
+    }
+    #$params_string .= ' -c ' . self->$config_file;
 
 	# iterate over parameters and switches
     for my $attr (@ExaBayes_PARAMS) {
@@ -204,20 +296,12 @@ sub _setparams {
         next unless $value;
         $param_string .= ' -' . $attr;
     }
-
-    # Set default output file if no explicit output file has been given
-#    if ( ! $self->outfile_name ) {
-#        my ( $tfh, $outfile ) = $self->io->tempfile( '-dir' => $self->work_dir );
-#        close $tfh;
-#        undef $tfh;
-#        $self->outfile_name($outfile);
-#    }
     
     # set file names to local
     my %path = ('-f' => $infile,  '-t' => $intree ); ##, '-n' => $self->outfile_name );
-	while( my ( $param, $path ) = each %path ) {		
+    while( my ( $param, $path ) = each %path ) {		
 		$param_string .= " $param $path";
-	}
+    }
     
     # hide stderr
     my $null = File::Spec->devnull;
@@ -225,46 +309,6 @@ sub _setparams {
 
     return $param_string;
 }
-
-
-
-#sub _setparams {
-#    my ( $self, $infile, @params, @switches, $binary, $intree) = @_;
-#    my $param_string = '';
-
-    # iterate over parameters and switches
-#    for my $attr (@params) {
-#        my $value = $self->$attr();
-#        next unless defined $value;
-#        $param_string .= ' -' . $attr . ' ' . $value;
-#    }
-#    for my $attr (@switches) {
-#        my $value = $self->$attr();
-#        next unless $value;
-#        $param_string .= ' -' . $attr;
-#    }
-
-    # Set default output file if no explicit output file has been given
-#    if ( ! $self->outfile_name ) {
-#            my ( $tfh, $outfile ) = $self->io->tempfile( '-dir' => $self->work_dir );
-#            close $tfh;
-#            undef $tfh;
-#            $self->outfile_name($outfile);
-#    }
-    
-    # set file names to local
-    #my %path = ( '-t' => $intree, '-s' => $infile, '-n' => $self->outfile_name );
-#    my %path = ('-f' => $infile);
-#    while( my ( $param, $path ) = each %path ) {
-#            $param_string .= " $param $path";
-#    }
-    
-    # hide stderr
-#    my $null = File::Spec->devnull;
-#    $param_string .= " > $null 2> $null" if $self->quiet() || $self->verbose < 0;
-
-#    return $param_string;
-#}
 
 
 sub program_name { $PROGRAM_NAME }
@@ -292,8 +336,5 @@ sub version {
     $string =~ /ExaBayes, version (\d+\.\d+\.\d+)/;
     return version->parse($1) || undef;
 }
-
-
-
 
 1;
