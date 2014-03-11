@@ -276,39 +276,79 @@ sub get_tree_for_nodes {
 }
 
 
-=item get_species_for_taxon
+=item expand_taxa
 
-Returns a list of species names for all descendent species of a given root taxon.
+Returns a list of taxon names for all descendent leaf taxa of a given root taxon.
+The 'lowest taxonomic rank' to be considered can be specified in the config file. 
+If leaves are found that are lower than the 'lowest taxonomic rank', their parents are
+considered a leaf in the tree (if themselfes are at least at the level 
+of 'lowest taxonomic rank').   
 
 =cut
 
-sub get_species_for_taxon {
-        my ($self, $root_taxon) = @_;
+sub expand_taxa {
+        my ($self, @root_taxa) = @_;                
         my @result = ();
-        my @nodes = $self->get_nodes_for_names($root_taxon);
-        my @tips;
-        my @queue = (@nodes);
+
+        # ranks in NCBI taxonomy
+        my @taxonomic_ranks = ('superkingdom', 'kingdom', 'subkingdom', 'superphylum', 'phylum',
+                               'subphylum', 'superclass', 'class', 'subclass', 'infraclass', 'superorder',
+                               'order', 'suborder', 'infraorder', 'parvorder', 'superfamily', 'family',
+                               'subfamily', 'tribe', 'subtribe', 'genus', 'subgenus', 'species group',
+                               'species subgroup', 'species', 'subspecies','varietas', 'forma', 'no rank');
+
+        # keep ranks that are higher or equal to highest rank specified in phylota.ini
+        my $config = Bio::Phylo::PhyLoTA::Config->new;
+        my $lowest_rank = $config->LOWEST_TAXON_RANK;
+        $log->info("expanding taxa names to taxonomic level down to '$lowest_rank'");
+
+        my ($index) = grep { uc $taxonomic_ranks[$_] eq uc $lowest_rank } 0..$#taxonomic_ranks;
+        if (! $index){
+                $log->warn("invalid lowest taxon rank '$lowest_rank', considering all ranks for taxa expansion");
+        }
+        # make subset of ranks that are considered, add 'no rank'
+        my @valid_ranks = @taxonomic_ranks[ 0 .. $index ];
+        push @valid_ranks, 'no rank';
+        
+        my @nodes = $self->get_nodes_for_names( @root_taxa );
+        my @queue = ( @nodes );
+
+        # traverse the tree upwards and keep the leaves that have at least
+        #  the taxnomic rank specified in phylota.ini
         while ( @queue ) {
                 my $node = shift @queue;
                 my @children = @{ $node->get_children };
-                if ( @children ) {
+
+                # if there is at least one child which has not reached the 
+                # specified lowest taxonomic rank yet, we keep traversing 
+                # the tree
+                my @child_ranks = map { $_->rank } @children;
+                my $stop = 1;
+                foreach  my $rank ( @child_ranks ) {
+                        if ( grep { $_ eq $rank } @valid_ranks ) {
+                                $stop = 0;
+                                last;
+                        }
+                }                
+                if ( ! $stop ) {                                                                       
                         push @queue, @children;
                 }
                 else {
-                        if ( $node->rank eq "species" ){
+                        # check if current node has valid rank, if yes it 
+                        # is in the result list
+                        if ( grep { $_ eq $node->rank } @valid_ranks ) {
                                 my $tipname = $node->get_name;
-                                push @result, $tipname;
+                                push @result, $tipname;                        
                         }
-                }
-        }                         
+                }                
+        }                 
         # write results to file
-        #my $outfile = $root_taxon.".txt";
-        #open my $fh, '>', $outfile or die "Cannot open output.txt: $!";
+        #my $outfile = "expanded_taxa.txt";
+        #open my $fh, '>', $outfile or die "Cannot open $outfile.txt: $!";
         #foreach ( sort @result ) {
         #        print $fh "$_\n";
         #}
-        #close $fh;
-        
+        #close $fh;        
         return @result;
 }
 
