@@ -46,10 +46,9 @@ sub consense_trees {
 	my $tmpl = '%s -burnin %i %s %s 2> /dev/null';
 	my $command = sprintf $tmpl, $config->TREEANNOTATOR_BIN, $babs, $infile, $outfile;
 	system($command) and die "Error building consensus: $?";
-	
 	# return the resulting tree
 	return parse_tree(
-		'-format' => 'nexus',
+	        '-format' => 'nexus',
 		'-file'   => $outfile,
 		'-as_project' => 1,
 	);
@@ -149,7 +148,7 @@ sub make_phylip_binary {
 	);
 	my $string = join ' ', @command;
 	$log->info("going to run '$string' inside " . $work_dir );
-	system($string) and $self->warn("Couldn't create $binfile: $?");        
+	system($string) and $log->warn("Couldn't create $binfile: $?");        
 	chdir $curdir;
         return "${binfile}.binary";
 }
