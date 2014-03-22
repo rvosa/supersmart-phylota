@@ -133,24 +133,24 @@ sub infer_clade_tree {
 }
 
 sub make_phylip_binary {
-	my ( $self, $phylip, $binfile, $parser, $work_dir) = @_;
-	$log->info("going to make binary representation of $phylip => $binfile");	
+	my ( $self, $phylip, $binfilename, $parser, $work_dir) = @_;
+	$log->info("going to make binary representation of $phylip => $binfilename");	
         $log->info("using parser $parser");	
-	my ( $binvolume, $bindirectories, $binbase ) = File::Spec->splitpath( $binfile );
+	my ( $phylipvolume, $phylipdirectories, $phylipbase ) = File::Spec->splitpath( $phylip );
         my $curdir = getcwd;
 	chdir $work_dir;        
 	my @command = ( $parser, 
 		'-m' => 'DNA', 
-		'-s' => $phylip, 
-		'-n' => $binfile,
+		'-s' => $phylipbase, 
+		'-n' => $binfilename,
 		'>'  => File::Spec->devnull,		
 		'2>' => File::Spec->devnull,
 	);
 	my $string = join ' ', @command;
 	$log->info("going to run '$string' inside " . $work_dir );
-	system($string) and $log->warn("Couldn't create $binfile: $?");        
+	my $a = system($string) and $log->warn("Couldn't create $binfilename: $?");        
 	chdir $curdir;
-        return "${binfile}.binary";
+	return "${binfilename}.binary";
 }
 
 sub make_phylip_from_matrix {
