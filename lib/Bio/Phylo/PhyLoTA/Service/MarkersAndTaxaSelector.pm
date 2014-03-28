@@ -74,8 +74,8 @@ sub get_nodes_for_names {
             
             # search the web service
             if ( my $id = $self->_do_tnrs_search($name) ) {
-		@nodes = $self->search_node( {  ti => $id } )->all;
-		$log->info("found match $id for $name through TNRS");
+	    	@nodes = $self->search_node( {  ti => $id } )->all;
+	    	$log->info("found match $id for $name through TNRS");
 	    }
             else {
                 $log->warn("couldn't find name $name anywhere!");
@@ -288,6 +288,18 @@ of 'lowest taxonomic rank').
 
 sub expand_taxa {
         my ($self, @root_taxa) = @_;                
+        
+        # keep ranks that are higher or equal to highest rank specified in phylota.ini
+        my $config = Bio::Phylo::PhyLoTA::Config->new;
+        my $lowest_rank = $config->ROOT_TAXA_EXPANSION;
+        # do not expand taxa if lowest rank not set in config
+        if ( ! $lowest_rank ) {
+                $log->info("ROOT_TAXA_EXPANSION not set in config file, skipping taxa expansion");
+                return ( @root_taxa );
+        }
+        
+        $log->info("expanding taxa names to taxonomic level down to '$lowest_rank'");
+
         my @result = ();
 
         # ranks in NCBI taxonomy
@@ -296,11 +308,6 @@ sub expand_taxa {
                                'order', 'suborder', 'infraorder', 'parvorder', 'superfamily', 'family',
                                'subfamily', 'tribe', 'subtribe', 'genus', 'subgenus', 'species group',
                                'species subgroup', 'species', 'subspecies','varietas', 'forma', 'no rank');
-
-        # keep ranks that are higher or equal to highest rank specified in phylota.ini
-        my $config = Bio::Phylo::PhyLoTA::Config->new;
-        my $lowest_rank = $config->LOWEST_TAXON_RANK;
-        $log->info("expanding taxa names to taxonomic level down to '$lowest_rank'");
 
         my ($index) = grep { uc $taxonomic_ranks[$_] eq uc $lowest_rank } 0..$#taxonomic_ranks;
         if (! $index){
@@ -311,6 +318,7 @@ sub expand_taxa {
         push @valid_ranks, 'no rank';
         
         my @nodes = $self->get_nodes_for_names( @root_taxa );
+
         my @queue = ( @nodes );
 
         # traverse the tree upwards and keep the leaves that have at least
