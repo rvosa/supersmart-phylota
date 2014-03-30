@@ -37,6 +37,7 @@ package {
 	"gcc-c++":                  ensure => installed;	
 	"curl":                     ensure => installed;
 	"gzip":                     ensure => installed;
+        "subversion":               ensure => installed;
 }
 
 # set up the mysql daemon process
@@ -84,9 +85,9 @@ file {
 
 # command line tasks
 exec {
-
+  
 	# make phylota database
-	"dl_phylota_dump":
+        "dl_phylota_dump":
 		command => "wget https://dl.dropboxusercontent.com/u/4180059/phylota.tar.gz",
 		cwd     => "/usr/share/supersmart",
 		creates => "/usr/share/supersmart/phylota.tar.gz",
@@ -226,7 +227,6 @@ exec {
 		cwd     => "/usr/local/src/Math-Random-0.70",		
 		creates => "/usr/local/lib64/perl5/Math/Random.pm",
 		require => Exec["make_makefile_math_random"];	
-
           
         # install perl package Parallel::MPI::Simple
 	"download_parallel_mpi_simple":
@@ -320,6 +320,35 @@ exec {
                 command => "chown -R vagrant examples/",
                 cwd     => "/usr/local/src/supersmart",
                 require => Exec["clone_supersmart"];
+
+        # install BEAST
+        "download_beast":
+                command => "wget https://beast-mcmc.googlecode.com/files/BEASTv1.8.0.tgz",
+                cwd     => "/usr/local/src",
+                creates => "/usr/local/src/BEASTv1.8.0.tgz",
+                require => Package[ 'wget' ];
+        "unzip_beast":
+                command => "tar -xvzf BEASTv1.8.0.tgz",
+                cwd     => "/usr/local/src/",
+                creates => "/usr/local/src/BEASTv1.8.0/bin/beast",
+                require => Exec[ 'download_beast' ];
+
+        # install beagle-lib
+        "checkout_beagle_lib":
+                command => "svn checkout http://beagle-lib.googlecode.com/svn/trunk/ beagle-lib",
+                cwd     => "/usr/local/src",
+                creates => "/usr/local/src/beagle-lib/autogen.sh",
+                require => Package[ 'subversion' ];
+        "generate_beagle_config":
+                command => "sh autogen.sh",
+                cwd     => "/usr/local/src/beagle-lib/",
+                creates => "/usr/local/src/beagle-lib/configure",
+                require => Exec[ 'checkout_beagle_lib' ];
+        "build_beagle_lib":
+                command => "sh configure && make install",
+                cwd     => "/usr/local/src/beagle-lib/",
+                creates => "/usr/local/lib/libhmsbeagle.so",
+                require => Exec[ 'generate_beagle_config' ];
           
 	# install treePL
 	"clone_treepl":
