@@ -5,8 +5,7 @@ use Getopt::Long;
 use Bio::Phylo::IO 'parse_tree';
 use Bio::Phylo::Util::Logger ':levels';
 use Bio::Phylo::PhyLoTA::Config;
-use Bio::Phylo::PhyLoTA::Service::FossilDataGetter;
-use Bio::Phylo::PhyLoTA::Service::CalibrationTableCreator;
+use Bio::Phylo::PhyLoTA::Service::CalibrationService;
 
 =head1 NAME
 
@@ -54,16 +53,18 @@ my $tree = parse_tree(
 	'-as_project' => 1 
 );
 
+my $table;
+if ( $fossiltable ) {
 # read the spreadsheet with calibration points
 INFO "reading fossils from file $fossiltable";
-my $fdg = Bio::Phylo::PhyLoTA::Service::FossilDataGetter->new;
-my @fossils = $fdg->read_fossil_table($fossiltable);
+my $cs = Bio::Phylo::PhyLoTA::Service::CalibrationService->new;
+my @fossils = $cs->read_fossil_table($fossiltable);
 
 # make calibration table from fossils
 INFO "going to make calibration table";
-my $ctc = Bio::Phylo::PhyLoTA::Service::CalibrationTableCreator->new;
-my @points = map { $ctc->find_calibration_point($_) } @fossils;
-my $table = $ctc->create_calibration_table( $tree, @points );
+my @points = map { $cs->find_calibration_point($_) } @fossils;
+$table = $cs->create_calibration_table( $tree, @points );
+}
 
 # write the config file header
 INFO "printing treePL config file header";
@@ -74,6 +75,7 @@ numsites = $numsites
 outfile = $writetree
 HEADER
 
+if ( $table ) {
 # write the mrca statements
 my $counter;
 for my $row ( $table->get_rows ) {
@@ -85,7 +87,7 @@ for my $row ( $table->get_rows ) {
 	INFO "minimum age is " . $row->min_age;
 	INFO "maximum age is " . $row->max_age;
 }
-
+}
 # we run treePL in parallel using MPI
 print "nthreads = " . $config->NODES . "\n";
 
