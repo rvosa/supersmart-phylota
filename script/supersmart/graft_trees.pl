@@ -6,6 +6,34 @@ use Bio::Phylo::Util::Logger ':levels';
 use Bio::Phylo::IO 'parse_tree';
 use Bio::Phylo::PhyLoTA::Service::TreeService;
 
+=head1 NAME
+
+graft_trees.pl - fuses backbone tree with one or more clade trees
+
+=head1 SYNOPSYS
+ 
+ $ perl graft_trees.pl -workdir <directory> -backbone <file> -cladetree <file> \
+    -outfile <file> [--verbose]
+    
+=head1 DESCRIPTION
+
+Combines a backbone tree of representative genera with one or more clade trees which have been
+infered independently. Given a C<directory>  as argument C<-workdir>, traverses it, looks for subdirectories
+and files that match the pattern C<clade\d+/clade\d+\.nex>. These must be NEXUS files. 
+Given a single NEXUS C<file> file as C<-cladetree> argument, grafts this tree onto the backbone.
+The resulting tree is exported in the NEWICK format.
+
+=over
+
+=item outfile
+
+Optional file name to which the final tree is written. Defaults to "grafted.dnd".
+
+=item backbone
+
+Name of the file containing the backbone tree in NEWICK format.
+
+=cut 
 
 # process command line objects
 my $verbosity = WARN;
@@ -70,7 +98,7 @@ if ( (($workdir and -d $workdir) or ($cladetree and -e $cladetree)) and $backbon
         }
         
         # save final tree in newick format
-        my $grafted_file = $outfile || "grafted.newick";
+        my $grafted_file = $outfile || "grafted.dnd";
         if ( $workdir ) {
                 $grafted_file = "${workdir}/${grafted_file}";
         }
