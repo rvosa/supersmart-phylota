@@ -81,8 +81,12 @@ if ( $table ) {
         for my $row ( $table->get_rows ) {
                 my @taxa = $row->taxa;
                 print "mrca = xx" . ++$counter . " @taxa\n";
-                print "max = xx$counter " . $row->max_age . "\n";
-                print "min = xx$counter " . $row->min_age . "\n";
+                if ( $row->max_age ) {
+                        print "max = xx$counter " . $row->max_age . "\n";
+                }
+                if ( $row->min_age ){
+                        print "min = xx$counter " . $row->min_age . "\n";
+                }
                 INFO "printed mrca $counter for @taxa";
                 INFO "minimum age is " . $row->min_age;
                 INFO "maximum age is " . $row->max_age;
