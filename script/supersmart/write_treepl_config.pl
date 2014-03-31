@@ -39,7 +39,7 @@ GetOptions(
 	'numsites=i'    => \$numsites,
 	'writetree=s'   => \$writetree,
 	'smooth=i'      => \$smooth,
-);
+    );
 
 # set up helper objects
 Bio::Phylo::Util::Logger->VERBOSE( '-level' => $verbosity, '-class' => 'main' );
@@ -48,45 +48,45 @@ my $config = Bio::Phylo::PhyLoTA::Config->new;
 # read the ML tree from newick (one tree in this file)
 INFO "reading tree from file $readtree";
 my $tree = parse_tree( 
-    '-format'     => 'newick', 
-    '-file'       => $readtree, 
-    '-as_project' => 1 
+        '-format'     => 'newick', 
+        '-file'       => $readtree, 
+        '-as_project' => 1 
     );
 
 my $table;
 if ( $fossiltable ) {
-## read the spreadsheet with calibration points
-    INFO "reading fossils from file $fossiltable";
-    my $cs = Bio::Phylo::PhyLoTA::Service::CalibrationService->new;
-    my @fossils = $cs->read_fossil_table($fossiltable);
-
-# make calibration table from fossils
-    INFO "going to make calibration table";
-    my @points = map { $cs->find_calibration_point($_) } @fossils;
-    $table = $cs->create_calibration_table( $tree, @points );
+        # read the spreadsheet with calibration points
+        INFO "reading fossils from file $fossiltable";
+        my $cs = Bio::Phylo::PhyLoTA::Service::CalibrationService->new;
+        my @fossils = $cs->read_fossil_table($fossiltable);
+        
+        # make calibration table from fossils
+        INFO "going to make calibration table";
+        my @points = map { $cs->find_calibration_point($_) } @fossils;
+        $table = $cs->create_calibration_table( $tree, @points );
 }
 
 # write the config file header
 INFO "printing treePL config file header";
 print <<"HEADER";
 treefile = $readtree
-    smooth = $smooth
-    numsites = $numsites
-    outfile = $writetree
-    HEADER
+smooth = $smooth
+numsites = $numsites
+outfile = $writetree
+HEADER
     
 if ( $table ) {
 # write the mrca statements
-    my $counter;
-    for my $row ( $table->get_rows ) {
-	my @taxa = $row->taxa;
-	print "mrca = xx" . ++$counter . " @taxa\n";
-	print "max = xx$counter " . $row->max_age . "\n";
-	print "min = xx$counter " . $row->min_age . "\n";
-	INFO "printed mrca $counter for @taxa";
-	INFO "minimum age is " . $row->min_age;
-	INFO "maximum age is " . $row->max_age;
-    }
+        my $counter;
+        for my $row ( $table->get_rows ) {
+                my @taxa = $row->taxa;
+                print "mrca = xx" . ++$counter . " @taxa\n";
+                print "max = xx$counter " . $row->max_age . "\n";
+                print "min = xx$counter " . $row->min_age . "\n";
+                INFO "printed mrca $counter for @taxa";
+                INFO "minimum age is " . $row->min_age;
+                INFO "maximum age is " . $row->max_age;
+        }
 }
 # we run treePL in parallel using MPI
 print "nthreads = " . $config->NODES . "\n";
