@@ -4,12 +4,7 @@ use warnings;
 use Getopt::Long;
 use Bio::Phylo::Util::Logger ':levels';
 use Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector;
-
-use ParallelService 'mpi' => 4; # can be either 'pthreads' or 'mpi';
-
-use constant DIRTY_NAMES_SUBSET => 1;
-use constant CLEAN_NAMES_SUBSET => 2;
-use constant HEAD_NODE => 0;
+use Bio::Phylo::PhyLoTA::Service::ParallelService 'mpi' => 4; # can be either 'pthreads' or 'mpi';
 
 =head1 NAME
 
@@ -45,9 +40,7 @@ my $log = Bio::Phylo::Util::Logger->new(
 	)]
     );
 
-
 my $mts = Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector->new;
-
 
 # read names from file or STDIN, clean line breaks
 my @names;
@@ -65,13 +58,15 @@ else {
 
 @names = $mts->expand_taxa( @names );
 
+# print table header to stdout in sequential mode
+sequential { print join ("\t", 'name', @levels), "\n"; };
+
+
 # this will take some time to do the taxonomic name resolution in the
-# database and with webservices
-my @result;
-@result = pmap {
+# database and with webservices. The below code runs in parallel
+my @result = pmap {
         my $name = $_;                
         my @res = ();
-        ##print join ("\t", 'name', @levels), "\n";
         my @nodes = $mts->get_nodes_for_names($name);
         if ( @nodes ) {
                 if ( @nodes > 1 ) {
@@ -106,9 +101,5 @@ my @result;
         else {
                 $log->warn("couldn't resolve name $name");
         }                
-        return ( @res );
+        return  @res;
 } @names; 
-
-#foreach my $r (@result){
-#        print $r."\n";
-#}
