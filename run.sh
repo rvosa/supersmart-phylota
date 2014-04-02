@@ -8,7 +8,7 @@
 # project-specific variables
 WORKDIR=examples/primates          # working directory for intermediate files
 NAMELIST=$WORKDIR/names.txt        # input list of taxon names
-FOSSILTABLE=$WORKDIR/fossils2.tsv
+FOSSILTABLE=$WORKDIR/fossils.tsv
 
 # template for looking up variables in the config file
 PRINTVAL="perl -MBio::Phylo::PhyLoTA::Config=printval -e printval"
