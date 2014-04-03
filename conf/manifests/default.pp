@@ -316,8 +316,8 @@ exec {
 		command => "echo 'setenv LD_LIBRARY_PATH /usr/lib' > supersmart.csh && echo 'setenv SUPERSMART_HOME /usr/local/src/supersmart' >> supersmart.csh && echo 'setenv PERL5LIB \$PERL5LIB:\$SUPERSMART_HOME/lib' >> supersmart.csh",
 		cwd     => "/etc/profile.d",
 		creates => "/etc/profile.d/supersmart.csh";		
-        "chown_supersmart_examples":
-                command => "chown -R vagrant examples/",
+        "chown_supersmart_home":
+                command => "chown -R vagrant .",
                 cwd     => "/usr/local/src/supersmart",
                 require => Exec["clone_supersmart"];
 
