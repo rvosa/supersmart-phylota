@@ -38,13 +38,16 @@ GetOptions(
 my $log = Bio::Phylo::Util::Logger->new(
 	'-level' => $verbosity,
 	'-class' => [qw(
-		main
+		main Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector
+
 	)]
 );
 
 # here we start in parallel mode
 MPI_Init();
 my $rank = MPI_Comm_rank(MPI_COMM_WORLD);
+
+my $mts = Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector->new;
 
 # this is executed by the boss node
 if ( $rank == 0 ) {
@@ -62,7 +65,8 @@ if ( $rank == 0 ) {
 	chomp(@names);
 	$log->info("read ".scalar(@names)." species names from $infile");
     }
-    
+    @names = $mts->expand_taxa( @names );
+
     # MPI_Comm_size returns the total number of nodes. Because we have one
     # head node this needs to be - 1
     my $nworkers = MPI_Comm_size(MPI_COMM_WORLD) - 1;
@@ -110,7 +114,6 @@ if ( $rank == 0 ) {
 
 # this is executed by worker nodes
 else {
-    my $mts = Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector->new;
     my $subset = MPI_Recv(0,DIRTY_NAMES_SUBSET,MPI_COMM_WORLD);
     my @names = @{ $subset };
 
@@ -137,6 +140,8 @@ else {
 		
 		# traverse up the tree
 		while ( $node ) {
+		    my $tn = $node->taxon_name;
+		    my $ti = $node->ti;
 		    my $rank = $node->rank;
 		    if ( exists $level{$rank} ) {
 			$level{$rank} = $node->get_id;
