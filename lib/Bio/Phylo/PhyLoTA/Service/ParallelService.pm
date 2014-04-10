@@ -1,30 +1,14 @@
 package Bio::Phylo::PhyLoTA::Service::ParallelService;
 use strict;
 use warnings;
-use threads;
-use threads::shared;
 use Carp 'croak';
 use POSIX 'ceil';
-use Parallel::MPI::Simple;
+use base 'Bio::Phylo::PhyLoTA::Service';
 
 my $mode;
-my $count;
+my $num_proc;
 
 =over
-
-=item INIT
-
-When running in 'mpi' mode, MPI_Init() needs to be called exactly once (per mpirun execution),
-this is done in the INIT block.
-
-=cut 
-
-INIT { 
-        if ( $mode eq 'mpi' ){
-                use Parallel::MPI::Simple;
-                MPI_Init();        
-        }
-}
 
 =item END
 
@@ -39,30 +23,52 @@ END {
         }
 }
 
-
-
 =item import
 
 When modules are 'use'd, the 'import' sub is automatically called as a package method,
 i.e. ParallelService->import. If the 'use' statement has additional arguments, these
 are passed into the import statement. For example:
 
- use ParallelService 'mpi' => 4;
+ use ParallelService 'mpi';
 
-Results in the import sub receiving 1. package name, 2. the string 'mpi', 3. the number
-4. Here we use this to determine what the pmap "mode" should be, and in how many parts
-to split the job. In addition, what we do here is to make it so that the subroutine 
-'pmap' is exported to the caller's namespace, including the prototype (&@). The result
-of this is that the user of the module can then use pmap as a drop-in replacement of 
-the built-in perl function map, whose prototype has two positional arguments: 1. a 
-code block (&), 2. a list.
+Results in the import sub receiving 1. package name, 2. a string determining the mode. 
+The mode can either be 'mpi' or 'pthreads', if none is given, 'pthreads' is the default.
+
+When importing this module, the subroutines 'pmap' and 'sequential' are exported to the caller's namespace, 
+including thir prototypes (&@ or &). 
+Pmap can be used as a drop-in replacement of the built-in perl function map. The method 'sequential' accepts a code
+block which is evaluated only on the master node. Note that 'sequential' does not need to be used when in 'pthread'
+mode, but it is still present for convenience. 
+ 
+The number of processes is determined 
+automatically in this class, if e.g. the script which uses the ParallelService class
+is invoced with 'mpirun -np 5', the number of processes is set to 4 (4 worker nodes and a master node). In 'pthread'
+mode, the number of processes is set to the number of cores present on the machine.
 
 =cut
 
-
 sub import {
 	my $package = shift;
-	( $mode, $count ) = @_;	
+	( $mode ) = @_;	
+        if ( ! $mode ) {
+                $mode = 'pthreads';
+                $package->logger->warn("parallel mode not provided to ParallelService. Using default mode 'pthreads'");
+        }
+        if ( $mode eq 'mpi' ){
+                use Parallel::MPI::Simple;
+                MPI_Init();       
+                $num_proc = MPI_Comm_size(MPI_COMM_WORLD())-1;                
+        }
+        elsif ( $mode eq 'pthreads' ) {
+                use threads;
+                use threads::shared;
+                # get and set number of processes
+                use Sys::Info;
+                use Sys::Info::Constants qw( :device_cpu );
+                my $info = Sys::Info->new;
+                my $cpu  = $info->device('CPU');
+                $num_proc = $cpu->count;
+        }
 	my ( $caller ) = caller();
         eval "sub ${caller}::pmap(\&\@);";
 	eval "*${caller}::pmap = \\&${package}::pmap;";
@@ -84,7 +90,7 @@ sub pmap_pthreads (&@) {
 	my $size = scalar @data;
         my @threads;
 	my @result;
-	my $inc = ceil($size/$count);
+	my $inc = ceil($size/$num_proc);
 	for ( my $i = 0; $i < $size; $i += $inc ) {
 		my $max = ( $i + $inc - 1 ) >= $size ? $size - 1 : $i + $inc - 1;
 		my @subset = @data[$i..$max];
@@ -114,7 +120,7 @@ Because there is also a boss node.
 sub pmap_mpi (&@) {
 	my ( $func, @data ) = @_;
 	my $size = scalar @data;
-	my $inc = ceil($size/$count);
+	my $inc = ceil($size/$num_proc);
         
 	my $WORLD  = MPI_COMM_WORLD();
 	my $BOSS   = 0;
