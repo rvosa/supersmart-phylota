@@ -7,6 +7,7 @@ use base 'Bio::Phylo::PhyLoTA::Service';
 
 my $mode;
 my $num_proc;
+my $logger;
 
 =over
 
@@ -50,14 +51,16 @@ mode, the number of processes is set to the number of cores present on the machi
 sub import {
 	my $package = shift;
 	( $mode ) = @_;	
+        $logger = $package->logger;
         if ( ! $mode ) {
-                $mode = 'pthreads';
-                $package->logger->warn("parallel mode not provided to ParallelService. Using default mode 'pthreads'");
+                $mode = 'pthreads';                
+                $logger->warn("parallel mode not provided in import of  ParallelService class. Using default mode 'pthreads'");
         }
         if ( $mode eq 'mpi' ){
                 use Parallel::MPI::Simple;
                 MPI_Init();       
                 $num_proc = MPI_Comm_size(MPI_COMM_WORLD())-1;                
+                $logger->info("Initializing ParallelService with $num_proc");
         }
         elsif ( $mode eq 'pthreads' ) {
                 use threads;
@@ -132,18 +135,19 @@ sub pmap_mpi (&@) {
 	if ( $rank == 0 ) {
                 # submit the data in chunks
 		my $worker = 1;
-		for ( my $i = 0; $i < $size; $i += $inc ) {
-			my $max = ( $i + $inc - 1 ) >= $size ? $size - 1 : $i + $inc - 1;
+		for ( my $i = 0; $i < $size; $i += $inc ) {                        
+                        my $max = ( $i + $inc - 1 ) >= $size ? $size - 1 : $i + $inc - 1;
 			my @subset = @data[$i..$max];
+                        $logger->info("Sending ".scalar(@subset)." items to worker # $worker");
 			MPI_Send(\@subset,$worker,$JOB,$WORLD);
 			$worker++;
 		}
-		
-		# receive the result
+                # receive the result
 		my @result;
                 # beware of the case that there are more nodes than items to process
 		for $worker ( 1 .. ceil($size/$inc) ) {
 			my $subset = MPI_Recv($worker,$RESULT,$WORLD);
+                        $logger->info("Received results from worker # $worker");
 			push @result, @{ $subset };
 		}
                 return @result;
