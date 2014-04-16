@@ -38,6 +38,7 @@ package {
 	"curl":                     ensure => installed;
 	"gzip":                     ensure => installed;
         "subversion":               ensure => installed;
+        "java-1.7.0-openjdk-devel": ensure => installed;
 }
 
 # set up the mysql daemon process
@@ -320,7 +321,7 @@ exec {
                 command => "chown -R vagrant .",
                 cwd     => "/usr/local/src/supersmart",
                 require => Exec["clone_supersmart"];
-
+              
         # install BEAST
         "download_beast":
                 command => "wget https://beast-mcmc.googlecode.com/files/BEASTv1.8.0.tgz",
@@ -333,6 +334,12 @@ exec {
                 creates => "/usr/local/src/BEASTv1.8.0/bin/beast",
                 require => Exec[ 'download_beast' ];
 
+        "symlink_beast":
+                command => "ln -s /usr/local/src/BEASTv1.8.0/bin/* .",
+                cwd     => "/usr/local/bin/",
+                creates => "/usr/local/bin/beast",
+                require => Exec[ 'unzip_beast' ];
+              
         # install beagle-lib
         "checkout_beagle_lib":
                 command => "svn checkout http://beagle-lib.googlecode.com/svn/trunk/ beagle-lib",
