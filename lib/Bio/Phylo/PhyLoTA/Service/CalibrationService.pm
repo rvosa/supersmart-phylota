@@ -237,6 +237,7 @@ sub create_calibration_table {
     		$logger->warn("could not find descendants for id $id in focal tree");
     	}    
     }
+    $table->sort_by_min_age;
     return $table;
 }
 

@@ -49,5 +49,19 @@ sub AUTOLOAD {
 		}
 	}
 }
+
+=item min_age
+
+    Getter/setter for minimum age for a L<Bio::Phylo::PhyLoTA::Domain::CalibrationPoint> object.
+
+=cut 
+
+sub min_age {
+        my $self = shift;
+        if ( @_ ) {
+                $self->{'min_age'} = shift;
+        }
+        return $self->{'min_age'};
+}
 			
 1;

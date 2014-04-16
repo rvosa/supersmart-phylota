@@ -81,5 +81,19 @@ sub to_string {
     return $string;
 }
 
+=item sort_by_min_age
+
+Sorts the table according to the min_age attributes of 
+all L<Bio::Phylo::PhyLoTA::Domain::CalibrationPoint> objects contained in the
+table. Sorting is done in ascending order.
+
+=cut
+
+sub sort_by_min_age {
+        my $self = shift;       
+        @{$self}  = sort { $a->min_age <=> $b->min_age } $self->get_rows;
+        return;
+}
+
 
 1;
