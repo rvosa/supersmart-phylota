@@ -40,6 +40,7 @@ SUPERMATRIX=$WORKDIR/supermatrix.phy
 MEGATREE=megatree.dnd
 CHRONOGRAM=$WORKDIR/chronogram.dnd
 TREEPLCONF=$WORKDIR/treePL.conf
+FINALTREE=$WORKDIR/final.dnd
 
 # creates a table where the first column has the input species
 # names and subsequent columns have the species ID and higher taxon IDs
@@ -86,6 +87,25 @@ fi
 
 # run treePL
 if [ ! -e $CHRONOGRAM ]; then
-	$TREEPLBIN $TREEPLCONF
+    $TREEPLBIN $TREEPLCONF
 fi
 
+# decompose backbone tree
+if [ ! -e $WORKDIR/clade* ]; then
+    $PERLSCRIPT/decompose_backbone.pl -t $SPECIESTABLE -l $MERGEDLIST -b "$WORKDIR/$MEGATREE" -w $WORKDIR $VERBOSE
+fi
+
+# merge clade alignments
+if [ ! -e $WORKDIR/clade0/clade0.xml ]; then
+    $PERLSCRIPT/merge_clade_alignments.pl -w $WORKDIR $VERBOSE
+fi
+
+# infer tree for each clade
+if [ ! -e $WORKDIR/clade0/clade0.nex ]; then
+    $PERLSCRIPT/infer_clade.pl -w $WORKDIR -ngens 30000000 -sfreq 300000 -lfreq 300000 $VERBOSE
+fi
+
+# graft clade trees onto backbone
+if [ ! -e $FINALTREE ]; then
+    $PERLSCRIPT/graft_trees.pl -workdir $WORKDIR -backbone $NAMED_CHRONOGRAM -outfile $FINALTREE $VERBOSE
+fi
