@@ -98,9 +98,6 @@ fi
 # merge clade alignments
 clade_count=`ls -d $WORKDIR/clade*/ 2>/dev/null | wc -w`
 file_count=`ls -d $WORKDIR/clade*/*.xml 2>/dev/null | wc -w`
-echo $file_count
-echo $clade_count
-
 if [ $file_count -le $clade_count ]; then    
     echo "HIER"
     $PERLSCRIPT/merge_clade_alignments.pl -w $WORKDIR $VERBOSE
