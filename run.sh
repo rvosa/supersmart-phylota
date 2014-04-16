@@ -96,12 +96,20 @@ if [ ! -e $WORKDIR/clade* ]; then
 fi
 
 # merge clade alignments
-if [ ! -e $WORKDIR/clade0/clade0.xml ]; then
+clade_count=`ls -d $WORKDIR/clade*/ 2>/dev/null | wc -w`
+file_count=`ls -d $WORKDIR/clade*/*.xml 2>/dev/null | wc -w`
+echo $file_count
+echo $clade_count
+
+if [ $file_count -le $clade_count ]; then    
+    echo "HIER"
     $PERLSCRIPT/merge_clade_alignments.pl -w $WORKDIR $VERBOSE
 fi
 
 # infer tree for each clade
-if [ ! -e $WORKDIR/clade0/clade0.nex ]; then
+file_count=`ls -f $WORKDIR/clade*/*.nex 2>/dev/null | wc -w`
+if [ $file_count -le $clade_count ]; then
+    echo "HIER2"
     $PERLSCRIPT/infer_clade.pl -w $WORKDIR -ngens 30000000 -sfreq 300000 -lfreq 300000 $VERBOSE
 fi
 
