@@ -109,8 +109,9 @@ HEADER
 	
 	# run treePL
 	close $tfh;
-	system( $config->TREEPL_BIN, $tplfile ) && die $?;
-	return parse_tree(
+        $self->logger->info("wrote treePL config file to  $tplfile");
+	system( $config->TREEPL_BIN, $tplfile ) && die $?;        
+        return parse_tree(
 		'-format' => 'newick',
 		'-file'   => $writetree,
 		'-as_project' => 1,
