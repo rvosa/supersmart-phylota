@@ -85,15 +85,29 @@ sub to_string {
 
 Sorts the table according to the min_age attributes of 
 all L<Bio::Phylo::PhyLoTA::Domain::CalibrationPoint> objects contained in the
-table. Sorting is done in ascending order.
+table. Sorting is done in ascending order. This function also sets prefixes in front 
+of the calibrated taxon name for each L<Bio::Phylo::PhyLoTA::Domain::CalibrationPoint>, 
+such that also the names have ascending order. This function is to get control
+over the behavior of treePL, which seems to care about the 
+order of the calibrated taxa recorded in the config file.
 
 =cut
 
 sub sort_by_min_age {
         my $self = shift;       
-        @{$self}  = sort { $a->min_age <=> $b->min_age } $self->get_rows;
+
+        # sort by ascending min taxon age
+        @{$self} = sort { $a->min_age <=> $b->min_age } $self->get_rows;                         
+
+        # loop over calibration points and prepend 'ct' and an index
+        my $counter = 0;
+        foreach my $cp ( @{$self} ) {
+                print "Ref $cp: ".ref($cp)."\n";
+                my $curr_name = $cp->name;
+                # ct stands for 'calibrated taxon'
+                $cp->name('ct'.$counter++.'_'.$curr_name)
+        }
         return;
 }
-
 
 1;
