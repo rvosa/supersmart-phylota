@@ -53,6 +53,7 @@ sub AUTOLOAD {
 =item min_age
 
     Getter/setter for minimum age for a L<Bio::Phylo::PhyLoTA::Domain::CalibrationPoint> object.
+    Note that this corresponds to the column named "MinAge" in the fossil table.
 
 =cut 
 
@@ -63,5 +64,22 @@ sub min_age {
         }
         return $self->{'min_age'};
 }
+
+=item name
+
+    Getter/setter for the calibrated taxon name  for a  L<Bio::Phylo::PhyLoTA::Domain::CalibrationPoint> object.
+    Note that this corresponds to the column named "CalibratedTaxon" in the fossil table.
+
+=cut 
+
+sub name {
+        my $self = shift;
+        if ( @_ ) {
+                $self->{'name'} = shift;
+        }
+        return $self->{'name'};
+}
+
+
 			
 1;
