@@ -78,16 +78,11 @@ if [ ! -e "$WORKDIR/$MEGATREE" ]; then
 	-s $SUPERMATRIX $VERBOSE
 fi
 
-# create treePL config file
+# calibrate backbone tree
 if [ ! -e $TREEPLCONF ]; then
-	NUMSITES=`head -1 $SUPERMATRIX | cut -f 2 -d ' '`
-	$PERLSCRIPT/write_treepl_config.pl -f $FOSSILTABLE -r "$WORKDIR/$MEGATREE" \
-	-s $TREEPLSMOOTH -w $CHRONOGRAM $VERBOSE -n $NUMSITES > $TREEPLCONF
-fi
-
-# run treePL
-if [ ! -e $CHRONOGRAM ]; then
-    $TREEPLBIN $TREEPLCONF
+    NUMSITES=`head -1 $SUPERMATRIX | cut -f 2 -d ' '`
+    $PERLSCRIPT/calibrate_tree.pl -f $FOSSILTABLE -r "$WORKDIR/$MEGATREE" \
+        -s $TREEPLSMOOTH -o $CHRONOGRAM $VERBOSE -n $NUMSITES 
 fi
 
 # decompose backbone tree
