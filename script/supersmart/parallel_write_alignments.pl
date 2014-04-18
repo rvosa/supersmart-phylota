@@ -8,7 +8,7 @@ use Bio::Phylo::Util::Logger ':levels';
 use Bio::Phylo::Matrices::Matrix;
 use Bio::Phylo::PhyLoTA::Service::SequenceGetter;
 use Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector;
-use Bio::Phylo::PhyLoTA::Service::ParallelService 'pthreads'; # can be either 'pthreads' or 'mpi';
+use Bio::Phylo::PhyLoTA::Service::ParallelService 'mpi'; # can be either 'pthreads' or 'mpi';
 
 =head1 NAME
 
@@ -57,6 +57,20 @@ my @nodes = $mts->get_nodes_for_table( '-file' => $infile ); ##sequential { retu
 # this is sorted from more to less inclusive
 my @sorted_clusters = $mts->get_clusters_for_nodes(@nodes); #sequential { return $mts->get_clusters_for_nodes(@nodes) };
 
+# hear we split the sorted clusters into subsets that divide
+# the inclusiveness more evenly
+my @subset;
+my $nworkers = num_workers();
+for my $i ( 0 .. $#sorted_clusters ) {
+        my $j = $i % $nworkers;
+        $subset[$j] = [] if not $subset[$j];
+        push @{ $subset[$j] }, $sorted_clusters[$i];
+}
+    
+# now we flatten the subsets again
+my @clusters;
+push @clusters, @{ $subset[$_] } for 0 .. ( $nworkers - 1 );
+
 
 # this is a simple mapping to see whether a taxon is of interest
 my @ti = map { $_->ti } @nodes;
@@ -69,21 +83,18 @@ my @result = pmap {
         my $sg = Bio::Phylo::PhyLoTA::Service::SequenceGetter->new;
         my @ss = $sg->get_sequences_for_cluster_object($cl);
         my @seqs    = $sg->filter_seq_set($sg->get_sequences_for_cluster_object($cl));
-        
         my $single  = $sg->single_cluster($cl);
         my $seed_gi = $single->seed_gi;
         my $mrca    = $single->ti_root->ti;
                 
         my @matching = grep { my $s = $_; grep { $_ == $s->ti } @ti  } @seqs;
-      
+        
         # let's not keep the ones we can't build trees out of
         if ( scalar @matching > 3 ) {
                 
                 # this runs muscle, so should be on your PATH.
                 # this also requires bioperl-live and bioperl-run
-                #$log->info("going to align ".scalar(@matching)." sequences");
                 my $aln = $sg->align_sequences(@matching);
-                #$log->info("done aligning");
             
                 # convert AlignI to matrix for pretty NEXUS generation
                 my $m = Bio::Phylo::Matrices::Matrix->new_from_bioperl($aln);
@@ -99,7 +110,7 @@ my @result = pmap {
                         my $seq = $row->get_char;
                         push @matrix, [ ">gi|${gi}|seed_gi|${seed_gi}|taxon|${ti}|mrca|${mrca}" => $seq ];
                           });
-			
+                                
                 my $filename = $workdir . '/' . $seed_gi . '.fa';
                 open my $fh, '>', $filename or die $!;
                 for my $row ( @matrix ) {
@@ -110,9 +121,9 @@ my @result = pmap {
                         'seed_gi' => $seed_gi,
                         'matrix'  => \@matrix,
                 };
-        }
+        } 
         return @res;
-} @sorted_clusters;
+} @clusters;
 
 
 # process results from parallel run
