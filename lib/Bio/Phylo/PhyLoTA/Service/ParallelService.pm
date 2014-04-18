@@ -6,7 +6,7 @@ use POSIX 'ceil';
 use base 'Bio::Phylo::PhyLoTA::Service';
 
 my $mode;
-my $num_proc;
+my $num_workers;
 my $logger;
 
 =over
@@ -59,8 +59,8 @@ sub import {
         if ( $mode eq 'mpi' ){
                 use Parallel::MPI::Simple;
                 MPI_Init();       
-                $num_proc = MPI_Comm_size(MPI_COMM_WORLD())-1;                
-                $logger->info("Initializing ParallelService with $num_proc");
+                $num_workers = MPI_Comm_size(MPI_COMM_WORLD())-1;                
+                $logger->info("Initializing ParallelService with $num_workers workers");
         }
         elsif ( $mode eq 'pthreads' ) {
                 use threads;
@@ -70,7 +70,7 @@ sub import {
                 use Sys::Info::Constants qw( :device_cpu );
                 my $info = Sys::Info->new;
                 my $cpu  = $info->device('CPU');
-                $num_proc = $cpu->count;
+                $num_workers = $cpu->count;
         }
 	my ( $caller ) = caller();
         eval "sub ${caller}::pmap(\&\@);";
@@ -78,6 +78,10 @@ sub import {
         
         eval "sub ${caller}::sequential(\&);";
 	eval "*${caller}::sequential = \\&${package}::sequential;";
+
+        eval "sub ${caller}::num_workers;";
+	eval "*${caller}::num_workers = \\&${package}::num_workers;";
+
 }
 
 
@@ -93,7 +97,7 @@ sub pmap_pthreads (&@) {
 	my $size = scalar @data;
         my @threads;
 	my @result;
-	my $inc = ceil($size/$num_proc);
+	my $inc = ceil($size/$num_workers);
 	for ( my $i = 0; $i < $size; $i += $inc ) {
 		my $max = ( $i + $inc - 1 ) >= $size ? $size - 1 : $i + $inc - 1;
 		my @subset = @data[$i..$max];
@@ -123,7 +127,7 @@ Because there is also a boss node.
 sub pmap_mpi (&@) {
 	my ( $func, @data ) = @_;
 	my $size = scalar @data;
-	my $inc = ceil($size/$num_proc);
+	my $inc = ceil($size/$num_workers);
         
 	my $WORLD  = MPI_COMM_WORLD();
 	my $BOSS   = 0;
@@ -153,11 +157,11 @@ sub pmap_mpi (&@) {
                 return @result;
 	}
 	else {
-	
+                use Time::HiRes 'gettimeofday';
 		# receive my job and process it
 		my $subset = MPI_Recv($BOSS,$JOB,$WORLD);
-		my @result = map { $func->($_) } @{ $subset };
-		
+                my @result = map { $func->($_) } @{ $subset };
+                
 		# send the result back to the boss
 		MPI_Send(\@result,$BOSS,$RESULT,$WORLD);
 	}
@@ -217,6 +221,16 @@ sub pmap (&@) {
 	elsif ( $mode eq 'mpi' ) {
 		goto &pmap_mpi;
 	}
+}
+
+=item num_workers
+
+Returns the number of worker nodes.
+
+=cut
+
+sub num_workers {
+        return $num_workers;
 }
 
 =back
