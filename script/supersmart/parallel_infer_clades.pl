@@ -35,7 +35,7 @@ Instead this should be something that is more on the order of 30_000_000 if not 
 more.
 
 =item sfreq
-
+    
 Specifies the sampling frequency. The default, which is strictly for testing, is 100.
 Instead this should be something that is more on the order of 300_000 if not much
 more. For example, this could be 0.1% of ngens so that you end up with a thousand trees.
@@ -77,8 +77,9 @@ my $logger = Bio::Phylo::Util::Logger->new(
 	'-class' => [ 
 		'main',
 		'Bio::Tools::Run::Phylo::StarBEAST',
-		'Bio::Phylo::Parsers::Nexml',
-	],
+		#'Bio::Phylo::Parsers::Nexml',
+                #'Bio::Phylo::PhyLoTA::Service::ParallelService',
+        ],
 );
 
 # configure beast
@@ -128,11 +129,7 @@ elsif ( $workdir and -d $workdir ) {
 		if ( $entry =~ /clade\d+/ && -d "${workdir}/${entry}" ) {
                         push   @cladedirs, $entry;
                 }
-        }
-        foreach my $e (@cladedirs){
-                print "Entry : $e \n";
-        }
-        
+        }        
         # infer clades in parallel mode
         pmap {
                 my $clade = $_;

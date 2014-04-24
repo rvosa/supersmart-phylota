@@ -110,58 +110,46 @@ sub pmap_pthreads (&@) {
 =item pmap_mpi
 
 Does a parallel version of map using MPI. The function pmap deletages to this 
-function if ParallelService was called with 'mpi' as its argument. Note the second
-argument:
+function if ParallelService was called with 'mpi' as its argument. 
 
- ParallelService 'mpi' => 4;
-
-Here, the number 4 indicates the number of WORKER nodes. Hence, the script needs 
-to be called as:
-
- mpirun -np 5 <scriptname>
-
-Because there is also a boss node.
 
 =cut
 
 sub pmap_mpi (&@) {
 	my ( $func, @data ) = @_;
-	my $size = scalar @data;
-	my $inc = ceil($size/$num_workers);
         
 	my $WORLD  = MPI_COMM_WORLD();
 	my $BOSS   = 0;
 	my $JOB    = 1;
 	my $RESULT = 2;
 	my $rank = MPI_Comm_rank($WORLD);
-
 	# this is the boss node
 	if ( $rank == 0 ) {
                 # submit the data in chunks
-		my $worker = 1;
-		for ( my $i = 0; $i < $size; $i += $inc ) {                        
-                        my $max = ( $i + $inc - 1 ) >= $size ? $size - 1 : $i + $inc - 1;
-			my @subset = @data[$i..$max];
-                        $logger->info("Sending ".scalar(@subset)." items to worker # $worker");
-			MPI_Send(\@subset,$worker,$JOB,$WORLD);
-			$worker++;
-		}
-                # receive the result
-		my @result;
-                # beware of the case that there are more nodes than items to process
-		for $worker ( 1 .. ceil($size/$inc) ) {
-			my $subset = MPI_Recv($worker,$RESULT,$WORLD);
+                my @chunks = map { [] } 1..$num_workers;
+                my @idx = sort map { $_ % $num_workers } 0..$#data;
+                
+                for my $i ( 0..$#data ){
+                        my $worker = $idx[$i-1]+1;
+                        push @chunks[$idx[$i]],  $data[ $i ];
+                }
+                my @result;
+                for my $worker ( 1 .. $num_workers){                        
+                        # send subset of data to worker
+                        my $subset = $chunks[$worker-1];
+                        $logger->info("Sending ".scalar(@$subset)." items to worker # $worker");
+                        MPI_Send($subset,$worker,$JOB,$WORLD);                        
+                        # receive the result
+                        my $result_subset = MPI_Recv($worker,$RESULT,$WORLD);
                         $logger->info("Received results from worker # $worker");
-			push @result, @{ $subset };
-		}
+                        push @result, @{ $subset };
+                }
                 return @result;
 	}
 	else {
-                use Time::HiRes 'gettimeofday';
 		# receive my job and process it
 		my $subset = MPI_Recv($BOSS,$JOB,$WORLD);
-                my @result = map { $func->($_) } @{ $subset };
-                
+                my @result = map { $func->($_) } @{ $subset };                
 		# send the result back to the boss
 		MPI_Send(\@result,$BOSS,$RESULT,$WORLD);
 	}
