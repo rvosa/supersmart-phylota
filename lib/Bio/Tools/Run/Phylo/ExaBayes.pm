@@ -14,9 +14,10 @@ use Bio::Phylo::PhyLoTA::Service::TreeService;
 use base qw(Bio::Tools::Run::Phylo::PhyloBase);
 
 my $treeservice = Bio::Phylo::PhyLoTA::Service::TreeService->new;
+my $log = Bio::Phylo::Util::Logger->new;
 
-our $PROGRAM_NAME = 'exabayes';
-our $POSTPROCESS_PROGRAM_NAME = 'consense';
+# program name required by PhyloBase
+our $PROGRAM_NAME = 'exabayes'; 
 
 our @ExaBayes_PARAMS = (
         'f',        # alnFile:    alignment file (binary and created by parser or plain-text phylip)
@@ -37,7 +38,7 @@ our @ExaBayes_CONFIGFILE_PARAMS = (
         # RUN parameters
         'numRuns',           # number of independant runs
         'numGen',            # number of generations to run. Defaults to 1e6
-
+        'parsimonyStart',    # if 1, start from most parsimoneous tree
         #MCMC parameters
         'numCoupledChains'   # number of chains per independent run
     );
@@ -53,8 +54,9 @@ our @Consense_PARAMS = (
 
 our @Misc_PARAMS = (
         # The following parameters are artificial, not a 'real' parameter of ExaBayes nor Consense
-        'outfile_name',        #  file name of the inferred consensus trees
-        'outfile_format'       #  format of output file. Either 'nexus' or 'newick' 
+        'outfile_name',        # file name of the inferred consensus trees
+        'outfile_format',       # format of output file. Either 'nexus' or 'newick' 
+        'consense_bin',         # location of consense binary 
     );
 
 
@@ -87,100 +89,128 @@ are cleaned up afterwards.
 
 *run_id = *n;
 
+=item seed
+
+Getter/setter for master seed for MCMC.
+
+=cut
+
+*seed = *s;
+
+=item burnin_fraction
+
+Getter/setter for fraction of burn in (used in the consense program).
+
+=cut
+
+*burnin_fraction = *b;
+
+=item config_file
+
+Getter/setter for a config file for the ExaBayes run.
+
+=cut
+
 *config_file = *c;
 
 
-my $log = Bio::Phylo::Util::Logger->new;
-
-
 sub new {
-    my ( $class, @args ) = @_;
-    my $self = $class->SUPER::new(@args);
-    $self->_set_from_args(
-        \@args,
-        '-methods' => [ @ExaBayes_PARAMS, @ExaBayes_SWITCHES, @ExaBayes_CONFIGFILE_PARAMS ],
-        '-create'  => 1,
-    );
-    my ($out) = $self->SUPER::_rearrange( [qw(OUTFILE_NAME)], @args );
-    $self->outfile_name( $out || '' );
-    return $self;
+        my ( $class, @args ) = @_;
+        my $self = $class->SUPER::new(@args);
+        $self->_set_from_args(
+                \@args,
+                '-methods' => [ @ExaBayes_PARAMS, @ExaBayes_SWITCHES, @ExaBayes_CONFIGFILE_PARAMS, @Misc_PARAMS, @Consense_PARAMS ],
+                '-create'  => 1,
+            );
+        my ($out) = $self->SUPER::_rearrange( [qw(OUTFILE_NAME)], @args );
+        $self->outfile_name( $out || '' );
+        return $self;
 }
 
 
 sub run {
 	my $self = shift;
- 	my ($project, $phylip);
-	
-	# one argument means it's a nexml file
-	if ( @_ == 1 ) {
+        my $ret;
+        my %args = @_;
+        my $phylip  = $args{'-phylip'} || die "Need -phylip arg";
+        my $intree  = $args{'-intree'} || die "Need -intree arg";
 
-                my $nexml = shift;	
-		# read nexml input
-		$project = parse(
-			'-format'     => 'nexml',
-			'-file'       => $nexml,
-			'-as_project' => 1,
-		);	
-	} 
-        else {
-		my %args = @_;
-                $project = parse(
-			'-format'     => 'newick',
-			'-file'       => $args{'-intree'},
-			'-as_project' => 1,
-		);
-                $phylip = $args{'-phylip'}
-	}
-        my @matrix = @{ $project->get_items(_MATRIX_) };
-        my ($taxa) = @{ $project->get_items(_TAXA_) };
         
-        # Create phylip file if it does not exist yet
-        if (! $phylip){                                
-                my $phylip_filename = File::Spec->catfile( $self->work_dir, $self->run_id . '.phy' );
-                $phylip = $treeservice->make_phylip_from_matrix( $taxa, $phylip_filename, @matrix );
-        }
         
         my $binary = $self->run_id . '-dat' ;
         $binary = $treeservice->make_phylip_binary( $phylip, $binary, $self->parser, $self->work_dir );
-                                               
+        $binary = File::Spec->catfile($self->work_dir, $binary);
         my @tipnames = $treeservice->read_tipnames( $phylip );
         
-        my ($tree) = @{ $project->get_items(_TREE_) }; 
-        my $intree = $self->_make_intree($taxa, $tree, \@tipnames );
-
+        #my $forest = Bio::Phylo::IO->parse(
+        #        '-format' => 'newick',
+        #        '-file'   => $intree,
+        #    );
+        #my $tree = $forest->first;
+        #$tree -> keep_tips( [ @tipnames ] );
+        #$tree -> resolve;
+        #$tree -> remove_unbranched_internals;
+        #$tree -> deroot;                                                                      
+        #my $newtree = $intree."_new";
+        #print "NEWTREE : ".$newtree."\n";
+        #open my $fh, '>', $newtree or die $!;
+        #print $fh $tree->to_newick;
+        #close $fh;        
+        #my $intree = $self->_make_intree($taxa, $tree, \@tipnames );
+        
         # compose argument string: add MPI commands, if any
         my $string;
-        print "MPIRUN : ".$self->mpirun." NODES: ".$self->nodes."\n"; 
         if ( $self->mpirun && $self->nodes ) {
 		$string = sprintf '%s -np %i ', $self->mpirun, $self->nodes;
 	}
-
-        $string .= $self->executable . $self->_setparams($binary, $intree);       
-
-        my $curdir = getcwd;
-	chdir $self->work_dir;	
-        
-        $log->info("going to run '$string' inside ".$self->work_dir);
-        print "going to run '$string' inside ".$self->work_dir."\n";
+        ##TODO: fix issue with input tree
+        my $newtree = 1;
+        $string .= $self->executable . $self->_setparams($binary, $newtree);       
+                
+        $log->info("going to run '$string'");        
         system($string) and $self->warn("Couldn't run ExaBayes: $?");
         
-        # It is not possible to specify an output file name for an Exabayes run. 
-        # We therefore move the ExBayes output topology file to the one specified
-        # by the user in 'outfile_name'
-        my ($volume, $directory, $file) = File::Spec->splitpath( $binary );
-        my $exabayes_outfile = "ExaBayes_topologies." . $self->run_id . ".0";
-        my $full_path = File::Spec->catpath( $volume, $self->work_dir, $exabayes_outfile );
+        # build command string for running 'consense'
+        $string = $self->consense_bin . $self->_set_consense_params;
+        # add all topology files created by Exabayes
+        $string .= " -f " . $self->work_dir . "ExaBayes_topologies." . $self->run_id . ".*" . " -n " . $self->run_id;
+        # run consense in working directory since we cannot specify output                 
 
-        chdir $curdir;
+        my $curdir = getcwd;
+        ##chdir $self->work_dir;
+	$log->info("Going to run $string");        
+        print $string."\n";
+        my $output = system($string);
+        #my $output = qx($string);
+        ##chdir $curdir;
+        print "Back in directory $curdir \n";
 
-        $string = "mv $full_path ".$self->outfile_name;
-        print "mv String : $string \n";
-        system($string) and $self->warn("Couldn't change name of outputile name to ".$self->outfile_name.": $?");
-        
-        
+        # consense output file name is not controllable and depends on the parameters
+        #   therefore we parse it from STDOUT of the command
+        #TODO : This is a hack. Filenames and directories should be managed in a clean way
+        my $filename = "ExaBayes_ConsensusExtendedMajorityRuleNewick.".$self->run_id;
+        # get format for output file, if not given, chose 'newick'
+        #my $format = $self->outfile_format | "newick";
+        #if ( $output =~/$format\ format\ to (.+)\n/ ) {
+        #        $filename = $1;
+        #} 
+        #else {
+        #        $log->warn("Could not capture output from consense");                
+        #        return; 
+        #}        
+        # rename to given output file name
+        if ( $self->outfile_name ) {
+                my $mvstr = "mv " . $filename . " " . $self->outfile_name;
+                system ($mvstr) and $self->warn("Couldn't run command $mvstr : $?");
+                ##my $status = $self->_run_in_dir( $self->work_dir, $mvstr ); 
+                $ret = $self->outfile_name;
+        } 
+        else {
+                $ret = $filename;
+        }
         
         #return $self->_cleanup;
-        return(1);
+        return $ret;
 }
 
 =item mpirun
@@ -227,6 +257,24 @@ sub parser {
 	return $self->{'_parser'} || 'parser';
 }
 
+sub _run_in_dir {
+        my ( $self, $dir, $command ) = @_;
+        #return value
+        my $res;
+        if ( $dir && $command ) {
+                $log->info("Going to run command $command in $dir");
+                my $curdir = getcwd;
+                chdir $self->work_dir;	
+                $res = system($command) and $self->warn("Couldn't run command $command : $?");                
+                chdir $curdir;
+        }
+        else {
+                $log->warn("Need 'directory' and 'command' arguments");
+                $res = -1;
+        }        
+        return $res;
+}
+
 sub _write_config_file {
         my $self = shift;
         my $conffile = File::Spec->catfile( $self->work_dir, $self->run_id . '.nex' );
@@ -245,7 +293,7 @@ sub _write_config_file {
 }
 
 sub _make_intree {
-	my ( $self, $taxa, $tree, $tipnames ) = @_;
+	my ( $self, $tree, $tipnames ) = @_;
 	my $treefile = File::Spec->catfile( $self->work_dir, $self->run_id . '.dnd' );
 	open my $treefh, '>', $treefile or die $!;
 	if ( $tree ) {
@@ -257,7 +305,7 @@ sub _make_intree {
 	}
 	else {
 	
-		# no tree was given in the nexml file. here we then simulate
+		# no tree was given to the class. here we then simulate
 		# a BS tree shape.
 		my $gen = Bio::Phylo::Generator->new;
 		$tree = $gen->gen_equiprobable( '-tips' => scalar @{$tipnames} )->first;
@@ -268,7 +316,7 @@ sub _make_intree {
 				$n->set_name( @{$tipnames}[$i++] );
 			}
 		});
-                return $self->_make_intree( $taxa, $tree, $tipnames );
+                return $self->_make_intree( $tree, $tipnames );
 	}
 	return $treefile;
 }
@@ -285,7 +333,7 @@ sub _setparams {
     }
     #$params_string .= ' -c ' . self->$config_file;
 
-	# iterate over parameters and switches
+    # iterate over parameters and switches
     for my $attr (@ExaBayes_PARAMS) {
         my $value = $self->$attr();
         next unless defined $value;
@@ -298,7 +346,7 @@ sub _setparams {
     }
     
     # set file names to local
-    my %path = ('-f' => $infile,  '-t' => $intree ); ##, '-n' => $self->outfile_name );
+    my %path = ('-f' => $infile );  ###, '-t' => $intree  , '-n' => $self->outfile_name );
     while( my ( $param, $path ) = each %path ) {		
 		$param_string .= " $param $path";
     }
@@ -310,8 +358,22 @@ sub _setparams {
     return $param_string;
 }
 
+sub _set_consense_params {
+        my $self = shift;
+        my $param_string;
+        for my $attr (@Consense_PARAMS) {
+                        my $value = $self->$attr();
+                        next unless defined $value;
+                        $param_string .= ' -' . $attr . ' ' . $value;                        
+        }
+        # hide stderr
+        my $null = File::Spec->devnull;
+        $param_string .= " > $null 2> $null" if $self->quiet() || $self->verbose < 0;
+        return $param_string;
+}
 
-sub program_name { $PROGRAM_NAME }
+
+##sub program_name { $PROGRAM_NAME }
 
 =item program_dir
 
