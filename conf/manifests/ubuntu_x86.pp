@@ -10,7 +10,7 @@ Exec {
 	    "/usr/bin",
 	    "/sbin",
 	    "/bin",
-	    ]
+	    ],
   ld_library_path => [
                       "/usr/lib64",
                       ]
