@@ -99,15 +99,15 @@ exec {
  		cwd     => "/usr/share/supersmart/",
                 timeout => 0,
  		require => Exec[ 'dl_phylota_dump'];
- 	"symlink_phylota_dump":
- 	        command => "ln -s /usr/share/supersmart/phylota",
+ 	"mv_phylota_dump":
+ 	        command => "mv /usr/share/supersmart/phylota/ /var/lib/mysql",
  		creates => "/var/lib/mysql/phylota/seqs.frm",
  		cwd     => "/var/lib/mysql/",
  		require => Exec[ 'unzip_phylota_dump' ];
  	"chown_phylota_db":
  		command => "chown -R -h mysql:mysql phylota/",
  		cwd     => "/var/lib/mysql/",
- 		require => Exec[ 'symlink_phylota_dump' ];
+ 		require => Exec[ 'mv_phylota_dump' ];
  	"grant_phylota_db":
  		command => "mysql -u root -e \"grant all on phylota.* to 'mysql'@'localhost';\"",
  		require => Exec[ 'chown_phylota_db' ];
