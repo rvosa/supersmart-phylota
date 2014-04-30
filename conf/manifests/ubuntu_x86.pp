@@ -10,10 +10,8 @@ Exec {
 	    "/usr/bin",
 	    "/sbin",
 	    "/bin",
-	    ],
-  ld_library_path => [
-                      "/usr/lib64",
-                      ]
+	    ]
+                      
 }
 
 # install packages. most likely this is done with yum.
@@ -324,7 +322,43 @@ exec {
                 command => "chown -R vagrant examples/",
                 cwd     => "/usr/local/src/supersmart",
                 require => Exec["clone_supersmart"];
-          
+
+        # install BEAST
+        "download_beast":
+                command => "wget https://beast-mcmc.googlecode.com/files/BEASTv1.8.0.tgz",
+                cwd     => "/usr/local/src",
+                creates => "/usr/local/src/BEASTv1.8.0.tgz",
+                require => Package[ 'wget' ];
+        "unzip_beast":
+                command => "tar -xvzf BEASTv1.8.0.tgz",
+                cwd     => "/usr/local/src/",
+                creates => "/usr/local/src/BEASTv1.8.0/bin/beast",
+                require => Exec[ 'download_beast' ];
+
+        "symlink_beast":
+                command => "ln -s /usr/local/src/BEASTv1.8.0/bin/* .",
+                cwd     => "/usr/local/bin/",
+                creates => "/usr/local/bin/beast",
+                require => Exec[ 'unzip_beast' ];
+              
+        # install beagle-lib
+        "checkout_beagle_lib":
+                command => "svn checkout http://beagle-lib.googlecode.com/svn/trunk/ beagle-lib",
+                cwd     => "/usr/local/src",
+                creates => "/usr/local/src/beagle-lib/autogen.sh",
+                require => Package[ 'subversion' ];
+        "generate_beagle_config":
+                command => "sh autogen.sh",
+                cwd     => "/usr/local/src/beagle-lib/",
+                creates => "/usr/local/src/beagle-lib/configure",
+                require => Exec[ 'checkout_beagle_lib' ];
+        "build_beagle_lib":
+                command => "sh configure && make install",
+                cwd     => "/usr/local/src/beagle-lib/",
+                creates => "/usr/local/lib/libhmsbeagle.so",
+                require => Exec[ 'generate_beagle_config' ];
+
+              
 	# install treePL
 	"clone_treepl":
 		command => "git clone https://github.com/blackrim/treePL.git",
