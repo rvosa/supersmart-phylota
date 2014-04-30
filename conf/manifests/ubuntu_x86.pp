@@ -1,16 +1,19 @@
 # This manifest installs the supersmart pipeline, 
 # for more information http://www.supersmart-project.org
 
-# update the $PATH environment variable for the Exec tasks.
+# update the $PATH and $LD_LIBRARY_PATH environment variables 
 Exec {
-	path => [ 
-		"/usr/local/sbin", 
-		"/usr/local/bin",
-		"/usr/sbin",
-		"/usr/bin",
-		"/sbin",
-		"/bin",
-	]
+  path => [ 
+	    "/usr/local/sbin", 
+	    "/usr/local/bin",
+	    "/usr/sbin",
+	    "/usr/bin",
+	    "/sbin",
+	    "/bin",
+	    ]
+  ld_library_path => [
+                      "/usr/lib64",
+                      ]
 }
 
 # install packages. most likely this is done with yum.
