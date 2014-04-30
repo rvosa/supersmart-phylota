@@ -41,7 +41,7 @@ package {
 
 # set up the mysql daemon process
 service { 
-	"mysqld":
+	"mysql":
 		enable  => true,
 		ensure  => running,
 		require => Package["mysql-server"],
