@@ -113,6 +113,15 @@ Getter/setter for a config file for the ExaBayes run.
 
 *config_file = *c;
 
+=item model
+
+Getter/setter for Exabayes model (DNA | Protein)
+
+=cut
+
+*model = *m;
+
+
 
 sub new {
         my ( $class, @args ) = @_;
@@ -134,8 +143,6 @@ sub run {
         my %args = @_;
         my $phylip  = $args{'-phylip'} || die "Need -phylip arg";
         my $intree  = $args{'-intree'} || die "Need -intree arg";
-
-        
         
         my $binary = $self->run_id . '-dat' ;
         $binary = $treeservice->make_phylip_binary( $phylip, $binary, $self->parser, $self->work_dir );
@@ -152,9 +159,7 @@ sub run {
         #$tree -> remove_unbranched_internals;
         #$tree -> deroot;                                                                      
         #my $newtree = $intree."_new";
-        #print "NEWTREE : ".$newtree."\n";
         #open my $fh, '>', $newtree or die $!;
-        #print $fh $tree->to_newick;
         #close $fh;        
         #my $intree = $self->_make_intree($taxa, $tree, \@tipnames );
         
@@ -172,43 +177,28 @@ sub run {
         
         # build command string for running 'consense'
         $string = $self->consense_bin . $self->_set_consense_params;
+
         # add all topology files created by Exabayes
-        $string .= " -f " . $self->work_dir . "ExaBayes_topologies." . $self->run_id . ".*" . " -n " . $self->run_id;
-        # run consense in working directory since we cannot specify output                 
-
-        my $curdir = getcwd;
-        ##chdir $self->work_dir;
-	$log->info("Going to run $string");        
-        print $string."\n";
-        my $output = system($string);
-        #my $output = qx($string);
-        ##chdir $curdir;
-        print "Back in directory $curdir \n";
-
-        # consense output file name is not controllable and depends on the parameters
-        #   therefore we parse it from STDOUT of the command
-        #TODO : This is a hack. Filenames and directories should be managed in a clean way
-        my $filename = "ExaBayes_ConsensusExtendedMajorityRuleNewick.".$self->run_id;
+        $string .= " -f " . $self->work_dir . "/ExaBayes_topologies." . $self->run_id . ".*" . " -n " . $self->run_id;
+        
+        # run consense
+        $log->info("Going to run $string");        
+        my $output = system($string) and $self->warn("Couldn't run Consense: $?");
+        
         # get format for output file, if not given, chose 'newick'
-        #my $format = $self->outfile_format | "newick";
-        #if ( $output =~/$format\ format\ to (.+)\n/ ) {
-        #        $filename = $1;
-        #} 
-        #else {
-        #        $log->warn("Could not capture output from consense");                
-        #        return; 
-        #}        
-        # rename to given output file name
+        my $format = $self->outfile_format | "newick";
+        $format = ucfirst($format);
+        # consense output file name is not controllable, therefore rename consense outfile
+        my $filename = "ExaBayes_Consensus*".$format . "." . $self->run_id;
+        
         if ( $self->outfile_name ) {
                 my $mvstr = "mv " . $filename . " " . $self->outfile_name;
                 system ($mvstr) and $self->warn("Couldn't run command $mvstr : $?");
-                ##my $status = $self->_run_in_dir( $self->work_dir, $mvstr ); 
                 $ret = $self->outfile_name;
         } 
         else {
                 $ret = $filename;
         }
-        
         #return $self->_cleanup;
         return $ret;
 }
