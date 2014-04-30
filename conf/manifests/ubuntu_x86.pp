@@ -31,7 +31,8 @@ package {
 	"libio-string-perl":           ensure => installed;
 	"git":                         ensure => installed;
 	"libarchive-dev":              ensure => installed;
-	"autoconf":                    ensure => installed;
+        "zlib1g-dev":                  ensure => installed;
+        "autoconf":                    ensure => installed;
 	"automake":                    ensure => installed;
 	"libtool":                     ensure => installed;
 	"build-essential":             ensure => installed;	
@@ -290,7 +291,7 @@ exec {
 		command => "git clone https://github.com/stamatak/ExaML.git",
 		cwd     => "/usr/local/src",
 		creates => "/usr/local/src/ExaML/",
-		require => Package[ 'git', 'libarchive-dev' ];
+	        require => Package[ 'git', 'zlib1g-dev' ];
 	"compile_examl":
 		command => "make -f Makefile.SSE3.gcc LD_LIBRARY_PATH=/usr/lib",
 		cwd     => "/usr/local/src/ExaML/examl",
