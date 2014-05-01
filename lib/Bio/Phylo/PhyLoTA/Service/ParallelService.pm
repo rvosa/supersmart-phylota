@@ -133,15 +133,17 @@ sub pmap_mpi (&@) {
                         my $worker = $idx[$i-1]+1;
                         push @chunks[$idx[$i]],  $data[ $i ];
                 }
-                my @result;
+                
                 # send subset of data to worker
                 for my $worker ( 1 .. $num_workers){                        
                         my $subset = $chunks[$worker-1];
                         $logger->info("Sending ".scalar(@$subset)." items to worker # $worker");
                         MPI_Send($subset,$worker,$JOB,$WORLD);              
                 }          
+                # receive the result
+                my @result;
                 for my $worker ( 1 .. $num_workers){                        
-                        # receive the result
+                        my $subset = $chunks[$worker-1];
                         my $result_subset = MPI_Recv($worker,$RESULT,$WORLD);
                         $logger->info("Received results from worker # $worker");
                         push @result, @{ $subset };
