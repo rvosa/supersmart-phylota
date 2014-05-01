@@ -71,8 +71,18 @@ file {
 		ensure  => link,
 		target  => "/usr/local/src/ExaML/parser/parser",
 		require => Exec["compile_parser"];
-	"treepl_link":
-		path    => "/usr/local/bin/treePL",
+        "exabayes_link":
+		path    => "/usr/local/bin/exabayes",
+		ensure  => link,
+		target  => "/usr/local/src/exabayes-1.2.1/bin/exabayes",
+		require => Exec["compile_exabayes"];
+        #"parser_link":
+	#	path    => "/usr/local/bin/parser",
+	#	ensure  => link,
+	#	target  => "/usr/local/src/exabayes-1.2.1/bin/parser",
+	#	require => Exec["compile_exabayes"];
+      "treepl_link":
+	        path    => "/usr/local/bin/treePL",
 		ensure  => link,
 		target  => "/usr/local/src/treePL/src/treePL",
 		require => Exec["compile_treepl"];
@@ -303,7 +313,25 @@ exec {
 		cwd     => "/usr/local/src/ExaML/parser",
 		creates => "/usr/local/src/ExaML/parser/parser",
 		require => Exec["clone_examl","install_openmpi"];
-		
+
+        # install exabayes
+        "download_exabayes":
+                command => "wget http://sco.h-its.org/exelixis/material/exabayes/1.2.1/exabayes-1.2.1-linux-openmpi-avx.tar.gz",
+                cwd     => "/usr/local/src",
+                creates => "/usr/local/src/exabayes-1.2.1-linux-openmpi-avx.tar.gz",
+                require => Exec[ "install_openmpi" ];
+        "unzip_exabayes":
+                command => "tar -xvzf exabayes-1.2.1-linux-openmpi-avx.tar.gz",
+                cwd     => "/usr/local/src",
+                creates => "/usr/local/src/exabayes-1.2.1/",
+                require => Exec[ "download_exabayes" ];
+        "compile_exabayes":
+                command => "sh build.sh CC=mpicc CXX=mpicxx",
+                cwd     => "/usr/local/src/exabayes-1.2.1/",
+                creates => "/usr/local/src/exabayes-1.2.1/bin/exabayes",
+                timeout => 0,
+                require => Exec[ "unzip_exabayes" ];      
+	      
 	# install supersmart
 	"clone_supersmart":
 		command => "git clone https://github.com/naturalis/supersmart.git",
