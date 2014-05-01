@@ -10,8 +10,7 @@ Exec {
 	    "/usr/bin",
 	    "/sbin",
 	    "/bin",
-	    ]
-                      
+	    ]                      
 }
 
 # install packages. most likely this is done with yum.
@@ -39,6 +38,7 @@ package {
 	"build-essential":             ensure => installed;	
 	"curl":                        ensure => installed;
 	"gzip":                        ensure => installed;
+        "openjdk-6-jdk":               ensure => installed;
 }
 
 # set up the mysql daemon process
@@ -346,7 +346,7 @@ exec {
                 command => "svn checkout http://beagle-lib.googlecode.com/svn/trunk/ beagle-lib",
                 cwd     => "/usr/local/src",
                 creates => "/usr/local/src/beagle-lib/autogen.sh",
-                require => Package[ 'subversion' ];
+                require => Package[ 'subversion', "openjdk-6-jdk" ];
         "generate_beagle_config":
                 command => "sh autogen.sh",
                 cwd     => "/usr/local/src/beagle-lib/",
