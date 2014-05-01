@@ -81,7 +81,7 @@ sub import {
 
         eval "sub ${caller}::num_workers;";
 	eval "*${caller}::num_workers = \\&${package}::num_workers;";
-
+        
 }
 
 
@@ -134,16 +134,19 @@ sub pmap_mpi (&@) {
                         push @chunks[$idx[$i]],  $data[ $i ];
                 }
                 my @result;
+                # send subset of data to worker
                 for my $worker ( 1 .. $num_workers){                        
-                        # send subset of data to worker
                         my $subset = $chunks[$worker-1];
                         $logger->info("Sending ".scalar(@$subset)." items to worker # $worker");
-                        MPI_Send($subset,$worker,$JOB,$WORLD);                        
+                        MPI_Send($subset,$worker,$JOB,$WORLD);              
+                }          
+                for my $worker ( 1 .. $num_workers){                        
                         # receive the result
                         my $result_subset = MPI_Recv($worker,$RESULT,$WORLD);
                         $logger->info("Received results from worker # $worker");
                         push @result, @{ $subset };
                 }
+                
                 return @result;
 	}
 	else {
