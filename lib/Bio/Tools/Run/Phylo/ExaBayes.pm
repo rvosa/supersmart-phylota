@@ -121,7 +121,55 @@ Getter/setter for Exabayes model (DNA | Protein)
 
 *model = *m;
 
+=item mode
 
+Getter/setter for Exabayes Mode (performance vs memory usage, value between 0 and 3)
+
+=cut
+
+*mode = *M;
+
+=item alnFile
+
+Getter/Setter for phylip alignment file 
+
+=cut
+
+*alnFile = *f;
+
+=item treeFile
+
+Getter/setter for file with starting tree
+
+=cut
+
+*treeFile = *t;
+
+##sub program_name { $PROGRAM_NAME }
+
+=item program_dir
+
+(no-op)
+
+=cut
+
+sub program_dir { undef }
+
+
+=item version
+
+Returns the version number of the ExaBayes executable.
+
+=cut
+
+sub version {
+    my ($self) = @_;
+    my $exe;
+    return undef unless $exe = $self->executable;
+    my $string = `$exe -v 2>&1`;
+    $string =~ /ExaBayes, version (\d+\.\d+\.\d+)/;
+    return version->parse($1) || undef;
+}
 
 sub new {
         my ( $class, @args ) = @_;
@@ -136,41 +184,26 @@ sub new {
         return $self;
 }
 
-
 sub run {
 	my $self = shift;
         my $ret;
         my %args = @_;
         my $phylip  = $args{'-phylip'} || die "Need -phylip arg";
-        my $intree  = $args{'-intree'} || die "Need -intree arg";
+        
         
         my $binary = $self->run_id . '-dat' ;
         $binary = $treeservice->make_phylip_binary( $phylip, $binary, $self->parser, $self->work_dir );
         $binary = File::Spec->catfile($self->work_dir, $binary);
-        my @tipnames = $treeservice->read_tipnames( $phylip );
         
-        #my $forest = Bio::Phylo::IO->parse(
-        #        '-format' => 'newick',
-        #        '-file'   => $intree,
-        #    );
-        #my $tree = $forest->first;
-        #$tree -> keep_tips( [ @tipnames ] );
-        #$tree -> resolve;
-        #$tree -> remove_unbranched_internals;
-        #$tree -> deroot;                                                                      
-        #my $newtree = $intree."_new";
-        #open my $fh, '>', $newtree or die $!;
-        #close $fh;        
-        #my $intree = $self->_make_intree($taxa, $tree, \@tipnames );
-        
+        $self->alnFile($binary);
+
         # compose argument string: add MPI commands, if any
         my $string;
         if ( $self->mpirun && $self->nodes ) {
 		$string = sprintf '%s -np %i ', $self->mpirun, $self->nodes;
 	}
-        ##TODO: fix issue with input tree
-        my $newtree = 1;
-        $string .= $self->executable . $self->_setparams($binary, $newtree);       
+        
+        $string .= $self->executable . $self->_setparams;       
                 
         $log->info("going to run '$string'");        
         system($string) and $self->warn("Couldn't run ExaBayes: $?");
@@ -247,23 +280,6 @@ sub parser {
 	return $self->{'_parser'} || 'parser';
 }
 
-sub _run_in_dir {
-        my ( $self, $dir, $command ) = @_;
-        #return value
-        my $res;
-        if ( $dir && $command ) {
-                $log->info("Going to run command $command in $dir");
-                my $curdir = getcwd;
-                chdir $self->work_dir;	
-                $res = system($command) and $self->warn("Couldn't run command $command : $?");                
-                chdir $curdir;
-        }
-        else {
-                $log->warn("Need 'directory' and 'command' arguments");
-                $res = -1;
-        }        
-        return $res;
-}
 
 sub _write_config_file {
         my $self = shift;
@@ -282,47 +298,15 @@ sub _write_config_file {
         return $self->config_file;
 }
 
-sub _make_intree {
-	my ( $self, $tree, $tipnames ) = @_;
-	my $treefile = File::Spec->catfile( $self->work_dir, $self->run_id . '.dnd' );
-	open my $treefh, '>', $treefile or die $!;
-	if ( $tree ) {
-                $tree -> keep_tips( [@{$tipnames}] );
-                $tree -> resolve;
-                $tree -> remove_unbranched_internals;
-                $tree -> deroot;                                                              
-                print $treefh $tree->to_newick;
-	}
-	else {
-	
-		# no tree was given to the class. here we then simulate
-		# a BS tree shape.
-		my $gen = Bio::Phylo::Generator->new;
-		$tree = $gen->gen_equiprobable( '-tips' => scalar @{$tipnames} )->first;
-		my $i = 0;
-		$tree->visit(sub{
-			my $n = shift;
-			if ( $n->is_terminal ) {
-				$n->set_name( @{$tipnames}[$i++] );
-			}
-		});
-                return $self->_make_intree( $tree, $tipnames );
-	}
-	return $treefile;
-}
-
-
-
 sub _setparams {
-    my ( $self, $infile, $intree ) = @_;
+    my $self = shift;
     my $param_string = '';
 
     # add config file to parameters if not already existant
     if (! $self->config_file){
             $self->_write_config_file;
     }
-    #$params_string .= ' -c ' . self->$config_file;
-
+    
     # iterate over parameters and switches
     for my $attr (@ExaBayes_PARAMS) {
         my $value = $self->$attr();
@@ -333,12 +317,6 @@ sub _setparams {
         my $value = $self->$attr();
         next unless $value;
         $param_string .= ' -' . $attr;
-    }
-    
-    # set file names to local
-    my %path = ('-f' => $infile );  ###, '-t' => $intree  , '-n' => $self->outfile_name );
-    while( my ( $param, $path ) = each %path ) {		
-		$param_string .= " $param $path";
     }
     
     # hide stderr
@@ -360,33 +338,6 @@ sub _set_consense_params {
         my $null = File::Spec->devnull;
         $param_string .= " > $null 2> $null" if $self->quiet() || $self->verbose < 0;
         return $param_string;
-}
-
-
-##sub program_name { $PROGRAM_NAME }
-
-=item program_dir
-
-(no-op)
-
-=cut
-
-sub program_dir { undef }
-
-
-=item version
-
-Returns the version number of the ExaBayes executable.
-
-=cut
-
-sub version {
-    my ($self) = @_;
-    my $exe;
-    return undef unless $exe = $self->executable;
-    my $string = `$exe -v 2>&1`;
-    $string =~ /ExaBayes, version (\d+\.\d+\.\d+)/;
-    return version->parse($1) || undef;
 }
 
 1;
