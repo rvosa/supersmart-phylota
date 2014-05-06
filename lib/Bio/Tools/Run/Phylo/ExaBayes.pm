@@ -145,6 +145,14 @@ Getter/setter for file with starting tree
 
 *treeFile = *t;
 
+=item dryRun
+
+Getter/setter for whether or not just a dry run should be performed
+
+=cut
+
+*dryRun = *d;
+
 ##sub program_name { $PROGRAM_NAME }
 
 =item program_dir
@@ -190,7 +198,6 @@ sub run {
         my %args = @_;
         my $phylip  = $args{'-phylip'} || die "Need -phylip arg";
         
-        
         my $binary = $self->run_id . '-dat' ;
         $binary = $treeservice->make_phylip_binary( $phylip, $binary, $self->parser, $self->work_dir );
         $binary = File::Spec->catfile($self->work_dir, $binary);
@@ -205,36 +212,55 @@ sub run {
         
         $string .= $self->executable . $self->_setparams;       
                 
+        # run exabayes
         $log->info("going to run '$string'");        
         system($string) and $self->warn("Couldn't run ExaBayes: $?");
         
-        # build command string for running 'consense'
-        $string = $self->consense_bin . $self->_set_consense_params;
-
-        # add all topology files created by Exabayes
-        $string .= " -f " . $self->work_dir . "/ExaBayes_topologies." . $self->run_id . ".*" . " -n " . $self->run_id;
+        $ret = $self->run_consense;
         
-        # run consense
-        $log->info("Going to run $string");        
-        my $output = system($string) and $self->warn("Couldn't run Consense: $?");
-        
-        # get format for output file, if not given, chose 'newick'
-        my $format = $self->outfile_format | "newick";
-        $format = ucfirst($format);
-        # consense output file name is not controllable, therefore rename consense outfile
-        my $filename = "ExaBayes_Consensus*".$format . "." . $self->run_id;
-        
-        if ( $self->outfile_name ) {
-                my $mvstr = "mv " . $filename . " " . $self->outfile_name;
-                system ($mvstr) and $self->warn("Couldn't run command $mvstr : $?");
-                $ret = $self->outfile_name;
-        } 
-        else {
-                $ret = $filename;
-        }
         #return $self->_cleanup;
+        # return outfile name or 1 if it was a dry run
+        return $ret || $self->dryRun;
+}
+
+sub run_consense {
+        my $self = shift;
+        my $ret = "";
+        
+        # add all topology files created by Exabayes. CAUTION! Some 'magic words' in here
+        my $exabayesout = $self->work_dir . "/ExaBayes_topologies." . $self->run_id . ".*";
+        my @arr = glob $exabayesout; 
+        if (scalar( @arr ) < 1 ) {
+                $log->warn("cannot run consense since ExaBayes did not produce output. Did you perform a dry run?");
+        }
+        else {
+                # build command string for running 'consense'
+                my $string = $self->consense_bin . $self->_set_consense_params;
+                $string .= " -f " . $exabayesout . " -n " . $self->run_id;
+                
+                # run consense
+                $log->info("Going to run $string");        
+                my $output = system($string) and $self->warn("Couldn't run Consense: $?");
+                
+                # get format for output file, if not given, chose 'newick'
+                my $format = $self->outfile_format | "newick";
+                $format = ucfirst($format);
+                
+                # consense output file name is not controllable, therefore rename consense outfile
+                my $filename = "ExaBayes_Consensus*".$format . "." . $self->run_id;
+                
+                if ( $self->outfile_name ) {
+                        my $mvstr = "mv " . $filename . " " . $self->outfile_name;
+                        system ($mvstr) and $self->warn("Couldn't run command $mvstr : $?");
+                        $ret = $self->outfile_name;
+                } 
+                else {
+                        $ret = $filename;
+                }
+        }
         return $ret;
 }
+
 
 =item mpirun
 
