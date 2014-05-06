@@ -8,6 +8,7 @@ use Bio::Phylo::PhyLoTA::Config;
 use Bio::Phylo::PhyLoTA::Service;
 use base 'Bio::Phylo::PhyLoTA::Service';
 use Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa;
+use List::MoreUtils 'uniq';
 use Storable 'dclone';
 
 my $config = Bio::Phylo::PhyLoTA::Config->new;
@@ -41,11 +42,16 @@ sub reroot_tree {
                 my $curr_tree = parse_tree(
                         '-format'     => 'newick',
                         '-string'     => $nw,
+                        '-as_project' => 1,
                     );                                
-                my $node = @{ $curr_tree->get_internals }[$i];                
+                
+                my $node = @{ $curr_tree->get_internals }[$i];
                 $curr_tree->reroot($node);
+                
+                # determine how many monophyletic genera there are in the rerooted tree
                 my @set = $self->_make_clade_species_sets( $curr_tree, @records );
-                if ( scalar (@set) > $max_clades ){
+                
+                if ( scalar (@set) >= $max_clades ){
                         $max_clades = scalar (@set);
                         $result = $curr_tree;
                 }
@@ -110,14 +116,14 @@ sub graft_tree {
 	my @exemplars;
 	for my $name ( @names ) {
 		if ( my $e = $backbone->get_by_name($name) ) {
-			$log->info("found $name in backbone: ".$e->get_name);
+			$log->warn("found $name in backbone: ".$e->get_name);
                         push @exemplars, $e;
 		}
 		else {
 			$log->debug("$name is not in the backbone tree");
 		}
 	}
-	$log->info("found ".scalar(@exemplars)." exemplars in backbone");
+	$log->warn("found ".scalar(@exemplars)." exemplars in backbone");
 	my @copy = @exemplars; # XXX ???	
 	my $bmrca = $backbone->get_mrca(\@copy);
 	
@@ -125,7 +131,7 @@ sub graft_tree {
 	my @clade_exemplars = map { $clade->get_by_name($_->get_name) } @exemplars;
 	my @ccopy = @clade_exemplars;
 	my $cmrca = $clade->get_mrca(\@ccopy);
-	$log->info("found equivalent ".scalar(@clade_exemplars)." exemplars in clade");
+	$log->warn("found equivalent ".scalar(@clade_exemplars)." exemplars in clade");
 	
 	# calculate the respective depths, scale the clade by the ratios of depths
 	my $cmrca_depth = $cmrca->calc_max_path_to_tips;
@@ -137,13 +143,15 @@ sub graft_tree {
 		$node->set_branch_length( $bl * ( $bmrca_depth / $cmrca_depth ) );
 		$log->debug("adjusting branch length for ".$node->get_internal_name);
 	});
-	$log->info("re-scaled clade by $bmrca_depth / $cmrca_depth");
+	$log->warn("re-scaled clade by $bmrca_depth / $cmrca_depth");
 	
 	# calculate the depth of the root in the clade, adjust backbone depth accordingly
 	my $crd  = $clade->get_root->calc_max_path_to_tips;
 	my $diff = $bmrca_depth - $crd;
-	$bmrca->set_branch_length( $bmrca->get_branch_length + $diff );
-	$log->info("adjusted backbone MRCA depth by $bmrca_depth - $crd");
+	print "crd $crd , diff: $diff , bmrca_depth $bmrca_depth bmrca branch length: ".$bmrca->get_branch_length."\n";
+        my $branch_length = $bmrca->get_branch_length || 0;
+        $bmrca->set_branch_length( $branch_length + $diff );
+	$log->warn("adjusted backbone MRCA depth by $bmrca_depth - $crd");
 	
 	# now graft!
 	$bmrca->clear();
@@ -153,12 +161,12 @@ sub graft_tree {
 			my $name = $node->get_internal_name;
 			if ( my $p = $node->get_parent ) {
 				if ( $p->is_root ) {
-					$log->info("grafted $name onto backbone MRCA");
+					$log->warn("grafted $name onto backbone MRCA");
 					$node->set_parent($bmrca);
 				}
 			}
 			if ( $node->is_root ) {
-				$log->info("replacing root $name with backbone MRCA");
+				$log->warn("replacing root $name with backbone MRCA");
 			}
 			else {
 				$log->debug("inserting $name into backbone");
@@ -183,18 +191,23 @@ sub make_phylip_binary {
 	$log->info("going to make binary representation of $phylip => $binfilename");	
         $log->info("using parser $parser");	
 	my ( $phylipvolume, $phylipdirectories, $phylipbase ) = File::Spec->splitpath( $phylip );
+        print "Volume : $phylipvolume Dirs : $phylipdirectories Base : $phylipbase \n";
         my $curdir = getcwd;
-	chdir $work_dir;        
-	my @command = ( $parser, 
+	chdir $work_dir;       
+        
+        # check if filename exists in working directory, if not take the full path
+        my $phylipfile = -e $phylipbase ? $phylipbase : $phylip;
+        
+        my @command = ( $parser, 
 		'-m' => 'DNA', 
-		'-s' => $phylipbase, 
+		'-s' => $phylipfile, 
 		'-n' => $binfilename,
 		'>'  => File::Spec->devnull,		
 		'2>' => File::Spec->devnull,
 	);
 	my $string = join ' ', @command;
 	$log->info("going to run '$string' inside " . $work_dir );
-	my $a = system($string) and $log->warn("Couldn't create $binfilename: $?");        
+        my $a = system($string) and $log->warn("Couldn't create $binfilename: $?");        
 	chdir $curdir;
 	return "${binfilename}.binary";
 }
@@ -232,8 +245,6 @@ sub make_phylip_from_matrix {
 	return $phylipfile;
 }
 
-
-
 # reads the supermatrix (phylip format) and returns the tip names from it
 sub read_tipnames {
 	my ($self, $supermatrix) = @_;
@@ -262,8 +273,47 @@ sub read_tipnames {
 }
 
 
+sub _count_monophyletic_groups {
+        my ($self, $tree, @records) = @_;
+        my $level = "family";
+        
+        # get all distinct families
+        my @families = uniq ( map { $_->{$level} } @records );
+       
+        my @terminals = @{ $tree->get_terminals };
+        #for my $t (@terminals){
+        #        print ref ($t)."\n";
+        #        print $t->get_name."\n";
+        #}
+        
+        # iterate over all families and get species in the tree that are 
+        #  in each family
+        for my $f (@families){
+                # get the subset of terminals that belong to this family
+                ##map { if ( $_->{'family'} == $f )  }   @records;
+                #for my $r ( @records ){
+                #        if 
+                #}
+                ##my @species = map { $_->{'species'} } grep { $_->{'family'} == $f } @records;
+                #for my $s (@species){
+                #        print $s."\n";
+                #}
+                die();
+        }
+        
+        #for my $r (@records) {
+        #        my %h = %$r;
+        #        for my $k (keys %h){
+        #                print $k."\t";
+        #                print $h{$k}."\n";
+        #        }
+        #        #print ref($r)."\n";
+        #}
+        
+        ##my ($genus) = map { $_->{'genus'} } grep { $_->{'species'} == $id } @records;
+}
 
-## as
+
 sub _make_clade_species_sets {
         my ($self, $tree, @records) = @_;
         if (! @records) {
