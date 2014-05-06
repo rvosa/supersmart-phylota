@@ -134,7 +134,7 @@ elsif ( $config->BACKBONE_INFERENCE_TOOL eq "exabayes" ) {
         $tool->numCoupledChains($cupchains);
         
         # set number of generations
-        my $numgen = 10;#00_000;
+        my $numgen = 1_000_000;
         $logger->info("setting number of generations to $numgen");
         $tool->numGen($numgen);
         
@@ -159,6 +159,16 @@ elsif ( $config->BACKBONE_INFERENCE_TOOL eq "exabayes" ) {
         # set burnin fraction
         $logger->info("setting burnin fraction to ".$config->BURNIN);
         $tool->burnin_fraction($config->BURNIN);
+
+        # set mode to zero (faster, but takes more memory)
+        $logger->info("setting exabayes 'mode' argument to zero ");
+        $tool->mode(0);
+        
+        # try to save memory with SEV technique
+        #$logger->info("trying to save memory with SEV technique in exabayes run");
+        #$tool->S(1);
+        
+        
 }
 
 $logger->info("patience please, running $supermatrix with starting tree");
