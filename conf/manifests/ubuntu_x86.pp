@@ -171,6 +171,7 @@ exec {
 		command => "git clone https://github.com/rvosa/bio-phylo.git",
 		cwd     => "/usr/local/src",
 		creates => "/usr/local/src/bio-phylo",
+		timeout => 0,
 		require => Package[ 'git' ];
 	"make_bio_phylo_sh":
 		command => "echo 'export PERL5LIB=\$PERL5LIB:/usr/local/src/bio-phylo/lib' > biophylo.sh",
@@ -188,6 +189,7 @@ exec {
 		command => "git clone -b v1.6.x https://github.com/bioperl/bioperl-live.git",
 		cwd     => "/usr/local/src",
 		creates => "/usr/local/src/bioperl-live",
+		timeout => 0,
 		require => Package[ 'git' ];		
 	"make_bioperl_live_sh":
 		command => "echo 'export PERL5LIB=\$PERL5LIB:/usr/local/src/bioperl-live' > bioperl_live.sh",
