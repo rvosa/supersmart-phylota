@@ -39,6 +39,7 @@ MERGEDLIST=$WORKDIR/merged.txt
 SUPERMATRIX=$WORKDIR/supermatrix.phy
 MEGATREE=megatree.dnd
 CHRONOGRAM=$WORKDIR/chronogram.dnd
+LABELLED_CHRONOGRAM=$WORKDIR/labelled_chronogram.dnd
 TREEPLCONF=$WORKDIR/treePL.conf
 FINALTREE=$WORKDIR/final.dnd
 
@@ -74,15 +75,13 @@ fi
 
 # infer backbone tree
 if [ ! -e "$WORKDIR/$MEGATREE" ]; then
-	$PERLSCRIPT/infer_backbone.pl -o "$WORKDIR/$MEGATREE" -w $WORKDIR -c $COMMONTREE \
-	-s $SUPERMATRIX $VERBOSE
+	$PERLSCRIPT/infer_backbone_bayes.pl -o "$WORKDIR/$MEGATREE" -w $WORKDIR -c $COMMONTREE -s $SUPERMATRIX -t $SPECIESTABLE $VERBOSE
 fi
 
 # calibrate backbone tree
 if [ ! -e $CHRONOGRAM ]; then
     NUMSITES=`head -1 $SUPERMATRIX | cut -f 2 -d ' '`
-    $PERLSCRIPT/calibrate_tree.pl -f $FOSSILTABLE -r "$WORKDIR/$MEGATREE" \
-        -s $TREEPLSMOOTH -o $CHRONOGRAM $VERBOSE -n $NUMSITES 
+    $PERLSCRIPT/calibrate_tree.pl -f $FOSSILTABLE -r "$WORKDIR/$MEGATREE" -s $TREEPLSMOOTH -o $CHRONOGRAM $VERBOSE -n $NUMSITES 
 fi
 
 # decompose backbone tree
@@ -100,10 +99,10 @@ fi
 # infer tree for each clade
 file_count=`ls -f $WORKDIR/clade*/*.nex 2>/dev/null | wc -w`
 if [ $file_count -le $clade_count ]; then
-    $PERLSCRIPT/infer_clade.pl -w $WORKDIR -ngens 30000000 -sfreq 300000 -lfreq 300000 $VERBOSE
+    $MPIRUN $PERLSCRIPT/parallel_infer_clades.pl -w $WORKDIR -ngens 30000000 -sfreq 300000 -lfreq 300000 $VERBOSE
 fi
 
 # graft clade trees onto backbone
 if [ ! -e $FINALTREE ]; then
-    $PERLSCRIPT/graft_trees.pl -workdir $WORKDIR -backbone $NAMED_CHRONOGRAM -outfile $FINALTREE $VERBOSE
+    $PERLSCRIPT/graft_trees.pl -workdir $WORKDIR -backbone $LABELLED_CHRONOGRAM -outfile $FINALTREE $VERBOSE
 fi
