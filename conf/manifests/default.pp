@@ -190,6 +190,7 @@ exec {
 		command => "git clone -b v1.6.x https://github.com/bioperl/bioperl-live.git",
 		cwd     => "/usr/local/src",
 		creates => "/usr/local/src/bioperl-live",
+		timeout => 0,
 		require => Package[ 'git' ];		
 	"make_bioperl_live_sh":
 		command => "echo 'export PERL5LIB=\$PERL5LIB:/usr/local/src/bioperl-live' > bioperl_live.sh",
@@ -207,6 +208,7 @@ exec {
 		command => "git clone https://github.com/bioperl/bioperl-run.git",
 		cwd     => "/usr/local/src",
 		creates => "/usr/local/src/bioperl-run",
+		timeout => 0,
 		require => Package[ 'git' ];		
 	"make_bioperl_run_sh":
 		command => "echo 'export PERL5LIB=\$PERL5LIB:/usr/local/src/bioperl-run/lib' > bioperl_run.sh",
