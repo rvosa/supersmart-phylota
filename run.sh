@@ -75,7 +75,7 @@ fi
 
 # infer backbone tree
 if [ ! -e "$WORKDIR/$MEGATREE" ]; then
-	$PERLSCRIPT/infer_backbone_bayes.pl -o "$WORKDIR/$MEGATREE" -w $WORKDIR -c $COMMONTREE -s $SUPERMATRIX -t $SPECIESTABLE $VERBOSE
+	$PERLSCRIPT/infer_backbone.pl -o "$WORKDIR/$MEGATREE" -w $WORKDIR -c $COMMONTREE -s $SUPERMATRIX -t $SPECIESTABLE $VERBOSE
 fi
 
 # calibrate backbone tree
