@@ -94,6 +94,41 @@ my $log    = Bio::Phylo::Util::Logger->new(
 	'-level' => $verbosity,
 );
 
+use Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector;
+my $mts     = Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector->new;
+
+sub get_seed_gi_description {
+        my $aln = shift;
+        open(FH, $aln);
+        # get seed gis
+        my @gis;
+        while (<FH>){
+                chomp;
+                my $str = $_;
+                ##print "str : $str \n";
+                my $seedgi;
+                while ($str =~ /seed_gi\|([0-9]+)/g){
+                        $seedgi = $1;
+                }
+                ##print "Seed GI : $seedgi \n";
+                if ($seedgi){
+                        push @gis,  $seedgi;
+                }
+        }
+        close FH;
+        
+        #get sequence objects and get sequence description
+        my @markers;
+        foreach my $gi (@gis){
+                my $seq = $mts->find_seq($gi);
+                #print $seq->def."\n";
+                push @markers, $seq->def;
+        }
+
+        return @markers;
+}
+
+
 # read list of alignments
 my @alignments;
 {
@@ -233,15 +268,13 @@ my @sorted_exemplars = sort { scalar(@{$alns_for_taxon{$a}}) <=> scalar(@{$alns_
 # starting with the least well-represented taxa...
 my ( %aln, %seen );
 TAXON: for my $taxon ( @sorted_exemplars ) {
-
 	# take all its not-yet-seen alignments...
 	my @alns = grep { ! $aln{$_} } @{ $alns_for_taxon{$taxon} };
 	$seen{$taxon} = 0 if not defined $seen{$taxon};
 	ALN: while( $seen{$taxon} < $config->BACKBONE_MIN_COVERAGE ) {
-	
 		# pick the most speciose alignments first
 		my $aln = shift @alns;
-		if ( not $aln or not -e $aln ) {
+                if ( not $aln or not -e $aln ) {
 			$log->warn("no alignment available for exemplar $taxon");
 			next TAXON;
 		}
@@ -252,16 +285,45 @@ TAXON: for my $taxon ( @sorted_exemplars ) {
 		last ALN if not @alns;
 	}
 }
-my @filtered_exemplars = keys %seen;
+
+# filter exemplars: only take the ones with sufficient coverage
+my @filtered_exemplars = grep { $seen{$_} >= $config->BACKBONE_MIN_COVERAGE } keys %seen;
 my @sorted_alignments  = keys %aln;
 
+# filter the alignments: only include alignments in supermatrix which have
+#  at least one species from the filtered exemplars ==> no empty rows in supermatrix
+my @filtered_alignments;
+for my $aln ( @sorted_alignments ) {
+        my $count = 0;
+        # increse counter if an alignment is present for a taxon
+        for my $taxon ( @filtered_exemplars ) {
+                my %fasta = $mt->parse_fasta_file($aln);
+                my ( $seq ) = $mt->get_sequences_for_taxon($taxon,%fasta);
+		if ( $seq ) {
+                        $count++;
+                        last;
+		}
+        }
+        if ( $count > 0 ) {
+                $log->info("including $aln in supermatrix");
+                push @filtered_alignments, $aln; 
+                my @markers = get_seed_gi_description($aln);
+                $log->info("marker : ".$markers[0])
+        } 
+        else {
+                $log->info("alignment $aln not included in supermatrix");
+        }
+}
+
+$log->info("using ".scalar(@filtered_alignments)." alignments for supermatrix");
+
 # produce interleaved phylip output
-my $nchar = sum( @nchar{@sorted_alignments} );
+open (my $phyfh, ">", "supermatrix.phy");
+my $nchar = sum( @nchar{@filtered_alignments} );
 my $ntax  = scalar(@filtered_exemplars);
 my $names_printed;
-print $ntax, ' ', $nchar, "\n"; # phylip header
-for my $aln ( @sorted_alignments ) {
-	$log->info("including $aln in supermatrix");
+print $phyfh $ntax, ' ', $nchar, "\n"; # phylip header
+for my $aln ( @filtered_alignments ) {
 	my %fasta = $mt->parse_fasta_file($aln);
 	for my $taxon ( @filtered_exemplars ) {
 	
@@ -271,22 +333,42 @@ for my $aln ( @sorted_alignments ) {
 		if ( not $names_printed ) {
 		
 			# pad the names with spaces to make 10 characters
-			print $taxon, ' ' x ( 10 - length($taxon) );
+			print $phyfh $taxon, ' ' x ( 10 - length($taxon) );
 		}
 		
 		# write aligned sequence or missing data of the same length
 		my ( $seq ) = $mt->get_sequences_for_taxon($taxon,%fasta);
 		if ( $seq ) {
-			print $seq;
+			print $phyfh $seq;
 		}
 		else {
-			print '?' x $nchar{$aln};
+			print $phyfh '?' x $nchar{$aln};
 		}
 		
 		# note that optionally there could be an additional blank line
 		# between every chunk. We don't do that, this break is just
 		# to move on to the next taxon, not the next chunk.
-		print "\n";
+		print $phyfh "\n";
 	}
 	$names_printed++;
 }
+close $phyfh;
+
+
+
+#write non-interleaved phylip format
+#open (my $fh, ">", "supermatrix_noninterleaved.txt");
+#for my $taxon (@filtered_exemplars) {
+#        print $fh $taxon, ' ' x ( 10 - length($taxon) );
+#        for my $aln ( @filtered_alignments ) {
+#                my %fasta = $mt->parse_fasta_file($aln);
+#                my ( $seq ) = $mt->get_sequences_for_taxon($taxon,%fasta);
+#                if ( $seq ) {
+#			print $fh $seq;
+#		}
+#		else {
+#			print $fh '?' x $nchar{$aln};
+#		}
+#        }
+#        print $fh "\n";}
+#close $fh;
