@@ -54,6 +54,7 @@ my $logger = Bio::Phylo::Util::Logger->new(
 # choose tool for backbone inference set in config file
 my $tool;
 if ( $config->BACKBONE_INFERENCE_TOOL eq "examl" ) {
+        
         $logger->info("using examl for backbone inference");
         $tool  = Bio::Tools::Run::Phylo::ExaML->new;
 } 
@@ -72,10 +73,6 @@ $tool->outfile_name($outfile);
 # set working directory
 $logger->info("going to use working directory $workdir");
 $tool->work_dir($workdir);
-
-# set parser location
-$logger->info("going to use parser executable ".$config->PARSER_BIN);
-$tool->parser($config->PARSER_BIN);
 
 # set mpirun location
 $logger->info("going to use mpirun executable ".$config->MPIRUN_BIN);
@@ -97,7 +94,11 @@ if ( $config->BACKBONE_INFERENCE_TOOL eq "examl" ) {
         # set examl location
         $logger->info("going to use executable ".$config->EXAML_BIN);
         $tool->executable($config->EXAML_BIN);
-        
+
+        # set parser location
+        $logger->info("going to use parser executable ".$config->EXAML_PARSER_BIN);
+        $tool->parser($config->PARSER_BIN);
+
         # set substitution model
         $logger->info("setting substitution model ".$config->EXAML_MODEL);
         $tool->m($config->EXAML_MODEL);
@@ -122,6 +123,10 @@ elsif ( $config->BACKBONE_INFERENCE_TOOL eq "exabayes" ) {
         # set exabayes location
         $logger->info("going to use executable ".$config->EXABAYES_BIN);
         $tool->executable($config->EXABAYES_BIN);
+        
+        # set parser location
+        $logger->info("going to use parser executable ".$config->EXABAYES_PARSER_BIN);
+        $tool->parser($config->PARSER_BIN);
         
         # set numbet of indepedent runs
         my $numruns = 4;
@@ -171,9 +176,9 @@ elsif ( $config->BACKBONE_INFERENCE_TOOL eq "exabayes" ) {
         
 }
 
-$logger->info("patience please, running $supermatrix with starting tree");
+$logger->info("patience please, running backbone inference with $supermatrix");
 if ( $intree ) {
-        $logger->info("using tree $intree as starting point");
+        $logger->info("using tree $intree as starting tree");
 }
 
 my $backbone = $tool->run(
