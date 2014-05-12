@@ -1,7 +1,7 @@
 VAGRANTFILE_API_VERSION = "2"
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
-    config.vm.box_url = "https://dl.dropbox.com/s/s0hf5pmtzprtydi/supersmart-F18.box"
-    config.vm.box = "supersmart-fedora-18"
+    config.vm.box_url = "https://www.dropbox.com/s/i4e4pgylw5e8g0q/ubuntu-x86.box"
+    config.vm.box = "supersmart-ubuntu"
     config.vm.host_name = "supersmart"
     config.vm.provision "puppet"
 end
