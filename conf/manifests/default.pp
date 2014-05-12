@@ -1,49 +1,50 @@
 # This manifest installs the supersmart pipeline, 
 # for more information http://www.supersmart-project.org
 
-# update the $PATH environment variable for the Exec tasks.
+# update the $PATH and $LD_LIBRARY_PATH environment variables 
 Exec {
-	path => [ 
-		"/usr/local/sbin", 
-		"/usr/local/bin",
-		"/usr/sbin",
-		"/usr/bin",
-		"/sbin",
-		"/bin",
-	]
+  path => [ 
+	    "/usr/local/sbin", 
+	    "/usr/local/bin",
+	    "/usr/sbin",
+	    "/usr/bin",
+	    "/sbin",
+	    "/bin",
+	    ]                      
 }
 
 # install packages. most likely this is done with yum.
 package {
-	"mysql-server":             ensure => installed;
-	"mysql":                    ensure => installed;
-	"ncbi-blast+.x86_64":       ensure => installed;
-	"wget":                     ensure => installed;
-	"tar":                      ensure => installed;
-	"perl-DBI":                 ensure => installed;
-	"perl-DBD-MySQL":           ensure => installed;
-	"perl-DBIx-Class":          ensure => installed;
-	"perl-JSON":                ensure => installed;
-	"perl-Moose":               ensure => installed;
-	"perl-XML-Twig":            ensure => installed;
-	"perl-HTML-Parser":         ensure => installed;
-	"perl-Config-Tiny":         ensure => installed;
-	"perl-IO-String":           ensure => installed;
-	"git":                      ensure => installed;
-	"zlib-devel":               ensure => installed;
-	"autoconf":                 ensure => installed;
-	"automake":                 ensure => installed;
-	"libtool":                  ensure => installed;
-	"gcc-c++":                  ensure => installed;	
-	"curl":                     ensure => installed;
-	"gzip":                     ensure => installed;
-        "subversion":               ensure => installed;
-        "java-1.7.0-openjdk-devel": ensure => installed;
+	"mysql-server":                ensure => installed;
+	"mysql-client":                ensure => installed;
+	"ncbi-blast+":       	       ensure => installed;
+	"wget":                        ensure => installed;
+	"tar":                         ensure => installed;
+	"libdbi-perl":                 ensure => installed;
+	"libdbd-mysql-perl":           ensure => installed;
+	"libdbix-class-perl":          ensure => installed;
+	"libjson-perl":                ensure => installed;
+	"libmoose-perl":               ensure => installed;
+	"libxml-twig-perl":            ensure => installed;
+	"libhtml-html5-parser-perl":   ensure => installed;
+	"libconfig-tiny-perl":         ensure => installed;
+	"libio-string-perl":           ensure => installed;
+	"git":                         ensure => installed;
+	"libarchive-dev":              ensure => installed;
+        "zlib1g-dev":                  ensure => installed;
+        "autoconf":                    ensure => installed;
+	"automake":                    ensure => installed;
+	"libtool":                     ensure => installed;
+	"build-essential":             ensure => installed;	
+	"curl":                        ensure => installed;
+	"gzip":                        ensure => installed;
+        "openjdk-6-jdk":               ensure => installed;
+        "subversion":                  ensure => installed;
 }
 
 # set up the mysql daemon process
 service { 
-	"mysqld":
+	"mysql":
 		enable  => true,
 		ensure  => running,
 		require => Package["mysql-server"],
@@ -66,7 +67,7 @@ file {
 		ensure  => link,
 		target  => "/usr/local/src/ExaML/examl/examl",
 		require => Exec["compile_examl"];
-        "parser_link":
+	"parser_link":
 		path    => "/usr/local/bin/parser",
 		ensure  => link,
 		target  => "/usr/local/src/ExaML/parser/parser",
@@ -76,15 +77,13 @@ file {
 		ensure  => link,
 		target  => "/usr/local/src/exabayes-1.2.1/bin/exabayes",
 		require => Exec["compile_exabayes"];
-
         #"parser_link":
 	#	path    => "/usr/local/bin/parser",
 	#	ensure  => link,
 	#	target  => "/usr/local/src/exabayes-1.2.1/bin/parser",
 	#	require => Exec["compile_exabayes"];
-
-	"treepl_link":
-		path    => "/usr/local/bin/treePL",
+      "treepl_link":
+	        path    => "/usr/local/bin/treePL",
 		ensure  => link,
 		target  => "/usr/local/src/treePL/src/treePL",
 		require => Exec["compile_treepl"];
@@ -98,9 +97,9 @@ file {
 
 # command line tasks
 exec {
-  
+
 	# make phylota database
-        "dl_phylota_dump":
+	"dl_phylota_dump":
 		command => "wget https://dl.dropboxusercontent.com/u/4180059/phylota.tar.gz",
 		cwd     => "/usr/share/supersmart",
 		creates => "/usr/share/supersmart/phylota.tar.gz",
@@ -112,15 +111,15 @@ exec {
  		cwd     => "/usr/share/supersmart/",
                 timeout => 0,
  		require => Exec[ 'dl_phylota_dump'];
- 	"symlink_phylota_dump":
- 	        command => "ln -s /usr/share/supersmart/phylota",
+ 	"mv_phylota_dump":
+ 	        command => "mv /usr/share/supersmart/phylota/ /var/lib/mysql",
  		creates => "/var/lib/mysql/phylota/seqs.frm",
  		cwd     => "/var/lib/mysql/",
  		require => Exec[ 'unzip_phylota_dump' ];
  	"chown_phylota_db":
  		command => "chown -R -h mysql:mysql phylota/",
  		cwd     => "/var/lib/mysql/",
- 		require => Exec[ 'symlink_phylota_dump' ];
+ 		require => Exec[ 'mv_phylota_dump' ];
  	"grant_phylota_db":
  		command => "mysql -u root -e \"grant all on phylota.* to 'mysql'@'localhost';\"",
  		require => Exec[ 'chown_phylota_db' ];
@@ -154,7 +153,7 @@ exec {
 		cwd     => "/usr/share/supersmart",
 		creates => "/usr/share/supersmart/inparanoid-blast.log",
 		timeout => 0,
-		require => [ Exec[ 'dl_inparanoid_seq' ], Package[ 'ncbi-blast+.x86_64' ] ];		
+		require => [ Exec[ 'dl_inparanoid_seq' ], Package[ 'ncbi-blast+' ] ];		
 
 	# install muscle multiple sequence alignment
 	"download_muscle":
@@ -173,6 +172,7 @@ exec {
 		command => "git clone https://github.com/rvosa/bio-phylo.git",
 		cwd     => "/usr/local/src",
 		creates => "/usr/local/src/bio-phylo",
+		timeout => 0,
 		require => Package[ 'git' ];
 	"make_bio_phylo_sh":
 		command => "echo 'export PERL5LIB=\$PERL5LIB:/usr/local/src/bio-phylo/lib' > biophylo.sh",
@@ -208,7 +208,6 @@ exec {
 		command => "git clone https://github.com/bioperl/bioperl-run.git",
 		cwd     => "/usr/local/src",
 		creates => "/usr/local/src/bioperl-run",
-		timeout => 0,
 		require => Package[ 'git' ];		
 	"make_bioperl_run_sh":
 		command => "echo 'export PERL5LIB=\$PERL5LIB:/usr/local/src/bioperl-run/lib' > bioperl_run.sh",
@@ -242,6 +241,7 @@ exec {
 		cwd     => "/usr/local/src/Math-Random-0.70",		
 		creates => "/usr/local/lib64/perl5/Math/Random.pm",
 		require => Exec["make_makefile_math_random"];	
+
           
         # install perl package Parallel::MPI::Simple
 	"download_parallel_mpi_simple":
@@ -305,7 +305,7 @@ exec {
 		command => "git clone https://github.com/stamatak/ExaML.git",
 		cwd     => "/usr/local/src",
 		creates => "/usr/local/src/ExaML/",
-		require => Package[ 'git', 'zlib-devel' ];
+	        require => Package[ 'git', 'zlib1g-dev' ];
 	"compile_examl":
 		command => "make -f Makefile.SSE3.gcc LD_LIBRARY_PATH=/usr/lib",
 		cwd     => "/usr/local/src/ExaML/examl",
@@ -333,8 +333,8 @@ exec {
                 cwd     => "/usr/local/src/exabayes-1.2.1/",
                 creates => "/usr/local/src/exabayes-1.2.1/bin/exabayes",
                 timeout => 0,
-                require => Exec[ "unzip_exabayes" ];
-          
+                require => Exec[ "unzip_exabayes" ];      
+	      
 	# install supersmart
 	"clone_supersmart":
 		command => "git clone https://github.com/naturalis/supersmart.git",
@@ -349,11 +349,11 @@ exec {
 		command => "echo 'setenv LD_LIBRARY_PATH /usr/lib' > supersmart.csh && echo 'setenv SUPERSMART_HOME /usr/local/src/supersmart' >> supersmart.csh && echo 'setenv PERL5LIB \$PERL5LIB:\$SUPERSMART_HOME/lib' >> supersmart.csh",
 		cwd     => "/etc/profile.d",
 		creates => "/etc/profile.d/supersmart.csh";		
-        "chown_supersmart_home":
-                command => "chown -R vagrant .",
+        "chown_supersmart_examples":
+                command => "chown -R vagrant examples/",
                 cwd     => "/usr/local/src/supersmart",
                 require => Exec["clone_supersmart"];
-              
+
         # install BEAST
         "download_beast":
                 command => "wget https://beast-mcmc.googlecode.com/files/BEASTv1.8.0.tgz",
@@ -377,7 +377,7 @@ exec {
                 command => "svn checkout http://beagle-lib.googlecode.com/svn/trunk/ beagle-lib",
                 cwd     => "/usr/local/src",
                 creates => "/usr/local/src/beagle-lib/autogen.sh",
-                require => Package[ 'subversion' ];
+                require => Package[ 'subversion', "openjdk-6-jdk" ];
         "generate_beagle_config":
                 command => "sh autogen.sh",
                 cwd     => "/usr/local/src/beagle-lib/",
@@ -388,13 +388,14 @@ exec {
                 cwd     => "/usr/local/src/beagle-lib/",
                 creates => "/usr/local/lib/libhmsbeagle.so",
                 require => Exec[ 'generate_beagle_config' ];
-          
+
+              
 	# install treePL
 	"clone_treepl":
 		command => "git clone https://github.com/blackrim/treePL.git",
 		cwd     => "/usr/local/src",
 		creates => "/usr/local/src/treePL",
-		require => Package[ 'git', 'autoconf', 'automake', 'libtool', 'gcc-c++', 'tar' ];
+		require => Package[ 'git', 'autoconf', 'automake', 'libtool', 'build-essential', 'tar' ];
 	"unzip_adolc":
 		command => "tar -xvzf adol-c_git_saved.tar.gz",
 		cwd     => "/usr/local/src/treePL/deps",
