@@ -20,12 +20,14 @@ for my $file ( @files ) {
 # verify these binaries can be found
 my @bins = qw(
 	EXAML_BIN
-	PARSER_BIN
+	EXABAYES_PARSER_BIN
+        EXAML_PARSER_BIN
 	BLASTP_BIN
 	MAKEBLASTDB_BIN
 	MUSCLE_BIN
-	CONSENSE_BIN
-	TREEPL_BIN
+	PHYLIP_CONSENSE_BIN
+	EXABAYES_CONSENSE_BIN
+        TREEPL_BIN
 );
 BIN: for my $var ( @bins ) {
 	my $bin = $config->$var;

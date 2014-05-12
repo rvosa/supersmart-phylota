@@ -159,7 +159,7 @@ elsif ( $config->BACKBONE_INFERENCE_TOOL eq "exabayes" ) {
         
         # set binary of consense program
         $logger->info("setting consense binary");
-        $tool->consense_bin($config->CONSENSE_BIN);
+        $tool->consense_bin($config->EXABAYES_CONSENSE_BIN);
         
         # set burnin fraction
         $logger->info("setting burnin fraction to ".$config->BURNIN);
