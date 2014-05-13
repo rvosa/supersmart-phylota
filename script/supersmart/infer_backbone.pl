@@ -97,7 +97,7 @@ if ( $config->BACKBONE_INFERENCE_TOOL eq "examl" ) {
 
         # set parser location
         $logger->info("going to use parser executable ".$config->EXAML_PARSER_BIN);
-        $tool->parser($config->PARSER_BIN);
+        $tool->parser($config->EXAML_PARSER_BIN);
 
         # set substitution model
         $logger->info("setting substitution model ".$config->EXAML_MODEL);
@@ -126,7 +126,7 @@ elsif ( $config->BACKBONE_INFERENCE_TOOL eq "exabayes" ) {
         
         # set parser location
         $logger->info("going to use parser executable ".$config->EXABAYES_PARSER_BIN);
-        $tool->parser($config->PARSER_BIN);
+        $tool->parser($config->EXABAYES_PARSER_BIN);
         
         # set numbet of indepedent runs
         my $numruns = 4;
