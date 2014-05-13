@@ -67,11 +67,10 @@ my $tree = parse_tree(
 $logger->info("going to read taxa mapping $taxa");
 my @records = $mt->parse_taxa_file($taxa);
 
-# reroot backbone tree
-$tree = $ts->reroot_tree($tree, @records);
 
 # decompose tree into clades and get the sets of species
 my @set = $ts->_make_clade_species_sets($tree, @records);
+print "LENGTH SET : ".scalar(@set)."\n";
 
 # now read the list of alignments
 my @alignments;
