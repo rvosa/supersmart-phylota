@@ -37,7 +37,7 @@ COMMONTREE=$WORKDIR/common.dnd
 ALIGNMENTLIST=$WORKDIR/aligned.txt
 MERGEDLIST=$WORKDIR/merged.txt
 SUPERMATRIX=$WORKDIR/supermatrix.phy
-MEGATREE=megatree.dnd
+MEGATREE=$WORKDIR/megatree.dnd
 CHRONOGRAM=$WORKDIR/chronogram.dnd
 LABELLED_CHRONOGRAM=$WORKDIR/labelled_chronogram.dnd
 TREEPLCONF=$WORKDIR/treePL.conf
@@ -74,19 +74,19 @@ if [ ! -e $SUPERMATRIX ]; then
 fi
 
 # infer backbone tree
-if [ ! -e "$WORKDIR/$MEGATREE" ]; then
-	$PERLSCRIPT/infer_backbone.pl -o "$WORKDIR/$MEGATREE" -w $WORKDIR -c $COMMONTREE -s $SUPERMATRIX -t $SPECIESTABLE $VERBOSE
+if [ ! -e $MEGATREE ]; then
+	$PERLSCRIPT/infer_backbone.pl -o $MEGATREE -w $WORKDIR -c $COMMONTREE -s $SUPERMATRIX -t $SPECIESTABLE $VERBOSE
 fi
 
 # calibrate backbone tree
 if [ ! -e $CHRONOGRAM ]; then
     NUMSITES=`head -1 $SUPERMATRIX | cut -f 2 -d ' '`
-    $PERLSCRIPT/calibrate_tree.pl -f $FOSSILTABLE -r "$WORKDIR/$MEGATREE" -s $TREEPLSMOOTH -o $CHRONOGRAM $VERBOSE -n $NUMSITES 
+    $PERLSCRIPT/calibrate_tree.pl -f $FOSSILTABLE -r $MEGATREE -s $TREEPLSMOOTH -o $CHRONOGRAM $VERBOSE -n $NUMSITES 
 fi
 
 # decompose backbone tree
 if [ ! -e $WORKDIR/clade* ]; then
-    $PERLSCRIPT/decompose_backbone.pl -t $SPECIESTABLE -l $MERGEDLIST -b "$WORKDIR/$MEGATREE" -w $WORKDIR $VERBOSE
+    $PERLSCRIPT/decompose_backbone.pl -t $SPECIESTABLE -l $MERGEDLIST -b $MEGATREE -w $WORKDIR $VERBOSE
 fi
 
 # merge clade alignments

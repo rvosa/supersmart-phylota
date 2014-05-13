@@ -97,38 +97,6 @@ my $log    = Bio::Phylo::Util::Logger->new(
 use Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector;
 my $mts     = Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector->new;
 
-sub get_seed_gi_description {
-        my $aln = shift;
-        open(FH, $aln);
-        # get seed gis
-        my @gis;
-        while (<FH>){
-                chomp;
-                my $str = $_;
-                ##print "str : $str \n";
-                my $seedgi;
-                while ($str =~ /seed_gi\|([0-9]+)/g){
-                        $seedgi = $1;
-                }
-                ##print "Seed GI : $seedgi \n";
-                if ($seedgi){
-                        push @gis,  $seedgi;
-                }
-        }
-        close FH;
-        
-        #get sequence objects and get sequence description
-        my @markers;
-        foreach my $gi (@gis){
-                my $seq = $mts->find_seq($gi);
-                #print $seq->def."\n";
-                push @markers, $seq->def;
-        }
-
-        return @markers;
-}
-
-
 # read list of alignments
 my @alignments;
 {
@@ -318,11 +286,10 @@ for my $aln ( @sorted_alignments ) {
 $log->info("using ".scalar(@filtered_alignments)." alignments for supermatrix");
 
 # produce interleaved phylip output
-open (my $phyfh, ">", "supermatrix.phy");
 my $nchar = sum( @nchar{@filtered_alignments} );
 my $ntax  = scalar(@filtered_exemplars);
 my $names_printed;
-print $phyfh $ntax, ' ', $nchar, "\n"; # phylip header
+print  $ntax, ' ', $nchar, "\n"; # phylip header
 for my $aln ( @filtered_alignments ) {
 	my %fasta = $mt->parse_fasta_file($aln);
 	for my $taxon ( @filtered_exemplars ) {
@@ -333,31 +300,62 @@ for my $aln ( @filtered_alignments ) {
 		if ( not $names_printed ) {
 		
 			# pad the names with spaces to make 10 characters
-			print $phyfh $taxon, ' ' x ( 10 - length($taxon) );
+			print  $taxon, ' ' x ( 10 - length($taxon) );
 		}
 		
 		# write aligned sequence or missing data of the same length
 		my ( $seq ) = $mt->get_sequences_for_taxon($taxon,%fasta);
 		if ( $seq ) {
-			print $phyfh $seq;
+			print  $seq;
 		}
 		else {
-			print $phyfh '?' x $nchar{$aln};
+			print  '?' x $nchar{$aln};
 		}
 		
 		# note that optionally there could be an additional blank line
 		# between every chunk. We don't do that, this break is just
 		# to move on to the next taxon, not the next chunk.
-		print $phyfh "\n";
+		print  "\n";
 	}
 	$names_printed++;
 }
-close $phyfh;
 
+
+# function to get the description of the genbank entry from 
+#  the seed gi of an alignment
+sub get_seed_gi_description {
+        my $aln = shift;
+        open(FH, $aln);
+        # get seed gis
+        my @gis;
+        while (<FH>){
+                chomp;
+                my $str = $_;
+                ##print "str : $str \n";
+                my $seedgi;
+                while ($str =~ /seed_gi\|([0-9]+)/g){
+                        $seedgi = $1;
+                }
+                ##print "Seed GI : $seedgi \n";
+                if ($seedgi){
+                        push @gis,  $seedgi;
+                }
+        }
+        close FH;
+        
+        #get sequence objects and get sequence description
+        my @markers;
+        foreach my $gi (@gis){
+                my $seq = $mts->find_seq($gi);
+                #print $seq->def."\n";
+                push @markers, $seq->def;
+        }
+
+        return @markers;
+}
 
 
 #write non-interleaved phylip format
-#open (my $fh, ">", "supermatrix_noninterleaved.txt");
 #for my $taxon (@filtered_exemplars) {
 #        print $fh $taxon, ' ' x ( 10 - length($taxon) );
 #        for my $aln ( @filtered_alignments ) {
