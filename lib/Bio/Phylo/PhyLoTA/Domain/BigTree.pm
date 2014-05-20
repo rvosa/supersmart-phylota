@@ -62,7 +62,7 @@ sub build_tree {
     # these are normally derived from the config file
     my $work_dir   = $args{'-work_dir'}   || $conf->WORK_DIR;
     my $examl_bin  = $args{'-examl_bin'}  || $conf->EXAML_BIN;
-    my $parser_bin = $args{'-parser_bin'} || $conf->PARSER_BIN;
+    my $parser_bin = $args{'-parser_bin'} || $conf->EXAML_PARSER_BIN;
     my $examl_args = $args{'-examl_args'} || $conf->EXAML_ARGS;
     my $mpirun_bin = $args{'-mpirun_bin'} || $conf->MPIRUN_BIN;
     my $nodes      = $args{'-nodes'}      || $conf->NODES;
