@@ -16,7 +16,6 @@ PRINTVAL="perl -MBio::Phylo::PhyLoTA::Config=printval -e printval"
 # config vars, optionally change by setting env var with SUPERSMART prefix, e.g.
 # $ SUPERSMART_WORK_DIR=/tmp
 VERBOSE=`$PRINTVAL VERBOSITY`       # global verbosity level
-PARSER=`$PRINTVAL PARSER_BIN`       # converts phylip to examl input files
 PERL=`$PRINTVAL PERL_BIN`           # the perl interpreter
 MPIBIN=`$PRINTVAL MPIRUN_BIN`       # MPI job dispatcher, 'mpirun' or 'mpiexec'
 NODES=`$PRINTVAL NODES`             # number of nodes and/or threads
