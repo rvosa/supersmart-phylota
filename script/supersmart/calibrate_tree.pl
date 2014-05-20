@@ -80,7 +80,7 @@ print $fh $chronogram->to_newick."\n";
 close $fh;
 
 # remap calibrated tree and save to file
-my $labelled_chronogram = $ts->remap($chronogram);
+my $labelled_chronogram = $ts->remap_to_name($chronogram);
 my ( $volume, $directories, $file ) = File::Spec->splitpath( $outfile );
 my $filename_lab = $volume .  $directories . 'labelled_' . $file;
 open my $fh_lab, '>', $filename_lab or die $!;

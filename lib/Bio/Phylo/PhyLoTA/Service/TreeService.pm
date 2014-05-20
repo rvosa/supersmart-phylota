@@ -9,7 +9,6 @@ use Bio::Phylo::PhyLoTA::Service;
 use base 'Bio::Phylo::PhyLoTA::Service';
 use Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa;
 use List::MoreUtils 'uniq';
-use Storable 'dclone';
 
 my $config = Bio::Phylo::PhyLoTA::Config->new;
 my $log = Bio::Phylo::PhyLoTA::Service->logger;	
@@ -61,7 +60,7 @@ sub reroot_tree {
 }
 
 # Changes NCBI taxon identifiers in a given tree to taxon names
-sub remap {
+sub remap_to_name {
         my ($self, $tree) = @_;
         $tree->visit(sub{
                 my $n = shift;
@@ -73,6 +72,36 @@ sub remap {
         return $tree;
         
 }
+
+# Changes taxon names in a given tree to taxon identifiers
+sub remap_to_ti { 
+        my ($self, $tree, @records) = @_;
+        if (! @records) {
+                die "Need both, tree and species table!";
+        }
+        $tree->visit(sub{
+                my $n = shift;
+                if ( $n->is_terminal ) {
+                        my $name = $n->get_name;
+                        $name =~ s/\'//g;
+                        my $tid;
+                        for my $rec (@records) {
+                                my $curr_name = $rec->{"name"};
+                                $curr_name =~ s/\ /_/g;
+                                if ( $curr_name eq $name=~s/\'//r) {
+                                        $tid = $rec->{"species"};
+                                        last;
+                                }
+                        }
+                        if ( !$tid ) {
+                                die "no taxon ID found for name $name";
+                        }
+                        $n->set_name( $tid );
+                }
+                     });
+        return $tree;       
+}
+
 
 # -infile, (optional: -burnin)
 sub consense_trees {
@@ -116,14 +145,14 @@ sub graft_tree {
 	my @exemplars;
 	for my $name ( @names ) {
 		if ( my $e = $backbone->get_by_name($name) ) {
-			$log->warn("found $name in backbone: ".$e->get_name);
+			$log->info("found $name in backbone: ".$e->get_name);
                         push @exemplars, $e;
 		}
 		else {
 			$log->debug("$name is not in the backbone tree");
 		}
 	}
-	$log->warn("found ".scalar(@exemplars)." exemplars in backbone");
+	$log->info("found ".scalar(@exemplars)." exemplars in backbone");
 	my @copy = @exemplars; # XXX ???	
 	my $bmrca = $backbone->get_mrca(\@copy);
 	
@@ -131,7 +160,7 @@ sub graft_tree {
 	my @clade_exemplars = map { $clade->get_by_name($_->get_name) } @exemplars;
 	my @ccopy = @clade_exemplars;
 	my $cmrca = $clade->get_mrca(\@ccopy);
-	$log->warn("found equivalent ".scalar(@clade_exemplars)." exemplars in clade");
+	$log->info("found equivalent ".scalar(@clade_exemplars)." exemplars in clade");
 	
 	# calculate the respective depths, scale the clade by the ratios of depths
 	my $cmrca_depth = $cmrca->calc_max_path_to_tips;
@@ -143,7 +172,7 @@ sub graft_tree {
 		$node->set_branch_length( $bl * ( $bmrca_depth / $cmrca_depth ) );
 		$log->debug("adjusting branch length for ".$node->get_internal_name);
 	});
-	$log->warn("re-scaled clade by $bmrca_depth / $cmrca_depth");
+	$log->info("re-scaled clade by $bmrca_depth / $cmrca_depth");
 	
 	# calculate the depth of the root in the clade, adjust backbone depth accordingly
 	my $crd  = $clade->get_root->calc_max_path_to_tips;
@@ -151,7 +180,7 @@ sub graft_tree {
 	print "crd $crd , diff: $diff , bmrca_depth $bmrca_depth bmrca branch length: ".$bmrca->get_branch_length."\n";
         my $branch_length = $bmrca->get_branch_length || 0;
         $bmrca->set_branch_length( $branch_length + $diff );
-	$log->warn("adjusted backbone MRCA depth by $bmrca_depth - $crd");
+	$log->info("adjusted backbone MRCA depth by $bmrca_depth - $crd");
 	
 	# now graft!
 	$bmrca->clear();
@@ -161,12 +190,12 @@ sub graft_tree {
 			my $name = $node->get_internal_name;
 			if ( my $p = $node->get_parent ) {
 				if ( $p->is_root ) {
-					$log->warn("grafted $name onto backbone MRCA");
+					$log->info("grafted $name onto backbone MRCA");
 					$node->set_parent($bmrca);
 				}
 			}
 			if ( $node->is_root ) {
-				$log->warn("replacing root $name with backbone MRCA");
+				$log->info("replacing root $name with backbone MRCA");
 			}
 			else {
 				$log->debug("inserting $name into backbone");
@@ -281,24 +310,32 @@ sub _count_monophyletic_groups {
         my @families = uniq ( map { $_->{$level} } @records );
        
         my @terminals = @{ $tree->get_terminals };
-        #for my $t (@terminals){
-        #        print ref ($t)."\n";
-        #        print $t->get_name."\n";
-        #}
-        
+                
         # iterate over all families and get species in the tree that are 
         #  in each family
         for my $f (@families){
+                print "Fam : $f \n";
                 # get the subset of terminals that belong to this family
-                ##map { if ( $_->{'family'} == $f )  }   @records;
-                #for my $r ( @records ){
-                #        if 
-                #}
-                ##my @species = map { $_->{'species'} } grep { $_->{'family'} == $f } @records;
-                #for my $s (@species){
-                #        print $s."\n";
-                #}
-                die();
+                my @species = map { $_->{'species'} } grep { $_->{$level} == $f } @records;
+                my @nodes;
+                for my $s (@species){
+                        ##print $s."\n";
+                        if ( my $n = $tree->get_by_name($s) ) {
+                                push @nodes, $n;
+                        }
+                        else {
+                                $log->debug("$s is not in the tree");
+                        }
+                }
+                # get most recent common ancestors
+                my $mrca = $tree->get_mrca(\@nodes);
+                
+                # get all descendents of the mrca 
+                my @terminals = @{ $mrca->get_terminals };
+                print "num terminals : ".scalar(@terminals)."\n";
+                print "num species : ".scalar(@species)."\n\n";
+                
+                
         }
         
         #for my $r (@records) {
