@@ -1,7 +1,7 @@
 # This manifest installs the supersmart pipeline, 
 # for more information http://www.supersmart-project.org
 
-# update the $PATH and $LD_LIBRARY_PATH environment variables 
+# update the $PATH environment variable
 Exec {
   path => [ 
 	    "/usr/local/sbin", 
@@ -67,22 +67,12 @@ file {
 		ensure  => link,
 		target  => "/usr/local/src/ExaML/examl/examl",
 		require => Exec["compile_examl"];
-	"parser_link":
-		path    => "/usr/local/bin/parser",
-		ensure  => link,
-		target  => "/usr/local/src/ExaML/parser/parser",
-		require => Exec["compile_parser"];
         "exabayes_link":
 		path    => "/usr/local/bin/exabayes",
 		ensure  => link,
 		target  => "/usr/local/src/exabayes-1.2.1/bin/exabayes",
 		require => Exec["compile_exabayes"];
-        #"parser_link":
-	#	path    => "/usr/local/bin/parser",
-	#	ensure  => link,
-	#	target  => "/usr/local/src/exabayes-1.2.1/bin/parser",
-	#	require => Exec["compile_exabayes"];
-      "treepl_link":
+        "treepl_link":
 	        path    => "/usr/local/bin/treePL",
 		ensure  => link,
 		target  => "/usr/local/src/treePL/src/treePL",
@@ -167,7 +157,7 @@ exec {
 		creates => "/usr/local/src/muscle3.8.31_i86linux64",
 		require => Exec["download_muscle"];
 
-	# install Bio::Phylo
+ 	# install Bio::Phylo
 	"clone_bio_phylo":
 		command => "git clone https://github.com/rvosa/bio-phylo.git",
 		cwd     => "/usr/local/src",
@@ -342,11 +332,11 @@ exec {
 		creates => "/usr/local/src/supersmart",
 		require => Package[ 'git' ];
 	"make_supersmart_sh":
-		command => "echo 'export LD_LIBRARY_PATH=/usr/lib' > supersmart.sh && echo 'export SUPERSMART_HOME=/usr/local/src/supersmart' >> supersmart.sh && echo 'export PERL5LIB=\$PERL5LIB:\$SUPERSMART_HOME/lib' >> supersmart.sh",
+		command => "echo 'export LD_LIBRARY_PATH=/usr/lib:/usr/lib64:/usr/local/lib' > supersmart.sh && echo 'export SUPERSMART_HOME=/usr/local/src/supersmart' >> supersmart.sh && echo 'export PERL5LIB=\$PERL5LIB:\$SUPERSMART_HOME/lib' >> supersmart.sh",
 		cwd     => "/etc/profile.d",
 		creates => "/etc/profile.d/supersmart.sh";
 	"make_supersmart_csh":
-		command => "echo 'setenv LD_LIBRARY_PATH /usr/lib' > supersmart.csh && echo 'setenv SUPERSMART_HOME /usr/local/src/supersmart' >> supersmart.csh && echo 'setenv PERL5LIB \$PERL5LIB:\$SUPERSMART_HOME/lib' >> supersmart.csh",
+		command => "echo 'setenv LD_LIBRARY_PATH /usr/lib:/usr/lib64:/usr/local/lib' > supersmart.csh && echo 'setenv SUPERSMART_HOME /usr/local/src/supersmart' >> supersmart.csh && echo 'setenv PERL5LIB \$PERL5LIB:\$SUPERSMART_HOME/lib' >> supersmart.csh",
 		cwd     => "/etc/profile.d",
 		creates => "/etc/profile.d/supersmart.csh";		
         "chown_supersmart_examples":
