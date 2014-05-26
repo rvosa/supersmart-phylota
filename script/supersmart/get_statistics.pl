@@ -102,7 +102,9 @@ foreach my $seq ($align->each_seq) {
 }
 
 my $bb_perc = $all_gaps * 100 / $all_bp;
-$logger->info("Backbone supermatrix : Total nuclotides : $all_bp total gaps : $all_gaps  % gaps : $bb_perc");
+$logger->info("Backbone supermatrix : Number of sites : $all_bp total gaps : $all_gaps  % gaps : $bb_perc");
+my $all_nuc = $all_bp - $all_gaps;
+$logger->info("Number of nucleotides in supermatrix : $all_nuc");
 
 # count number of subclades
 opendir (DIR, $workdir) or die ("Could not open working directory $workdir");
