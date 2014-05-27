@@ -161,7 +161,9 @@ else {
     # iterate over clusters, build result
     my @result;
     for my $cl ( @{ $subset } ) {
-        $log->info("worker $rank going to fetch sequences for cluster $cl");
+        my %h = %$cl;             
+        my $ci = $h{'ci'};
+        $log->info("worker $rank going to fetch sequences for cluster $ci");
         
         # fetch ALL sequences for the cluster, reduce data set
         my $sg = Bio::Phylo::PhyLoTA::Service::SequenceGetter->new;
@@ -183,28 +185,28 @@ else {
             my $aln = $sg->align_sequences(@matching);
             $log->info("worker $rank done aligning");
             
-            # convert AlignI to matrix for pretty NEXUS generation
-            my $m = Bio::Phylo::Matrices::Matrix->new_from_bioperl($aln);
-            
-            # iterate over all matrix rows
-            my @matrix;
-            $m->visit(sub{					
-                my $row = shift;
-                
-                # the GI is set as the name by the alignment method
-                my $gi  = $row->get_name;
-                my $ti  = $sg->find_seq($gi)->ti;
-                my $seq = $row->get_char;
-                push @matrix, [ ">gi|${gi}|seed_gi|${seed_gi}|taxon|${ti}|mrca|${mrca}" => $seq ];
-            });
-			
-			# fetch gene name, if any
-#			my $features = $sg->search_feature( { 'gi' => $seed_gi } );
-#			my @genes = grep { /\S/ } map { $_->gene } $features->all;
-#			$log->info("genes for $seed_gi => '@genes'");
-			
-			# write intermediate result
-#			my $filename = $workdir . '/' . $seed_gi . '.' . join('.',@genes) . '.fa';
+            # in some cases the alignment tool can crash
+            #  here we prevent the whole pipeline to stop in case of a crash
+            if ( ! $aln ) {
+                    $log->warn("alignment tool crashed! no alignment produced")
+            }
+            else {
+          
+                    # convert AlignI to matrix for pretty NEXUS generation
+                    my $m = Bio::Phylo::Matrices::Matrix->new_from_bioperl($aln);
+                    
+                    # iterate over all matrix rows
+                    my @matrix;
+                    $m->visit(sub{					
+                            my $row = shift;
+                            
+                            # the GI is set as the name by the alignment method
+                            my $gi  = $row->get_name;
+                            my $ti  = $sg->find_seq($gi)->ti;
+                            my $seq = $row->get_char;
+                            push @matrix, [ ">gi|${gi}|seed_gi|${seed_gi}|taxon|${ti}|mrca|${mrca}" => $seq ];
+                              });
+                    
 			my $filename = $workdir . '/' . $seed_gi . '.fa';
 			open my $fh, '>', $filename or die $!;
 			for my $row ( @matrix ) {
@@ -213,10 +215,10 @@ else {
 			
             push @result, {
 				'seed_gi' => $seed_gi,
-#				'gene'    => join('.',@genes),
 				'matrix'  => \@matrix,
 			};
-        }
+            }
+        }        
     }
     
     # return result
