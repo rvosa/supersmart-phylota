@@ -104,9 +104,10 @@ outfile = $writetree
 nthreads = $nthreads
 HEADER
 
+        $ct->remove_orphan_taxa;
 	# print MRCA statements
 	print $tfh $ct->to_string, "thorough\n";
-	
+
 	# run treePL
 	close $tfh;
         $self->logger->info("wrote treePL config file to  $tplfile");
@@ -116,6 +117,7 @@ HEADER
 		'-file'   => $writetree,
 		'-as_project' => 1,
 	);
+        
 }
 
 =item find_calibration_point
