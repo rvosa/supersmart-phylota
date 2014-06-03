@@ -102,11 +102,27 @@ sub sort_by_min_age {
         # loop over calibration points and prepend 'ct' and an index
         my $counter = 0;
         foreach my $cp ( @{$self} ) {
-                print "Ref $cp: ".ref($cp)."\n";
                 my $curr_name = $cp->name;
                 # ct stands for 'calibrated taxon'
                 $cp->name('ct'.$counter++.'_'.$curr_name)
         }
+        return;
+}
+
+=item remove_orphan_taxa
+
+Removes calibration points from the table that only contain a single leaf taxon to be calibrated. 
+Since internal nodes of SUPERSMART trees are not assigned to any taxon id, any taxon id in the
+calibration table has rank species (or lower). Calibration is done by selecting the mrca of all leave taxa
+for one calibration point and setting the age of that internal node to the corresponding age.
+If there is only one leave for a calibration point, one would calibrate the leave representing an
+extant species. This functin removes these 'orphan' calibration points from the table. 
+
+=cut
+
+sub remove_orphan_taxa {
+        my $self = shift;
+        @{$self} = grep { $_->taxa > 1 } $self->get_rows;
         return;
 }
 
