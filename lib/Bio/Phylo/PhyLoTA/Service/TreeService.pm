@@ -94,7 +94,8 @@ sub remap_to_ti {
                                 }
                         }
                         if ( !$tid ) {
-                                die "no taxon ID found for name $name";
+                                #die "no taxon ID found for name $name";
+                                $tid = $name;
                         }
                         $n->set_name( $tid );
                 }
@@ -125,19 +126,77 @@ sub consense_trees {
 	# execute command
 	my $tmpl = '%s -burnin %i %s %s 2> /dev/null';
 	my $command = sprintf $tmpl, $config->TREEANNOTATOR_BIN, $babs, $infile, $outfile;
+        $log->info("running command $command");
         system($command) and die "Error building consensus: $?";
-        # return the resulting tree
-	return parse_tree(
-	        '-format' => 'nexus',
-		'-file'   => $outfile,
-		'-as_project' => 1,
-	);
+        my $newicktree = $self->parse_newick_from_nexus( $outfile );
+        return $newicktree;
+}
+
+sub parse_newick_from_nexus {
+        my ($self, $nexusfile) = @_;
+        my $newick = "";
+        open my $fh, '<', $nexusfile or die $!;
+        my @lines = <$fh>;
+        close $fh;
+        my @rev = reverse @lines;
+        if (scalar (@rev) > 1) { 
+                $newick = $rev[1];
+        }
+        else {
+                $log->warn("nexus file has less than two lines")
+        }
+        $newick =~ s/^tree.+\[\&R\]\s+//g;
+        
+        # get ids for taxon labels from 'Translate' section in nexus file
+        my @sub;
+        foreach (@lines) {
+                push(@sub, split) if (/Translate/ .. /\;/);
+        }    
+        shift @sub;
+        pop @sub;
+        my %id_map = @sub;
+        
+        # remove trailing commas from idenifiers, if any
+        for ( values %id_map ) { s/,$//g };
+        
+        # substitute comments except for 'posterior' and set posteriors as node names 
+        $newick =~ s/\[[^]]*?posterior=([0-9.]+)[^]]*]|\[[^]]*]/$1/g;
+        my $newicktree =  parse_tree(
+                '-string'   => $newick,
+                '-format' => 'newick',
+                '-as_project' => 1,
+            );
+        
+        # substitute nexus taxon ids with real taxon labels
+        # note that there is possible trouble if node names for posteriors (e.g. 1) 
+        #   overlap with nexus identifier. However, *BEAST seems to write all posteriors
+        #   as proper decimals
+        $newicktree->visit( sub{
+                my $n = shift;
+                $n->set_name( $id_map{$n->get_name} ) if exists $id_map{$n->get_name};  
+                            });
+        return $newicktree;
+        
+}
+
+sub write_newick_tree {
+        my ($self, $tree) = @_;
+        my $str = "";
+        $tree->visit_depth_first(
+                '-pre_daughter'   => sub { $str .= '('             },     
+                '-post_daughter'  => sub { $str .= ')'             },     
+                '-in'             => sub { my $n = shift; $str .= $n->get_name . ":"  . $n->get_branch_length },
+                '-pre_sister'     => sub { $str.= ','             },     
+            );
+        $str .= ';';
+        return $str;
+
 }
 
 # grafts a clade tree into a backbone tree, returns backbone
 sub graft_tree {
 	my ( $self, $backbone, $clade ) = @_;
-	my @names = map { $_->get_name } @{ $clade->get_terminals };
+        my @names = map { $_->get_name } @{ $clade->get_terminals };
 	$log->debug("@names");
 	
 	# retrieve the tips from the clade tree that also occur in the backbone, i.e. the 
@@ -155,36 +214,36 @@ sub graft_tree {
 	$log->info("found ".scalar(@exemplars)." exemplars in backbone");
 	my @copy = @exemplars; # XXX ???	
 	my $bmrca = $backbone->get_mrca(\@copy);
-	
-	# find the exemplars in the clade tree and find *their* MRCA
+        # find the exemplars in the clade tree and find *their* MRCA
 	my @clade_exemplars = map { $clade->get_by_name($_->get_name) } @exemplars;
 	my @ccopy = @clade_exemplars;
 	my $cmrca = $clade->get_mrca(\@ccopy);
 	$log->info("found equivalent ".scalar(@clade_exemplars)." exemplars in clade");
-	
-	# calculate the respective depths, scale the clade by the ratios of depths
+        # calculate the respective depths, scale the clade by the ratios of depths
 	my $cmrca_depth = $cmrca->calc_max_path_to_tips;
 	my $bmrca_depth = $bmrca->calc_max_path_to_tips;
         my $str = $clade->to_newick;
-	$clade->visit(sub{
+        
+        $clade->visit(sub{
 		my $node = shift;
 		my $bl = $node->get_branch_length || 0; # zero for root
-		$node->set_branch_length( $bl * ( $bmrca_depth / $cmrca_depth ) );
-		$log->debug("adjusting branch length for ".$node->get_internal_name);
+                $node->set_branch_length( $bl * ( $bmrca_depth / $cmrca_depth ) );
+                $log->debug("adjusting branch length for ".$node->get_internal_name);
 	});
 	$log->info("re-scaled clade by $bmrca_depth / $cmrca_depth");
 	
 	# calculate the depth of the root in the clade, adjust backbone depth accordingly
 	my $crd  = $clade->get_root->calc_max_path_to_tips;
 	my $diff = $bmrca_depth - $crd;
-	print "crd $crd , diff: $diff , bmrca_depth $bmrca_depth bmrca branch length: ".$bmrca->get_branch_length."\n";
         my $branch_length = $bmrca->get_branch_length || 0;
         $bmrca->set_branch_length( $branch_length + $diff );
 	$log->info("adjusted backbone MRCA depth by $bmrca_depth - $crd");
 	
-	# now graft!
-	$bmrca->clear();
-	$clade->visit(
+        # now graft!
+	$log->info("BMRCA branch_length : ".$bmrca->get_branch_length."\n");
+        $bmrca->clear();
+        $log->info("BMRCA branch_length now : ".$bmrca->get_branch_length."\n");
+        $clade->visit(
 		sub {
 			my $node = shift;
 			my $name = $node->get_internal_name;
@@ -198,11 +257,11 @@ sub graft_tree {
 				$log->info("replacing root $name with backbone MRCA");
 			}
 			else {
-				$log->debug("inserting $name into backbone");
+				$log->info("inserting $name into backbone");
 				$backbone->insert($node);
 			}
 		}
-	);
+            );
 	return $backbone;
 }
 
@@ -220,7 +279,6 @@ sub make_phylip_binary {
 	$log->info("going to make binary representation of $phylip => $binfilename");	
         $log->info("using parser $parser");	
 	my ( $phylipvolume, $phylipdirectories, $phylipbase ) = File::Spec->splitpath( $phylip );
-        print "Volume : $phylipvolume Dirs : $phylipdirectories Base : $phylipbase \n";
         my $curdir = getcwd;
 	chdir $work_dir;       
         
@@ -314,12 +372,10 @@ sub _count_monophyletic_groups {
         # iterate over all families and get species in the tree that are 
         #  in each family
         for my $f (@families){
-                print "Fam : $f \n";
                 # get the subset of terminals that belong to this family
                 my @species = map { $_->{'species'} } grep { $_->{$level} == $f } @records;
                 my @nodes;
                 for my $s (@species){
-                        ##print $s."\n";
                         if ( my $n = $tree->get_by_name($s) ) {
                                 push @nodes, $n;
                         }
