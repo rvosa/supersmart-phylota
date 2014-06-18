@@ -57,6 +57,8 @@ my $tree = parse_tree(
         '-as_project' => 1 
     );
 
+$tree->resolve;
+
 my $table;
 if ( $fossiltable ) {
         # read the spreadsheet with calibration points
