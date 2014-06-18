@@ -12,7 +12,7 @@ Bio::Phylo::PhyLoTA::Domain::CalibrationTable - Calibration table
 =head1 DESCRIPTION
 
 Object that represents a list of calibration points that can be serialized
-as input for treePL.
+as input for trePL.
 
 =head1 METHODS
 
@@ -71,13 +71,15 @@ sub to_string {
 	# write the mrca statements
 	my $counter;
 	for my $row ( $self->get_rows ) {
-		my @taxa = $row->taxa;
-		my $name = $row->name || 'clade' . ++$counter;
-		$string .= "mrca = $name @taxa\n";
-		$string .= "min = $name " . $row->min_age . "\n";
-		my $max = $row->max_age || $row->min_age;
-		$string .= "max = $name $max\n";		
-	}
+                my @taxa = $row->taxa;
+                $string .= "mrca = NFos" . $row->nfos . " @taxa\n";
+                if ( $row->max_age ) {
+                        $string .= "max = NFos" . $row->nfos . " " .  $row->max_age . "\n";
+                }
+                if ( $row->min_age ){
+                        $string .= "min = NFos" . $row->nfos . " " . $row->min_age . "\n";
+                }               
+        }
     return $string;
 }
 
