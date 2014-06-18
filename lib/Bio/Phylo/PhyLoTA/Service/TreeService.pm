@@ -196,7 +196,24 @@ sub write_newick_tree {
 # grafts a clade tree into a backbone tree, returns backbone
 sub graft_tree {
 	my ( $self, $backbone, $clade ) = @_;
+        
+        # sometimes single quotes are added in the beast output when dealing with special characters
+        #   removing them to match names in the backbone. Just to be sure, remove quotes also from backbone
+        $clade->visit(sub{
+                my $node = shift;
+                my $name = $node->get_name;
+                $name =~ s/\'//g;
+                $node->set_name($name);
+                      });
+        $backbone->visit(sub{
+                my $node = shift;
+                my $name = $node->get_name;
+                $name =~ s/\'//g;
+                $node->set_name($name);
+                         });
+        
         my @names = map { $_->get_name } @{ $clade->get_terminals };
+
 	$log->debug("@names");
 	
 	# retrieve the tips from the clade tree that also occur in the backbone, i.e. the 
@@ -208,7 +225,7 @@ sub graft_tree {
                         push @exemplars, $e;
 		}
 		else {
-			$log->debug("$name is not in the backbone tree");
+			$log->warn("$name is not in the backbone tree");
 		}
 	}
 	$log->info("found ".scalar(@exemplars)." exemplars in backbone");
@@ -216,20 +233,23 @@ sub graft_tree {
 	my $bmrca = $backbone->get_mrca(\@copy);
         # find the exemplars in the clade tree and find *their* MRCA
 	my @clade_exemplars = map { $clade->get_by_name($_->get_name) } @exemplars;
-	my @ccopy = @clade_exemplars;
+	
+        my @ccopy = @clade_exemplars;
 	my $cmrca = $clade->get_mrca(\@ccopy);
 	$log->info("found equivalent ".scalar(@clade_exemplars)." exemplars in clade");
         # calculate the respective depths, scale the clade by the ratios of depths
 	my $cmrca_depth = $cmrca->calc_max_path_to_tips;
 	my $bmrca_depth = $bmrca->calc_max_path_to_tips;
-        my $str = $clade->to_newick;
         
         $clade->visit(sub{
 		my $node = shift;
 		my $bl = $node->get_branch_length || 0; # zero for root
+                print "Node name : ".$node->get_name."\n";
+                print "bl : $bl \n";
+                print "bmcra, cmcra : ".$bmrca_depth . " " . $cmrca_depth."\n";
                 $node->set_branch_length( $bl * ( $bmrca_depth / $cmrca_depth ) );
-                $log->debug("adjusting branch length for ".$node->get_internal_name);
-	});
+                $log->info("adjusting branch length for ".$node->get_internal_name." to ".$bl * ( $bmrca_depth / $cmrca_depth ));
+                      });
 	$log->info("re-scaled clade by $bmrca_depth / $cmrca_depth");
 	
 	# calculate the depth of the root in the clade, adjust backbone depth accordingly
@@ -240,9 +260,7 @@ sub graft_tree {
 	$log->info("adjusted backbone MRCA depth by $bmrca_depth - $crd");
 	
         # now graft!
-	$log->info("BMRCA branch_length : ".$bmrca->get_branch_length."\n");
         $bmrca->clear();
-        $log->info("BMRCA branch_length now : ".$bmrca->get_branch_length."\n");
         $clade->visit(
 		sub {
 			my $node = shift;
