@@ -383,9 +383,9 @@ exec {
 		command => "echo 'setenv LD_LIBRARY_PATH /usr/lib:/usr/lib64:/usr/local/lib' > supersmart.csh && echo 'setenv SUPERSMART_HOME /usr/local/src/supersmart' >> supersmart.csh && echo 'setenv PERL5LIB \$PERL5LIB:\$SUPERSMART_HOME/lib' >> supersmart.csh",
 		cwd     => "/etc/profile.d",
 		creates => "/etc/profile.d/supersmart.csh";		
-        "chown_supersmart_examples":
-                command => "chown -R vagrant examples/",
-                cwd     => "/usr/local/src/supersmart",
+        "chown_supersmart":
+                command => "chown -R vagrant supersmart/",
+                cwd     => "/usr/local/src",
                 require => Exec["clone_supersmart"];
 
         # install BEAST
