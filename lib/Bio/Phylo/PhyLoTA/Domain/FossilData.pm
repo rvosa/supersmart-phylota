@@ -138,6 +138,12 @@ sub fossil_author {
     return $self->{'NUsrcrFos'};
 }
 
+sub nfos {
+        my $self = shift;
+        $self->{'NFos'} = shift if @_;
+        return $self->{'NFos'};
+}
+
 =item date_added
 
 Getter/Setter for the date the fossil record was added.
