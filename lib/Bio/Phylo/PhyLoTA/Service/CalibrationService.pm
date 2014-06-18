@@ -169,6 +169,7 @@ sub create_calibration_table {
     $logger->info("going to map fossils to calibrated taxon IDs");
     my %fd_for_id;
     for my $fd ( @fossildata ) {
+                $logger->info("New fossil data");
 		my @nodes = $fd->calibration_points; # returns higher taxa
 		my $score = $fd->best_practice_score || 0;
 		if ( $score >= $cutoff ) {
@@ -212,8 +213,8 @@ sub create_calibration_table {
     		($node) = $mts->get_nodes_for_names($name);
     	}
     	my $id = $node->ti;
-		for my $fid ( @sorted ) {
-			if ( $fd_for_id{$fid}->{'desc'}->{$id} ) {
+		for my $fid ( @sorted ) {                       
+                        if ( $fd_for_id{$fid}->{'desc'}->{$id} ) {
 				push @{ $tips_for_id{$fid} }, $tip;
 				my $ct = $fd_for_id{$fid}->{'fd'}->calibrated_taxon;
 				$logger->debug("assigning leaf $name to $ct");
@@ -225,13 +226,13 @@ sub create_calibration_table {
     $logger->info("going to add within-clade calibrated taxa in table");
     for my $id ( keys %tips_for_id ) {
     	if ( scalar @{ $tips_for_id{$id} } ) {
-    	
-			# create record in table
-			$table->add_row(
+		# create record in table
+                $table->add_row(
 				'taxa'    => [ sort { $a cmp $b } map { $_->get_name } @{ $tips_for_id{$id} } ],
 				'min_age' => $fd_for_id{$id}->{'fd'}->min_age,
 				'name'    => $fd_for_id{$id}->{'fd'}->calibrated_taxon,	    
-			);    	
+                                'nfos'    => $fd_for_id{$id}->{'fd'}->nfos,	    
+                            );    	
     	}
     	else {
     	
@@ -241,6 +242,7 @@ sub create_calibration_table {
     	}    
     }
     $table->sort_by_min_age;
+    $logger->info($tree->to_newick());
     return $table;
 }
 
