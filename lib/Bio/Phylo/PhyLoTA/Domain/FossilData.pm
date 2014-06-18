@@ -138,6 +138,12 @@ sub fossil_author {
     return $self->{'NUsrcrFos'};
 }
 
+=item fossil_author
+
+Getter/Setter for the record number (Nfos column in the table).
+
+=cut
+
 sub nfos {
         my $self = shift;
         $self->{'NFos'} = shift if @_;
