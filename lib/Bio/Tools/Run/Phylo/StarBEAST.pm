@@ -336,19 +336,21 @@ sub version {
 
 sub _alignment {
 	my ( $self, $thing, $format ) = @_;
-	if ( -e $thing ) {
-		$self->{'_alignment'} = parse(
-			'-format'     => $format,
-			'-file'       => $thing,
-			'-as_project' => 1,
-		);
-		$self->_validate;
+	if ( $thing ) {
+		if ( -e $thing ) {
+			$self->{'_alignment'} = parse(
+				'-format'     => $format,
+				'-file'       => $thing,
+				'-as_project' => 1,
+			);
+			$self->_validate;
+		}
+		elsif ( ref $thing ) {
+			$self->{'_alignment'} = $thing;
+			$self->_validate;
+		}
 	}
-	elsif ( ref $thing ) {
-		$self->{'_alignment'} = $thing;
-		$self->_validate;
-	}
-	$self->{'_alignment'};
+	return $self->{'_alignment'};
 }
 
 sub _validate {
