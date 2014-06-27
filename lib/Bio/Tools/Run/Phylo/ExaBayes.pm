@@ -243,7 +243,7 @@ sub run_consense {
                 my $output = system($string) and $self->warn("Couldn't run Consense: $?");
                 
                 # get format for output file, if not given, chose 'newick'
-                my $format = $self->outfile_format | "newick";
+                my $format = $self->outfile_format || "newick";
                 $format = ucfirst($format);
                 
                 # consense output file name is not controllable, therefore rename consense outfile
