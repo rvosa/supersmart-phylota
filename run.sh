@@ -8,7 +8,7 @@
 # project-specific variables
 WORKDIR=examples/primates          # working directory for intermediate files
 NAMELIST=$WORKDIR/names.txt        # input list of taxon names
-FOSSILTABLE=$WORKDIR/fossils.tsv
+FOSSILTABLE=$WORKDIR/fossils3.tsv
 
 # template for looking up variables in the config file
 PRINTVAL="perl -MBio::Phylo::PhyLoTA::Config=printval -e printval"
@@ -16,6 +16,7 @@ PRINTVAL="perl -MBio::Phylo::PhyLoTA::Config=printval -e printval"
 # config vars, optionally change by setting env var with SUPERSMART prefix, e.g.
 # $ SUPERSMART_WORK_DIR=/tmp
 VERBOSE=`$PRINTVAL VERBOSITY`       # global verbosity level
+##PARSER=`$PRINTVAL PARSER_BIN`       # converts phylip to examl input files
 PERL=`$PRINTVAL PERL_BIN`           # the perl interpreter
 MPIBIN=`$PRINTVAL MPIRUN_BIN`       # MPI job dispatcher, 'mpirun' or 'mpiexec'
 NODES=`$PRINTVAL NODES`             # number of nodes and/or threads
@@ -45,7 +46,7 @@ FINALTREE=$WORKDIR/final.dnd
 # creates a table where the first column has the input species
 # names and subsequent columns have the species ID and higher taxon IDs
 if [ ! -e $SPECIESTABLE ]; then
-	$MPIRUN $PERLSCRIPT/mpi_write_taxa_table.pl -i $NAMELIST \
+	$PERLSCRIPT/parallel_write_taxa_table.pl -i $NAMELIST \
 	$VERBOSE > $SPECIESTABLE
 fi
 
@@ -69,7 +70,7 @@ fi
 
 # create supermatrix for backbone taxa
 if [ ! -e $SUPERMATRIX ]; then
-	$PERLSCRIPT/pick_exemplars.pl -l $MERGEDLIST -t $SPECIESTABLE $VERBOSE > $SUPERMATRIX
+	$PERLSCRIPT/pick_exemplars.pl -l $MERGEDLIST -t $SPECIESTABLE $VERBOSE #> $SUPERMATRIX
 fi
 
 # infer backbone tree
@@ -78,22 +79,22 @@ if [ ! -e $MEGATREE ]; then
 fi
 
 # calibrate backbone tree
-if [ ! -e $CHRONOGRAM ]; then
+#if [ ! -e $CHRONOGRAM ]; then
     NUMSITES=`head -1 $SUPERMATRIX | cut -f 2 -d ' '`
     $PERLSCRIPT/calibrate_tree.pl -f $FOSSILTABLE -r $MEGATREE -s $TREEPLSMOOTH -o $CHRONOGRAM $VERBOSE -n $NUMSITES 
-fi
+#fi
 
 # decompose backbone tree
-if [ ! -e $WORKDIR/clade* ]; then
-    $PERLSCRIPT/decompose_backbone.pl -t $SPECIESTABLE -l $MERGEDLIST -b $MEGATREE -w $WORKDIR $VERBOSE
-fi
+#if [ ! -e $WORKDIR/clade* ]; then
+#    $MPIRUN $PERLSCRIPT/parallel_decompose_backbone.pl -t $SPECIESTABLE -l $MERGEDLIST -b $MEGATREE -w $WORKDIR $VERBOSE
+#fi
 
 # merge clade alignments
 clade_count=`ls -d $WORKDIR/clade*/ 2>/dev/null | wc -w`
 file_count=`ls -d $WORKDIR/clade*/*.xml 2>/dev/null | wc -w`
-if [ $file_count -le $clade_count ]; then    
+#if [ $file_count -le $clade_count ]; then    
         $PERLSCRIPT/merge_clade_alignments.pl -w $WORKDIR $VERBOSE
-fi
+#fi
 
 # infer tree for each clade
 file_count=`ls -f $WORKDIR/clade*/*.nex 2>/dev/null | wc -w`
@@ -104,4 +105,4 @@ fi
 # graft clade trees onto backbone
 if [ ! -e $FINALTREE ]; then
     $PERLSCRIPT/graft_trees.pl -workdir $WORKDIR -backbone $LABELLED_CHRONOGRAM -outfile $FINALTREE $VERBOSE
-fi
+#fi
