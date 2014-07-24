@@ -60,7 +60,7 @@ sub import {
                 use Parallel::MPI::Simple;
                 MPI_Init();       
                 $num_workers = MPI_Comm_size(MPI_COMM_WORLD())-1;                
-                $logger->info("Initializing ParallelService with $num_workers workers");
+                $logger->info("Initializing MPI ParallelService with $num_workers workers");
         }
         elsif ( $mode eq 'pthreads' ) {
                 use threads;
@@ -71,6 +71,8 @@ sub import {
                 my $info = Sys::Info->new;
                 my $cpu  = $info->device('CPU');
                 $num_workers = $cpu->count;
+ 				$logger->info("Initializing pthread ParallelService with $num_workers workers");
+ 
         }
 	my ( $caller ) = caller();
         eval "sub ${caller}::pmap(\&\@);";
@@ -146,9 +148,8 @@ sub pmap_mpi (&@) {
                         my $subset = $chunks[$worker-1];
                         my $result_subset = MPI_Recv($worker,$RESULT,$WORLD);
                         $logger->info("Received results from worker # $worker");
-                        push @result, @{ $subset };
+                        push @result, @{ $result_subset };
                 }
-                
                 return @result;
 	}
 	else {
