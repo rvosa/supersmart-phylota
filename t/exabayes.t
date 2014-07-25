@@ -42,19 +42,20 @@ ok( $exabayes->numCoupledChains(2), "coupled Monte Carlo chains ");
 ok( $exabayes->numGen(2), "number of generations ");
 
 # run very small example 
-my $phylip = "$Bin/example.phy";
+my $phylip = "$Bin/testdata/testmatrix-small.phy";
 
 ok( $exabayes->run('-phylip'=> $phylip)); 
 
 ok( $exabayes->dryRun(1), "performing dry runs");
 
 # dry run larger example
-$phylip = "$Bin/../examples/primates/supermatrix.phy";
+$phylip = "$Bin/testdata/testmatrix.phy";
 
 ## ok( $exabayes->treeFile( $intree ), "use user defined starting tree"); 
 
 $exabayes->run_id('testrun2');
 ok( $exabayes->outfile_name('exabayes_out2'));
-ok( $exabayes->run('-phylip'=> $phylip));
+# will give warning because consense cannot be called when performing dry run
+ok( $exabayes->run('-phylip'=> $phylip)); 
 
 
