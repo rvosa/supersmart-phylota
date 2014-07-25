@@ -15,7 +15,7 @@ my $cs = new_ok('Bio::Phylo::PhyLoTA::Service::CalibrationService');
 
 # read a PROTEUS compatible tab-separated spreadsheet with fossils,
 # returns an array of Bio::Phylo::PhyLoTA::Domain::FossilData objects
-my @fossils = $cs->read_fossil_table("$Bin/testfossils.tsv");
+my @fossils = $cs->read_fossil_table("$Bin/testdata/testfossils.tsv");
 for my $f ( @fossils ) {
 	isa_ok( $f, 'Bio::Phylo::PhyLoTA::Domain::FossilData' );
 }
