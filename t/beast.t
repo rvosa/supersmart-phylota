@@ -20,4 +20,4 @@ ok( $beast->overwrite(1), "overwrite");
 my (undef, $file) = tempfile(OPEN=>0);
 
 ok( $beast->outfile_name( $file ), "outfile");
-ok( $beast->run( "$Bin/testdata.xml" ), "run BEAST");
+ok( $beast->run( "$Bin/testdata/testdata.xml" ), "run BEAST");

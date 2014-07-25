@@ -15,7 +15,7 @@ my $cs = new_ok('Bio::Phylo::PhyLoTA::Service::CalibrationService');
 
 # read a PROTEUS compatible tab-separated spreadsheet with fossils,
 # returns an array of Bio::Phylo::PhyLoTA::Domain::FossilData objects
-my @fossils = $cs->read_fossil_table("$Bin/../examples/primates/fossils.tsv");
+my @fossils = $cs->read_fossil_table("$Bin/testfossils.tsv");
 for my $f ( @fossils ) {
 	isa_ok( $f, 'Bio::Phylo::PhyLoTA::Domain::FossilData' );
 }
@@ -29,7 +29,7 @@ for my $i ( @identified ) {
 # read a newick tree
 my $tree = parse_tree(
 	'-format'     => 'newick',
-	'-file'       => "$Bin/../examples/primates/supermatrix-cover1-rerooted-remapped.dnd",
+	'-file'       => "$Bin/testdata/testtree.dnd",
 	'-as_project' => 1,
 );
 isa_ok( $tree, 'Bio::Tree::TreeI' );
