@@ -66,9 +66,16 @@ if ( $rank == 0 ) {
 
     # instantiate nodes from infile
     my @nodes = $mts->get_nodes_for_table( '-file' => $infile );
+	
+	use Data::Dumper;
+	foreach my $node (@nodes){
+		print ("id : ".$node->id."\n");
+		
+	}
 
     # this is sorted from more to less inclusive
     my @sorted_clusters = $mts->get_clusters_for_nodes(@nodes);
+    print "Length sorted clusters : ".scalar(@sorted_clusters)."\n";
     
     # hear we split the sorted clusters into subsets that divide
     # the inclusiveness more evenly
@@ -82,10 +89,19 @@ if ( $rank == 0 ) {
     # now we flatten the subsets again
     my @clusters;
     push @clusters, @{ $subset[$_] } for 0 .. ( $nworkers - 1 );
-
-    # this is a simple mapping to see whether a taxon is of interest
-    my %ti = map { $_->ti => 1 } @nodes;        
+	print "Length clusters : ".scalar(@clusters)."\n";
     
+	##@clusters = grep {my %h = %$_; $h{'ci'} eq 148 } @clusters;##(@clusters[0..10]); #Hannes 148
+	##use List::MoreUtils qw(uniq);
+	##$log->info("Length clusters : ".scalar(@clusters)." length uniq clusters ".scalar(uniq(@clusters)));
+	
+	#foreach my $cl (@clusters){
+	#	#print "Clusters : \n";
+	#	print Dumper($cl);
+	#}
+	# this is a simple mapping to see whether a taxon is of interest
+    my %ti = map { $_->ti => 1 } @nodes;        
+	    
     # for each worker we dispatch an approximately equal chunk of clusters.
     my $nclusters = int( scalar(@clusters) / $nworkers );
     $log->info("each worker will process about $nclusters clusters");
@@ -137,6 +153,9 @@ if ( $rank == 0 ) {
             # open write handle
 		    open my $outfh, '>', $outfile or die $!;
 	    
+	    	#Hannes
+	    	$log->info("ALINGNMENT WRITTEN TO ".$outfile);
+	    
             # iterate over rows in alignment
             for my $row ( @{ $alignment->{matrix} } ) {
                 
@@ -154,16 +173,22 @@ else {
     
     # first receive the map of nodes to keep
     my $ti = MPI_Recv(0,NODE_MAP,MPI_COMM_WORLD);
-    
+	##my %h = %$ti;
+	$log->info("TI : ");
+	$log->info(Dumper($ti));
+
     # then receive the list of clusters to process
     my $subset = MPI_Recv(0,CLUSTER_SUBSET,MPI_COMM_WORLD);
     
     # iterate over clusters, build result
     my @result;
     for my $cl ( @{ $subset } ) {
+     	$log->info(Dumper($cl));
+       
         my %h = %$cl;             
         my $ci = $h{'ci'};
-        $log->info("worker $rank going to fetch sequences for cluster $ci");
+        my $ti_root = $h{'ti_root'};
+        $log->info("worker $rank going to fetch sequences for cluster $ci with root ti: $ti_root");
         
         # fetch ALL sequences for the cluster, reduce data set
         my $sg = Bio::Phylo::PhyLoTA::Service::SequenceGetter->new;
@@ -171,10 +196,15 @@ else {
         my $single  = $sg->single_cluster($cl);
         my $seed_gi = $single->seed_gi;
 		my $mrca    = $single->ti_root->ti;
-        $log->info("worker $rank fetched ".scalar(@seqs)." sequences");
-        
+        $log->info("worker $rank fetched ".scalar(@seqs)." sequences for cluster $ci with root ti: $ti_root");
         # keep only the sequences for our taxa
         my @matching = grep { $ti->{$_->ti} } @seqs;
+    	        for my $seq (@seqs){
+        	print ("Ti : ". $seq->ti."\n");
+        }
+    	
+       	$log->info ("Length matching : ".scalar(@matching));
+	
         
         # let's not keep the ones we can't build trees out of
         if ( scalar @matching > 3 ) {
