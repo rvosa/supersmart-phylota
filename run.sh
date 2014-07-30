@@ -16,7 +16,7 @@ PRINTVAL="perl -MBio::Phylo::PhyLoTA::Config=printval -e printval"
 # config vars, optionally change by setting env var with SUPERSMART prefix, e.g.
 # $ SUPERSMART_WORK_DIR=/tmp
 VERBOSE=`$PRINTVAL VERBOSITY`       # global verbosity level
-##PARSER=`$PRINTVAL PARSER_BIN`       # converts phylip to examl input files
+##PARSER=`$PRINTVAL PARSER_BIN`     # converts phylip to examl input files
 PERL=`$PRINTVAL PERL_BIN`           # the perl interpreter
 MPIBIN=`$PRINTVAL MPIRUN_BIN`       # MPI job dispatcher, 'mpirun' or 'mpiexec'
 NODES=`$PRINTVAL NODES`             # number of nodes and/or threads
@@ -51,14 +51,14 @@ if [ ! -e $SPECIESTABLE ]; then
 fi
 
 # creates the NCBI common tree from an input species table
-if [ ! -e $COMMONTREE ]; then
-	$PERLSCRIPT/write_common_tree.pl --nodelabels -i $SPECIESTABLE \
-	$VERBOSE > $COMMONTREE
-fi
+#if [ ! -e $COMMONTREE ]; then
+#	$PERLSCRIPT/write_common_tree.pl --nodelabels -i $SPECIESTABLE \
+#	$VERBOSE > $COMMONTREE
+#fi
 
 # create alignments from an input species table
 if [ ! -e $ALIGNMENTLIST ]; then
-	$MPIRUN $PERLSCRIPT/mpi_write_alignments.pl -i $SPECIESTABLE \
+	$MPIRUN $PERLSCRIPT/parallel_write_alignments.pl -i $SPECIESTABLE \
 	$VERBOSE -w $WORKDIR > $ALIGNMENTLIST
 fi
 
@@ -70,7 +70,7 @@ fi
 
 # create supermatrix for backbone taxa
 if [ ! -e $SUPERMATRIX ]; then
-	$PERLSCRIPT/pick_exemplars.pl -l $MERGEDLIST -t $SPECIESTABLE $VERBOSE #> $SUPERMATRIX
+	$PERLSCRIPT/pick_exemplars.pl -l $MERGEDLIST -t $SPECIESTABLE $VERBOSE > $SUPERMATRIX
 fi
 
 # infer backbone tree
