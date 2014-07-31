@@ -3,7 +3,6 @@ use strict;
 use warnings;
 use Getopt::Long;
 use Data::Dumper;
-use Parallel::MPI::Simple;
 use Bio::Phylo::Util::Logger ':levels';
 use Bio::Phylo::Matrices::Matrix;
 use Bio::Phylo::PhyLoTA::Service::SequenceGetter;
@@ -28,7 +27,7 @@ re-directed to a file.
 =cut
 
 # process command line arguments
-my $verbosity = WARN;
+my $verbosity = INFO;
 my ( $infile, $workdir );
 GetOptions(
 	'infile=s'  => \$infile,
@@ -42,11 +41,9 @@ my $log = Bio::Phylo::Util::Logger->new(
 	'-class' => [qw(
 		main
 		Bio::Phylo::PhyLoTA::Service::SequenceGetter
-		Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector
 		Bio::Phylo::PhyLoTA::Service::ParallelService
 	)]
 );
-
     
 # instantiate helper object
 my $mts = Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector->new;
@@ -71,13 +68,19 @@ for my $i ( 0 .. $#sorted_clusters ) {
 my @clusters;
 push @clusters, @{ $subset[$_] } for 0 .. ( $nworkers - 1 );
 
-
 # this is a simple mapping to see whether a taxon is of interest
-my @ti = map { $_->ti } @nodes;
+my %ti = map { $_->ti => 1 } @nodes;        
 
+my $counter = 0;
 # make the alignments in parallel mode
 my @result = pmap {        
         my $cl = $_;
+        my $ti = \%ti;
+		$counter = $counter + 1;
+		$log->info("Counter = $counter");
+        my %h = %$cl;             
+        # get cluster id
+        my $ci = $h{'ci'};
         my @res = ();
         # fetch ALL sequences for the cluster, reduce data set
         my $sg = Bio::Phylo::PhyLoTA::Service::SequenceGetter->new;
@@ -86,19 +89,19 @@ my @result = pmap {
         my $single  = $sg->single_cluster($cl);
         my $seed_gi = $single->seed_gi;
         my $mrca    = $single->ti_root->ti;
-                
-        my @matching = grep { my $s = $_; grep { $_ == $s->ti } @ti  } @seqs;
-        
+		$log->info("fetched ".scalar(@seqs)." sequences for cluster $ci");                
+        my @matching = grep { $ti->{$_->ti} } @seqs;
+         
         # let's not keep the ones we can't build trees out of
         if ( scalar @matching > 3 ) {
-                
-                # this runs muscle, so should be on your PATH.
+                # this runs muscle or mafft, so should be on your PATH.
                 # this also requires bioperl-live and bioperl-run
+                $log->info("going to align ".scalar(@matching)." sequences for cluster $ci");
                 my $aln = $sg->align_sequences(@matching);
-            
+                
                 # convert AlignI to matrix for pretty NEXUS generation
                 my $m = Bio::Phylo::Matrices::Matrix->new_from_bioperl($aln);
-            
+                
                 # iterate over all matrix rows
                 my @matrix;
                 $m->visit(sub{					
@@ -116,34 +119,15 @@ my @result = pmap {
                 for my $row ( @matrix ) {
                         print $fh $row->[0], "\n", $row->[1], "\n";
                 }
-                
+                close $fh;
                 push @res, {
                         'seed_gi' => $seed_gi,
                         'matrix'  => \@matrix,
                 };
+                $log->info("aligning sequences for cluster $ci finished and written to $filename");
+ 				
+ 				#print alignment file name to STDOUT so it can be saved in output file of script          
+ 				print $filename . "\n";
         } 
         return @res;
 } @clusters;
-
-
-# process results from parallel run
-sequential {    
-        # iterate over alignments
-        for my $alignment ( @result ) {            
-                # create out file name
-                my $outfile = $workdir
-                    . '/'
-                    . $alignment->{seed_gi}
-                . '.fa';                
-                # print name to stdout so we can make a list of produced files
-                print $outfile, "\n";            
-                # open write handle
-                open my $outfh, '>', $outfile or die $!;                
-                # iterate over rows in alignment
-                for my $row ( @{ $alignment->{matrix} } ) {                
-                        # 0 is FASTA header, 1 is aligned sequence data
-                        print $outfh $row->[0], "\n", $row->[1], "\n";
-                }                                
-        }    
-};
-
