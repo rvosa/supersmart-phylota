@@ -64,9 +64,10 @@ fi
 
 # merge alignments by orthology 
 if [ ! -e $MERGEDLIST ]; then
-	$PERLSCRIPT/merge_alignments.pl -l $ALIGNMENTLIST -w $WORKDIR \
+	$MPIRUN $PERLSCRIPT/parallel_merge_alignments.pl -l $ALIGNMENTLIST -w $WORKDIR \
 	$VERBOSE > $MERGEDLIST
 fi
+
 
 # create supermatrix for backbone taxa
 if [ ! -e $SUPERMATRIX ]; then
