@@ -279,7 +279,8 @@ sub get_tree_for_nodes {
 =item expand_taxa
 
 Returns a list of taxon names for all descendent leaf taxa of a given root taxon.
-The 'lowest taxonomic rank' to be considered can be specified in the config file. 
+The 'lowest taxonomic rank' to be considered can be specified as 
+an argument to this function, e.g. from the config file. 
 If leaves are found that are lower than the 'lowest taxonomic rank', their parents are
 considered a leaf in the tree (if themselfes are at least at the level 
 of 'lowest taxonomic rank').   
@@ -287,12 +288,12 @@ of 'lowest taxonomic rank').
 =cut
 
 sub expand_taxa {
-        my ($self, @root_taxa) = @_;                
-        
-        # keep ranks that are higher or equal to highest rank specified in phylota.ini
-        my $config = Bio::Phylo::PhyLoTA::Config->new;
-        my $lowest_rank = $config->ROOT_TAXA_EXPANSION;
-        # do not expand taxa if lowest rank not set in config
+        my ($self, $names, $lowest_rank) = @_;                
+        my @root_taxa = @{$names};
+        use Data::Dumper;
+        $log->info(Dumper(@root_taxa));
+        # keep ranks that are higher or equal to highest rank specified as argument
+        # do not expand taxa if lowest rank not given
         if ( ! $lowest_rank ) {
                 $log->info("ROOT_TAXA_EXPANSION not set in config file, skipping taxa expansion");
                 return ( @root_taxa );
