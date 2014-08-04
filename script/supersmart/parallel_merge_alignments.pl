@@ -72,6 +72,7 @@ for my $aln ( @alignments ) {
 		print $fh '>', $gi, "\n", $seq->seq, "\n";
 	}	
 }
+$log->info("read ".scalar(@alignments)." alignments");
 
 # make blast db
 $log->info("going to make BLAST db for $dbname");
@@ -82,18 +83,22 @@ my @cmd = (
 	'2>'      => '/dev/null',
 	'>'       => '/dev/null',		
 ); 
-system("@cmd") and die "Problem making db: $?";
+
+$log->info( "going to run command ".join(" ", @cmd) );
+my $result = `@cmd`;
 
 # run blast search
 $log->info("going to run all vs all BLAST search on $dbname");
-
 @cmd = (
 	$config->BLASTN_BIN,
 	'-query'  => $dbname,
 	'-db'     => $dbname,
 	'2>'      => '/dev/null',	
 );
-my $result = `@cmd`;
+$log->info( "going to run command ".join(" ", @cmd) );
+$result = `@cmd`;
+
+die "BLAST result empty" if not length($result) > 0;
 
 # process results, this is all-vs-all so many results with many hits. we will discard
 # all hits where the overlapping region is smaller than 0.51 of the length of both
@@ -103,12 +108,15 @@ $log->info("going to process BLAST results");
 #my %hits;
 my $q = 1;
 open my $out, '<', \$result;
+
 my $report = Bio::SearchIO->new( '-format' => 'blast', '-fh' => $out );
 
 my @blastresults;
 while ( my $result = $report->next_result ) {
 	push @blastresults, $result;
 }
+
+$log->info("number of blast results : ".scalar(@blastresults));
 
 my @res = pmap {
 	my $result = $_;
@@ -197,14 +205,14 @@ my @clusters = map { {'id'=>$i++, 'seq'=>$_} } @$sets;
 # align
 our $total = scalar @clusters;
 
-$log->info("start processing ".scalar(@clusters)." clusters");
+$log->info("start processing $total clusters");
 
-pmap{
+my @res = pmap{
 	my %cluster = %{$_};
 	my $clusterid = $cluster{'id'};
 	my @seqids = @{$cluster{'seq'}};
 
-	$log->info("merging alignments in cluster $clusterid");
+	$log->info("merging alignments in cluster # $clusterid");
 	
 	# turn GIs into file names, check for singletons
 	my @files = map { File::Spec->catfile( $workdir, $_ . '.fa' ) } @seqids;
