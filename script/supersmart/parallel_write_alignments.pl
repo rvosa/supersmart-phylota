@@ -72,12 +72,13 @@ push @clusters, @{ $subset[$_] } for 0 .. ( $nworkers - 1 );
 my %ti = map { $_->ti => 1 } @nodes;        
 
 my $counter = 0;
+my $total = scalar(@clusters);
 # make the alignments in parallel mode
 my @result = pmap {        
         my $cl = $_;
         my $ti = \%ti;
 		$counter = $counter + 1;
-		$log->info("Counter = $counter");
+		$log->info("processing cluster $counter  / $total");
         my %h = %$cl;             
         # get cluster id
         my $ci = $h{'ci'};
