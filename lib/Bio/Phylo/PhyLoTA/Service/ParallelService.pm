@@ -59,7 +59,13 @@ sub import {
         if ( $mode eq 'mpi' ){
                 use Parallel::MPI::Simple;
                 MPI_Init();       
-                $num_workers = MPI_Comm_size(MPI_COMM_WORLD())-1;                
+                $num_workers = MPI_Comm_size(MPI_COMM_WORLD())-1; 
+                
+                # minimum workers is one: worker node same as boss node
+                if ( $num_workers == 0 ){
+                	$num_workers = 1;
+                }        
+                       
                 $logger->info("Initializing MPI ParallelService with $num_workers workers");
         }
         elsif ( $mode eq 'pthreads' ) {
@@ -103,7 +109,7 @@ sub pmap_pthreads (&@) {
 	for ( my $i = 0; $i < $size; $i += $inc ) {
 		my $max = ( $i + $inc - 1 ) >= $size ? $size - 1 : $i + $inc - 1;
 		my @subset = @data[$i..$max];
-                push @threads, threads->create( sub { map {$func->()} @subset } );
+                push @threads, threads->create( sub { map {$func->() } @subset } );
         }
 	push @result, $_->join for @threads;
 	return @result;
