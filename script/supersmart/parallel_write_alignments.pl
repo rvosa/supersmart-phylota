@@ -90,7 +90,7 @@ my @result = pmap {
         my $single  = $sg->single_cluster($cl);
         my $seed_gi = $single->seed_gi;
         my $mrca    = $single->ti_root->ti;
-		$log->info("fetched ".scalar(@seqs)." sequences for cluster $ci");                
+		$log->info("fetched ".scalar(@seqs)." sequences for cluster id $ci");                
         my @matching = grep { $ti->{$_->ti} } @seqs;
          
         # let's not keep the ones we can't build trees out of
