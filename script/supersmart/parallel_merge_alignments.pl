@@ -39,6 +39,7 @@ GetOptions(
 
 
 my $dbname = File::Spec->catfile( $workdir, 'seeds.fa' );
+$log->info("creating database file $dbname");
 
 # instantiate helper objects
 my $service = Bio::Phylo::PhyLoTA::Service::SequenceGetter->new;
