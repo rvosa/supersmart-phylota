@@ -37,10 +37,6 @@ GetOptions(
 	'workdir=s' => \$workdir,
 );
 
-
-my $dbname = File::Spec->catfile( $workdir, 'seeds.fa' );
-$log->info("creating database file $dbname");
-
 # instantiate helper objects
 my $service = Bio::Phylo::PhyLoTA::Service::SequenceGetter->new;
 my $mts     = Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa->new;
@@ -49,6 +45,16 @@ my $log     = Bio::Phylo::Util::Logger->new(
 	'-level' => $verbosity,
 	'-class' => 'main',
 );
+
+$log->info("MERGE_ALIGNMENTS STARTED! list : $list , workdir : $workdir ");
+
+foreach (sort keys %ENV) { 
+  $log->info("$_  =  $ENV{$_}"); 
+}
+
+
+my $dbname = File::Spec->catfile( $workdir, 'seeds.fa' );
+$log->info("creating database file $dbname");
 
 # read list of alignments
 my @alignments;
@@ -71,9 +77,13 @@ for my $aln ( @alignments ) {
 		my $gi = $1;
 		my $seq = $service->find_seq($gi);
 		print $fh '>', $gi, "\n", $seq->seq, "\n";
+		$log->info("PRINTING ALIGNMENT");
+		print $fh "alignment\n";
 	}	
 }
 $log->info("read ".scalar(@alignments)." alignments");
+
+
 
 # make blast db
 $log->info("going to make BLAST db for $dbname");
@@ -204,11 +214,13 @@ my $i = 1;
 my @clusters = map { {'id'=>$i++, 'seq'=>$_} } @$sets;
 
 # align
-our $total = scalar @clusters;
+my $total = scalar @clusters;
 
 $log->info("start processing $total clusters");
 
-my @res = pmap{
+
+
+my @cres = pmap{
 	my %cluster = %{$_};
 	my $clusterid = $cluster{'id'};
 	my @seqids = @{$cluster{'seq'}};
