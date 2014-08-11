@@ -80,11 +80,11 @@ if [ ! -e $MEGATREE ]; then
 fi
 
 # calibrate backbone tree
-#if [ ! -e $CHRONOGRAM ]; then
+if [ ! -e $CHRONOGRAM ]; then
     NUMSITES=`head -1 $SUPERMATRIX | cut -f 2 -d ' '`
     $PERLSCRIPT/calibrate_tree.pl -f $FOSSILTABLE -r $MEGATREE -s $TREEPLSMOOTH -o $CHRONOGRAM $VERBOSE -n $NUMSITES 
 #fi
-exit;
+
 
 # decompose backbone tree
 if [ ! -e $WORKDIR/clade* ]; then
