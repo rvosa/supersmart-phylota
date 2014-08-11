@@ -46,7 +46,7 @@ FINALTREE=$WORKDIR/final.dnd
 # creates a table where the first column has the input species
 # names and subsequent columns have the species ID and higher taxon IDs
 if [ ! -e $SPECIESTABLE ]; then
-	$PERLSCRIPT/parallel_write_taxa_table.pl -i $NAMELIST \
+	$MPIRUN $PERLSCRIPT/parallel_write_taxa_table.pl -i $NAMELIST \
 	$VERBOSE > $SPECIESTABLE
 fi
 
