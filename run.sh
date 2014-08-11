@@ -8,7 +8,7 @@
 # project-specific variables
 WORKDIR=examples/primates          # working directory for intermediate files
 NAMELIST=$WORKDIR/names.txt        # input list of taxon names
-FOSSILTABLE=$WORKDIR/fossils3.tsv
+FOSSILTABLE=$WORKDIR/fossils.tsv
 
 # template for looking up variables in the config file
 PRINTVAL="perl -MBio::Phylo::PhyLoTA::Config=printval -e printval"
@@ -51,10 +51,10 @@ if [ ! -e $SPECIESTABLE ]; then
 fi
 
 # creates the NCBI common tree from an input species table
-#if [ ! -e $COMMONTREE ]; then
-#	$PERLSCRIPT/write_common_tree.pl --nodelabels -i $SPECIESTABLE \
-#	$VERBOSE > $COMMONTREE
-#fi
+if [ ! -e $COMMONTREE ]; then
+	$PERLSCRIPT/write_common_tree.pl --nodelabels -i $SPECIESTABLE \
+	$VERBOSE > $COMMONTREE
+fi
 
 # create alignments from an input species table
 if [ ! -e $ALIGNMENTLIST ]; then
@@ -84,11 +84,12 @@ fi
     NUMSITES=`head -1 $SUPERMATRIX | cut -f 2 -d ' '`
     $PERLSCRIPT/calibrate_tree.pl -f $FOSSILTABLE -r $MEGATREE -s $TREEPLSMOOTH -o $CHRONOGRAM $VERBOSE -n $NUMSITES 
 #fi
+exit;
 
 # decompose backbone tree
-#if [ ! -e $WORKDIR/clade* ]; then
-#    $MPIRUN $PERLSCRIPT/parallel_decompose_backbone.pl -t $SPECIESTABLE -l $MERGEDLIST -b $MEGATREE -w $WORKDIR $VERBOSE
-#fi
+if [ ! -e $WORKDIR/clade* ]; then
+    $MPIRUN $PERLSCRIPT/parallel_decompose_backbone.pl -t $SPECIESTABLE -l $MERGEDLIST -b $MEGATREE -w $WORKDIR $VERBOSE
+fi
 
 # merge clade alignments
 clade_count=`ls -d $WORKDIR/clade*/ 2>/dev/null | wc -w`
