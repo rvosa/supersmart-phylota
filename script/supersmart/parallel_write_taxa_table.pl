@@ -23,8 +23,8 @@ underlying taxonomy. Writes the results as a tab-separated file to STDOUT.
 =cut
 
 # process command line arguments
-my $verbosity = WARN;
-my @levels = qw[species genus family order class phylum kingdom];
+my $verbosity = INFO;
+my @levels = qw[species genus subfamily family superfamily parvorder infraorder suborder order class phylum kingdom];
 my ( $infile, $root_taxon );
 GetOptions(
 	'infile=s'   => \$infile,
@@ -38,7 +38,7 @@ my $log = Bio::Phylo::Util::Logger->new(
 	'-level' => $verbosity,
 	'-class' => [qw(
 		main 
-		
+		Bio::Phylo::PhyLoTA::Service::ParallelService		
 	)]
     );
 
@@ -61,14 +61,19 @@ if ( $infile ){
 	}
 }
 
+# expand possible root taxa to taxonomic level set in ROOT_TAXA_EXPANSION 
+#  or set to "Species" in the case a root taxon is given as argument, but 
+#  expansion is not set in config file
+my $expand_to = $config->ROOT_TAXA_EXPANSION;
+	
 # if a root taxon is given, add it to the taxon names and set expansion to "Species" if not set otherwise
 if ( $root_taxon ) {
 	push @names, $root_taxon;
+	if ( ! $expand_to ){
+		$expand_to = "Species"
+	}
 }
 
-# expand possible root taxa to taxonomic level set in ROOT_TAXA_EXPANSION
-my $expand_to = $config->ROOT_TAXA_EXPANSION || "Species";
-	
 @names = $mts->expand_taxa( \@names , $expand_to);
 
 # print table header to stdout in sequential mode
@@ -94,7 +99,7 @@ my @result = pmap {
                         # create hash of taxonomic levels so that when we walk up the
                         # taxonomy tree we can more easily check to see if we are at a
                         # level of interest
-                        my %level = map { $_ => undef } @levels;
+                        my %level = map { $_ => "NA" } @levels;
                         
                         # traverse up the tree
                         while ( $node ) {
@@ -103,9 +108,10 @@ my @result = pmap {
                                 my $rank = $node->rank;
                                 if ( exists $level{$rank} ) {
                                         $level{$rank} = $node->get_id;
-                                }
+                                } 
                                 $node = $node->get_parent;
                         }
+                        
                         print join("\t", $name, @level{@levels})."\n";
                         push @res, join("\t", $name, @level{@levels});
                 }
