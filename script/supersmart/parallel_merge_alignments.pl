@@ -46,13 +46,6 @@ my $log     = Bio::Phylo::Util::Logger->new(
 	'-class' => 'main',
 );
 
-$log->info("MERGE_ALIGNMENTS STARTED! list : $list , workdir : $workdir ");
-
-foreach (sort keys %ENV) { 
-  $log->info("$_  =  $ENV{$_}"); 
-}
-
-
 my $dbname = File::Spec->catfile( $workdir, 'seeds.fa' );
 $log->info("creating database file $dbname");
 
@@ -77,7 +70,6 @@ for my $aln ( @alignments ) {
 		my $gi = $1;
 		my $seq = $service->find_seq($gi);
 		print $fh '>', $gi, "\n", $seq->seq, "\n";
-		$log->info("PRINTING ALIGNMENT");
 		print $fh "alignment\n";
 	}	
 }
