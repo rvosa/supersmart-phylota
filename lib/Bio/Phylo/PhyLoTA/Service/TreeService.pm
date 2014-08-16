@@ -9,54 +9,130 @@ use Bio::Phylo::PhyLoTA::Service;
 use base 'Bio::Phylo::PhyLoTA::Service';
 use Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa;
 use List::MoreUtils 'uniq';
+use List::Util 'min';
+use Array::Utils qw(intersect array_diff array_minus);
+
 
 my $config = Bio::Phylo::PhyLoTA::Config->new;
 my $log = Bio::Phylo::PhyLoTA::Service->logger;	
 
-# writes a tree description that spans provided taxa/clade to file
-sub write_tree {
+sub reroot_tree {
+	my ( $self, $tree, @records ) = @_;
+	
+	# taxonomic ranks to consider for determining paraphyly
+	my @levels = ('suborder', 'infraorder', 'family');
 
+	# store the scores (number of paraphyletic species per rerooting) for each level and node index
+	# at which we reroot
+	my %scores = ();
+	@scores{ @levels } = ();
+
+	# store the tree objects for the rerooting at each node
+	my %rerooted_trees = ();
+
+	my $num_internals = scalar @{ $tree->get_internals };
+	my $newi          = $tree->to_newick;
+
+	# iterate over all possible rerootings
+	for my $i (0 .. $num_internals - 1 ) {
+
+		# get fresh tree, so the node order etc. won't be messed up
+		my $current_tree = parse_tree(
+			'-string' => $newi,
+			'-format' => 'newick',
+		);
+
+		my @internals = @{ $current_tree->get_internals };
+
+		# reroot the tree
+		my $node = $internals[$i];
+		$log->debug("rerooting tree at internal node # " . $i);
+
+		$node->set_root_below;
+
+		# store the tree for later
+		$rerooted_trees{$i} = $current_tree;
+
+		# calculate the 'scores' : count the amount of paraphyly at each taxonomic level
+		foreach my $level (@levels) {
+			my $para_count =
+				$self->_count_paraphyletic_species( $current_tree, $level, @records );
+			$scores{$level}{$i} = $para_count;
+		}
+	}
+
+    # traverse all scores and just keep the node indices for the min scores for each level
+	my %best_node_idx = ();
+	foreach my $level (@levels) {
+		$best_node_idx{$level} = ();
+		my $minscore = min( values $scores{$level} );
+		foreach my $k ( keys $scores{$level} ) {
+			if ( $scores{$level}{$k} == $minscore ) {
+				push @{ $best_node_idx{$level} }, $k;
+			}
+		}
+	}
+
+	# now we take the intersection of all indices for all the levels
+	my @best_indices =
+	  @{ $best_node_idx{ $levels[0] } };   #initialize with set from first level
+	my $count = @levels;
+	for my $ii ( 1 .. $count - 1 ) {
+		@best_indices =
+		  intersect( @best_indices, @{ $best_node_idx{ $levels[$ii] } } );
+	}
+
+	if ( scalar @best_indices > 1 ) {
+		$log->warn ("Found more than one optimal rerooted trees. Returning the first one");
+	}
+	if ( scalar @best_indices == 0 ) {
+		$log->warn ("Found no optimal rerooted tree. Returning the original one");
+		return $tree;
+	}
+	return $rerooted_trees{ $best_indices[0] };
 }
 
-# re-roots a given backbone tree such that the number of monophyletic genera is maximized 
-sub reroot_tree {       
-	my ($self, $tree, @records) = @_;
-        if (! @records) {
-                die "Need both, tree and species table!";
-        }
-        $log->info("rerooting tree");
-        my $nw = $tree->to_newick;
+sub _count_paraphyletic_species {
+	my ( $self, $current_tree, $level, @records ) = @_;
 
-        # iterate over all nodes, re-root the tree at the branch below each
-        # node and check how many clades we will get. Take the tree that will 
-        # have the most clades.
-        my $max_clades = scalar ( $self->_make_clade_species_sets( $tree, @records ) );
-        my $num_internals = scalar @{ $tree->get_internals };
-        my $result = $tree;
+	# get all distinct members of the NCBI tree at the given level
+	my @members = uniq( map { $_->{$level} } @records );
 
-        foreach my $i ( 0..$num_internals-1 ) {
-                # Get a fresh curr_tree, because node order could be messed up
-                # by re-rooting and not all internal branches would be considered.
-                # Reading from newick is a workaround since $tree->clone somehow takes forever
-                my $curr_tree = parse_tree(
-                        '-format'     => 'newick',
-                        '-string'     => $nw,
-                        '-as_project' => 1,
-                    );                                
-                
-                my $node = @{ $curr_tree->get_internals }[$i];
-                $curr_tree->reroot($node);
-                
-                # determine how many monophyletic genera there are in the rerooted tree
-                my @set = $self->_make_clade_species_sets( $curr_tree, @records );
-                
-                if ( scalar (@set) >= $max_clades ){
-                        $max_clades = scalar (@set);
-                        $result = $curr_tree;
-                }
-        }
-        $log->info("rerooted tree has $max_clades monophyletic clades");
-        return $result;
+	# sum up the amount of paraphyletic species for all members at that level
+	my $para_count = 0;
+
+	for my $m (@members) {
+		
+	   # get the subset of terminals in the NCBI tree that belong to this family
+		my @ncbi_terminal_names =
+		  map { $_->{'species'} } grep { $_->{$level} eq $m } @records;
+
+		# get node objects for species in our tree
+		my @nodes = map{ $current_tree->get_by_name( $_ )  } @ncbi_terminal_names;
+
+		# get most recent common ancestor of the species in this family in our tree
+		my $mrca = $current_tree->get_mrca( \@nodes );
+		if ($mrca) {
+
+			# get descendants of the mrca
+			my @terminals = @{ $mrca->get_terminals };
+			my @terminal_names = map { $_->get_name } @terminals;
+
+			# count how many terminals of the mrca in our tree are in the
+			#  terminals in the NCBI tree, paraphyletic species are then the
+			#  ones that are descendents in our tree but not in the NCBI tree
+			my @matching = intersect( @ncbi_terminal_names, @terminal_names );
+			my @paraspecies = array_minus( @terminal_names, @ncbi_terminal_names );
+
+			$para_count += scalar @paraspecies;
+		}
+	}
+	return $para_count;
+}
+
+
+# writes a tree description that spans provided taxa/clade to file
+sub write_tree {
 }
 
 # Changes NCBI taxon identifiers in a given tree to taxon names
@@ -244,10 +320,7 @@ sub graft_tree {
         $clade->visit(sub{
 		my $node = shift;
 		my $bl = $node->get_branch_length || 0; # zero for root
-                print "Node name : ".$node->get_name."\n";
-                print "bl : $bl \n";
-                print "bmcra, cmcra : ".$bmrca_depth . " " . $cmrca_depth."\n";
-                $node->set_branch_length( $bl * ( $bmrca_depth / $cmrca_depth ) );
+          		$node->set_branch_length( $bl * ( $bmrca_depth / $cmrca_depth ) );
                 $log->info("adjusting branch length for ".$node->get_internal_name." to ".$bl * ( $bmrca_depth / $cmrca_depth ));
                       });
 	$log->info("re-scaled clade by $bmrca_depth / $cmrca_depth");
@@ -376,54 +449,6 @@ sub read_tipnames {
 	}
 	return @result;
 }
-
-
-sub _count_monophyletic_groups {
-        my ($self, $tree, @records) = @_;
-        my $level = "family";
-        
-        # get all distinct families
-        my @families = uniq ( map { $_->{$level} } @records );
-       
-        my @terminals = @{ $tree->get_terminals };
-                
-        # iterate over all families and get species in the tree that are 
-        #  in each family
-        for my $f (@families){
-                # get the subset of terminals that belong to this family
-                my @species = map { $_->{'species'} } grep { $_->{$level} == $f } @records;
-                my @nodes;
-                for my $s (@species){
-                        if ( my $n = $tree->get_by_name($s) ) {
-                                push @nodes, $n;
-                        }
-                        else {
-                                $log->debug("$s is not in the tree");
-                        }
-                }
-                # get most recent common ancestors
-                my $mrca = $tree->get_mrca(\@nodes);
-                
-                # get all descendents of the mrca 
-                my @terminals = @{ $mrca->get_terminals };
-                print "num terminals : ".scalar(@terminals)."\n";
-                print "num species : ".scalar(@species)."\n\n";
-                
-                
-        }
-        
-        #for my $r (@records) {
-        #        my %h = %$r;
-        #        for my $k (keys %h){
-        #                print $k."\t";
-        #                print $h{$k}."\n";
-        #        }
-        #        #print ref($r)."\n";
-        #}
-        
-        ##my ($genus) = map { $_->{'genus'} } grep { $_->{'species'} == $id } @records;
-}
-
 
 sub _make_clade_species_sets {
         my ($self, $tree, @records) = @_;
