@@ -46,7 +46,7 @@ sub reroot_tree {
 
 		# reroot the tree
 		my $node = $internals[$i];
-		$log->debug("rerooting tree at internal node # " . $i);
+		$log->debug("rerooting tree at internal node # " . ($i+1) . "/" . $num_internals);
 
 		$node->set_root_below;
 
