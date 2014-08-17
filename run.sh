@@ -16,7 +16,6 @@ PRINTVAL="perl -MBio::Phylo::PhyLoTA::Config=printval -e printval"
 # config vars, optionally change by setting env var with SUPERSMART prefix, e.g.
 # $ SUPERSMART_WORK_DIR=/tmp
 VERBOSE=`$PRINTVAL VERBOSITY`       # global verbosity level
-##PARSER=`$PRINTVAL PARSER_BIN`     # converts phylip to examl input files
 PERL=`$PRINTVAL PERL_BIN`           # the perl interpreter
 MPIBIN=`$PRINTVAL MPIRUN_BIN`       # MPI job dispatcher, 'mpirun' or 'mpiexec'
 NODES=`$PRINTVAL NODES`             # number of nodes and/or threads
@@ -38,6 +37,7 @@ ALIGNMENTLIST=$WORKDIR/aligned.txt
 MERGEDLIST=$WORKDIR/merged.txt
 SUPERMATRIX=$WORKDIR/supermatrix.phy
 MEGATREE=$WORKDIR/megatree.dnd
+REROOTED_MEGATREE=$WORKDIR/rerooted_megatree.dnd
 CHRONOGRAM=$WORKDIR/chronogram.dnd
 LABELLED_CHRONOGRAM=$WORKDIR/labelled_chronogram.dnd
 TREEPLCONF=$WORKDIR/treePL.conf
@@ -68,7 +68,6 @@ if [ ! -e $MERGEDLIST ]; then
 	$VERBOSE > $MERGEDLIST
 fi
 
-
 # create supermatrix for backbone taxa
 if [ ! -e $SUPERMATRIX ]; then
 	$PERLSCRIPT/pick_exemplars.pl -l $MERGEDLIST -t $SPECIESTABLE $VERBOSE > $SUPERMATRIX
@@ -79,12 +78,16 @@ if [ ! -e $MEGATREE ]; then
 	$PERLSCRIPT/infer_backbone.pl -o $MEGATREE -w $WORKDIR -c $COMMONTREE -s $SUPERMATRIX -t $SPECIESTABLE $VERBOSE
 fi
 
-# calibrate backbone tree
+# reroot backbone tree
+if [ ! -e $REROOTED_MEGATREE ]; then
+	$PERLSCRIPT/reroot_backbone.pl -w $WORKDIR -b $MEGATREE -t $SPECIESTABLE $VERBOSE > $REROOTED_MEGATREE
+fi
+
+# calibrate rerooted backbone tree
 if [ ! -e $CHRONOGRAM ]; then
     NUMSITES=`head -1 $SUPERMATRIX | cut -f 2 -d ' '`
-    $PERLSCRIPT/calibrate_tree.pl -f $FOSSILTABLE -r $MEGATREE -s $TREEPLSMOOTH -o $CHRONOGRAM $VERBOSE -n $NUMSITES 
-#fi
-
+    $PERLSCRIPT/calibrate_tree.pl -f $FOSSILTABLE -r $REROOTED_MEGATREE -s $TREEPLSMOOTH -o $CHRONOGRAM $VERBOSE -n $NUMSITES 
+fi
 
 # decompose backbone tree
 if [ ! -e $WORKDIR/clade* ]; then
@@ -107,4 +110,4 @@ fi
 # graft clade trees onto backbone
 if [ ! -e $FINALTREE ]; then
     $PERLSCRIPT/graft_trees.pl -workdir $WORKDIR -backbone $LABELLED_CHRONOGRAM -outfile $FINALTREE $VERBOSE
-#fi
+fi
