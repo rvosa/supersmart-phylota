@@ -16,7 +16,7 @@ infer_backbone.pl - infers backbone tree using ExaML
 
 =head1 SYNOPSIS
 
- $ infer_backbone.pl -o <file> -w <dir> -c <common tree> -s <supermatrix> -t <taxa> [--verbose]
+ $ infer_backbone.pl -o <file> -w <dir> -c <common tree> -s <supermatrix> [--verbose]
 
 =head1 DESCRIPTION
 
@@ -31,20 +31,18 @@ directory location needs to be specified.
 
 # process command line arguments
 my $verbosity = WARN;
-my ( $outfile, $workdir, $commontree, $supermatrix, $taxa );
+my ( $outfile, $workdir, $commontree, $supermatrix );
 GetOptions(
 	'outfile=s'     => \$outfile,
 	'workdir=s'     => \$workdir,
 	'commontree=s'  => \$commontree,
 	'supermatrix=s' => \$supermatrix,
-        'taxa=s'        => \$taxa,
 	'verbose+'      => \$verbosity,
 );
 
 # instantiate helper objects
 my $config = Bio::Phylo::PhyLoTA::Config->new;
 my $ts = Bio::Phylo::PhyLoTA::Service::TreeService->new;
-my $mt = Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa->new;
 my $logger = Bio::Phylo::Util::Logger->new(
 	'-level' => $verbosity,
 	'-class' => [qw(main Bio::Phylo::PhyLoTA::Service::TreeService 
@@ -193,9 +191,6 @@ my $bbtree = parse_tree(
 	'-file'       => $backbone,
 	'-as_project' => 1,
 );
-
-
-my @records = $mt->parse_taxa_file($taxa);
 
 open my $outfh, '>', $outfile or die $!;
 print $outfh $bbtree->to_newick;
