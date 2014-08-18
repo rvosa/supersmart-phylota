@@ -16,7 +16,7 @@ infer_backbone.pl - infers backbone tree using ExaML
 
 =head1 SYNOPSIS
 
- $ infer_backbone.pl -o <file> -w <dir> -c <common tree> -s <supermatrix> [--verbose]
+ $ infer_backbone.pl -o <file> -w <dir> -c <common tree> -s <supermatrix> [-t <tool>] [--verbose]
 
 =head1 DESCRIPTION
 
@@ -25,18 +25,20 @@ using ExaML or uses ExaBayes to sample a posterior distribution of trees. If Exa
 'consense' tree is calculated from the posterior. The tree resulting from this script is written to file.
 For tree inference with examl, an NCBI classification tree (in Newick format) has to be supplied 
 as a starting tree. ExaML and ExaBayes produce many intermediate checkpoint files, for which a
-directory location needs to be specified. 
+directory location needs to be specified. The software for tree inference (ExaML or ExaBayes) is
+determined in the configuration file, but can optionally also be given as a command-line argumet.
 
 =cut
 
 # process command line arguments
 my $verbosity = WARN;
-my ( $outfile, $workdir, $commontree, $supermatrix );
+my ( $outfile, $workdir, $commontree, $supermatrix, $tool );
 GetOptions(
 	'outfile=s'     => \$outfile,
 	'workdir=s'     => \$workdir,
 	'commontree=s'  => \$commontree,
 	'supermatrix=s' => \$supermatrix,
+	'tool=s'        => \$tool,
 	'verbose+'      => \$verbosity,
 );
 
@@ -49,19 +51,19 @@ my $logger = Bio::Phylo::Util::Logger->new(
                         Bio::Tools::Run::Phylo::ExaBayes)],
     );
 
-# choose tool for backbone inference set in config file
-my $tool;
-if ( $config->BACKBONE_INFERENCE_TOOL eq "examl" ) {
-        
-        $logger->info("using examl for backbone inference");
-        $tool  = Bio::Tools::Run::Phylo::ExaML->new;
-} 
-elsif ( $config->BACKBONE_INFERENCE_TOOL eq "exabayes" ) {
-        $logger->info("using exabayes for backbone inference");
-        $tool  = Bio::Tools::Run::Phylo::ExaBayes->new;
-}
-else {
-        die ("tool for backbone inference must be set in config file.")
+# choose tool for backbone inference either passed as argument or set in config file
+if (not $tool or not  lc $tool ~~ ['examl', 'exabayes'] ) {
+	if ( $config->BACKBONE_INFERENCE_TOOL eq "examl" ) {
+	        $logger->info("using examl for backbone inference");
+	        $tool  = Bio::Tools::Run::Phylo::ExaML->new;
+	} 
+	elsif ( $config->BACKBONE_INFERENCE_TOOL eq "exabayes" ) {
+	        $logger->info("using exabayes for backbone inference");
+	        $tool  = Bio::Tools::Run::Phylo::ExaBayes->new;
+	}
+	else {
+	        die ("tool for backbone inference must be set in config file.")
+	}
 }
 
 # set outfile name
