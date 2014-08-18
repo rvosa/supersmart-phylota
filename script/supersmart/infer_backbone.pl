@@ -196,7 +196,6 @@ my $bbtree = parse_tree(
 
 
 my @records = $mt->parse_taxa_file($taxa);
-##my $rerooted = $ts->reroot_tree($bbtree, @records);
 
 open my $outfh, '>', $outfile or die $!;
 print $outfh $bbtree->to_newick;
