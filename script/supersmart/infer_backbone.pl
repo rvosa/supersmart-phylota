@@ -20,12 +20,12 @@ infer_backbone.pl - infers backbone tree using ExaML
 
 =head1 DESCRIPTION
 
-Given an input supermatrix (in interleaved PHYLIP format), infers a maximum likelihood tree 
-using ExaML or ExaBayes and writes this to an output file. For tree inference with examl, an 
-NCBI classification tree (in Newick format) has to be supplied as a starting tree.
-ExaML and ExaBayes produce many intermediate checkpoint files, for which a
-directory location needs to be specified.
-Finally, the tree gets rerooted such that the number of monophyletic genera is maximized.
+Given an input supermatrix (in interleaved PHYLIP format), infers either a maximum likelihood tree 
+using ExaML or uses ExaBayes to sample a posterior distribution of trees. If ExaBayes is used, a 
+'consense' tree is calculated from the posterior. The tree resulting from this script is written to file.
+For tree inference with examl, an NCBI classification tree (in Newick format) has to be supplied 
+as a starting tree. ExaML and ExaBayes produce many intermediate checkpoint files, for which a
+directory location needs to be specified. 
 
 =cut
 
@@ -129,7 +129,7 @@ elsif ( $config->BACKBONE_INFERENCE_TOOL eq "exabayes" ) {
         $tool->parser($config->EXABAYES_PARSER_BIN);
         
         # set numbet of indepedent runs
-        my $numruns = 4;
+        my $numruns = 2;
         $logger->info("going to perform $numruns independent runs");
         $tool->numRuns($numruns);
 
@@ -194,14 +194,12 @@ my $bbtree = parse_tree(
 	'-as_project' => 1,
 );
 
-$logger->info("rerooting backbone tree such that the numebr of monophyletic genera is maximized");
 
 my @records = $mt->parse_taxa_file($taxa);
-my $rerooted = $ts->reroot_tree($bbtree, @records);
+##my $rerooted = $ts->reroot_tree($bbtree, @records);
 
-# write rerooted tree to specified output file
 open my $outfh, '>', $outfile or die $!;
-print $outfh $rerooted->to_newick;
+print $outfh $bbtree->to_newick;
 close $outfh;
 
 $logger->info("done, result written to $outfile");
