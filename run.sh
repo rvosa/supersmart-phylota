@@ -75,7 +75,7 @@ fi
 
 # infer backbone tree
 if [ ! -e $MEGATREE ]; then
-	$PERLSCRIPT/infer_backbone.pl -o $MEGATREE -w $WORKDIR -c $COMMONTREE -s $SUPERMATRIX -t $SPECIESTABLE $VERBOSE
+	$PERLSCRIPT/infer_backbone.pl -o $MEGATREE -w $WORKDIR -c $COMMONTREE -s $SUPERMATRIX $VERBOSE
 fi
 
 # reroot backbone tree
