@@ -25,6 +25,7 @@ underlying taxonomy. Writes the results as a tab-separated file to STDOUT.
 # process command line arguments
 my $verbosity = INFO;
 my @levels = qw[species genus subfamily family superfamily parvorder infraorder suborder order class phylum kingdom];
+##my @levels = qw[species genus family order class phylum kingdom];
 my ( $infile, $root_taxon );
 GetOptions(
 	'infile=s'   => \$infile,
@@ -82,7 +83,10 @@ sequential { print join ("\t", 'name', @levels), "\n"; };
 # this will take some time to do the taxonomic name resolution in the
 # database and with webservices. The below code runs in parallel
 my @result = pmap {
-        my $name = $_;                
+        my $name = $_; 
+        
+        # replace consecutive whitespaces with one
+        $name =~ s/\s+/ /g ;               
         my @res = ();
         my @nodes = $mts->get_nodes_for_names($name);
         if ( @nodes ) {
@@ -110,14 +114,36 @@ my @result = pmap {
                                         $level{$rank} = $node->get_id;
                                 } 
                                 $node = $node->get_parent;
-                        }
-                        
-                        print join("\t", $name, @level{@levels})."\n";
-                        push @res, join("\t", $name, @level{@levels});
-                }
+                        }                        
+                        my @entry = ($name, @level{@levels});
+                        push @res, \@entry;
+        		}
         }
         else {
                 $log->warn("couldn't resolve name $name");
         }                
         return  @res;
 } @names; 
+
+
+# filter taxa with duplicate species id and write the results to stdout
+sequential {
+	my %seen = ();
+	foreach my $res ( @result ) {
+		my @entry = @{$res};
+		my ( $species_name, $species_id ) = @entry;
+		
+		# filter out entries where the taxon is of higher level than species
+		if ( $species_id eq 'NA' ){
+			$log->info("Reconciled taxon with name $species_name is not of rank 'species'. Ignoring.");
+			next;
+		}
+		if ( exists $seen{$species_id} ) {
+			$log->info("Species with id $species_id (taxon name $species_name) already in species table. Ignoring.");
+		} 
+		else {
+			print join("\t", @entry)."\n";
+			$seen{$species_id} = 1;	
+		}
+	}
+}
