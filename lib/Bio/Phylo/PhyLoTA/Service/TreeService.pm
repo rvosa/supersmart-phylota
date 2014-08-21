@@ -10,8 +10,6 @@ use base 'Bio::Phylo::PhyLoTA::Service';
 use Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa;
 use List::MoreUtils 'uniq';
 use List::Util 'min';
-use Array::Utils qw(intersect array_diff array_minus);
-
 
 my $config = Bio::Phylo::PhyLoTA::Config->new;
 my $log = Bio::Phylo::PhyLoTA::Service->logger;	
@@ -79,7 +77,7 @@ sub reroot_tree {
 	my $count = @levels;
 	for my $ii ( 1 .. $count - 1 ) {
 		@best_indices =
-		  intersect( @best_indices, @{ $best_node_idx{ $levels[$ii] } } );
+		  _intersect( \@best_indices, $best_node_idx{ $levels[$ii] }  );
 	}
 
 	if ( scalar @best_indices > 1 ) {
@@ -121,15 +119,33 @@ sub _count_paraphyletic_species {
 			# count how many terminals of the mrca in our tree are in the
 			#  terminals in the NCBI tree, paraphyletic species are then the
 			#  ones that are descendents in our tree but not in the NCBI tree
-			my @matching = intersect( @ncbi_terminal_names, @terminal_names );
-			my @paraspecies = array_minus( @terminal_names, @ncbi_terminal_names );
-
+			my @matching = _intersect( \@ncbi_terminal_names, \@terminal_names );
+			my @paraspecies = _array_minus( \@terminal_names, \@ncbi_terminal_names );
 			$para_count += scalar @paraspecies;
 		}
 	}
 	return $para_count;
 }
 
+# get intersection between elements of two array references
+sub _intersect {
+	my ($a1, $a2) = @_;
+	my @arr1 = @{$a1};
+	my @arr2 = @{$a2};
+	my %arr1 = map{$_=>1} @arr1;
+	my %arr2 = map{$_=>1} @arr2;
+	return grep( $arr1{$_}, @arr2 );
+}
+
+# for two arrays A and B, returns the array elements that only exist in array A and not in array B
+sub _array_minus {
+	my ($a, $b) = @_;
+	my @a = @{$a};
+	my @b = @{$b};
+	my %a = map{$_=>1} @a;
+	my %b = map{$_=>1} @b;
+	return grep ( ! defined $b{$_}, @a );
+}
 
 # writes a tree description that spans provided taxa/clade to file
 sub write_tree {
