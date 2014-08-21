@@ -19,23 +19,20 @@ my $tree = parse_tree(
 	'-as_project' => 1,
     );
 
-#my $taxa = $Bin . '/testdata/testspecieslist.tsv';
-my $taxa = $Bin . '/../examples/primates/species.tsv'; 
+my $taxa = $Bin . '/testdata/species.tsv';
 # parse taxon mapping
 my $mt = 'Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa';
 my @records = $mt->parse_taxa_file($taxa);
 
-$tf = "/Users/hettling/Naturalis/supersmart/wrong_root.dnd";
+$tf = $Bin . '/testdata/tree-not-rerooted.dnd';
 $tree = parse_tree(
 	'-file'   => $tf,
 	'-format' => 'newick',
 	'-as_project' => 1,
     );
 
-
 # test rerooting a tree
 my $rerooted = $ts->reroot_tree($tree, @records);
-print "Ref rerooted : ".ref($rerooted)."\n";
 isa_ok ($rerooted, 'Bio::Tree::TreeI');
 
 # rerooted tree should be different
