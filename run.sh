@@ -6,7 +6,7 @@
 # show how things are supposed to fit together.
 
 # project-specific variables
-WORKDIR=examples/primates          # working directory for intermediate files
+WORKDIR=examples/orchids          # working directory for intermediate files
 NAMELIST=$WORKDIR/names.txt        # input list of taxon names
 FOSSILTABLE=$WORKDIR/fossils.tsv
 
@@ -49,7 +49,7 @@ if [ ! -e $SPECIESTABLE ]; then
 	$MPIRUN $PERLSCRIPT/parallel_write_taxa_table.pl -i $NAMELIST \
 	$VERBOSE > $SPECIESTABLE
 fi
-
+exit;
 # creates the NCBI common tree from an input species table
 if [ ! -e $COMMONTREE ]; then
 	$PERLSCRIPT/write_common_tree.pl --nodelabels -i $SPECIESTABLE \
@@ -90,16 +90,17 @@ if [ ! -e $CHRONOGRAM ]; then
 fi
 
 # decompose backbone tree
-if [ ! -e $WORKDIR/clade* ]; then
-    $MPIRUN $PERLSCRIPT/parallel_decompose_backbone.pl -t $SPECIESTABLE -l $MERGEDLIST -b $MEGATREE -w $WORKDIR $VERBOSE
+count=`ls -d $WORKDIR/clade* 2>/dev/null | wc -w`
+if [ $count -eq 0 ]; then
+    $MPIRUN $PERLSCRIPT/parallel_decompose_backbone.pl -t $SPECIESTABLE -l $MERGEDLIST -b $REROOTED_MEGATREE -w $WORKDIR $VERBOSE
 fi
 
 # merge clade alignments
 clade_count=`ls -d $WORKDIR/clade*/ 2>/dev/null | wc -w`
 file_count=`ls -d $WORKDIR/clade*/*.xml 2>/dev/null | wc -w`
-#if [ $file_count -le $clade_count ]; then    
+if [ $file_count -lt $clade_count ]; then    
         $PERLSCRIPT/merge_clade_alignments.pl -w $WORKDIR $VERBOSE
-#fi
+fi
 
 # infer tree for each clade
 file_count=`ls -f $WORKDIR/clade*/*.nex 2>/dev/null | wc -w`
