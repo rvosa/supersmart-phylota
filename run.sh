@@ -6,7 +6,7 @@
 # show how things are supposed to fit together.
 
 # project-specific variables
-WORKDIR=examples/orchids          # working directory for intermediate files
+WORKDIR=examples/primates          # working directory for intermediate files
 NAMELIST=$WORKDIR/names.txt        # input list of taxon names
 FOSSILTABLE=$WORKDIR/fossils.tsv
 
