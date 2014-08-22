@@ -49,7 +49,7 @@ if [ ! -e $SPECIESTABLE ]; then
 	$MPIRUN $PERLSCRIPT/parallel_write_taxa_table.pl -i $NAMELIST \
 	$VERBOSE > $SPECIESTABLE
 fi
-exit;
+
 # creates the NCBI common tree from an input species table
 if [ ! -e $COMMONTREE ]; then
 	$PERLSCRIPT/write_common_tree.pl --nodelabels -i $SPECIESTABLE \
