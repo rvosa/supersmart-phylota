@@ -172,7 +172,7 @@ sub get_distinct_taxa {
 Returns the distinct species IDs for the provided taxon ID.
 
 =cut
-
+ 
 sub get_species_for_taxon {
 	my ( $class, $taxon, $id, @records ) = @_;
 	my %ids = map { $_ => 1 } map { $_->{'species'} } grep { $_->{$taxon} == $id } @records;
