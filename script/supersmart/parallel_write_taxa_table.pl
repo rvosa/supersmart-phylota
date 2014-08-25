@@ -24,8 +24,8 @@ underlying taxonomy. Writes the results as a tab-separated file to STDOUT.
 
 # process command line arguments
 my $verbosity = INFO;
-my @levels = qw[species genus subfamily family superfamily parvorder infraorder suborder order class phylum kingdom];
-##my @levels = qw[species genus family order class phylum kingdom];
+my @levels = qw[varietas subspecies species genus tribe subfamily family superfamily parvorder infraorder suborder order subclass class phylum kingdom];
+
 my ( $infile, $root_taxon );
 GetOptions(
 	'infile=s'   => \$infile,
@@ -131,19 +131,14 @@ sequential {
 	my %seen = ();
 	foreach my $res ( @result ) {
 		my @entry = @{$res};
-		my ( $species_name, $species_id ) = @entry;
-		
-		# filter out entries where the taxon is of higher level than species
-		if ( $species_id eq 'NA' ){
-			$log->info("Reconciled taxon with name $species_name is not of rank 'species'. Ignoring.");
-			next;
-		}
-		if ( exists $seen{$species_id} ) {
-			$log->info("Species with id $species_id (taxon name $species_name) already in species table. Ignoring.");
+		my $name =  shift @entry;
+		my $ids = join "\t", @entry;
+		if ( exists $seen{$ids} ) {
+			$log->info("Taxon with resolved name $name already in species table. Ignoring.");
 		} 
 		else {
-			print join("\t", @entry)."\n";
-			$seen{$species_id} = 1;	
+			print "$name \t $ids \n";
+			$seen{$ids} = 1;	
 		}
 	}
 }
