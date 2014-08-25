@@ -77,8 +77,7 @@ my $logger = Bio::Phylo::Util::Logger->new(
 	'-class' => [ 
 		'main',
 		'Bio::Tools::Run::Phylo::StarBEAST',
-		#'Bio::Phylo::Parsers::Nexml',
-                #'Bio::Phylo::PhyLoTA::Service::ParallelService',
+        'Bio::Phylo::PhyLoTA::Service::ParallelService',
         ],
 );
 
