@@ -25,3 +25,10 @@ is (scalar @nodes, 2, "test retrieving multiple rows");
 for my $n ( @nodes ){
     isa_ok( $n, 'Bio::Phylo::PhyLoTA::DAO::Result::Node');
 }
+
+# try retrieving Trichosanthes cucumerina. This should be in the database;
+$name = "Trichosanthes cucumerina";
+@nodes = $schema->resultset('Node')->search({ taxon_name => $name }); 
+$node = shift @nodes;
+$id = $node->get_id();
+is ( $id, 50543, "found $name");
