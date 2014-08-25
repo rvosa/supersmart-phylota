@@ -65,7 +65,7 @@ sub get_nodes_for_names {
         $log->info("going to search for name '$name'");
         
         # do we have an exact match?
-	# caution: there might be multiple nodes for one taxon name 
+		# caution: there might be multiple nodes for one taxon name 
     	my @nodes = $self->search_node( { taxon_name => $name } )->all;
         
         # no exact match if ->single returns undef (i.e. false)
@@ -74,7 +74,7 @@ sub get_nodes_for_names {
             
             # search the web service
             if ( my $id = $self->_do_tnrs_search($name) ) {
-	    	@nodes = $self->search_node( {  ti => $id } )->all;
+	    		@nodes = $self->search_node( {  ti => $id } )->all;
 	    	$log->info("found match $id for $name through TNRS");
 	    }
             else {
@@ -290,8 +290,7 @@ of 'lowest taxonomic rank').
 sub expand_taxa {
         my ($self, $names, $lowest_rank) = @_;                
         my @root_taxa = @{$names};
-        use Data::Dumper;
-        $log->info(Dumper(@root_taxa));
+    
         # keep ranks that are higher or equal to highest rank specified as argument
         # do not expand taxa if lowest rank not given
         if ( ! $lowest_rank ) {
@@ -326,38 +325,28 @@ sub expand_taxa {
         #  the taxnomic rank specified in phylota.ini
         while ( @queue ) {
                 my $node = shift @queue;
+                $log->info("Processing node " . $node->get_name);
                 my @children = @{ $node->get_children };
 
                 # if there is at least one child which has not reached the 
                 # specified lowest taxonomic rank yet, we keep traversing 
                 # the tree
                 my @child_ranks = map { $_->rank } @children;
-                my $stop = 1;
                 foreach  my $rank ( @child_ranks ) {
                         if ( grep { $_ eq $rank } @valid_ranks ) {
-                                $stop = 0;
+                				push @queue, @children;                                
                                 last;
                         }
                 }                
-                if ( ! $stop ) {                                                                       
-                        push @queue, @children;
-                }
-                else {
-                        # check if current node has valid rank, if yes it 
-                        # is in the result list
-                        if ( grep { $_ eq $node->rank } @valid_ranks ) {
-                                my $tipname = $node->get_name;
+                # check if current node has valid rank, if yes it 
+                # is in the result list, except if it is the root taxon that
+                #  is expanded!
+				my $name = $node->get_name;
+                if ( grep { $_ eq $node->rank } @valid_ranks  and not  grep (/^$name$/, @root_taxa)  ) {
+                                my $tipname = $name;
                                 push @result, $tipname;                        
-                        }
-                }                
+                }
         }                 
-        # write results to file
-        #my $outfile = "expanded_taxa.txt";
-        #open my $fh, '>', $outfile or die "Cannot open $outfile.txt: $!";
-        #foreach ( sort @result ) {
-        #        print $fh "$_\n";
-        #}
-        #close $fh;        
         return @result;
 }
 
