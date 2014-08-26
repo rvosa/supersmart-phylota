@@ -43,9 +43,7 @@ my $log = Bio::Phylo::Util::Logger->new(
 	'-level' => $verbosity,
 	'-class' => [qw(
 		main 
-		Bio::Phylo::PhyLoTA::Service::ParallelService		
-		Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector		
-
+		Bio::Phylo::PhyLoTA::Service::ParallelService
 	)]
     );
 
