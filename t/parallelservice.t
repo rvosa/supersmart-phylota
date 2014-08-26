@@ -12,12 +12,27 @@ if ( $ARGV[0] ){
 		
 		BEGIN { use_ok('Bio::Phylo::PhyLoTA::Service::ParallelService', 'mpi') };
 		my @letters;
-		sequential{ @letters = ('A'..'Z') };
-		my @result = pmap { print "Processing item $_ \n"; return $_++; } @letters ;
-		sequential{ cmp_ok (scalar @result, '==', 26, "Returned array has correct length") };
+		sequential{ @letters = ('A'..'K') };
+		my @result = pmap {sleep(1); print "Processing item $_ \n"; return $_++; } @letters ;
+		sequential{ cmp_ok (scalar @result, '==', 11, "Returned array has correct length") };
 	}
 }			
 else {
+	
 	# call script with mpirun and flag for parallel mode
-	system ( "mpirun -np 4 perl $Bin/$scriptname -p");	
+	#  do two calculations: One wih four nodes and one with one node. 
+	#  The parallel calculation should be faster!
+	
+	my $before = time();
+	system "mpirun -np 4 perl $Bin/$scriptname -p";	
+	my $after = time();
+	my $elapsed_parallel = $after - $before;
+	
+	$before = time();
+	system "mpirun -np 1 perl $Bin/$scriptname -p";	
+	$after = time();
+	my $elapsed_sequential = $after - $before;
+	
+	cmp_ok ( $elapsed_parallel, '<', $elapsed_sequential, "parallel calculation faster than sequential");
+	
 }	
