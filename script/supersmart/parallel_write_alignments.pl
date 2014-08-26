@@ -49,15 +49,15 @@ my $log = Bio::Phylo::Util::Logger->new(
 my $mts = Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector->new;
 
 # instantiate nodes from infile
-my @nodes = $mts->get_nodes_for_table( '-file' => $infile ); ##sequential { return $mts->get_nodes_for_table( '-file' => $infile ) };
+my @nodes = $mts->get_nodes_for_table( '-file' => $infile ); 
 
 # this is sorted from more to less inclusive
-my @sorted_clusters = $mts->get_clusters_for_nodes(@nodes); #sequential { return $mts->get_clusters_for_nodes(@nodes) };
+my @sorted_clusters = $mts->get_clusters_for_nodes(@nodes); 
 
 # hear we split the sorted clusters into subsets that divide
 # the inclusiveness more evenly
 my @subset;
-my $nworkers = num_workers();
+my $nworkers = num_workers() || 1;
 for my $i ( 0 .. $#sorted_clusters ) {
         my $j = $i % $nworkers;
         $subset[$j] = [] if not $subset[$j];
@@ -66,22 +66,22 @@ for my $i ( 0 .. $#sorted_clusters ) {
     
 # now we flatten the subsets again
 my @clusters;
-push @clusters, @{ $subset[$_] } for 0 .. ( $nworkers - 1 );
+push @clusters, @{ $subset[$_] } for 0 .. ( $nworkers - 1 ) ;
+
 
 # this is a simple mapping to see whether a taxon is of interest
-my %ti = map { $_->ti => 1 } @nodes;        
+my %ti =  map { $_->ti => 1 } @nodes;        
 
-my $counter = 0;
 my $total = scalar(@clusters);
 # make the alignments in parallel mode
 my @result = pmap {        
         my $cl = $_;
         my $ti = \%ti;
-		$counter = $counter + 1;
-		$log->info("processing cluster $counter  / $total");
         my %h = %$cl;             
         # get cluster id
         my $ci = $h{'ci'};
+		$log->info("processing cluster with id $ci");
+
         my @res = ();
         # fetch ALL sequences for the cluster, reduce data set
         my $sg = Bio::Phylo::PhyLoTA::Service::SequenceGetter->new;
