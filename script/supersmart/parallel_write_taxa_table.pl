@@ -24,7 +24,11 @@ underlying taxonomy. Writes the results as a tab-separated file to STDOUT.
 
 # process command line arguments
 my $verbosity = INFO;
-my @levels = qw[varietas subspecies species genus tribe subfamily family superfamily parvorder infraorder suborder order subclass class phylum kingdom];
+my @levels = reverse ('superkingdom', 'kingdom', 'subkingdom', 'superphylum', 'phylum',
+                               'subphylum', 'superclass', 'class', 'subclass', 'infraclass', 'superorder',
+                               'order', 'suborder', 'infraorder', 'parvorder', 'superfamily', 'family',
+                               'subfamily', 'tribe', 'subtribe', 'genus', 'subgenus', 'species group',
+                               'species subgroup', 'species', 'subspecies','varietas', 'forma');
 
 my ( $infile, $root_taxon );
 GetOptions(
@@ -40,6 +44,8 @@ my $log = Bio::Phylo::Util::Logger->new(
 	'-class' => [qw(
 		main 
 		Bio::Phylo::PhyLoTA::Service::ParallelService		
+		Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector		
+
 	)]
     );
 
