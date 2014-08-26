@@ -60,13 +60,7 @@ sub import {
                 use Parallel::MPI::Simple;
                 MPI_Init();       
                 $num_workers = MPI_Comm_size(MPI_COMM_WORLD())-1; 
-                
-                # minimum workers is one: worker node same as boss node
-                if ( $num_workers == 0 ){
-                	$num_workers = 1;
-                }        
-                       
-                $logger->info("Initializing MPI ParallelService with $num_workers workers");
+              	$logger->info("Initializing MPI ParallelService with $num_workers workers");
         }
         elsif ( $mode eq 'pthreads' ) {
                 use threads;
@@ -125,12 +119,21 @@ function if ParallelService was called with 'mpi' as its argument.
 
 sub pmap_mpi (&@) {
 	my ( $func, @data ) = @_;
-        
+    my $counter = 0;
 	my $WORLD  = MPI_COMM_WORLD();
 	my $BOSS   = 0;
 	my $JOB    = 1;
 	my $RESULT = 2;
 	my $rank = MPI_Comm_rank($WORLD);
+	
+	if ( num_workers() == 0 ) {
+		return map { 
+                	$counter++;
+                	$logger->info("Worker $rank is processing item # $counter / " . scalar(@data) );
+                	$func->($_) ;
+                } @data;                
+	}
+	
 	# this is the boss node
 	if ( $rank == 0 ) {
                 # submit the data in chunks
@@ -161,7 +164,11 @@ sub pmap_mpi (&@) {
 	else {
 		# receive my job and process it
 		my $subset = MPI_Recv($BOSS,$JOB,$WORLD);
-                my @result = map { $func->($_) } @{ $subset };                
+                my @result = map { 
+                	$counter++;
+                	$logger->info("Worker $rank is processing item # $counter / " . scalar(@{$subset}));
+                	$func->($_) ;
+                } @{ $subset };                
 		# send the result back to the boss
 		MPI_Send(\@result,$BOSS,$RESULT,$WORLD);
 	}
@@ -225,11 +232,12 @@ sub pmap (&@) {
 
 =item num_workers
 
-Returns the number of worker nodes.
+Getter/setter for the number of worker nodes.
 
 =cut
 
 sub num_workers {
+        $num_workers = shift if @_;
         return $num_workers;
 }
 
