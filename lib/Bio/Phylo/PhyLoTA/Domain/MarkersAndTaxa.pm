@@ -164,7 +164,9 @@ Returns the distinct IDs for the provided taxonomic level.
 sub get_distinct_taxa {
 	my ( $class, $taxon, @records ) = @_;
 	my %ids = map { $_ => 1 } map { $_->{$taxon} } @records;
-	return keys %ids;
+	# filter for e.g. 'NA' values
+	my @taxa = grep /[0-9]+/,  keys %ids;
+	return @taxa;
 }
 
 =item get_species_for_taxon
@@ -172,11 +174,13 @@ sub get_distinct_taxa {
 Returns the distinct species IDs for the provided taxon ID.
 
 =cut
- 
+
 sub get_species_for_taxon {
 	my ( $class, $taxon, $id, @records ) = @_;
-	my %ids = map { $_ => 1 } map { $_->{'species'} } grep { $_->{$taxon} == $id } @records;
-	return keys %ids;
+	my %ids = map { $_ => 1 } map { $_->{'species'} } grep { $_->{$taxon} == $id if $_->{$taxon}=~m/[0-9]+/ } @records;
+	# filter for e.g. 'NA' values
+	my @taxa = grep /[0-9]+/,  keys %ids;
+	return @taxa;
 }
 
 =item get_taxa_from_fasta
