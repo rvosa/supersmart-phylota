@@ -125,27 +125,35 @@ sub get_nodes_for_table {
     else {
         throw 'BadArgs' => 'need either -file or -handle argument';
     }
-    
     # iterate over lines
     while(<$fh>) {
-        chomp;
+	    chomp;
         my @fields = split /\t/, $_;
-        my $id = $fields[$i];
-        
-        # this will make us skip over any column headers and blank lines
-        if ( $id =~ /^\d+$/ ) {
-            my $node = $self->find_node($id);
+		
+		# get the id of the lowest taxon that is mapped to the entry and skip e.g. NA values
+		my $id;
+		foreach my $f ( @fields ) {
+			if ( $f =~ /^\d+$/ ) {
+				$id = $f;
+				last;
+			} 			
+		}	
+		
+		# omit e.g. header, rows with only NA...
+		next if not $id;
+		
+		my $node = $self->find_node($id);
             
-            # this *could* fail because perhaps the IDs have been found by TNRS
-            # without being present in our local database
-            if ( $node ) {
-                push @nodes, $node;
-            }
-            else {
-                $log->warn("couldn't instantiate node $id");
-            }
+        # this *could* fail because perhaps the IDs have been found by TNRS
+        # without being present in our local database
+        if ( $node ) {
+        	push @nodes, $node;
+        }
+        else {
+            $log->warn("couldn't instantiate node $id");
         }
     }
+    $log->info("created " . scalar(@nodes) . " nodes from taxon table");
     return @nodes;
 }
 
