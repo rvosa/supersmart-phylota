@@ -54,7 +54,7 @@ Overwrites any previously existing output files.
 =cut
 
 # process command line objects
-my $verbosity = WARN;
+my $verbosity = INFO;
 my ( $ngens, $sfreq, $lfreq ) = ( 100, 100, 100 );
 my $workdir;
 my $file;
@@ -122,15 +122,19 @@ elsif ( $workdir and -d $workdir ) {
 
 	# iterate over entries in work dir
 	opendir my $dh, $workdir or die $!;
-        my @cladedirs;
-	while( my $entry = readdir $dh ) {
-		# peruse directories named cladeXXX
-		if ( $entry =~ /clade\d+/ && -d "${workdir}/${entry}" ) {
-                        push   @cladedirs, $entry;
-                }
-        }        
-        # infer clades in parallel mode
-        pmap {
+    my @cladedirs;
+	
+	sequential { 
+			while( my $entry = readdir $dh ) {
+			# peruse directories named cladeXXX
+				if ( $entry =~ /clade\d+/ && -d "${workdir}/${entry}" ) {
+		                        push   @cladedirs, $entry;
+		        }
+	    }        
+	};
+
+    # infer clades in parallel mode
+    pmap {
                 my $clade = $_;
                 # this should be a nexml file with one taxa block and
                 # multiple matrices                
