@@ -7,7 +7,7 @@
 
 # project-specific variables
 WORKDIR=examples/primates          # working directory for intermediate files
-NAMELIST=$WORKDIR/names.txt        # input list of taxon names
+NAMELIST=$WORKDIR/names.txt 	   # input list of taxon names
 FOSSILTABLE=$WORKDIR/fossils.tsv
 
 # template for looking up variables in the config file
@@ -98,13 +98,14 @@ fi
 # merge clade alignments
 clade_count=`ls -d $WORKDIR/clade*/ 2>/dev/null | wc -w`
 file_count=`ls -d $WORKDIR/clade*/*.xml 2>/dev/null | wc -w`
+
 if [ $file_count -lt $clade_count ]; then    
         $PERLSCRIPT/merge_clade_alignments.pl -w $WORKDIR $VERBOSE
 fi
 
 # infer tree for each clade
 file_count=`ls -f $WORKDIR/clade*/*.nex 2>/dev/null | wc -w`
-if [ $file_count -le $clade_count ]; then
+if [ $file_count -lt $clade_count ]; then
     $MPIRUN $PERLSCRIPT/parallel_infer_clades.pl -w $WORKDIR -ngens 30000000 -sfreq 300000 -lfreq 300000 $VERBOSE
 fi
 
