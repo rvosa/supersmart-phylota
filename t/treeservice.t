@@ -59,5 +59,22 @@ my $bbtree = parse_tree(
 	'-format' => 'newick',
 	'-as_project' => 1,
 );
+
+# graft clade onto backbone tree
+my $bbstr = $bbtree->to_newick;
 my $grafted = $ts->graft_tree( $bbtree, $consensus );
 isa_ok($grafted,'Bio::Tree::TreeI');
+ok (length $grafted->to_newick > length $bbstr, "tree is larger after grafting");
+
+# do another graft with two trees that cause trouble before...
+$bbfile = "$Bin/testdata/backbone.dnd";
+$bbtree = parse_tree(
+	'-file'   => $bbfile,
+	'-format' => 'newick',
+	'-as_project' => 1,
+);
+$bbstr = $bbtree->to_newick;
+$treefile  = "$Bin/testdata/cercopithecus_clade.nex";
+$consensus = $ts->consense_trees( '-infile' => $treefile );
+$grafted = $ts->graft_tree( $bbtree, $consensus );
+ok (length $grafted->to_newick > length $bbstr, "tree is larger after grafting");
