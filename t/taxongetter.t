@@ -86,3 +86,14 @@ $taxa = $Bin . '/testdata/species-allranks.tsv';
 @records = $mt->parse_taxa_file($taxa);
 @nodes = $mts->get_nodes_for_table(@records);
 ok( @nodes, "getting nodes for taxa table (many ranks)" );
+
+# test function get_rank_for_taxon
+my $tid = 3656;
+my $rank = $mts->get_rank_for_taxon($tid);
+is ($rank, "species", "taxon $tid is of rank species");
+
+$tid = 2759; 
+$rank = $mts->get_rank_for_taxon($tid);
+is ($rank, "superkingdom", "taxon $tid is of rank superkingdom");
+
+
