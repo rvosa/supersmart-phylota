@@ -353,6 +353,17 @@ sub get_rank_for_taxon {
 	return $self->find_node($tid)->rank;
 }
 
+=item get_taxonomic_ranks
+
+Getter for all taxonomic ranks which are considered
+
+=cut
+
+sub get_taxonomic_ranks {
+	my $self = shift;
+	return @taxonomic_ranks;
+}
+
 =item taxa_are_disjoint
 
 Computes whether two array references of taxon IDs are non-overlapping (i.e.
