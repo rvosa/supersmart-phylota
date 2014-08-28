@@ -41,6 +41,14 @@ my $fac = Bio::Phylo::Factory->new;
 # this is used for logging messages
 my $log = Bio::Phylo::Util::Logger->new;
 
+# these are all ranks in NCBI taxonomy which are considered in SUPERSMART. 
+my @taxonomic_ranks = ('superkingdom', 'kingdom', 'subkingdom', 'superphylum', 'phylum',
+                               'subphylum', 'superclass', 'class', 'subclass', 'infraclass', 'superorder',
+                               'order', 'suborder', 'infraorder', 'parvorder', 'superfamily', 'family',
+                               'subfamily', 'tribe', 'subtribe', 'genus', 'subgenus', 'species group',
+                               'species subgroup', 'species', 'subspecies','varietas', 'forma');
+
+
 =over
 
 =item get_nodes_for_names
@@ -94,49 +102,32 @@ sub get_nodes_for_names {
 
 =item get_nodes_for_table
 
-Accepts a tab-delimited file as produced by write_taxa_table.pl and returns instantiated
-node objects
+Accepts an array of taxa table entries as produced by parse_taxa_file in class Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa 
+and returns instantiated node objects
 
 =cut
 
 sub get_nodes_for_table {
-    my ( $self, %args ) = @_;
-    my $i = $args{'-index'} || 1;
-        
-    # this will hold the instantiated node objects
-    my @nodes;
+    my ( $self, @taxatable ) = @_;
+   	my @nodes = ();
     
-    # this will be the handle we read from, which we either...
-    my $fh;
-    
-    # ...open from a file
-    if ( $args{'-file'} ) {
-        open $fh, '<', $args{'-file'} or throw 'FileError' => $!;
-        $log->info("going to read column $i from file $args{'-file'}");
-    }
-    
-    # ...get passed in as an open handle
-    elsif ( $args{'-handle'} ) {
-        $fh = $args{'-handle'};
-        $log->info("going to read column $i from handle");
-    }
-    
-    # ...or disaster happens
-    else {
-        throw 'BadArgs' => 'need either -file or -handle argument';
-    }
     # iterate over lines
-    while(<$fh>) {
-	    chomp;
-        my @fields = split /\t/, $_;
+    foreach (@taxatable) {
+		
+		my %entry = %{$_};
+    	
+    	# get the entries of the row sorted from lower to higher taxa
+        my @fields =  @entry{reverse @taxonomic_ranks};
 		
 		# get the id of the lowest taxon that is mapped to the entry and skip e.g. NA values
 		my $id;
 		foreach my $f ( @fields ) {
-			if ( $f =~ /^\d+$/ ) {
-				$id = $f;
-				last;
-			} 			
+			if ( $f ) {
+				if ( $f =~ /^\d+$/ ) {
+					$id = $f;
+					last;
+				} 			
+			}
 		}	
 		
 		# omit e.g. header, rows with only NA...
@@ -310,13 +301,6 @@ sub expand_taxa {
 
         my @result = ();
 
-        # ranks in NCBI taxonomy
-        my @taxonomic_ranks = ('superkingdom', 'kingdom', 'subkingdom', 'superphylum', 'phylum',
-                               'subphylum', 'superclass', 'class', 'subclass', 'infraclass', 'superorder',
-                               'order', 'suborder', 'infraorder', 'parvorder', 'superfamily', 'family',
-                               'subfamily', 'tribe', 'subtribe', 'genus', 'subgenus', 'species group',
-                               'species subgroup', 'species', 'subspecies','varietas', 'forma', 'no rank');
-
         my ($index) = grep { uc $taxonomic_ranks[$_] eq uc $lowest_rank } 0..$#taxonomic_ranks;
         if (! $index){
                 $log->warn("invalid lowest taxon rank '$lowest_rank', considering all ranks for taxa expansion");
@@ -356,6 +340,17 @@ sub expand_taxa {
                 }
         }                 
         return @result;
+}
+
+=item get_rank_for_taxon
+
+Returns a string with the taxonomic rank for the given taxon id
+
+=cut
+
+sub get_rank_for_taxon {
+	my ($self, $tid) = @_;
+	return $self->find_node($tid)->rank;
 }
 
 =item taxa_are_disjoint
