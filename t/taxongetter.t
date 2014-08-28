@@ -7,6 +7,8 @@ use Bio::Phylo::PhyLoTA::Config;
 use Bio::Phylo::Util::Logger ':levels';
 use Bio::Phylo::Matrices::Matrix;
 use Bio::Phylo::PhyLoTA::Service::SequenceGetter;
+use Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa;
+
 use Data::Dumper;
 
 # BEWARE: this is a lengthy test to run!
@@ -66,9 +68,21 @@ ok( @nodes, "found nodes" );
 my $taxon = "Alouatta fusca";
 my @fusca_nodes = $mts->get_nodes_for_names($taxon);
 # after TNRS searching webservice, Alouatta guariba should be found. 
-is ($fusca_nodes[0]->taxon_name, "Alouatta guariba");
+is ($fusca_nodes[0]->taxon_name, "Alouatta guariba", "found species Alouatta guariba");
 
 # search for taxon that cannot be found anywhere
 my @no_nodes = $mts->get_nodes_for_names("xy");
-is (scalar @no_nodes, 0);
+is ( scalar @no_nodes, 0, "nonsense query yields no taxon");
 
+# test getting the nodes for a whole taxon table 
+my $mt =  Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa->new;
+my $taxa = $Bin . '/testdata/species.tsv';
+my @records = $mt->parse_taxa_file($taxa);
+@nodes = $mts->get_nodes_for_table(@records);
+ok( @nodes, "getting nodes for taxa table" );
+
+# test getting nodes with a different taxon table
+$taxa = $Bin . '/testdata/species-allranks.tsv';
+@records = $mt->parse_taxa_file($taxa);
+@nodes = $mts->get_nodes_for_table(@records);
+ok( @nodes, "getting nodes for taxa table (many ranks)" );
