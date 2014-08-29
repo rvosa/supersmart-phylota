@@ -1,8 +1,12 @@
 # this is an object oriented perl module
 
 package Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa;
+
 use strict;
 use warnings;
+
+use Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector;
+use List::MoreUtils 'uniq';
 use Bio::Phylo::Matrices::Datum;
 
 
@@ -124,8 +128,7 @@ sub parse_taxa_file {
 	my ( $class, $file ) = @_;
 	open my $fh, '<', $file or die $!;
 	my $string = do { local $/; <$fh> };
-	return $class->parse_taxa_string($string);
-	
+	return $class->parse_taxa_string($string);	
 }
 
 =item parse_taxa_string
@@ -167,6 +170,42 @@ sub get_distinct_taxa {
 	# filter for e.g. 'NA' values
 	my @taxa = grep /[0-9]+/,  keys %ids;
 	return @taxa;
+}
+
+=item get_root_level
+
+Returns the level of the 'root' taxon. This is the lowest taxonomic rank which
+comprise all entries in the species table
+
+=cut
+
+sub get_root_taxon_level {
+	my ( $class, @records) = @_;	
+	my $mts = Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector->new;
+	my $result;
+	
+	# get all possible taxonomic ranks, ordered from lowest to highest
+	my @all_ranks = reverse $mts->get_taxonomic_ranks;
+	my %ranks_in_table = map { $_=>1 } keys $records[0];
+	
+	# iterate over all ranks; the root taxon level is the first rank for which all 
+	#  entries in the taxa table are the same!
+	foreach my $rank (@all_ranks){		
+
+		# skip rank if not in our taxa table
+		next if not exists $ranks_in_table{$rank};
+		
+		# extract column for taxonomic level
+		my @column = map {my %h=%$_; my $entry=$h{$rank}; $entry=~s/\s//g; $entry; } @records;
+	
+		# omit columns that contain 'NA' values
+		next if grep {$_ eq 'NA'} @column;
+		if (scalar (uniq @column) == 1){
+			$result = $rank;
+			last;
+		}
+	}
+	return $result;
 }
 
 =item get_species_for_taxon
