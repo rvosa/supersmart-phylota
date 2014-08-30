@@ -43,7 +43,10 @@ my $mts     = Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa->new;
 my $config  = Bio::Phylo::PhyLoTA::Config->new;
 my $log     = Bio::Phylo::Util::Logger->new(
 	'-level' => $verbosity,
-	'-class' => 'main',
+	'-class' => [qw(
+		main
+		Bio::Phylo::PhyLoTA::Service::ParallelService
+	)]
 );
 
 my $dbname = File::Spec->catfile( $workdir, 'seeds.fa' );
