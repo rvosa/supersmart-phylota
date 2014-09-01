@@ -19,7 +19,7 @@ merge_clade_alignments.pl - creates a merged data file for species-level inferen
 
 Given a working directory, traverses it looking for subdirectories of the pattern
 C<clade\d+>. Perusing each of these, it merges the *.fa (FASTA) files in it and
-produces a single output file that can be analyses by the infer_clade.pl wrapper.
+produces a single output file that can be analysed by the infer_clade.pl wrapper.
 
 =cut
 
@@ -61,7 +61,7 @@ while( my $dir = readdir $odh ) {
 				my $id = $1;
 				
 				# parse the file
-				$log->debug("adding alignment $file");
+				$log->info("adding alignment $file");
 				my $matrix = parse_matrix(
 					'-type'       => 'dna',
 					'-format'     => 'fasta',
