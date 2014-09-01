@@ -44,7 +44,6 @@ my $log = Bio::Phylo::Util::Logger->new(
 		main
 		Bio::Phylo::PhyLoTA::Service::SequenceGetter
 		Bio::Phylo::PhyLoTA::Service::ParallelService
-		Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector
 	)]
 );
     
@@ -70,7 +69,7 @@ my %clusters;
 foreach my $cl (@sorted_clusters) {
 	my $single  = $sg->single_cluster($cl);
 	my $seed_gi = $single->seed_gi;
-	$log->info("Extracted seed gi from cluster");
+	#$log->info("Extracted seed gi from cluster");
 	push @{$clusters{$seed_gi}}, $cl;
 }
 
