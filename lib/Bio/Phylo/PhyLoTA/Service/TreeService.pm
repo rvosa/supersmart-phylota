@@ -207,8 +207,9 @@ sub consense_trees {
 	my $counter = 0;
 	open my $fh, '<', $infile or die $!;
 	while(<$fh>) {
-		$counter++ if /^\s*tree\s/i;
+		$counter++ if /^\s*tree\s/i; #*
 	}	
+	
 	my $babs = int( $burnin * $counter );
 	
 	# create temporary outfile name
@@ -251,8 +252,21 @@ sub parse_newick_from_nexus {
         # remove trailing commas from idenifiers, if any
         for ( values %id_map ) { s/,$//g };
         
-        # substitute comments except for 'posterior' and set posteriors as node names 
-        $newick =~ s/\[[^]]*?posterior=([0-9.]+)[^]]*]|\[[^]]*]/$1/g;
+        # remove comments [things between square brackets] but keep the 'posterior' from comment
+        #  and set the posterior as node name
+        my @comments = ( $newick =~ m/(\[.+?\])/g );
+  		
+  		# iterate through comments and parse out posterior value, if given
+        foreach my $c (@comments){
+       	my @matches = ( $c =~ m/posterior=([0-9.]+)/g);
+  			$log->warn("Found more than one posterior in comment tag") if scalar(@matches) > 1;
+  			my $posterior = $matches[0] || "";
+  			my $quoted = quotemeta $c;
+  			
+  			# substitute in newick tree string
+  			$newick =~ s/$quoted/$posterior/g;
+        }
+       
         my $newicktree =  parse_tree(
                 '-string'   => $newick,
                 '-format' => 'newick',
@@ -261,7 +275,7 @@ sub parse_newick_from_nexus {
         
         # substitute nexus taxon ids with real taxon labels
         # note that there is possible trouble if node names for posteriors (e.g. 1) 
-        #   overlap with nexus identifier. However, *BEAST seems to write all posteriors
+        #   overlap with nexus identifier. However, BEAST seems to write all posteriors
         #   as proper decimals
         $newicktree->visit( sub{
                 my $n = shift;
@@ -289,23 +303,22 @@ sub write_newick_tree {
 sub graft_tree {
 	my ( $self, $backbone, $clade ) = @_;
         
-        # sometimes single quotes are added in the beast output when dealing with special characters
-        #   removing them to match names in the backbone. Just to be sure, remove quotes also from backbone
-        $clade->visit(sub{
+    # sometimes single quotes are added in the beast output when dealing with special characters
+    #   removing them to match names in the backbone. Just to be sure, remove quotes also from backbone
+    $clade->visit(sub{
                 my $node = shift;
                 my $name = $node->get_name;
                 $name =~ s/\'//g;
                 $node->set_name($name);
                       });
-        $backbone->visit(sub{
+    $backbone->visit(sub{
                 my $node = shift;
                 my $name = $node->get_name;
                 $name =~ s/\'//g;
                 $node->set_name($name);
                          });
         
-        my @names = map { $_->get_name } @{ $clade->get_terminals };
-
+    my @names = map { $_->get_name } @{ $clade->get_terminals };
 	$log->debug("@names");
 	
 	# retrieve the tips from the clade tree that also occur in the backbone, i.e. the 
@@ -323,13 +336,16 @@ sub graft_tree {
 	$log->info("found ".scalar(@exemplars)." exemplars in backbone");
 	my @copy = @exemplars; # XXX ???	
 	my $bmrca = $backbone->get_mrca(\@copy);
-        # find the exemplars in the clade tree and find *their* MRCA
+	if ( $bmrca->is_root ){
+		$log->fatal("Something goes wrong here: MRCA of exemplar species in backbone is the backbone root!");
+	}
+    # find the exemplars in the clade tree and find their MRCA
 	my @clade_exemplars = map { $clade->get_by_name($_->get_name) } @exemplars;
 	
-        my @ccopy = @clade_exemplars;
+    my @ccopy = @clade_exemplars;
 	my $cmrca = $clade->get_mrca(\@ccopy);
 	$log->info("found equivalent ".scalar(@clade_exemplars)." exemplars in clade");
-        # calculate the respective depths, scale the clade by the ratios of depths
+    # calculate the respective depths, scale the clade by the ratios of depths
 	my $cmrca_depth = $cmrca->calc_max_path_to_tips;
 	my $bmrca_depth = $bmrca->calc_max_path_to_tips;
         
@@ -347,7 +363,6 @@ sub graft_tree {
         my $branch_length = $bmrca->get_branch_length || 0;
         $bmrca->set_branch_length( $branch_length + $diff );
 	$log->info("adjusted backbone MRCA depth by $bmrca_depth - $crd");
-	
         # now graft!
         $bmrca->clear();
         $clade->visit(
@@ -357,14 +372,13 @@ sub graft_tree {
 			if ( my $p = $node->get_parent ) {
 				if ( $p->is_root ) {
 					$log->info("grafted $name onto backbone MRCA");
-					$node->set_parent($bmrca);
+					$node->set_parent($bmrca);								
 				}
 			}
 			if ( $node->is_root ) {
 				$log->info("replacing root $name with backbone MRCA");
 			}
 			else {
-				$log->info("inserting $name into backbone");
 				$backbone->insert($node);
 			}
 		}
