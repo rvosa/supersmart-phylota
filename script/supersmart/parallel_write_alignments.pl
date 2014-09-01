@@ -3,8 +3,10 @@ use strict;
 use warnings;
 use Getopt::Long;
 use Data::Dumper;
+use List::Util 'min';
 use Bio::Phylo::Util::Logger ':levels';
 use Bio::Phylo::Matrices::Matrix;
+use Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa;
 use Bio::Phylo::PhyLoTA::Service::SequenceGetter;
 use Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector;
 use Bio::Phylo::PhyLoTA::Service::ParallelService 'mpi'; # can be either 'pthreads' or 'mpi';
@@ -42,20 +44,85 @@ my $log = Bio::Phylo::Util::Logger->new(
 		main
 		Bio::Phylo::PhyLoTA::Service::SequenceGetter
 		Bio::Phylo::PhyLoTA::Service::ParallelService
+		Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector
 	)]
 );
     
 # instantiate helper object
 my $mts = Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector->new;
+my $mt =  Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa->new;
+my $sg = Bio::Phylo::PhyLoTA::Service::SequenceGetter->new;
+   
+# parse the taxa file 
+my @taxatable = $mt->parse_taxa_file($infile);
 
 # instantiate nodes from infile
-my @nodes = $mts->get_nodes_for_table( '-file' => $infile ); 
+my @nodes = $mts->get_nodes_for_table(@taxatable); 
+
+$log->info("Found " . scalar(@nodes) . " nodes for taxa table");
 
 # this is sorted from more to less inclusive
 my @sorted_clusters = $mts->get_clusters_for_nodes(@nodes); 
+$log->info("Retrieved clusters for node obects");
 
-# hear we split the sorted clusters into subsets that divide
-# the inclusiveness more evenly
+# store all the clusters according to their respective seed gi
+my %clusters;
+foreach my $cl (@sorted_clusters) {
+	my $single  = $sg->single_cluster($cl);
+	my $seed_gi = $single->seed_gi;
+	$log->info("Extracted seed gi from cluster");
+	push @{$clusters{$seed_gi}}, $cl;
+}
+
+$log->info("Going to reduce clusters");
+sequential{
+
+	# Now reduce the clusters: There can be multiple clusters for one marker (seed gi).
+	#  If we have two clusters with the same seed_gi, we want to keep the cluster that
+	#  corresponds to the taxon which has higher level, and forget about the other one.
+	#  But caution! We do not want a higher level than the highest level in our taxon list!
+	foreach my $seed (keys %clusters) {
+		$log->info("Processing seed $seed");
+		# collect all possible ranks for clusters for that seed gi
+		my @ranks = map { $mts->get_rank_for_taxon( $sg->single_cluster($_)->ti_root->ti ) } @{$clusters{$seed}};	
+		
+		# get all taxonomic ranks ordered from higher to lower levels
+		my @all_ranks = $mts->get_taxonomic_ranks;
+		# get 'root' rank in taxa table
+		my $highest_rank = $mt->get_root_taxon_level( @taxatable );
+		use Data::Dumper;
+		# remove everything below the highest taxon
+		shift @all_ranks while (not $all_ranks[0] eq $highest_rank);
+	
+		my @indices;
+		foreach my $rank (@ranks) {
+			if ($rank ~~ @all_ranks){
+				my ($idx) = grep { $all_ranks[$_] eq $rank } 0..$#all_ranks;
+				push @indices, $idx;
+			}
+		}
+		
+		# Skip the gi if all clusters for this seed gi have ranks lower than the lowest for our taxa
+		if (! @indices){
+			$log->info("Deleting all (" . scalar(@ranks) . ") cluster(s) for seed gi $seed since they are of higher rank than $highest_rank");
+			##$clusters{$seed} =  @{$clusters{$seed}}[0];
+			delete $clusters{$seed};
+			next;
+		}
+		# taxonomic ranks are oredered from high to low, we therefore we take the lowest index
+		my ($cluster_idx) = grep { $indices[$_] == min(@indices) } 0..$#indices;
+		
+		# set the chosen cluster as the only one for this seed
+		my $cluster = @{$clusters{$seed}}[$cluster_idx];
+		$clusters{$seed} = $cluster;
+	}
+	
+	$log->info("Number of clusters : " . scalar(@sorted_clusters));
+	@sorted_clusters = values %clusters;
+	$log->info("Number of clusters after filtering: " . scalar(@sorted_clusters));
+	
+};
+
 my @subset;
 my $nworkers = num_workers() || 1;
 for my $i ( 0 .. $#sorted_clusters ) {
@@ -88,9 +155,10 @@ my @result = pmap {
         my @ss = $sg->get_sequences_for_cluster_object($cl);
         my @seqs    = $sg->filter_seq_set($sg->get_sequences_for_cluster_object($cl));
         my $single  = $sg->single_cluster($cl);
+        
         my $seed_gi = $single->seed_gi;
         my $mrca    = $single->ti_root->ti;
-		$log->info("fetched ".scalar(@seqs)." sequences for cluster id $ci");                
+		$log->info("fetched ".scalar(@seqs)." sequences for cluster id $ci, seed gi: $seed_gi, ti_root : " . $mrca);                
         my @matching = grep { $ti->{$_->ti} } @seqs;
          
         # let's not keep the ones we can't build trees out of
@@ -115,7 +183,7 @@ my @result = pmap {
                         push @matrix, [ ">gi|${gi}|seed_gi|${seed_gi}|taxon|${ti}|mrca|${mrca}" => $seq ];
                           });
                                 
-                my $filename = $workdir . '/' . $seed_gi . '.fa';
+                my $filename = $workdir . '/' . $seed_gi . '.fa'; #'_' . $mrca . '.fa';
                 open my $fh, '>', $filename or die $!;
                 for my $row ( @matrix ) {
                         print $fh $row->[0], "\n", $row->[1], "\n";
