@@ -156,8 +156,8 @@ my @res = pmap {
 	}
 	
 	# report progress
-	my $template = 'found %i hits for query %s (%i nt) - processed %i / %i';
-	my @args = ( scalar(@{$blhits{$query}}), $query, $q_l, $q++, scalar(@alignments) );
+	my $template = 'found %i hits for query %s (%i nt)';
+	my @args = ( scalar(@{$blhits{$query}}), $query, $q_l );
 	my $message  = sprintf $template, @args;
 	$log->info($message);	
 	return \%blhits;
