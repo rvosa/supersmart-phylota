@@ -209,6 +209,19 @@ sub sample_freq {
 	return $self->{'_sample_freq'};
 }
 
+=item collapse_species
+
+Getter/Setter for flag if taxa of rank subspecies, varietas and formas of one 
+species should be collapsed in the inferred species tree
+
+=cut
+
+sub collapse_species {
+	my $self = shift;
+	$self->{'_collapse_species'} = shift if @_;
+	return $self->{'_collapse_species'};
+}
+
 =item root_height
 
 Sets the root height to provided value. If no value is given, the root height is
@@ -577,11 +590,20 @@ sub _make_species_xml {
 	my %species;
 	for my $taxon ( @{ $args{'taxa'} } ) {
 		my $escaped = _escape($taxon);
-		if ( $escaped =~ /^([^_]+_[^_]+)/ ) {
-			my $binomial = $1;
-			$species{$binomial} = [] if not $species{$binomial};
-			push @{ $species{$binomial} }, $escaped;
+		
+		# collapse species if flag is set. This means we look if there is
+		#  a possible second '_' character in the taxon name. If yes,
+		#  the taxon name will be assigned to the corresponding species 
+		if ( $self->collapse_species ) {
+			if ( $escaped =~ /^([^_]+_[^_]+)/ ) {
+				my $binomial = $1;
+				$species{$binomial} = [] if not $species{$binomial};
+				push @{ $species{$binomial} }, $escaped;
+			}
 		}
+		else {
+			$species{$escaped} = [$escaped];
+		}	
 	}
 
 	# make sp elements
