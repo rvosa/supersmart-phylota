@@ -16,8 +16,23 @@ ok( $beast->executable( $config->BEAST_BIN ), "executable" );
 ok( $beast->chain_length(100) == 100, "chain length" );
 ok( $beast->sample_freq(100) == 100, "sample_freq" );
 ok( $beast->overwrite(1), "overwrite");
+ok( $beast->collapse_species(1), "collapse species");
 
 my (undef, $file) = tempfile(OPEN=>0);
 
 ok( $beast->outfile_name( $file ), "outfile");
 ok( $beast->run( "$Bin/testdata/testdata.xml" ), "run BEAST");
+
+
+# Caution, lengthy test ! 
+# second example, test if subspecies, varietas and forma 
+# will be present in output tree
+my $runlengthy = 0;
+SKIP : {
+	skip "running second beast example would take too long " unless $runlengthy;
+	ok ($beast->collapse_species(0) == 0, "do not collapse species");
+	ok( $beast->chain_length(10) == 10, "chain length" );
+	ok( $beast->sample_freq(10) == 10, "sample_freq" );
+	ok( $beast->overwrite(1), "overwrite");
+	ok( $beast->run( "$Bin/testdata/testdata_cucumis.xml" ), "run BEAST");
+};
