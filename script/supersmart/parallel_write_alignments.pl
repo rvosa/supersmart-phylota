@@ -67,33 +67,39 @@ $log->info("Retrieved clusters for node obects");
 # store all the clusters according to their respective seed gi
 my %clusters;
 
-sequential{
+#sequential{
 	foreach my $cl (@sorted_clusters) {
 		my $single  = $sg->single_cluster($cl);	
 		my $seed_gi = $single->seed_gi;
 		#$log->info("Extracted seed gi from cluster");
 		push @{$clusters{$seed_gi}}, $single;
 	}
-
+#};
 	$log->info("Going to reduce clusters");
 
 	# Now reduce the clusters: There can be multiple clusters for one marker (seed gi).
 	#  If we have two clusters with the same seed_gi, we want to keep the cluster that
 	#  corresponds to the taxon which has higher level, and forget about the other one.
 	#  But caution! We do not want a higher level than the highest level in our taxon list!
-	my $counter = 0;
-	foreach my $seed (keys %clusters) {
-		$log->info("Check if clusters for seed gi $seed  can be reduced ( #" . ++$counter . " / " . scalar(keys %clusters) . " )" );
+
+
+	#my $counter = 0;
+	#foreach my $seed (keys %clusters) {
+my @filtered_clusters = pmap {
+		my $seed = $_;
+		$log->info("checking if clusters for seed gi $seed  can be reduced" );
 		# collect all possible ranks for clusters for that seed gi
 		my @ranks = map { $mts->get_rank_for_taxon( $_->ti_root->ti ) } @{$clusters{$seed}};	
-		
 		# get all taxonomic ranks ordered from higher to lower levels
 		my @all_ranks = $mts->get_taxonomic_ranks;
 		# get 'root' rank in taxa table
 		my $highest_rank = $mt->get_root_taxon_level( @taxatable );
 		# remove everything below the highest taxon
 		shift @all_ranks while (not $all_ranks[0] eq $highest_rank);
-	
+		
+		# get the indices for all the ranks of our clusters for the present gi with respect to all ranks in NCBI
+		#  example: if NCBI ranks are (species, genus, order) and our clusters for this gi have ranks genus and order, 
+		#  then indices are 1 and 2. 
 		my @indices;
 		foreach my $rank (@ranks) {
 			if ($rank ~~ @all_ranks){
@@ -105,36 +111,35 @@ sequential{
 		# Skip the gi if all clusters for this seed gi have ranks lower than the lowest for our taxa
 		if (! @indices){
 			$log->info("Deleting all (" . scalar(@ranks) . ") cluster(s) for seed gi $seed since they are of higher rank than $highest_rank");
-			##$clusters{$seed} =  @{$clusters{$seed}}[0];
-			delete $clusters{$seed};
-			next;
+			return;
 		}
 		# taxonomic ranks are oredered from high to low, we therefore we take the lowest index
 		my ($cluster_idx) = grep { $indices[$_] == min(@indices) } 0..$#indices;
 		
-		# set the chosen cluster as the only one for this seed
+		# return the chosen cluster as the only one for this seed
 		my $cluster = @{$clusters{$seed}}[$cluster_idx];
-		$clusters{$seed} = $cluster;
-	}
+		return $cluster;	
+
+} keys(%clusters);
 	
-	$log->info("Number of clusters : " . scalar(@sorted_clusters));
-	@sorted_clusters = values %clusters;
-	$log->info("Number of clusters after filtering: " . scalar(@sorted_clusters));
-	
-};
 
 my @subset;
-my $nworkers = num_workers() || 1;
-for my $i ( 0 .. $#sorted_clusters ) {
-        my $j = $i % $nworkers;
-        $subset[$j] = [] if not $subset[$j];
-        push @{ $subset[$j] }, $sorted_clusters[$i];
-}
-    
-# now we flatten the subsets again
 my @clusters;
-push @clusters, @{ $subset[$_] } for 0 .. ( $nworkers - 1 ) ;
+my $nworkers = num_workers() || 1;
 
+sequential{
+	$log->info("Number of clusters : " . scalar(@sorted_clusters));
+	@sorted_clusters = values %clusters;
+	$log->info("Number of clusters after filtering: " . scalar(@filtered_clusters));
+
+	for my $i ( 0 .. $#filtered_clusters ) {
+	        my $j = $i % $nworkers;
+	        $subset[$j] = [] if not $subset[$j];
+	        push @{ $subset[$j] }, $filtered_clusters[$i];
+	}	    
+	# now we flatten the subsets again
+	push @clusters, @{ $subset[$_] } for 0 .. ( $nworkers - 1 ) ;
+};
 
 # this is a simple mapping to see whether a taxon is of interest
 my %ti =  map { $_->ti => 1 } @nodes;        
