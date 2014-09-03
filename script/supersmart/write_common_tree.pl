@@ -45,7 +45,7 @@ my $mts = Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector->new;
 my $mt =  Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa->new;
 
 my $log = Bio::Phylo::Util::Logger->new(
-	'-class' => [ qw(main Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector) ],
+	'-class' => [ 'main' ],
 	'-level' => $verbosity
 );
 
