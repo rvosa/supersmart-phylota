@@ -66,30 +66,31 @@ $log->info("Retrieved clusters for node obects");
 
 # store all the clusters according to their respective seed gi
 my %clusters;
-foreach my $cl (@sorted_clusters) {
-	my $single  = $sg->single_cluster($cl);
-	my $seed_gi = $single->seed_gi;
-	#$log->info("Extracted seed gi from cluster");
-	push @{$clusters{$seed_gi}}, $cl;
-}
 
-$log->info("Going to reduce clusters");
 sequential{
+	foreach my $cl (@sorted_clusters) {
+		my $single  = $sg->single_cluster($cl);	
+		my $seed_gi = $single->seed_gi;
+		#$log->info("Extracted seed gi from cluster");
+		push @{$clusters{$seed_gi}}, $single;
+	}
+
+	$log->info("Going to reduce clusters");
 
 	# Now reduce the clusters: There can be multiple clusters for one marker (seed gi).
 	#  If we have two clusters with the same seed_gi, we want to keep the cluster that
 	#  corresponds to the taxon which has higher level, and forget about the other one.
 	#  But caution! We do not want a higher level than the highest level in our taxon list!
+	my $counter = 0;
 	foreach my $seed (keys %clusters) {
-		$log->info("Processing seed $seed");
+		$log->info("Check if clusters for seed gi $seed  can be reduced ( #" . ++$counter . " / " . scalar(keys %clusters) . " )" );
 		# collect all possible ranks for clusters for that seed gi
-		my @ranks = map { $mts->get_rank_for_taxon( $sg->single_cluster($_)->ti_root->ti ) } @{$clusters{$seed}};	
+		my @ranks = map { $mts->get_rank_for_taxon( $_->ti_root->ti ) } @{$clusters{$seed}};	
 		
 		# get all taxonomic ranks ordered from higher to lower levels
 		my @all_ranks = $mts->get_taxonomic_ranks;
 		# get 'root' rank in taxa table
 		my $highest_rank = $mt->get_root_taxon_level( @taxatable );
-		use Data::Dumper;
 		# remove everything below the highest taxon
 		shift @all_ranks while (not $all_ranks[0] eq $highest_rank);
 	
@@ -141,20 +142,21 @@ my %ti =  map { $_->ti => 1 } @nodes;
 my $total = scalar(@clusters);
 # make the alignments in parallel mode
 my @result = pmap {        
-        my $cl = $_;
+        # get 'single' cluster object
+        my $single = $_;
         my $ti = \%ti;
-        my %h = %$cl;             
-        # get cluster id
-        my $ci = $h{'ci'};
+		my $ci = $$single{"_column_data"}{"ci"};
 		$log->info("processing cluster with id $ci");
-
+		my $cl_type = $$single{"_column_data"}{"cl_type"};
+		my $ti_root = $$single{"_column_data"}{"ti_root"};
+		
+		my %h = ('ci'=>$ci, 'cl_type'=>$cl_type, 'ti_root'=>$ti_root);        
         my @res = ();
+        
         # fetch ALL sequences for the cluster, reduce data set
         my $sg = Bio::Phylo::PhyLoTA::Service::SequenceGetter->new;
-        my @ss = $sg->get_sequences_for_cluster_object($cl);
-        my @seqs    = $sg->filter_seq_set($sg->get_sequences_for_cluster_object($cl));
-        my $single  = $sg->single_cluster($cl);
-        
+        my @ss = $sg->get_sequences_for_cluster_object(\%h);
+        my @seqs    = $sg->filter_seq_set($sg->get_sequences_for_cluster_object(\%h));        
         my $seed_gi = $single->seed_gi;
         my $mrca    = $single->ti_root->ti;
 		$log->info("fetched ".scalar(@seqs)." sequences for cluster id $ci, seed gi: $seed_gi, ti_root : " . $mrca);                
