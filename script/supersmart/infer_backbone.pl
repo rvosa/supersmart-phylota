@@ -102,22 +102,28 @@ if ( $config->BACKBONE_INFERENCE_TOOL eq "examl" ) {
         # set substitution model
         $logger->info("setting substitution model ".$config->EXAML_MODEL);
         $tool->m($config->EXAML_MODEL);
-   
-        # here we need to read the names from the phylip file and adjust the
+
+    	# here we need to read the names from the phylip file and adjust the
         # common tree accordingly: it must only retain the taxa in the supermatrix,
         # and it must be fully resolved.
-        $intree = File::Spec->catfile( $workdir, 'user.dnd' );
-        open my $fh, '>', $intree or die $!;
-        print $fh parse(
+  
+		my @tipnames = $ts->read_tipnames($supermatrix);
+		my $tree = parse(
                 '-format' => 'newick',
                 '-file'   => $commontree,
             )->first
-            ->keep_tips( [ $ts->read_tipnames($supermatrix) ] )
+            ->keep_tips( \@tipnames )
             ->resolve
             ->remove_unbranched_internals
-            ->deroot
-            ->to_newick;
-        close $fh;
+            ->deroot;
+
+		my @terminals = @{$tree->get_terminals()};
+		die("Number of taxa in supermatrix does not match number of taxa in NCBI common tree") if not scalar(@terminals) == scalar(@tipnames);
+
+		$intree = File::Spec->catfile( $workdir, 'user.dnd' );
+        open my $fh, '>', $intree or die $!;
+        print $fh $tree->to_newick;
+		close $fh;
 }
 elsif ( $config->BACKBONE_INFERENCE_TOOL eq "exabayes" ) {
         # set exabayes location
