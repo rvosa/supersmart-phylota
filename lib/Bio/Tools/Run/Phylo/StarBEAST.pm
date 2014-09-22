@@ -169,6 +169,19 @@ sub logfile_name {
 	return $self->{'_logfile_name'};
 }
 
+=item beastfile_name
+
+Getter/setter for the location of the xml file that
+is generated as input for *BEAST
+
+=cut
+
+sub beastfile_name {
+	my $self = shift;
+	$self->{'_beastfile_name'} = shift if @_;
+	return $self->{'_beastfile_name'};
+}
+
 =item log_freq
 
 Getter/setter for the logging frequency.
@@ -314,10 +327,12 @@ sub run {
 	# generate BEAST xml
 	$log->info("going to generate beast xml");	
 	my $twig = $self->_make_beast_xml;
-	my ($fh, $filename) = tempfile();
+
+	my $filename = $self->beastfile_name();
+	open (my $fh, ">", $filename) or die "Error writing BEAST input file: $!"; 
 	$twig->print($fh);
 	$log->info("beast xml written to $filename");
-	
+	close $fh;
 	# create the invocation and run the command	
 	my $command = $self->executable . $self->_setparams($filename);
 	$log->info("going to execute '$command'");	
