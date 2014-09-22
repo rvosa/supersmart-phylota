@@ -115,6 +115,8 @@ $beast->overwrite($overwrite);
 if ( $file and -e $file ) {
 	$beast->outfile_name( "${file}.nex" );
 	$beast->logfile_name( "${file}.log" );
+	$logger->info("Setting beast input file name to ${file}.bxml");
+	$beast->beastfile_name( "${file}-beast-in.xml" );
 	$beast->run( $file );
 	$logger->info("done. trees are in ${file}.nex, BEAST log in ${file}.log");
 }
@@ -143,6 +145,7 @@ elsif ( $workdir and -d $workdir ) {
                 if ( -e $file ) {
                         $beast->outfile_name( "${stem}.nex" );
                         $beast->logfile_name( "${stem}.log" );
+						$beast->beastfile_name( "${stem}-beast-in.xml" );
                         $beast->run( $file );
                         my $tmpl = 'done with %s. trees are in %s.nex, log is in %s.log';
                         $logger->info(sprintf $tmpl, $clade, $stem, $stem);				
