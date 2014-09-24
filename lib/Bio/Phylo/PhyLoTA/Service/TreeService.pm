@@ -12,14 +12,16 @@ use List::MoreUtils 'uniq';
 use List::Util 'min';
 
 my $config = Bio::Phylo::PhyLoTA::Config->new;
-my $log = Bio::Phylo::PhyLoTA::Service->logger;	
+my $log = Bio::Phylo::PhyLoTA::Service->logger->new;	
 
 sub reroot_tree {
-	my ( $self, $tree, @records ) = @_;
+	my ( $self, $tree, $taxatable, $levels ) = @_;
+	
+	my @records = @{$taxatable};
 	
 	# taxonomic ranks to consider for determining paraphyly
-	my @levels = ('suborder', 'infraorder', 'family');
-
+	my @levels = @{$levels};
+	
 	# store the scores (number of paraphyletic species per rerooting) for each level and node index
 	# at which we reroot
 	my %scores = ();
@@ -266,21 +268,22 @@ sub parse_newick_from_nexus {
   			# substitute in newick tree string
   			$newick =~ s/$quoted/$posterior/g;
         }
-       
-        my $newicktree =  parse_tree(
-                '-string'   => $newick,
-                '-format' => 'newick',
-                '-as_project' => 1,
-            );
-        
+		
         # substitute nexus taxon ids with real taxon labels
         # note that there is possible trouble if node names for posteriors (e.g. 1) 
         #   overlap with nexus identifier. However, BEAST seems to write all posteriors
         #   as proper decimals
-        $newicktree->visit( sub{
+		my $newicktree =  parse_tree(
+                '-string'   => $newick,
+                '-format' => 'newick',
+                '-as_project' => 1,
+        );
+
+  	    $newicktree->visit( sub{
                 my $n = shift;
                 $n->set_name( $id_map{$n->get_name} ) if exists $id_map{$n->get_name};  
-                            });
+        });
+        
         return $newicktree;
         
 }
@@ -291,7 +294,7 @@ sub write_newick_tree {
         $tree->visit_depth_first(
                 '-pre_daughter'   => sub { $str .= '('             },     
                 '-post_daughter'  => sub { $str .= ')'             },     
-                '-in'             => sub { my $n = shift; $str .= $n->get_name . ":"  . $n->get_branch_length },
+                '-in'             => sub { my $n = shift; $str .= $n->get_name . ":"  . $n->get_branch_length;},
                 '-pre_sister'     => sub { $str.= ','             },     
             );
         $str .= ';';
@@ -326,11 +329,11 @@ sub graft_tree {
 	my @exemplars;
 	for my $name ( @names ) {
 		if ( my $e = $backbone->get_by_name($name) ) {
-			$log->info("found $name in backbone: ".$e->get_name);
+			$log->warn("found $info in backbone: ".$e->get_name);
                         push @exemplars, $e;
 		}
 		else {
-			$log->warn("$name is not in the backbone tree");
+			$log->info("$name is not in the backbone tree");
 		}
 	}
 	$log->info("found ".scalar(@exemplars)." exemplars in backbone");
@@ -480,7 +483,7 @@ sub read_tipnames {
 	return @result;
 }
 
-sub _make_clade_species_sets {
+sub extract_clades {
         my ($self, $tree, @records) = @_;
         if (! @records) {
                 die "Need both, tree and species table!";
@@ -498,7 +501,11 @@ sub _make_clade_species_sets {
                         # occurs on more than one tip we need to know if the genus is monophyletic
                         if ( $node->is_terminal ) {
                                 my $id = $node->get_name;
-                                my ($genus) = map { $_->{'genus'} } grep { $_->{'species'} == $id } @records;
+                                
+                                my ($genus) = map { $_->{'genus'} } grep { $_->{'species'} eq $id || 
+                                										   $_->{'subspecies'} eq $id || 
+                                										   $_->{'varietas'} eq $id || 
+                                										   $_->{'forma'} eq $id} @records;
                                 $node->set_generic( 'species' => [ $id ], 'genera' => { $genus => 1 } );
                                 
                                 # in the end, this will be either 1 (for monotypic genera), or 2 (for
@@ -580,7 +587,7 @@ sub _make_clade_species_sets {
         my @set;
         for my $i ( keys %{ { map { $_ => 1 } values %index } } ) {
                 my @g = @{ $genera[$i] };
-                my @s = map { $mt->get_species_for_taxon( 'genus' => $_, @records ) } @g;
+                my @s = map { $mt->get_species_and_lower_for_taxon( 'genus' => $_, @records ) } @g;
                 push @set, \@s if scalar(@s) > 2;
         }
         

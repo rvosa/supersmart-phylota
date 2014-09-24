@@ -54,6 +54,7 @@ my $logger = Bio::Phylo::Util::Logger->new(
 	'-level' => $verbosity,
 	'-class' => ['main' ,
                      'Bio::Phylo::PhyLoTA::Service::ParallelService',
+                     'Bio::Phylo::PhyLoTA::Service::TreeService',
         ], 
 );
 
@@ -71,7 +72,7 @@ my @records = $mt->parse_taxa_file($taxa);
 
 
 # decompose tree into clades and get the sets of species
-my @set = $ts->_make_clade_species_sets($tree, @records);
+my @set = $ts->extract_clades($tree, @records);
 
 # now read the list of alignments
 my @alignments;
@@ -85,11 +86,9 @@ sequential {
 };
 
 # write suitable alignments to their respective clade folders
-
-
 pmap {
-        my $aln = $_;
-	$logger->debug("assessing $aln");
+    my $aln = $_;
+	$logger->info("assessing alignment file $aln");
 	my %fasta = $mt->parse_fasta_file($aln);
 	my $dist  = $mt->calc_mean_distance(%fasta);
 	my $nchar = $mt->get_nchar(%fasta);
@@ -128,6 +127,7 @@ pmap {
 	else {
 		$logger->info("$aln is too divergent: $dist > ".$config->CLADE_MAX_DISTANCE);
 	}
+	$logger->info("done assessing alignment file $aln");
 } @alignments;
 
 sub make_handle {
