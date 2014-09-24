@@ -172,10 +172,50 @@ sub get_distinct_taxa {
 	return @taxa;
 }
 
+=item get_highest_informative_level
+
+Determines, for a given species table, which taxonomic level
+(column in the table) is the highest one that can give information about
+distinct taxa in this table. This will be the column which does not contain NA values and 
+which has at least two different taxon identifiers. This level forms a good basis to check
+for paraphyly in the branches spawning from there.
+
+=cut
+
+sub get_highest_informative_level{
+	my ( $class, @records) = @_;	
+	my $mts = Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector->new;
+	my $result;
+	
+	# get all possible taxonomic ranks, ordered from highest to lowest
+	my @all_ranks = $mts->get_taxonomic_ranks;
+	my %ranks_in_table = map { $_=>1 } keys $records[0];
+	
+	# iterate over all ranks; the first informative taxon level is the level that 
+	# does not contain NA values and that has distinct taxon IDs
+	foreach my $rank (@all_ranks){		
+
+		# skip rank if not in our taxa table
+		next if not exists $ranks_in_table{$rank};
+		
+		# extract column for taxonomic level
+		my @column = map {my %h=%$_; my $entry=$h{$rank}; $entry=~s/\s//g; $entry; } @records;
+	
+		# omit columns that contain 'NA' values
+		next if grep {$_ eq 'NA'} @column;
+	
+		if (scalar (uniq @column) > 1){
+			$result = $rank;
+			last;
+		}
+	}
+	return $result;
+}
+
 =item get_root_level
 
 Returns the level of the 'root' taxon. This is the lowest taxonomic rank which
-comprise all entries in the species table
+comprises all entries in the species table.
 
 =cut
 
@@ -206,6 +246,23 @@ sub get_root_taxon_level {
 		}
 	}
 	return $result;
+}
+
+sub get_species_and_lower_for_taxon {
+	my ( $class, $tlevel, $id, @records ) = @_;
+	my @levels = ('species', 'subspecies', 'varietas', 'forma');
+	my @result;
+	foreach my $row ( @records ) {
+		if ( ($row->{$tlevel} =~m/[0-9]+/) and  ($row->{$tlevel} == $id) ) {
+			foreach my $level ( @levels ){
+				if ( $row->{$level}=~m/[0-9]+/ ) {
+					push @result, $row->{$level}; 
+				}
+			
+			}
+		}
+	}
+	return (uniq @result);
 }
 
 =item get_species_for_taxon
