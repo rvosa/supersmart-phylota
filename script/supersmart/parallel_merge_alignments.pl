@@ -127,6 +127,7 @@ $log->info("number of blast results : ".scalar(@blastresults));
 my @res = pmap {
 	my $result = $_;
 	my $query = $result->query_name;
+	$log->info("querying for $query");
 	my $q_l = length($service->find_seq($query)->seq);
 	my %blhits;
 	$blhits{$query} = [];
@@ -203,17 +204,12 @@ sub merge {
 # now remove duplicates
 @$sets = values %{ { map { join('|', sort { $a <=> $b } @{$_}) => $_ } @$sets } };
 
-
 # assign ids to clusters
 my $i = 1;
 my @clusters = map { {'id'=>$i++, 'seq'=>$_} } @$sets;
 
 # align
 my $total = scalar @clusters;
-
-$log->info("start processing $total clusters");
-
-
 
 my @cres = pmap{
 	my %cluster = %{$_};
@@ -270,6 +266,6 @@ my @cres = pmap{
 			$log->info("rejecting $file2 from $file1");
 		}		
 	}
-	print $merged || $file1, "\n";
+	print $file1 || $merged, "\n";
 	$i++;
 } @clusters;
