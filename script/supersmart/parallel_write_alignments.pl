@@ -82,12 +82,9 @@ my %clusters;
 	#  corresponds to the taxon which has higher level, and forget about the other one.
 	#  But caution! We do not want a higher level than the highest level in our taxon list!
 
-
-	#my $counter = 0;
-	#foreach my $seed (keys %clusters) {
 my @filtered_clusters = pmap {
 		my $seed = $_;
-		$log->info("checking if clusters for seed gi $seed  can be reduced" );
+		$log->debug("checking if clusters for seed gi $seed  can be reduced" );
 		# collect all possible ranks for clusters for that seed gi
 		my @ranks = map { $mts->get_rank_for_taxon( $_->ti_root->ti ) } @{$clusters{$seed}};	
 		# get all taxonomic ranks ordered from higher to lower levels
