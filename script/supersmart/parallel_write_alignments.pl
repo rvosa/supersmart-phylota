@@ -161,7 +161,7 @@ my @result = pmap {
         my @seqs    = $sg->filter_seq_set($sg->get_sequences_for_cluster_object(\%h));        
         my $seed_gi = $single->seed_gi;
         my $mrca    = $single->ti_root->ti;
-		$log->info("fetched ".scalar(@seqs)." sequences for cluster id $ci, seed gi: $seed_gi, ti_root : " . $mrca);                
+		$log->info("fetched ".scalar(@seqs)." sequences for cluster id with id $ci");                
         my @matching = grep { $ti->{$_->ti} } @seqs;
          
         # let's not keep the ones we can't build trees out of
