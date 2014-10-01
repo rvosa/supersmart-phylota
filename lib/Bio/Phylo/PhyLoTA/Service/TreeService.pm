@@ -329,7 +329,7 @@ sub graft_tree {
 	my @exemplars;
 	for my $name ( @names ) {
 		if ( my $e = $backbone->get_by_name($name) ) {
-			$log->warn("found $info in backbone: ".$e->get_name);
+			$log->warn("found $name in backbone: ".$e->get_name);
                         push @exemplars, $e;
 		}
 		else {
