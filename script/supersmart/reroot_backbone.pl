@@ -50,9 +50,14 @@ my $tree = parse_tree(
 
 my @records = $mt->parse_taxa_file($taxa);
 
+my $level = $mt->get_highest_informative_level(@records);
+
+$logger->info("Highest informative level : $level");
+
 # reroot the tree
 $logger->info("rerooting backone tree");
-my $rerooted = $ts->reroot_tree($tree, @records);
+
+my $rerooted = $ts->reroot_tree($tree, \@records, [$level]);
 
 #print the result
 print $rerooted->to_newick;
