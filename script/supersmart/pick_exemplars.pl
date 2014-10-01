@@ -9,6 +9,7 @@ use Bio::Phylo::Matrices::Datum;
 use Bio::Phylo::PhyLoTA::Config;
 use Bio::Phylo::Util::Logger ':levels';
 use Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa;
+use Bio::Phylo::PhyLoTA::Service::TreeService;
 
 =head1 NAME
 
@@ -77,7 +78,7 @@ cases.
 =cut
 
 # process command line arguments
-my $verbosity = WARN;
+my $verbosity = INFO;
 my ( $list, $taxa );
 GetOptions(
 	'list=s'   => \$list,
@@ -96,6 +97,7 @@ my $log    = Bio::Phylo::Util::Logger->new(
 
 use Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector;
 my $mts     = Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector->new;
+my $ts = Bio::Phylo::PhyLoTA::Service::TreeService->new;
 
 # read list of alignments
 my @alignments;
@@ -114,12 +116,17 @@ my @records = $mt->parse_taxa_file($taxa);
 
 # extract the distinct species for each genus
 my %species_for_genus;
-for my $genus ( $mt->get_distinct_taxa( 'genus' => @records ) ) {
 
+my @g = $mt->get_distinct_taxa( 'genus' => @records );
+
+
+
+for my $genus ( $mt->get_distinct_taxa( 'genus' => @records ) ) {
 	# extract the distinct species for the focal genus
 	my @species = $mt->get_species_for_taxon( 'genus' => $genus, @records );
 	$species_for_genus{$genus} = \@species;
 }
+
 $log->info("read ".scalar(keys(%species_for_genus))." genera");
 
 # this will store distances within each genus
@@ -132,13 +139,18 @@ ALN: for my $aln ( @alignments ) {
 	
 	# iterate over genera, skip those with fewer than three species
 	GENUS: for my $genus ( keys %species_for_genus ) {
-		next GENUS if scalar @{ $species_for_genus{$genus} } <= 2;
+		my $genus_name = $ts->find_node($genus)->taxon_name;
+		if ( scalar @{ $species_for_genus{$genus} } <= 2 ) {
+			$log->debug( "Genus $genus ($genus_name) has less than three species. Skipping." );
+			next GENUS; 
+		}
 	
 		# aggregate sequence objects by species within this genus
 		my %sequences_for_species;
 		for my $species ( @{ $species_for_genus{$genus} } ) {
+			my $species_name = $ts->find_node($species)->taxon_name;
 			if ( my @raw = $mt->get_sequences_for_taxon( $species, %fasta ) ) {
-				$log->debug("$aln contained ".scalar(@raw)." sequences for species $species");
+				$log->debug("$aln contained ".scalar(@raw)." sequences for species $species ($species_name)");
 				my @seq = map { $dat->new( '-type' => 'dna', '-char' => $_ ) } @raw;
 				$sequences_for_species{$species} = \@seq;
 			}
@@ -147,7 +159,7 @@ ALN: for my $aln ( @alignments ) {
 		# check if we've seen enough sequenced species
 		my @species = keys %sequences_for_species;
 		if ( scalar(@species) <= 2 ) {
-			$log->debug("not enough species for genus $genus in $aln");
+			$log->debug("not enough sequenced species for genus $genus ($genus_name) in $aln");
 			next GENUS;
 		}		
 		
@@ -158,7 +170,7 @@ ALN: for my $aln ( @alignments ) {
 			for my $j ( ( $i + 1 ) .. $#species ) {
 				my $sp1 = $species[$i];
 				my $sp2 = $species[$j];
-				$log->debug("going to compute average distance between $sp1 and $sp2");
+				#$log->debug("going to compute average distance between $sp1 and $sp2");
 				my @seqs1 = @{ $sequences_for_species{$sp1} };
 				my @seqs2 = @{ $sequences_for_species{$sp2} };
 				my $dist;
@@ -176,7 +188,7 @@ ALN: for my $aln ( @alignments ) {
 		# pick the most distal pair, weight it by number of pairs minus one
 		my ($farthest) = sort { $dist{$b} <=> $dist{$a} } keys %dist;
 		$distance{$genus}->{$farthest} += scalar(keys(%dist))-1;
-		$log->debug("most distal pair for genus $genus in $aln: $farthest");
+		##$log->debug("most distal pair for genus $genus in $aln: $farthest");
 	}
 }
 
@@ -188,17 +200,23 @@ for my $genus ( keys %species_for_genus ) {
 	# from the table
 	if ( not scalar keys %{ $distance{$genus} } ) {
 		push @exemplars, @{ $species_for_genus{$genus} };
+	
 	}
 	else {
 		my %p = %{ $distance{$genus} };
 		my ($sp1,$sp2) = map { split /\|/, $_ } sort { $p{$b} <=> $p{$a} } keys %p;
 		push @exemplars, $sp1, $sp2;
-		$log->debug(Dumper({ $genus => \%p }));
+		$log->info(Dumper({ $genus => \%p }));
 	}
 }
 
 # this includes species for which we may end up not having sequences after all
 $log->info("identified ".scalar(@exemplars)." exemplars");
+
+##$log->info(Dumper(@exemplars));
+foreach my $ex (@exemplars){
+	$log->info($ex);
+}
 
 # make the best set of alignments:
 # 1. map exemplar taxa to alignments and vice versa
@@ -236,6 +254,8 @@ my @sorted_exemplars = sort { scalar(@{$alns_for_taxon{$a}}) <=> scalar(@{$alns_
 # starting with the least well-represented taxa...
 my ( %aln, %seen );
 TAXON: for my $taxon ( @sorted_exemplars ) {
+    my $taxon_name = $ts->find_node($taxon)->taxon_name;
+	$log->info("Checking alignment coverage for taxon with name $taxon_name");
 	# take all its not-yet-seen alignments...
 	my @alns = grep { ! $aln{$_} } @{ $alns_for_taxon{$taxon} };
 	$seen{$taxon} = 0 if not defined $seen{$taxon};
@@ -243,8 +263,8 @@ TAXON: for my $taxon ( @sorted_exemplars ) {
 		# pick the most speciose alignments first
 		my $aln = shift @alns;
                 if ( not $aln or not -e $aln ) {
-			$log->warn("no alignment available for exemplar $taxon");
-			next TAXON;
+					$log->warn("no alignment available for exemplar $taxon ($taxon_name)");
+					next TAXON;
 		}
 		$aln{$aln}++;
 		
@@ -254,8 +274,9 @@ TAXON: for my $taxon ( @sorted_exemplars ) {
 	}
 }
 
+
 # filter exemplars: only take the ones with sufficient coverage
-my @filtered_exemplars = grep { $seen{$_} >= $config->BACKBONE_MIN_COVERAGE } keys %seen;
+my @filtered_exemplars = grep { $seen{$_} >= 1 } keys %seen; #$config->BACKBONE_MIN_COVERAGE
 my @sorted_alignments  = keys %aln;
 
 # filter the alignments: only include alignments in supermatrix which have
@@ -267,10 +288,10 @@ for my $aln ( @sorted_alignments ) {
         for my $taxon ( @filtered_exemplars ) {
                 my %fasta = $mt->parse_fasta_file($aln);
                 my ( $seq ) = $mt->get_sequences_for_taxon($taxon,%fasta);
-		if ( $seq ) {
-                        $count++;
-                        last;
-		}
+				if ( $seq ) {
+		                        $count++;
+		                        last;
+				}
         }
         if ( $count > 0 ) {
                 $log->info("including $aln in supermatrix");
@@ -284,6 +305,8 @@ for my $aln ( @sorted_alignments ) {
 }
 
 $log->info("using ".scalar(@filtered_alignments)." alignments for supermatrix");
+$log->info("number of filtered exemplars : " . scalar(@filtered_exemplars));
+$log->info(Dumper(@filtered_exemplars));
 
 # produce interleaved phylip output
 my $nchar = sum( @nchar{@filtered_alignments} );
@@ -293,30 +316,35 @@ print  $ntax, ' ', $nchar, "\n"; # phylip header
 for my $aln ( @filtered_alignments ) {
 	my %fasta = $mt->parse_fasta_file($aln);
 	for my $taxon ( @filtered_exemplars ) {
-	
+                
 		# in interleaved phylip, only the first part of the sequences are
 		# preceded by their name, hence this flag:
 		# http://evolution.genetics.washington.edu/phylip/doc/sequence.html
-		if ( not $names_printed ) {
+                my $pref = ' ' x10;
+                if ( not $names_printed ) {
 		
 			# pad the names with spaces to make 10 characters
 			print  $taxon, ' ' x ( 10 - length($taxon) );
-		}
+                        $pref = '';
+                }
+
 		
 		# write aligned sequence or missing data of the same length
 		my ( $seq ) = $mt->get_sequences_for_taxon($taxon,%fasta);
 		if ( $seq ) {
-			print  $seq;
+			
+                        print $pref . $seq;
 		}
 		else {
-			print  '?' x $nchar{$aln};
+                        print $pref . '?' x $nchar{$aln};
 		}
 		
 		# note that optionally there could be an additional blank line
 		# between every chunk. We don't do that, this break is just
 		# to move on to the next taxon, not the next chunk.
-		print  "\n";
-	}
+		print "\n";
+        }
+        print "\n";
 	$names_printed++;
 }
 
