@@ -61,6 +61,13 @@ SUPERSMART working directory.
 $ vagrant ssh 
 $ cd $SUPERSMART_HOME
 
+At this point it is always advisable to check whether
+there are updates to the pipeline source code. This is
+done by issuing the following command, which will download
+the latest code from the repository:
+
+$ git pull
+
 For instructions on how to run the pipeline,
 please refer to the README file in the 'examples/'
 directory.
