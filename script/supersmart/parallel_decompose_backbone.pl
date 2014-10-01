@@ -36,7 +36,7 @@ groups them with the other relevant alignments for that clade.
 =cut
 
 # process command line arguments
-my $verbosity = WARN;
+my $verbosity = INFO;
 my ( $taxa, $list, $backbone, $workdir );
 GetOptions(
 	'taxa=s'     => \$taxa,
