@@ -106,7 +106,7 @@ fi
 # infer tree for each clade
 file_count=`ls -f $WORKDIR/clade*/*.nex 2>/dev/null | wc -w`
 if [ $file_count -lt $clade_count ]; then
-  	 $MPIRUN $PERLSCRIPT/parallel_infer_clades.pl -w $WORKDIR -ngens 30000000 -sfreq 300000 -lfreq 300000 $VERBOSE
+  	 $MPIRUN $PERLSCRIPT/parallel_infer_clades.pl -w $WORKDIR -ngens 3000000 -sfreq 30000 -lfreq 30000 $VERBOSE
 fi
 
 # graft clade trees onto backbone
