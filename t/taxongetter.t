@@ -27,26 +27,26 @@ $log->VERBOSE(
 	'-class' => 'Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector',
 );
 
-SKIP: {
-	skip "variable ROOT_TAXA_EXPANSION not set in phylota.ini" unless $config->ROOT_TAXA_EXPANSION;
-	# get species for a given root taxon
-	my @root_taxa_names = ("Gentianales", "Rubiaceae");
+# get species for a given root taxon
+my @root_taxa_names = ("Gentianales", "Rubiaceae");
 
-	my @taxa_names = $mts->expand_taxa(@root_taxa_names);
-	cmp_ok (scalar @taxa_names, '>', 7000, "expand for root taxa");
+my $expand_rank = "species";
+my @taxa_names = $mts->expand_taxa(\@root_taxa_names, $expand_rank);
+cmp_ok (scalar @taxa_names, '>', 7000, "expand for root taxa");
 
-	@root_taxa_names = ("Primates");
-	@taxa_names = $mts->expand_taxa(@root_taxa_names);
-	cmp_ok (scalar @taxa_names, '>', 300, "expand for root taxa");
+@root_taxa_names = ("Primates");
+@taxa_names = $mts->expand_taxa(\@root_taxa_names, $expand_rank);
+cmp_ok (scalar @taxa_names, '>', 300, "expand for root taxa");
 
-	# 'Otolemur garnettii' has a subspecies, which should be 
-	#  discarded if lowest level is "Species"
-	@root_taxa_names = ("Otolemur garnettii");
-	@taxa_names = $mts->expand_taxa(@root_taxa_names);
-	# should be 'Otolemur garnettii' and NOT 'Otolemur garnettii garnettii'
-	cmp_ok (scalar @taxa_names, '==', 1, "single taxon");
-	cmp_ok ( $taxa_names[0], 'eq', "Otolemur garnettii", "test subspecies");
-}
+# 'Otolemur garnettii' has a subspecies, which should be 
+#  discarded if lowest level is "Species"
+@root_taxa_names = ("Otolemur garnettii");
+@taxa_names = $mts->expand_taxa(\@root_taxa_names, $expand_rank);
+
+# should be 'Otolemur garnettii' and NOT 'Otolemur garnettii garnettii'
+cmp_ok (scalar @taxa_names, '==', 1, "single taxon");
+cmp_ok ( $taxa_names[0], 'eq', "Otolemur garnettii", "test subspecies");
+
 
 # we are going to read the text files in the results/specieslists dir,
 my $file = $Bin . '/testdata/testnames.txt';
