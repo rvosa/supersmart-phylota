@@ -117,7 +117,7 @@ sub get_nodes_for_table {
 		my %entry = %{$_};
     	
     	# get the entries of the row sorted from lower to higher taxa
-        my @fields =  @entry{reverse @taxonomic_ranks};
+        my @fields =  @entry{reverse $self->get_taxonomic_ranks};
 		
 		# get the id of the lowest taxon that is mapped to the entry and skip e.g. NA values
 		my $id;
@@ -129,7 +129,6 @@ sub get_nodes_for_table {
 				} 			
 			}
 		}	
-		
 		# omit e.g. header, rows with only NA...
 		next if not $id;
 		
@@ -244,7 +243,7 @@ sub get_tree_for_nodes {
             
             # we will visit the same node via multiple, distinct paths
             if ( not $by_id{$nid} ) {
-                $log->debug("creating node with guid $nid and name ".$node->taxon_name);
+                #$log->debug("creating node with guid $nid and name ".$node->taxon_name);
                 $by_id{$nid} = $fac->create_node( '-guid' => $nid, '-name' => $node->taxon_name );
             }
             $node = $parent;
@@ -253,7 +252,7 @@ sub get_tree_for_nodes {
         # this happens the first time, for the root
         my $nid = $node->get_id;
         if ( not $by_id{$nid} ) {
-            $log->debug("creating node with guid $nid and name ".$node->taxon_name);
+            #$log->debug("creating node with guid $nid and name ".$node->taxon_name);
             $by_id{$nid} = $fac->create_node( '-guid' => $nid, '-name' => $node->taxon_name );
         }        
     }
@@ -261,7 +260,7 @@ sub get_tree_for_nodes {
     # copy the tree structure
     for my $nid ( keys %by_id ) {
         my $bio_phylo_node = $by_id{$nid};
-        $log->debug($bio_phylo_node->to_string);
+        #$log->debug($bio_phylo_node->to_string);
         if ( $children{$nid} ) {
             for my $child_id ( keys %{ $children{$nid} } ) {
                 $bio_phylo_node->set_child($by_id{$child_id});
@@ -293,7 +292,7 @@ sub expand_taxa {
         # keep ranks that are higher or equal to highest rank specified as argument
         # do not expand taxa if lowest rank not given
         if ( ! $lowest_rank ) {
-                $log->info("ROOT_TAXA_EXPANSION not set in config file, skipping taxa expansion");
+                $log->info("taxonomic rank for taxa expansion not set, skipping");
                 return ( @root_taxa );
         }
         

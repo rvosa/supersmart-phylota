@@ -13,12 +13,14 @@ parallel_write_taxa_table.pl - reconciles taxon labels with a taxonomy
 
 =head1 SYNOPSYS
 
- $ mpi_write_taxa_table.pl --infile=<file> --root_taxon<taxon_name>  > <outfile>
+ $ mpi_write_taxa_table.pl --infile=<file> --expand_rank=<rank>  > <outfile>
 
 =head1 DESCRIPTION
 
 Given a file with putative taxon names, or optionally a root taxon name, attempts to link these to the pipeline's
-underlying taxonomy. Writes the results as a tab-separated file to STDOUT.
+underlying taxonomy. Writes the results as a tab-separated file to STDOUT. Argument expand_rank can be set to 
+the lowest taxonomic rank to which taxa should be expanded (e.g. species, subspecies varietas...). If not set, no
+attempt to expand root taxa is taken.
 
 =cut
 
@@ -30,10 +32,10 @@ my @levels = reverse ('superkingdom', 'kingdom', 'subkingdom', 'superphylum', 'p
                                'subfamily', 'tribe', 'subtribe', 'genus', 'subgenus', 'species group',
                                'species subgroup', 'species', 'subspecies','varietas', 'forma');
 
-my ( $infile, $root_taxon );
+my ( $infile, $expand_rank );
 GetOptions(
 	'infile=s'   => \$infile,
-	'root_taxon=s' => \$root_taxon,
+	'expand_rank=s' => \$expand_rank,
 	'verbose+' => \$verbosity,
 	'level=s'  => \@levels,
 );
@@ -65,21 +67,11 @@ if ( $infile ){
 		$log->info("read ".scalar(@names)." species names from $infile");
 	}
 }
-
-# expand possible root taxa to taxonomic level set in ROOT_TAXA_EXPANSION 
-#  or set to "Species" in the case a root taxon is given as argument, but 
-#  expansion is not set in config file
-my $expand_to = $config->ROOT_TAXA_EXPANSION;
 	
-# if a root taxon is given, add it to the taxon names and set expansion to "Species" if not set otherwise
-if ( $root_taxon ) {
-	push @names, $root_taxon;
-	if ( ! $expand_to ){
-		$expand_to = "Species"
-	}
+# expand root taxa if argument is provided
+if ( $expand_rank ) {
+	@names = $mts->expand_taxa( \@names , $expand_rank);
 }
-
-@names = $mts->expand_taxa( \@names , $expand_to);
 
 # print table header to stdout in sequential mode
 sequential { print join ("\t", 'name', @levels), "\n"; };

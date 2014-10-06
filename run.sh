@@ -6,9 +6,13 @@
 # show how things are supposed to fit together.
 
 # project-specific variables
-WORKDIR=examples/fishes	           # working directory for intermediate files
+WORKDIR=examples/primates	       # working directory for intermediate files
 NAMELIST=$WORKDIR/names.txt 	   # input list of taxon names
 FOSSILTABLE=$WORKDIR/fossils.tsv
+
+# if names list contains root taxa, set taxonomic rank to which these root taxa
+# should be expanded
+EXPAND_RANK=0
 
 # template for looking up variables in the config file
 PRINTVAL="perl -MBio::Phylo::PhyLoTA::Config=printval -e printval"
@@ -46,7 +50,7 @@ FINALTREE=$WORKDIR/final.dnd
 # creates a table where the first column has the input species
 # names and subsequent columns have the species ID and higher taxon IDs
 if [ ! -e $SPECIESTABLE ]; then
-	$MPIRUN $PERLSCRIPT/parallel_write_taxa_table.pl -i $NAMELIST \
+	$MPIRUN $PERLSCRIPT/parallel_write_taxa_table.pl -i $NAMELIST -e $EXPAND_RANK \
 	$VERBOSE > $SPECIESTABLE
 fi
 
@@ -98,7 +102,6 @@ fi
 # merge clade alignments
 clade_count=`ls -d $WORKDIR/clade*/ 2>/dev/null | wc -w`
 file_count=`ls -d $WORKDIR/clade*/*.xml 2>/dev/null | wc -w`
-
 if [ $file_count -lt $clade_count ]; then    
 	$PERLSCRIPT/merge_clade_alignments.pl -w $WORKDIR $VERBOSE
 fi
@@ -107,8 +110,7 @@ fi
 # infer tree for each clade
 file_count=`ls -f $WORKDIR/clade*/*.nex 2>/dev/null | wc -w`
 if [ $file_count -lt $clade_count ]; then
-  
-    $MPIRUN $PERLSCRIPT/parallel_infer_clades.pl -w $WORKDIR -ngens 300000 -sfreq 30000 -lfreq 30000 $VERBOSE
+    $MPIRUN $PERLSCRIPT/parallel_infer_clades.pl -w $WORKDIR -ngens 30000000 -sfreq 300000 -lfreq 300000 $VERBOSE
 fi
 
 
