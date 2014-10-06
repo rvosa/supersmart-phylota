@@ -307,7 +307,7 @@ sub expand_taxa {
         # make subset of ranks that are considered, add 'no rank'
         my @valid_ranks = @taxonomic_ranks[ 0 .. $index ];
         push @valid_ranks, 'no rank';
-        
+                
         my @nodes = $self->get_nodes_for_names( @root_taxa );
 
         my @queue = ( @nodes );
@@ -316,7 +316,7 @@ sub expand_taxa {
         #  the taxnomic rank specified in phylota.ini
         while ( @queue ) {
                 my $node = shift @queue;
-                $log->info("Processing node " . $node->get_name);
+                $log->debug("Processing node " . $node->get_name);
                 my @children = @{ $node->get_children };
 
                 # if there is at least one child which has not reached the 
@@ -333,7 +333,7 @@ sub expand_taxa {
                 # is in the result list, except if it is the root taxon that
                 #  is expanded!
 				my $name = $node->get_name;
-                if ( grep { $_ eq $node->rank } @valid_ranks  and not  grep (/^$name$/, @root_taxa)  ) {
+                if ( grep { $_ eq $node->rank } @valid_ranks) {  #and not  grep (/^$name$/, @root_taxa)  ) {
                                 my $tipname = $name;
                                 push @result, $tipname;                        
                 }
