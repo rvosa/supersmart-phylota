@@ -313,7 +313,7 @@ sub expand_taxa {
         my @queue = ( @nodes );
 
         # traverse the tree upwards and keep the leaves that have at least
-        #  the taxnomic rank specified in phylota.ini
+        #  the taxnomic rank specified by parameter $lowest_rank
         while ( @queue ) {
                 my $node = shift @queue;
                 $log->debug("Processing node " . $node->get_name);
