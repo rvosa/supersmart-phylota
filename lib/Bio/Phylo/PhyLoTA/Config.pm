@@ -21,14 +21,14 @@ Bio::Phylo::PhyLoTA::Config - manager of runtime configuration variables
  # instantiate the singleton config object
  my $conf = Bio::Phylo::PhyLoTA::Config->new;
  
- # fetch the value of a variable in phylota.ini
+ # fetch the value of a variable in supersmart.ini
  my $examl = $conf->EXAML_BIN;
 
 =head1 DESCRIPTION
 
 The config object holds the values of variables that are needed when running the
 pipeline. Most commonly, these are the locations of executables that the pipeline
-invokes. The values of these variables are defined in C<conf/phylota.ini>, although
+invokes. The values of these variables are defined in C<conf/supersmart.ini>, although
 you can override these using environment variables. For example, to define an
 alternate location for EXAML_BIN, create an environment variable called 
 SUPERSMART_EXAML_BIN, whose value will be used in lieu of that in the config file.
@@ -40,7 +40,7 @@ SUPERSMART_EXAML_BIN, whose value will be used in lieu of that in the config fil
 =item new
 
 The constructor optionally takes the location of a configuration file in INI
-syntax. By default this is C<conf/phylota.ini>.
+syntax. By default this is C<conf/supersmart.ini>.
 
 =cut
 
@@ -77,7 +77,7 @@ for the config file.
 
 sub read {
     my $self = shift;
-    my $file = shift || "$ENV{SUPERSMART_HOME}/conf/phylota.ini";
+    my $file = shift || "$ENV{SUPERSMART_HOME}/conf/supersmart.ini";
     my $conf = Config::Tiny->read($file);
     if ( my $error = Config::Tiny->errstr ) {
         die $error;
