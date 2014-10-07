@@ -363,6 +363,40 @@ sub get_taxonomic_ranks {
 	return @taxonomic_ranks;
 }
 
+=item get_outgroup_taxa
+
+Given a list of taxon IDs and a tree, returns a list of taxon ids that are an outgroup 
+with respect to the given input list. The outgroup is selected by calculating the MRCA of 
+of all input species, then select a sister node of the MRCA in the tree and return all its
+terminal nodes
+
+=cut
+
+sub get_outgroup_taxa {
+	my ( $self, $tree, $ingroup ) = @_;
+	
+	# get node object for taxon ids (or names) 
+	my @ids = @{$ingroup};
+	my @nodes;
+	$tree->visit(
+		sub{ 
+			my $node = shift;
+			if ( $node->get_name ~~ @ids ){
+				push @nodes, $node; 
+			}
+		}
+	);
+	
+	my $mrca = $tree->get_mrca(\@nodes);
+	my $sister = $mrca->get_next_sister;
+	if (! $sister) {
+		$sister = $mrca->get_previous_sister
+	}
+	my @terminals = @{ $sister->get_terminals };
+	return ( map {$_->get_name} @terminals );
+}
+
+
 =item taxa_are_disjoint
 
 Computes whether two array references of taxon IDs are non-overlapping (i.e.
