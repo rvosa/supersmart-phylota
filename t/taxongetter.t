@@ -4,6 +4,7 @@ use warnings;
 use FindBin '$Bin';
 use Test::More 'no_plan';
 use Bio::Phylo::PhyLoTA::Config;
+use Bio::Phylo::IO 'parse_tree';
 use Bio::Phylo::Util::Logger ':levels';
 use Bio::Phylo::Matrices::Matrix;
 use Bio::Phylo::PhyLoTA::Service::SequenceGetter;
@@ -96,4 +97,13 @@ $tid = 2759;
 $rank = $mts->get_rank_for_taxon($tid);
 is ($rank, "superkingdom", "taxon $tid is of rank superkingdom");
 
-
+# test function get_outgroup_taxa
+my @ingroup = (319220, 869827, 396991, 442820);
+my $tf = $Bin . '/testdata/commontree-cucumis.dnd';
+my $tree = parse_tree(
+	'-file'   => $tf,
+	'-format' => 'newick',
+	'-as_project' => 1,
+    );
+my @outgroup = $mts->get_outgroup_taxa($tree, \@ingroup);
+cmp_ok ( scalar @outgroup, ">", 0, "found outgroup species for list of taxon ids");
