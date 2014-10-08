@@ -51,7 +51,7 @@ service {
 }
 
 # set default paths for storing data, tools and source code
-$username = "vagrant"
+$username = "hettling"
 $supersmart_dir	= "/home/${username}/SUPERSMART"  ##"/home/${id}/SUPERSMART"
 $tools_dir		= "${supersmart_dir}/tools"
 $tools_bin_dir	= "${tools_dir}/bin"
@@ -259,6 +259,23 @@ exec {
 		creates => "/etc/profile.d/bioperl_run.csh",
 		require => Exec[ 'clone_bioperl_run' ];	
 		
+  #install perl package App:Cmd     
+   "clone_app_cmd":
+   command => "git clone https://github.com/rjbs/App-Cmd.git",
+   cwd     => $tools_dir,
+   creates => "${tools_dir}/App-Cmd",
+   require => Package[ 'git' ];  
+  "make_app_cmd_run_sh":
+    command => "echo 'export PERL5LIB=\$PERL5LIB:${tools_dir}/App-Cmd/lib' > app_cmd.sh",
+    cwd     => "/etc/profile.d",
+    creates => "/etc/profile.d/app_cmd.sh",
+    require => Exec[ 'clone_app_cmd' ];
+  "make_app_cmd_run_csh":
+    command => "echo 'setenv PERL5LIB \$PERL5LIB:${tools_dir}/App-Cmd/lib' > app_cmd.csh",
+    cwd     => "/etc/profile.d",
+    creates => "/etc/profile.d/app_cmd.csh",
+    require => Exec[ 'clone_app_cmd' ]; 
+  	  
    #install perl package Math::Random
   "download_math_random":
     command => "wget http://search.cpan.org/CPAN/authors/id/G/GR/GROMMEL/Math-Random-0.70.tar.gz",
@@ -325,27 +342,7 @@ exec {
     creates => "${tools_dir}/Sys-Info-0.78/lib/Sys/Info.pm",		
     require => Exec["make_makefile_sys_info"];	
   
-   #install perl package App:Cmd
-   "download_app_cmd":
-    command => "wget http://search.cpan.org/CPAN/authors/id/R/RJ/RJBS/App-Cmd-0.323.tar.gz",
-    cwd     => $tools_dir,
-    creates => "${tools_dir}/App-Cmd-0.323.tar.gz",
-    require => Package[ 'wget', 'tar' ];  
-   "unzip_app_cmd":
-    command => "tar -xvzf ${tools_dir}/App-Cmd-0.323.tar.gz",
-    creates => "${tools_dir}/App-Cmd-0.323/Makefile.PL",
-    cwd     => $tools_dir,
-    require => Exec["download_app_cmd"];     
-   "make_makefile_app_cmd":
-    command => "perl Makefile.PL",
-    cwd     => "${tools_dir}/App-Cmd-0.323",
-    creates => "${tools_dir}/App-Cmd-0.323/Makefile",
-    require => Exec["unzip_app_cmd"];
-   "make_app_cmd":
-    command => "make install",
-    cwd     => "${tools_dir}/App-Cmd-0.323",    
-    creates => "${tools_dir}/App-Cmd-0.323/lib/App/Cmd.pm",    
-    require => Exec["make_makefile_app_cmd"];  
+
                                
   #install perl package Parallel::MPI::Simple
 	"download_parallel_mpi_simple":
