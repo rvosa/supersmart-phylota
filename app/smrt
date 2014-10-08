@@ -1,0 +1,4 @@
+#!/usr/bin/perl
+use Bio::Apps::Supersmart;
+
+Bio::Apps::Supersmart->run;
