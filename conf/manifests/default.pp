@@ -297,12 +297,12 @@ exec {
 		cwd     => "${tools_dir}/Sys-Info-Base-0.7802",
 		creates => "${tools_dir}/Sys-Info-Base-0.7802/Makefile",
 		require => Exec["unzip_sys_info_base"];
-        "make_sys_info_base":
+   "make_sys_info_base":
 		command => "make install",
 		cwd     => "${tools_dir}/Sys-Info-Base-0.7802",		
 		creates => "${tools_dir}/Sys-Info-Base-0.7802/lib/Sys/Info.pm",		
 		require => Exec["make_makefile_sys_info_base"];	
- 
+ 	  
    #install perl package Sys::Info
    "download_sys_info":
     command => "wget http://search.cpan.org/CPAN/authors/id/B/BU/BURAK/Sys-Info-0.78.tar.gz",
@@ -324,8 +324,30 @@ exec {
     cwd     => "${tools_dir}/Sys-Info-0.78",		
     creates => "${tools_dir}/Sys-Info-0.78/lib/Sys/Info.pm",		
     require => Exec["make_makefile_sys_info"];	
-                 
-  # install perl package Parallel::MPI::Simple
+  
+   #install perl package App:Cmd
+   "download_app_cmd":
+    command => "wget http://search.cpan.org/CPAN/authors/id/R/RJ/RJBS/App-Cmd-0.323.tar.gz",
+    cwd     => $tools_dir,
+    creates => "${tools_dir}/App-Cmd-0.323.tar.gz",
+    require => Package[ 'wget', 'tar' ];  
+   "unzip_app_cmd":
+    command => "tar -xvzf ${tools_dir}/App-Cmd-0.323.tar.gz",
+    creates => "${tools_dir}/App-Cmd-0.323/Makefile.PL",
+    cwd     => $tools_dir,
+    require => Exec["download_app_cmd"];     
+   "make_makefile_app_cmd":
+    command => "perl Makefile.PL",
+    cwd     => "${tools_dir}/App-Cmd-0.323",
+    creates => "${tools_dir}/App-Cmd-0.323/Makefile",
+    require => Exec["unzip_app_cmd"];
+   "make_app_cmd":
+    command => "make install",
+    cwd     => "${tools_dir}/App-Cmd-0.323",    
+    creates => "${tools_dir}/App-Cmd-0.323/lib/App/Cmd.pm",    
+    require => Exec["make_makefile_app_cmd"];  
+                               
+  #install perl package Parallel::MPI::Simple
 	"download_parallel_mpi_simple":
 		command => "wget http://search.cpan.org/CPAN/authors/id/A/AJ/AJGOUGH/Parallel-MPI-Simple-0.10.tar.gz",
 		cwd     => $tools_dir,
