@@ -47,59 +47,71 @@ LABELLED_CHRONOGRAM=$WORKDIR/labelled_chronogram.dnd
 TREEPLCONF=$WORKDIR/treePL.conf
 FINALTREE=$WORKDIR/final.dnd
 
+# GLOBAL: [-v -v -v] [-w $WORKDIR || cwd]
+
 # creates a table where the first column has the input species
 # names and subsequent columns have the species ID and higher taxon IDs
+# possible subcommand name: smrt [GLOBAL] tnrs [OPTIONS]
 if [ ! -e $SPECIESTABLE ]; then
 	$MPIRUN $PERLSCRIPT/parallel_write_taxa_table.pl -i $NAMELIST -e $EXPAND_RANK \
 	$VERBOSE > $SPECIESTABLE
 fi
 
 # creates the NCBI common tree from an input species table
+# possible subcommand name: smrt [GLOBAL] taxonomy [OPTIONS] > <outfile>
 if [ ! -e $COMMONTREE ]; then
 	$PERLSCRIPT/write_common_tree.pl --nodelabels -i $SPECIESTABLE \
 	$VERBOSE > $COMMONTREE
 fi
 
 # create alignments from an input species table
+# possible subcommand name: smrt [GLOBAL] align [OPTIONS] > <outfile>
 if [ ! -e $ALIGNMENTLIST ]; then
 	$MPIRUN $PERLSCRIPT/parallel_write_alignments.pl -i $SPECIESTABLE \
 	$VERBOSE -w $WORKDIR > $ALIGNMENTLIST
 fi
 
 # merge alignments by orthology 
+# possible subcommand name: smrt [GLOBAL] orthologize [OPTIONS] > <outfile>
 if [ ! -e $MERGEDLIST ]; then
 	$MPIRUN $PERLSCRIPT/parallel_merge_alignments.pl -l $ALIGNMENTLIST -w $WORKDIR \
 	$VERBOSE > $MERGEDLIST
 fi
 
 # create supermatrix for backbone taxa
+# possible subcommand name: smrt [GLOBAL] bbmatrix [OPTIONS] > <outfile>
 if [ ! -e $SUPERMATRIX ]; then
 	$PERLSCRIPT/pick_exemplars.pl -l $MERGEDLIST -t $SPECIESTABLE $VERBOSE > $SUPERMATRIX
 fi
 
 # infer backbone tree
+# possible subcommand name: smrt [GLOBAL] bbtree [OPTIONS] > <outfile>
 if [ ! -e $MEGATREE ]; then
 	$PERLSCRIPT/infer_backbone.pl -o $MEGATREE -w $WORKDIR -c $COMMONTREE -s $SUPERMATRIX $VERBOSE
 fi
 
 # reroot backbone tree
+# possible subcommand name: smrt [GLOBAL] reroot [OPTIONS] > <outfile>
 if [ ! -e $REROOTED_MEGATREE ]; then
 	$PERLSCRIPT/reroot_backbone.pl -w $WORKDIR -b $MEGATREE -t $SPECIESTABLE $VERBOSE > $REROOTED_MEGATREE
 fi
 
 # calibrate rerooted backbone tree
+# possible subcommand name: smrt [GLOBAL] calibrate [OPTIONS]
 if [ ! -e $CHRONOGRAM ]; then
     NUMSITES=`head -1 $SUPERMATRIX | cut -f 2 -d ' '`
     $PERLSCRIPT/calibrate_tree.pl -f $FOSSILTABLE -r $REROOTED_MEGATREE -s $TREEPLSMOOTH -o $CHRONOGRAM $VERBOSE -n $NUMSITES 
 fi
 
 # decompose backbone tree
+# possible subcommand name: smrt [GLOBAL] decompose [OPTIONS]
 count=`ls -d $WORKDIR/clade* 2>/dev/null | wc -w`
 if [ $count -eq 0 ]; then
     $MPIRUN $PERLSCRIPT/parallel_decompose_backbone.pl -t $SPECIESTABLE -l $MERGEDLIST -b $REROOTED_MEGATREE -w $WORKDIR $VERBOSE
 fi
 
 # merge clade alignments
+# possible subcommand name: smrt [GLOBAL] cladematrix [OPTIONS]
 clade_count=`ls -d $WORKDIR/clade*/ 2>/dev/null | wc -w`
 file_count=`ls -d $WORKDIR/clade*/*.xml 2>/dev/null | wc -w`
 if [ $file_count -lt $clade_count ]; then    
@@ -108,6 +120,7 @@ fi
 
 
 # infer tree for each clade
+# possible subcommand name: smrt [GLOBAL] cladetree [OPTIONS]
 file_count=`ls -f $WORKDIR/clade*/*.nex 2>/dev/null | wc -w`
 if [ $file_count -lt $clade_count ]; then
     $MPIRUN $PERLSCRIPT/parallel_infer_clades.pl -w $WORKDIR -ngens 30000000 -sfreq 300000 -lfreq 300000 $VERBOSE
@@ -115,6 +128,7 @@ fi
 
 
 # graft clade trees onto backbone
+# possible subcommand name: smrt [GLOBAL] graft [OPTIONS]
 if [ ! -e $FINALTREE ]; then
     $PERLSCRIPT/graft_trees.pl -workdir $WORKDIR -backbone $LABELLED_CHRONOGRAM -outfile $FINALTREE $VERBOSE
 fi
