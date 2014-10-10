@@ -3,7 +3,7 @@ package Bio::Apps::Supersmart::Command::taxize;
 use strict;
 use warnings;
 
-use List::MoreUtils qw(firstidx);
+use List::MoreUtils qw(firstidx uniq);
 
 use Bio::Phylo::Util::Logger ':levels';
 use Bio::Phylo::PhyLoTA::Config;
@@ -28,8 +28,9 @@ sub options {
 
 sub validate_args {
 	my ($self, $opt, $args) = @_;		
+
 	# We only have to check the 'infile' argument. 
-	#  If the infile is absent or empty, taxize won't start.  
+	#  If the infile is absent or empty, abort  
 	my $file = $opt->infile;
 	$self->usage_error("no infile argument given") if not $file;
 	$self->usage_error("file $file does not exist") unless (-e $file);
@@ -76,9 +77,8 @@ sub execute {
 	# database and with webservices. The below code runs in parallel
 	my @result = pmap {
 	        my $name = $_; 
-	        
 	        # replace consecutive whitespaces with one
-	        $name =~ s/\s+/ /g ;               
+	        $name =~ s/\s+/ /g;               
 	        my @res = ();
 	        my @nodes = $mts->get_nodes_for_names($name);
 	        if ( @nodes ) {
@@ -117,8 +117,8 @@ sub execute {
 	        return  @res;
 	} @names; 
 	
-	# filter taxa with duplicate species id and write the results to stdout
-	# also omit all taxa with higher taxonomic rank than 'Species' 
+	# clean the results for duplicates and rows that represent taxa with levels higher 
+	# than 'Species', then write the results to the output file
 	sequential {
 		open my $out, '>', $outfile or die $!;
 	
@@ -129,10 +129,18 @@ sub execute {
 		foreach my $res ( @result ) {
 			my @entry = @{$res};
 			my $name =  shift @entry;
-			my $idx = 			
 			my $ids = join "\t", @entry;
-			if ( exists $seen{$ids} ) {
-				$log->info("Taxon with resolved name $name already in species table. Ignoring.");
+			
+			# omit all taxa with higher taxonomic rank than 'Species' 
+			my $highest_rank = "Species";
+			my $idx = firstidx { lc ($_) eq lc ($highest_rank) } @levels;			
+			my @subset = @entry[0..$idx];
+			if ( uniq (@subset) == 1) {
+				$log->debug("rank of taxon with resolved name $name is higher than $highest_rank, omitting");									
+			}	
+			# filter taxa with duplicate species id		
+			elsif ( exists $seen{$ids} ) {
+				$log->debug("taxon with resolved name $name already in species table, omitting");
 			} 
 			else {
 				print $out "$name \t $ids \n";
@@ -141,7 +149,7 @@ sub execute {
 		}
 		close $out;		
 	};
-	
+		
 	return 1;    
 }
 
