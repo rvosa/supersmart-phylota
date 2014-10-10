@@ -36,13 +36,13 @@ sub options {
 	my ($self, $opt, $args) = @_;		
 	my $outfile_default = "species.tsv";
 	return (
-		["infile|i=s", "file with list of taxon names", { required => 1, arg => "file"}],
+		["infile|i=s", "file with list of taxon names", { arg => "file"}],
 		["outfile|o=s", "name of the output file, defaults to '$outfile_default'", {default => $outfile_default, arg => "file"}],
 		["expand_rank|e=s", "rank to which root taxa are expanded", { default => 0, arg => "rank"}],	
 	);	
 }
 
-sub validate_args {
+sub validate {
 	my ($self, $opt, $args) = @_;		
 
 	# We only have to check the 'infile' argument. 
@@ -165,7 +165,7 @@ sub execute {
 		}
 		close $out;		
 	};
-	$log->info("done, results written to $outfile");
+	$log->info("DONE, results written to $outfile");
 		
 	return 1;    
 }
