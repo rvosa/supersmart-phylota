@@ -13,8 +13,24 @@ use Bio::Phylo::PhyLoTA::Service::ParallelService 'pthreads'; # can be either 'p
 use base 'Bio::Apps::GlobalCmd';
 use Bio::Apps::Supersmart qw(-command);
 
-
 # ABSTRACT: writes taxa table for given list of taxon names or root taxa
+
+=head1 NAME
+
+Taxize.pm - reconciles taxon names with information from NCBI taxonomy
+
+=head1 SYNOPSYS
+
+$ smrt taxize [-v ] [-w <dir>] -i <file> [-o <file>] [-e <rank>] 
+
+=head1 DESCRIPTION
+
+Performs taxonomic name resolution by mapping a provided list of input names onto the 
+NCBI taxonomy. Optionally expands the higher input taxa to the specified lower taxon, 
+e.g. to expand a named Order to its constituent species. Produces a table that lists 
+all resolved (and expanded) taxa and their higher classification.
+
+=cut
 
 sub options {
 	my ($self, $opt, $args) = @_;		
@@ -149,6 +165,7 @@ sub execute {
 		}
 		close $out;		
 	};
+	$log->info("done, results written to $outfile");
 		
 	return 1;    
 }
