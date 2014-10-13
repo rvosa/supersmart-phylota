@@ -61,7 +61,7 @@ sub execute {
 	# collect command-line arguments
 	my $infile = $opt->infile;
 	my $outfile = $opt->outfile;
-	my $workdir = $opt->workdir;
+	(my $workdir = $opt->workdir) =~ s/\/$//g;
 	$verbosity += $opt->verbose ? $opt->verbose : 0;
 
 	# instantiate helper objects
@@ -161,13 +161,15 @@ sub execute {
                 $log->info("aligning sequences for cluster $ci finished and written to $filename");
  				
  				#print alignment file name to STDOUT so it can be saved in output file of script          
- 				open my $outfh, '>>', $outfile or die $!;
+ 				open my $outfh, '>>', $workdir . '/' . $outfile or die $!;
  				print $outfh $filename . "\n";
  				close $outfh;
         } 
         return @res;
 	} @clusters;
-
+	
+	$log->info("DONE, results written to $workdir/$outfile");
+	
 	return 1;
 }
 

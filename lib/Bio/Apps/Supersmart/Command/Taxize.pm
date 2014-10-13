@@ -62,6 +62,7 @@ sub execute {
 	my $infile = $opt->infile;
 	my $expand_rank = $opt->expand_rank;
 	my $outfile = $opt->outfile;
+	(my $workdir = $opt->workdir) =~ s/\/$//g;
 	$verbosity += $opt->verbose ? $opt->verbose : 0;
 	
 	# instantiate helper objects
@@ -136,7 +137,7 @@ sub execute {
 	# clean the results for duplicates and rows that represent taxa with levels higher 
 	# than 'Species', then write the results to the output file
 	sequential {
-		open my $out, '>', $outfile or die $!;
+		open my $out, '>', $workdir . '/' . $outfile or die $!;
 	
 		# print table header 
 		print $out join ("\t", 'name', @levels), "\n";
@@ -165,7 +166,7 @@ sub execute {
 		}
 		close $out;		
 	};
-	$log->info("DONE, results written to $outfile");
+	$log->info("DONE, results written to $workdir/$outfile");
 		
 	return 1;    
 }

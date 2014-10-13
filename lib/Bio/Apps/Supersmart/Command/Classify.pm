@@ -59,6 +59,7 @@ sub execute {
 	# collect command-line arguments
 	my $infile = $opt->infile;
 	my $outfile = $opt->outfile;
+	(my $workdir = $opt->workdir) =~ s/\/$//g;
 	$verbosity += $opt->verbose ? $opt->verbose : 0;
 	my $outformat = $opt->outformat;
 	
@@ -92,14 +93,14 @@ sub execute {
 	});
 	
 	# write output
-	open my $out, '>', $outfile or die $!;
+	open my $out, '>', $workdir . '/' . $outfile or die $!;
 	print $out unparse(
 		'-format'     => $outformat,
 		'-phylo'      => $tree,
 		'-nodelabels' => 1,
 	);
 	close $out;
-	$log->info("DONE, results written to $outfile");
+	$log->info("DONE, results written to $workdir/$outfile");
 	
 	return 1;
 }
