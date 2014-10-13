@@ -91,7 +91,6 @@ sub validate_args {
 	my ($class, $opt, $args) = @_;		
 	
 	if ($opt->help){
-			
 		# This is a small hack to make the help screen called with the 
 		#  option (as here, e.g. "$ smrt command -h" ) look the same
 		#  as when we call "$ smrt help command"  				
@@ -125,7 +124,7 @@ sub usage_desc {
 		my $s = @{$opt}[0];
 		my %h = %{@{$opt}[2]};
 		my ($short_opt) = ($s =~ /\|([a-z]+)/);
-		my $required = $h{'required'};
+		my $required = $h{'mandatory'};
 		my $arg = $h{'arg'};
 		my $opt_str = "-$short_opt ";
 		$opt_str .= $arg ? " <$arg>"  :"";

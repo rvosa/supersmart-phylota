@@ -36,7 +36,7 @@ sub options {
 	my ($self, $opt, $args) = @_;		
 	my $outfile_default = "species.tsv";
 	return (
-		["infile|i=s", "file with list of taxon names", { arg => "file"}],
+		["infile|i=s", "file with list of taxon names", { arg => "file", mandatory => 1}],
 		["outfile|o=s", "name of the output file, defaults to '$outfile_default'", {default => $outfile_default, arg => "file"}],
 		["expand_rank|e=s", "rank to which root taxa are expanded", { default => 0, arg => "rank"}],	
 	);	
