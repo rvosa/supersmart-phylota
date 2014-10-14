@@ -98,17 +98,22 @@ file {
 		target  => "${tools_dir}/phylip-3.696/src/consense",
 		require => Exec["make_phylip"];
 	"examl_link":
-		path    => "/usr/local/bin/examl",
+		path    => "${tools_bin_dir}/examl",
 		ensure  => link,
 		target  => "${tools_dir}/ExaML/examl/examl",
 		require => Exec["compile_examl"];
-    "exabayes_link":
-		path    => "/usr/local/bin/exabayes",
+  "parse_examl_link":
+    path    => "${tools_bin_dir}/parse-examl",
+    ensure  => link,
+    target  => "${tools_dir}/ExaML/parser/parse-examl",
+    require => Exec["compile_examl"];     
+	 "exabayes_link":
+		path    => "${tools_bin_dir}/exabayes",
 		ensure  => link,
 		target  => "${tools_dir}/exabayes-1.2.1/bin/exabayes",
 		require => Exec["compile_exabayes"];
-     "treepl_link":
-	    path    => "/usr/local/bin/treePL",
+   "treepl_link":
+	  path    => "${tools_bin_dir}/treePL",
 		ensure  => link,
 		target  => "${tools_dir}/treePL/src/treePL",
 		require => Exec["compile_treepl"];
