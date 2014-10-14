@@ -148,7 +148,7 @@ sub execute {
                         push @matrix, [ ">gi|${gi}|seed_gi|${seed_gi}|taxon|${ti}|mrca|${mrca}" => $seq ];
                           });
                                 
-                my $filename = $workdir . '/' . $seed_gi . '-' . $mrca . '-' . $ci . '.fa';
+                my $filename = $workdir . '/' . $seed_gi . '.fa'; # -' . $mrca . '-' . $ci . '.fa';
                 open my $fh, '>', $filename or die $!;
                 for my $row ( @matrix ) {
                         print $fh $row->[0], "\n", $row->[1], "\n";
@@ -160,7 +160,7 @@ sub execute {
                 };
                 $log->info("aligning sequences for cluster $ci finished and written to $filename");
  				
- 				#print alignment file name to STDOUT so it can be saved in output file of script          
+ 				#print alignment file name to output file so it can be saved in output file of script          
  				open my $outfh, '>>', $workdir . '/' . $outfile or die $!;
  				print $outfh $filename . "\n";
  				close $outfh;
