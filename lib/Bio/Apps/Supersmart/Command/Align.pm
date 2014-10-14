@@ -64,6 +64,10 @@ sub execute {
 	(my $workdir = $opt->workdir) =~ s/\/$//g;
 	$verbosity += $opt->verbose ? $opt->verbose : 0;
 
+	# create empty output file 
+	open my $outfh, '>', $workdir . '/' . $outfile or die $!;
+	close $outfh;
+
 	# instantiate helper objects
 	my $log = Bio::Phylo::Util::Logger->new(
 	'-level' => $verbosity,
