@@ -633,7 +633,7 @@ sub get_aligned_locus_indices {
 	my $length = $feat->length;
 	my $end    = $start + $length;
 	my $nucs   = 0;
-	my @seq    = split //, $seq;
+	my @seq    = split '//', $seq;
         my @indices;
 	for my $i ( 0 .. $#seq ) {
 		$nucs++ if $seq[$i] ne '-';
