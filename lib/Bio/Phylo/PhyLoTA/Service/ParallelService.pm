@@ -61,6 +61,7 @@ sub import {
                 MPI_Init();       
                 $num_workers = MPI_Comm_size(MPI_COMM_WORLD())-1; 
               	$logger->info("Initializing MPI ParallelService with $num_workers workers");
+				print STDERR "Initializing MPI ParallelService with $num_workers workers\n";
         }
         elsif ( $mode eq 'pthreads' ) {
                 use threads;
@@ -70,14 +71,15 @@ sub import {
                 use Sys::Info::Constants qw( :device_cpu );
                 my $info = Sys::Info->new;
                 my $cpu  = $info->device('CPU');
-                $num_workers = $cpu->count;
+                $num_workers = $cpu->count - 1;
  				$logger->info("Initializing pthread ParallelService with $num_workers workers");
+				print STDERR "Initializing pthread ParallelService with $num_workers workers\n";
  
         }
 	my ( $caller ) = caller();
         eval "sub ${caller}::pmap(\&\@);";
 	eval "*${caller}::pmap = \\&${package}::pmap;";
-        
+        	
         eval "sub ${caller}::sequential(\&);";
 	eval "*${caller}::sequential = \\&${package}::sequential;";
 
@@ -96,14 +98,29 @@ function if ParallelService was called with 'pthreads' as its argument.
 
 sub pmap_pthreads (&@) {
 	my ( $func, @data ) = @_;
+	my $counter = 0;
 	my $size = scalar @data;
-        my @threads;
+    my @threads;
 	my @result;
 	my $inc = ceil($size/$num_workers);
+	$logger->info("pmap pthreads has $num_workers nodes available");
+	my $thread = 0;
 	for ( my $i = 0; $i < $size; $i += $inc ) {
+		++$thread;
 		my $max = ( $i + $inc - 1 ) >= $size ? $size - 1 : $i + $inc - 1;
 		my @subset = @data[$i..$max];
-                push @threads, threads->create( sub { map {$func->() } @subset } );
+       	$logger->info("Detaching " . scalar(@subset) . " items to thread # " . $thread);
+       	push @threads, threads->create( 
+           								sub {           									
+           									map  {
+           										my %h = %{$_};           										
+           										$counter++;
+           										$logger->info("Thread $thread is processing item # $counter / " . scalar(@subset) );
+
+												# execute code block given in $func with argument
+           										$func->($_);
+           									} @subset 
+          								} );
         }
 	push @result, $_->join for @threads;
 	return @result;
