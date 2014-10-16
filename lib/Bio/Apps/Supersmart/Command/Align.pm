@@ -90,31 +90,18 @@ sub execute {
 	$log->info("Found " . scalar(@nodes) . " nodes for taxa table");
 	
 	# this is sorted from more to less inclusive
-	my @sorted_clusters = $mts->get_clusters_for_nodes(@nodes); 
-	
-	# hear we split the sorted clusters into subsets that divide
-	# the inclusiveness more evenly
-	my @subset;
-	my $nworkers = num_workers() || 1;
-	for my $i ( 0 .. $#sorted_clusters ) {
-	        my $j = $i % $nworkers;
-	        $subset[$j] = [] if not $subset[$j];
-	        push @{ $subset[$j] }, $sorted_clusters[$i];
-	}
-	    
-	# now we flatten the subsets again
-	my @clusters;
-	push @clusters, @{ $subset[$_] } for 0 .. ( $nworkers - 1 ) ;
-	
+	my @clusters = $mts->get_clusters_for_nodes(@nodes); 
 	
 	# this is a simple mapping to see whether a taxon is of interest
 	my %ti =  map { $_->ti => 1 } @nodes;        
 		
+	$log->info("Processing " . scalar(@clusters) . " clusters");
 	# make the alignments in parallel mode
-	my @result = pmap {        
-		my $cl = $_;
+	my @result = pmap {        		
+		my ($cl) = @_;
 	   	my $ti = \%ti;
 	    my %h = %$cl;             
+
         # get cluster id
         my $ci = $h{'ci'};
 		$log->info("processing cluster with id $ci");
@@ -132,8 +119,10 @@ sub execute {
          
         # let's not keep the ones we can't build trees out of
         if ( scalar @matching > 3 ) {
+                
                 # this runs muscle or mafft, so should be on your PATH.
                 # this also requires bioperl-live and bioperl-run
+                                                              
                 $log->info("going to align ".scalar(@matching)." sequences for cluster $ci");
                 my $aln = $sg->align_sequences(@matching);
                 
@@ -152,7 +141,7 @@ sub execute {
                         push @matrix, [ ">gi|${gi}|seed_gi|${seed_gi}|taxon|${ti}|mrca|${mrca}" => $seq ];
                           });
                                 
-                my $filename = $workdir . '/' . $seed_gi . '.fa'; # -' . $mrca . '-' . $ci . '.fa';
+                my $filename = $workdir . '/' . $seed_gi . '.fa';   # '-' . $mrca . '-' . $ci . '.fa';
                 open my $fh, '>', $filename or die $!;
                 for my $row ( @matrix ) {
                         print $fh $row->[0], "\n", $row->[1], "\n";
