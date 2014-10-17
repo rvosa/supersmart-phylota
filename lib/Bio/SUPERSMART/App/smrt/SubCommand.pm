@@ -1,5 +1,10 @@
 package Bio::SUPERSMART::App::smrt::SubCommand;
 
+use Bio::Phylo::Util::Logger ':levels';
+
+my $_verbosity = INFO;
+my $_logger;
+
 =head1 NAME
 
 Bio::SUPERSMART::App::smrt::SubCommand Superclass for C<smrt> subcommands
@@ -12,6 +17,53 @@ inherited by all subcommand classes.
 =head1 METHODS
 
 =over
+
+=item logger
+
+Getter/setter for the subcommand's Bio::Phylo::Util::Logger object, 
+verbosity can be de- or increased by  the argument -v for all subcommands. 
+
+=cut
+
+sub logger {
+	my $self = shift;
+	if ( @_ ) {
+		$_logger = shift;		
+	}
+	return $_logger;
+}
+
+=item run
+
+This is the method in which the functionality of the subcommand
+class is implemented; all subcommand-specific magig will happen in
+here. 
+
+=cut
+
+sub run {	
+	die "Subroutine 'run' not implemented for subcommand class " . ref ($_); 		
+}
+
+=item execute
+
+Overrides the default classes 'execute method' such that some global properties 
+for all subcommands (e.g. verbosity level, ...) can be set in this method. The
+method then calls the 'run' subroutine, which must be implemented for all child classes
+
+=cut
+
+sub execute {
+	my ($class, $opt, $args) = @_;
+	my $str = ref($class);
+	$_verbosity += $opt->verbose ? $opt->verbose : 0;
+	
+	$_logger = Bio::Phylo::Util::Logger->new(
+		'-level' => $_verbosity,
+		'-class' => [ ref( $class )],
+    );
+	$class->run( $opt, $args );
+}
 
 =item opt_spec
 
@@ -64,7 +116,7 @@ sub description {
 
 =item validate_args
 
-overrides the default method mainly for one reason: There are two ways of 
+Overrides the default method mainly for one reason: There are two ways of 
 displaying the help screen: One is '$ smrt help command', the other is
 '$ smrt command -h'. Here we make the latter to behave exactly as
 the former.
