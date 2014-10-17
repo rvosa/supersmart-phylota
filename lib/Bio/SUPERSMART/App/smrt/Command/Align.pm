@@ -1,4 +1,4 @@
-package Bio::Apps::Supersmart::Command::Align;
+package Bio::SUPERSMART::App::smrt::Command::Align;
 
 use strict;
 use warnings;
@@ -11,8 +11,8 @@ use Bio::Phylo::PhyLoTA::Service::SequenceGetter;
 use Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector;
 use Bio::Phylo::PhyLoTA::Service::ParallelService 'pthreads'; # can be either 'pthreads' or 'mpi';
 
-use base 'Bio::Apps::GlobalCmd';
-use Bio::Apps::Supersmart qw(-command);
+use base 'Bio::SUPERSMART::App::smrt::SubCommand';
+use Bio::SUPERSMART::App::smrt qw(-command);
 
 # ABSTRACT: writes multiple sequence alignments for a list of taxa
 

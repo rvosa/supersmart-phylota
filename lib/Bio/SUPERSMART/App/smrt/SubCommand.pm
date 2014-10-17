@@ -1,24 +1,8 @@
-package Bio::Apps::Supersmart;
-our $VERSION = 0.1;
-use App::Cmd::Setup -app;
+package Bio::SUPERSMART::App::smrt::SubCommand;
 
 =head1 NAME
 
-Bio::Apps::Supersmart app class
-
-=head1 DESCRIPTION
-
-This class is invoked when using the command C<smrt>.
-
-=cut
-
-1;
-
-package Bio::Apps::GlobalCmd;
-
-=head1 NAME
-
-Bio::Apps::GlobalCmd Superclass for C<smrt> subcommands
+Bio::SUPERSMART::App::smrt::SubCommand Superclass for C<smrt> subcommands
 
 =head1 DESCRIPTION
 
@@ -134,6 +118,5 @@ sub usage_desc {
 	return $usage;	
 }
 
-=back
 
 1;

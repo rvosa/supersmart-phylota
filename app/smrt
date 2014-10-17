@@ -1,4 +1,4 @@
 #!/usr/bin/perl
-use Bio::Apps::Supersmart;
+use Bio::SUPERSMART::App::smrt;
 
-Bio::Apps::Supersmart->run;
+Bio::SUPERSMART::App::smrt->run;

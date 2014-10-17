@@ -1,4 +1,4 @@
-package Bio::Apps::Supersmart::Command::Classify;
+package Bio::SUPERSMART::App::smrt::Command::Classify;
 
 use strict;
 use warnings;
@@ -8,8 +8,8 @@ use Bio::Phylo::Util::Logger ':levels';
 use Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector;
 use Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa;
 
-use base 'Bio::Apps::GlobalCmd';
-use Bio::Apps::Supersmart qw(-command);
+use base 'Bio::SUPERSMART::App::smrt::SubCommand';
+use Bio::SUPERSMART::App::smrt qw(-command);
 
 # ABSTRACT: writes a classification tree for a given taxa table
 

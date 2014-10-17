@@ -1,4 +1,4 @@
-package Bio::Apps::Supersmart::Command::BBmerge;
+package Bio::SUPERSMART::App::smrt::Command::BBmerge;
 
 use strict;
 use warnings;
@@ -10,8 +10,8 @@ use Bio::Phylo::Util::Logger ':levels';
 use Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa;
 use Bio::Phylo::PhyLoTA::Service::TreeService;
 
-use base 'Bio::Apps::GlobalCmd';
-use Bio::Apps::Supersmart qw(-command);
+use base 'Bio::SUPERSMART::App::smrt::SubCommand';
+use Bio::SUPERSMART::App::smrt qw(-command);
 
 # ABSTRACT: creates supermatrix for genus-level backbone tree
 
