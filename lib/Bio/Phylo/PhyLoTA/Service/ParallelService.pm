@@ -113,7 +113,6 @@ sub pmap_pthreads (&@) {
        	push @threads, threads->create( 
            								sub {           									
            									map  {
-           										my %h = %{$_};           										
            										$counter++;
            										$logger->info("Thread $thread is processing item # $counter / " . scalar(@subset) );
 
