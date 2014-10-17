@@ -4,7 +4,6 @@ use strict;
 use warnings;
 
 use List::Util 'min';
-use Bio::Phylo::Util::Logger ':levels';
 use Bio::Phylo::Matrices::Matrix;
 use Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa;
 use Bio::Phylo::PhyLoTA::Service::SequenceGetter;
@@ -53,30 +52,20 @@ sub validate {
 	$self->usage_error("file $file is empty") unless (-s $file);			
 }
 
-sub execute {
+sub run {
 	my ($self, $opt, $args) = @_;
-
-	my $verbosity = INFO;
 
 	# collect command-line arguments
 	my $infile = $opt->infile;
 	my $outfile = $opt->outfile;
 	(my $workdir = $opt->workdir) =~ s/\/$//g;
-	$verbosity += $opt->verbose ? $opt->verbose : 0;
 
 	# create empty output file 
 	open my $outfh, '>', $workdir . '/' . $outfile or die $!;
 	close $outfh;
 
 	# instantiate helper objects
-	my $log = Bio::Phylo::Util::Logger->new(
-	'-level' => $verbosity,
-	'-class' => [
-			__PACKAGE__,
-			'Bio::Phylo::PhyLoTA::Service::SequenceGetter',
-			'Bio::Phylo::PhyLoTA::Service::ParallelService',
-		]
-	);
+	my $log = $self->logger;
 	my $mts = Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector->new;
 	my $mt =  Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa->new;
 	my $sg = Bio::Phylo::PhyLoTA::Service::SequenceGetter->new;

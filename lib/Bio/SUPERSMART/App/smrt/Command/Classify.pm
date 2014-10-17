@@ -4,7 +4,6 @@ use strict;
 use warnings;
 
 use Bio::Phylo::IO qw(unparse);
-use Bio::Phylo::Util::Logger ':levels';
 use Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector;
 use Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa;
 
@@ -51,28 +50,21 @@ sub validate {
 	$self->usage_error("file $file is empty") unless (-s $file);			
 }
 
-sub execute {
+sub run {
 	my ($self, $opt, $args) = @_;
 
-	my $verbosity = INFO;
-	
 	# collect command-line arguments
 	my $infile = $opt->infile;
 	my $outfile = $opt->outfile;
 	(my $workdir = $opt->workdir) =~ s/\/$//g;
-	$verbosity += $opt->verbose ? $opt->verbose : 0;
 	my $outformat = $opt->outformat;
 	
 	# instantiate helper objects
 	my $mts = Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector->new;
 	my $mt =  Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa->new;
 
-	my $log = Bio::Phylo::Util::Logger->new(
-		'-class' => [   __PACKAGE__,
-						'Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector',
-					  	'Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa' ],		
-		'-level' => $verbosity
-	);	
+	my $log = $self->logger;
+
 	# parse the taxa file 
 	my @taxatable = $mt->parse_taxa_file($infile);
 

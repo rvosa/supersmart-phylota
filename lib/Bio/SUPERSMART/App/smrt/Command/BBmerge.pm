@@ -6,7 +6,6 @@ use warnings;
 use List::Util qw(min max sum);
 use Bio::Phylo::Matrices::Datum;
 use Bio::Phylo::PhyLoTA::Config;
-use Bio::Phylo::Util::Logger ':levels';
 use Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa;
 use Bio::Phylo::PhyLoTA::Service::TreeService;
 
@@ -105,11 +104,9 @@ sub validate {
 }
 
 
-sub execute {
+sub run {
 	my ($self, $opt, $args) = @_;		
-	
-	my $verbosity = INFO;
-	
+		
 	# collect command-line arguments
 	my $alnfile = $opt->alnfile;
 	my $taxafile = $opt->taxafile;
@@ -123,12 +120,7 @@ sub execute {
 	my $dat    	= 'Bio::Phylo::Matrices::Datum';
 	my $config 	= Bio::Phylo::PhyLoTA::Config->new;
 	my $mt     	= Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa->new;
-	my $log = Bio::Phylo::Util::Logger->new(
-		'-level' => $verbosity,
-		'-class' => [
-			__PACKAGE__,
-		]
-	);
+	my $log = $self->logger;
 
 	# read list of alignments
 	my @alignments;

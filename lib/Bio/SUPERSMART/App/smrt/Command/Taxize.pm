@@ -5,7 +5,6 @@ use warnings;
 
 use List::MoreUtils qw(firstidx uniq);
 
-use Bio::Phylo::Util::Logger ':levels';
 use Bio::Phylo::PhyLoTA::Config;
 use Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector;
 use Bio::Phylo::PhyLoTA::Service::ParallelService 'pthreads'; # can be either 'pthreads' or 'mpi';
@@ -53,25 +52,17 @@ sub validate {
 	$self->usage_error("file $file is empty") unless (-s $file);			
 }
 
-sub execute {
+sub run {
 	my ($self, $opt, $args) = @_;
-	
-	my $verbosity = INFO;
-	
+		
 	# collect command-line arguments
 	my $infile = $opt->infile;
 	my $expand_rank = $opt->expand_rank;
 	my $outfile = $opt->outfile;
 	(my $workdir = $opt->workdir) =~ s/\/$//g;
-	$verbosity += $opt->verbose ? $opt->verbose : 0;
 	
 	# instantiate helper objects
-	my $log = Bio::Phylo::Util::Logger->new(
-		'-level' => $verbosity,
-		'-class' => [ __PACKAGE__,			 
-					 "Bio::Phylo::PhyLoTA::Service::ParallelService"]
-    );
-    
+	my $log = $self->logger; 
     my $config = Bio::Phylo::PhyLoTA::Config->new;
 	my $mts = Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector->new;
     
@@ -164,7 +155,7 @@ sub execute {
 				$seen{$ids} = 1;	
 			}
 		}
-		close $out;		
+		close $out;
 	};
 	$log->info("DONE, results written to $workdir/$outfile");
 		

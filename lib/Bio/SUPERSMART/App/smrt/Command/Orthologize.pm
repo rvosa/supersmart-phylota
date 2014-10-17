@@ -4,7 +4,6 @@ use strict;
 use warnings;
 
 use Bio::SearchIO;
-use Bio::Phylo::Util::Logger ':levels';
 use Bio::Phylo::PhyLoTA::Config;
 use Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa;
 use Bio::Phylo::PhyLoTA::Service::SequenceGetter;
@@ -51,16 +50,13 @@ sub validate {
 }
 
 
-sub execute {
+sub run {
 	my ($self, $opt, $args) = @_;
-	
-	my $verbosity = INFO;
 	
 	# collect command-line arguments
 	my $infile = $opt->infile;
 	my $outfile = $opt->outfile;
 	(my $workdir = $opt->workdir) =~ s/\/$//g;
-	$verbosity += $opt->verbose ? $opt->verbose : 0;
 	
 	# create empty output file 
 	open my $outfh, '>', $workdir . '/' . $outfile or die $!;
@@ -70,13 +66,7 @@ sub execute {
 	my $service = Bio::Phylo::PhyLoTA::Service::SequenceGetter->new;
 	my $mts     = Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa->new;
 	my $config  = Bio::Phylo::PhyLoTA::Config->new;
-	my $log     = Bio::Phylo::Util::Logger->new(
-		'-level' => $verbosity,
-		'-class' => [
-			__PACKAGE__,
-			'Bio::Phylo::PhyLoTA::Service::ParallelService',
-		]
-	);
+	my $log     = $self->logger;
 	
 	my $dbname = File::Spec->catfile( $workdir, 'seeds.fa' );
 	$log->info("creating database file $dbname");
