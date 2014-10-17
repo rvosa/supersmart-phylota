@@ -21,6 +21,7 @@ BBmerge.pm - creates supermatrix for genus-level backbone tree
 
 =head1 SYNOPSIS
 
+smrt bbmerge [-h ] [-v ] [-w <dir>] -a <file> -t <file> [-o <file>] 
 
 =head1 DESCRIPTION
 
