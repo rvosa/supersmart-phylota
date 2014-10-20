@@ -76,13 +76,14 @@ sub execute {
 	# create logger object with user-defined verbosity
 	$_logger = Bio::Phylo::Util::Logger->new(
 		'-level' => $_verbosity,
-		'-class' => [ ref( $class )],
+		'-class' => [ ref( $class ), Bio::Phylo::PhyLoTA::Service::TreeService],
     );
     
     # make output file name. If output file is given and it is an absolute path, 
     #  leave as is; if it is a single filename or a relative path, prepend the working
-    #  directory    
-    $_outfile = $opt->outfile =~ /^\// ? $opt->outfile : $opt->workdir . "/" . $opt->outfile;  
+    #  directory    	
+	($wd = $opt->workdir) =~ s/\/$//g;
+    $_outfile = $opt->outfile =~ /^\// ? $opt->outfile : $wd . "/" . $opt->outfile;  
     
 	return $class->run( $opt, $args );
 }
