@@ -111,8 +111,7 @@ sub run {
 	my $alnfile = $opt->alnfile;
 	my $taxafile = $opt->taxafile;
 	my $outfile= $opt->outfile;	
-	(my $workdir = $opt->workdir) =~ s/\/$//g;
-	$verbosity += $opt->verbose ? $opt->verbose : 0;
+	(my $workdir = $opt->workdir) =~ s/\/$//g;	
 
 	# instantiate helper objects
 	my $mts     = Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector->new;
