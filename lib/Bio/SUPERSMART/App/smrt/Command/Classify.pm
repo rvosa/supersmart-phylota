@@ -86,7 +86,7 @@ sub run {
 	});
 	
 	# write output
-	open my $out, '>', $workdir . '/' . $outfile or die $!;
+	open my $out, '>', $outfile or die $!;
 	print $out $tree->remove_unbranched_internals->to_newick;
 	close $out;
 	$log->info("DONE, results written to $outfile");
