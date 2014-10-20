@@ -4,6 +4,7 @@ use Bio::Phylo::Util::Logger ':levels';
 
 my $_verbosity = INFO;
 my $_logger;
+my $_outfile; 
 
 =head1 NAME
 
@@ -33,6 +34,20 @@ sub logger {
 	return $_logger;
 }
 
+=item outfile
+
+returns the output file name of the subcommand
+
+=cut
+
+sub outfile {
+	my $self = shift;
+	if ( @_ ) {
+		$_outfile = shift;		
+	}
+	return $_outfile;
+}
+
 =item run
 
 This is the method in which the functionality of the subcommand
@@ -58,11 +73,18 @@ sub execute {
 	my $str = ref($class);
 	$_verbosity += $opt->verbose ? $opt->verbose : 0;
 	
+	# create logger object with user-defined verbosity
 	$_logger = Bio::Phylo::Util::Logger->new(
 		'-level' => $_verbosity,
 		'-class' => [ ref( $class )],
     );
-	$class->run( $opt, $args );
+    
+    # make output file name. If output file is given and it is an absolute path, 
+    #  leave as is; if it is a single filename or a relative path, prepend the working
+    #  directory    
+    $_outfile = $opt->outfile =~ /^\// ? $opt->outfile : $opt->workdir . "/" . $opt->outfile;  
+    
+	return $class->run( $opt, $args );
 }
 
 =item opt_spec
