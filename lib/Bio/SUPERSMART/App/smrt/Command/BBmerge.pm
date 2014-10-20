@@ -110,7 +110,7 @@ sub run {
 	# collect command-line arguments
 	my $alnfile = $opt->alnfile;
 	my $taxafile = $opt->taxafile;
-	my $outfile= $opt->outfile;	
+	my $outfile= $self->outfile;	
 	(my $workdir = $opt->workdir) =~ s/\/$//g;	
 
 	# instantiate helper objects
@@ -223,7 +223,7 @@ sub run {
 		}
 		else {
 			my %p = %{ $distance{$genus} };
-			my ($sp1,$sp2) = map { split '/\|/', $_ } sort { $p{$b} <=> $p{$a} } keys %p;
+			my ($sp1,$sp2) = map { split (/\|/, $_) } sort { $p{$b} <=> $p{$a} } keys %p;
 			push @exemplars, $sp1, $sp2;
 		}
 	}
@@ -319,7 +319,7 @@ sub run {
 	$log->info("using ".scalar(@filtered_alignments)." alignments for supermatrix");
 	$log->info("number of filtered exemplars : " . scalar(@filtered_exemplars));
 	
-	open my $outfh, '>', $workdir . '/' . $outfile or die $!;
+	open my $outfh, '>', $outfile or die $!;
 	
 	#$ts->make_phylip_from_matrix()
 		
@@ -332,7 +332,7 @@ sub run {
 	for my $aln ( @filtered_alignments ) {
 		my %fasta = $mt->parse_fasta_file($aln);
 		for my $taxon ( @filtered_exemplars ) {
-	                
+	                $log->info("TAXON : $taxon");
 					# in interleaved phylip, only the first part of the sequences are
 					# preceded by their name, hence this flag:
 					# http://evolution.genetics.washington.edu/phylip/doc/sequence.html
@@ -363,6 +363,8 @@ sub run {
 		$names_printed++;
 	}
 	close $outfh;
+	
+	$log->info("DONE, results written to $outfile");
 	
 	return 1;
 	
