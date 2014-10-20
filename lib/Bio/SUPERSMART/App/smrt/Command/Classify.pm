@@ -55,14 +55,17 @@ sub run {
 
 	# collect command-line arguments
 	my $infile = $opt->infile;
-	my $outfile = $opt->outfile;
+	my $outfile = $self->outfile;
 	(my $workdir = $opt->workdir) =~ s/\/$//g;
 	my $outformat = $opt->outformat;
 	
 	# instantiate helper objects
 	my $mts = Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector->new;
 	my $mt =  Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa->new;
-
+	use Bio::Phylo::PhyLoTA::Service::TreeService;
+	
+	my $ts = Bio::Phylo::PhyLoTA::Service::TreeService->new;
+	
 	my $log = $self->logger;
 
 	# parse the taxa file 
@@ -70,29 +73,23 @@ sub run {
 
 	# instantiate nodes from infile
 	my @nodes = $mts->get_nodes_for_table( @taxatable );
-
-	# compute common tree
-	my $tree = $mts->get_tree_for_nodes(@nodes);
-	$log->debug("done computing common tree");
 	
-	my $newick = $tree->to_newick;
+	# compute classification tree
+	my $tree = $mts->get_tree_for_nodes(@nodes);
 	
 	# create node labels
 	$tree->visit(sub{
 		my $node = shift;
 		my $label = $node->get_guid;		
+		$log->info("Node name : " . $label);		
 		$node->set_name( $label );
 	});
 	
 	# write output
 	open my $out, '>', $workdir . '/' . $outfile or die $!;
-	print $out unparse(
-		'-format'     => $outformat,
-		'-phylo'      => $tree,
-		'-nodelabels' => 1,
-	);
+	print $out $tree->remove_unbranched_internals->to_newick;
 	close $out;
-	$log->info("DONE, results written to $workdir/$outfile");
+	$log->info("DONE, results written to $outfile");
 	
 	return 1;
 }
