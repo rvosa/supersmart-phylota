@@ -36,7 +36,7 @@ sub options {
 	my ($self, $opt, $args) = @_;		
 	my $outfile_default = "aligned.txt";
 	return (
-		["infile|i=s", "file (tab-seperated value format) as produced by 'smrt taxize'", { arg => "file", mandatory => 1}],
+		["infile|i=s", "taxa file (tab-seperated value format) as produced by 'smrt taxize'", { arg => "file", mandatory => 1}],
 		["outfile|o=s", "name of the output file, defaults to '$outfile_default'", {default => $outfile_default, arg => "file"}],	
 	);	
 }
