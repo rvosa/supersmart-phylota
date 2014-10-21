@@ -81,7 +81,6 @@ sub run {
 	$tree->visit(sub{
 		my $node = shift;
 		my $label = $node->get_guid;		
-		$log->info("Node name : " . $label);		
 		$node->set_name( $label );
 	});
 	
