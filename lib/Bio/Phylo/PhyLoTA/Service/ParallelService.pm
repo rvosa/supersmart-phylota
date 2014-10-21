@@ -60,8 +60,7 @@ sub import {
                 use Parallel::MPI::Simple;
                 MPI_Init();       
                 $num_workers = MPI_Comm_size(MPI_COMM_WORLD())-1; 
-              	$logger->info("Initializing MPI ParallelService with $num_workers workers");
-				print STDERR "Initializing MPI ParallelService with $num_workers workers\n";
+              	$logger->debug("Initializing MPI ParallelService with $num_workers workers");
         }
         elsif ( $mode eq 'pthreads' ) {
                 use threads;
@@ -72,8 +71,7 @@ sub import {
                 my $info = Sys::Info->new;
                 my $cpu  = $info->device('CPU');
                 $num_workers = $cpu->count - 1;
- 				$logger->info("Initializing pthread ParallelService with $num_workers workers");
-				print STDERR "Initializing pthread ParallelService with $num_workers workers\n";
+ 				$logger->debug("Initializing pthread ParallelService with $num_workers workers");
  
         }
 	my ( $caller ) = caller();
