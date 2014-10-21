@@ -111,7 +111,6 @@ sub run {
 	my $alnfile = $opt->alnfile;
 	my $taxafile = $opt->taxafile;
 	my $outfile= $self->outfile;	
-	(my $workdir = $opt->workdir) =~ s/\/$//g;	
 
 	# instantiate helper objects
 	my $mts     = Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector->new;
