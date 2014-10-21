@@ -332,8 +332,7 @@ sub run {
 	for my $aln ( @filtered_alignments ) {
 		my %fasta = $mt->parse_fasta_file($aln);
 		for my $taxon ( @filtered_exemplars ) {
-	                $log->info("TAXON : $taxon");
-					# in interleaved phylip, only the first part of the sequences are
+	        		# in interleaved phylip, only the first part of the sequences are
 					# preceded by their name, hence this flag:
 					# http://evolution.genetics.washington.edu/phylip/doc/sequence.html
 	                my $pref = ' ' x10;
