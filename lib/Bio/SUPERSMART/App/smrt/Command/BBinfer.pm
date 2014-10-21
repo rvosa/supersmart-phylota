@@ -220,7 +220,7 @@ elsif ( lc $inferencetool eq "exabayes" ) {
 	print $outfh $bbtree->to_newick;
 	close $outfh;
 	
-	$logger->info("DONE, results written to $workdir/$outfile");
+	$logger->info("DONE, results written to $outfile");
 	
 }
 
