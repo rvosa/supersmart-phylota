@@ -62,7 +62,7 @@ sub run {
 
 =item execute
 
-Overrides the default classes 'execute method' such that some global properties 
+Overrides the default classes' 'execute' method such that some global properties 
 for all subcommands (e.g. verbosity level, ...) can be set in this method. The
 method then calls the 'run' subroutine, which must be implemented for all child classes
 
@@ -70,13 +70,19 @@ method then calls the 'run' subroutine, which must be implemented for all child 
 
 sub execute {
 	my ($class, $opt, $args) = @_;
+	return $class->run( $opt, $args );	
+}
+
+
+sub init {
+	my ($class, $opt, $args) = @_;
 	my $str = ref($class);
 	$_verbosity += $opt->verbose ? $opt->verbose : 0;
 	
 	# create logger object with user-defined verbosity
 	$_logger = Bio::Phylo::Util::Logger->new(
 		'-level' => $_verbosity,
-		'-class' => [ ref( $class ), Bio::Phylo::PhyLoTA::Service::TreeService],
+		'-class' => [ ref( $class ) ],
     );
     
     # make output file name. If output file is given and it is an absolute path, 
@@ -87,7 +93,7 @@ sub execute {
     if ( $of ){
     	$_outfile = $of =~ /^\// ? $of : $wd . "/" . $of;  
     }
-	return $class->run( $opt, $args );
+	#return $class->run( $opt, $args );
 }
 
 =item opt_spec
@@ -150,6 +156,11 @@ the former.
 
 sub validate_args {
 	my ($class, $opt, $args) = @_;		
+	
+	# first init the properties of the superclass
+	$class->init($opt, $args);
+		
+	$class->usage_error("workdir needs to be a valid directory") if not -d $opt->workdir;
 	
 	if ($opt->help){
 		# This is a small hack to make the help screen called with the 
