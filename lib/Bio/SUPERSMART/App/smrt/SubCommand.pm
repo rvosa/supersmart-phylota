@@ -83,8 +83,10 @@ sub execute {
     #  leave as is; if it is a single filename or a relative path, prepend the working
     #  directory    	
 	($wd = $opt->workdir) =~ s/\/$//g;
-    $_outfile = $opt->outfile =~ /^\// ? $opt->outfile : $wd . "/" . $opt->outfile;  
-    
+    my $of = eval { $opt->outfile };
+    if ( $of ){
+    	$_outfile = $of =~ /^\// ? $of : $wd . "/" . $of;  
+    }
 	return $class->run( $opt, $args );
 }
 
@@ -101,7 +103,7 @@ sub opt_spec {
 	return (
 		[ "help|h", "display help screen", {} ],
 		[ "verbose|v+", "increase verbosity level", {} ],
-		[ "workdir|w=s", "directory in which results and intermediate files are stored", { default => ".", arg => "dir"} ],	
+		[ "workdir|w=s", "directory in which results and intermediate files are stored", { default => "./", arg => "dir"} ],	
 		$class->options($app),
 	);	
 }
