@@ -19,15 +19,14 @@ use Bio::SUPERSMART::App::smrt qw(-command);
 
 sub options {
 	my ($self, $opt, $args) = @_;		
-	my $outfile_default="summary.tsv";
+	my $outfile_default = "summary.tsv";
 	return (
 		["backbone|b=s", "backbone tree as produced by 'smrt bbinfer'", { arg => "file", mandatory => 1}],
 		["commontree|c=s", "classification tree as produced by 'smrt classify'", { arg => "file", mandatory => 1}],
 		["alnfile|a=s", "list of file locations of merged alignments  as produced by 'smrt orthologize'", { arg => "file", mandatory => 1}],	
 		["taxafile|t=s", "tsv (tab-seperated value) taxa file as produced by 'smrt taxize'", { arg => "file", mandatory => 1}],
 		["add_outgroups|g", "automatically add outgroup for each clade", { default=> 1} ],
-		["summary_table|s=s", ", writes to 'markers.tsv' by default", ],
-		["outfile|o=s", "name of the output file (summary table with included accessions)", { default=> $outfile_default, arg => "file"}],
+		["outfile|o=s", "name of the output file (summary table with included accessions), defaults to $outfile_default", { default=> $outfile_default, arg => "file"}],
 	);	
 }
 
@@ -149,7 +148,7 @@ sub run{
 				else {
 					my $dens = sprintf ( "%.2f", $distinct/scalar(@species));
 					$logger->info("$aln is not informative or dense enough: density " 
-					. $dens . " > $mdens, number of distinct taxa: $distinct");
+					. $dens . " < $mdens, number of distinct taxa: $distinct");
 				}
 			}
 		}
