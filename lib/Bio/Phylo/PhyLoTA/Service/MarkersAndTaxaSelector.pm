@@ -388,11 +388,22 @@ sub get_outgroup_taxa {
 	);
 	
 	my $mrca = $tree->get_mrca(\@nodes);
-	my $sister = $mrca->get_next_sister;
-	if (! $sister) {
-		$sister = $mrca->get_previous_sister
+		
+	my @terminals;
+	while ( (scalar (@terminals)) == 0 and (! $mrca->is_root) ){
+		my $sister = $mrca->get_next_sister || $mrca->get_previous_sister;
+		if ($sister) {
+			@terminals = @{ $sister->get_terminals };
+		} else {
+			$mrca = $mrca->get_parent;
+		}
 	}
-	my @terminals = @{ $sister->get_terminals };
+	
+	if ($mrca->is_root){
+		$log->warn("cannot determine outgroup taxa since the mrca of the ingroup is the root of the tree!");	
+		return ();	
+	}
+	
 	return ( map {$_->get_name} @terminals );
 }
 
