@@ -294,7 +294,10 @@ sub write_newick_tree {
         $tree->visit_depth_first(
                 '-pre_daughter'   => sub { $str .= '('             },     
                 '-post_daughter'  => sub { $str .= ')'             },     
-                '-in'             => sub { my $n = shift; $str .= $n->get_name . ":"  . $n->get_branch_length;},
+                '-in'             => sub { 
+                	my $n = shift; 
+                	$str .= $n->get_name;  
+                	$str .= ":"  . $n->get_branch_length if $n->get_branch_length;},
                 '-pre_sister'     => sub { $str.= ','             },     
             );
         $str .= ';';
