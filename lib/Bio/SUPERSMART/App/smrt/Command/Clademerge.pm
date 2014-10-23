@@ -15,7 +15,7 @@ use Bio::SUPERSMART::App::smrt qw(-command);
 sub options {
 	my ($self, $opt, $args) = @_;		
 	return (
-				[ "outformat|o=s", "output format for merged clade files, defaults to 'nexml'", { arg=>"string", default=> 'nexml'} ],
+		[ "outformat|o=s", "output format for merged clade files (phylip or nexml), defaults to 'nexml'", { arg=>"string", default=> 'nexml'} ],
 	);	
 }
 
@@ -68,8 +68,8 @@ sub run {
 						my $row = shift;
 						my $name = $row->get_name;
 						my %fields = split /\|/, $name;
-						my $binomial = $service->find_node($fields{'taxon'})->taxon_name;
-						$binomial =~ s/ /_/g;
+						my $binomial = $fields{'taxon'}; ##$service->find_node($fields{'taxon'})->taxon_name;
+						#$binomial =~ s/ /_/g;
 						
 						# create new taxon object if none seen yet
 						if ( not $t{$binomial} ) {
