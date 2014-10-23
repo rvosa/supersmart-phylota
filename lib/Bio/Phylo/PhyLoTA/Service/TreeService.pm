@@ -221,7 +221,7 @@ sub consense_trees {
 	# execute command
 	my $tmpl = '%s -burnin %i %s %s 2> /dev/null';
 	my $command = sprintf $tmpl, $config->TREEANNOTATOR_BIN, $babs, $infile, $outfile;
-        $log->info("running command $command");
+        $log->debug("running command $command");
         system($command) and die "Error building consensus: $?";
         my $newicktree = $self->parse_newick_from_nexus( $outfile );
         return $newicktree;
@@ -305,7 +305,8 @@ sub write_newick_tree {
 # grafts a clade tree into a backbone tree, returns backbone
 sub graft_tree {
 	my ( $self, $backbone, $clade ) = @_;
-        
+    my $num_terminals = scalar @{ $backbone->get_terminals };
+ 
     # sometimes single quotes are added in the beast output when dealing with special characters
     #   removing them to match names in the backbone. Just to be sure, remove quotes also from backbone
     $clade->visit(sub{
@@ -329,16 +330,18 @@ sub graft_tree {
 	my @exemplars;
 	for my $name ( @names ) {
 		if ( my $e = $backbone->get_by_name($name) ) {
-			$log->warn("found $name in backbone: ".$e->get_name);
+			$log->info("found exemplar $name in backbone: ".$e->get_name);
                         push @exemplars, $e;
 		}
 		else {
-			$log->info("$name is not in the backbone tree");
+			$log->debug("$name is not in the backbone tree");
 		}
 	}
 	$log->info("found ".scalar(@exemplars)." exemplars in backbone");
 	my @copy = @exemplars; # XXX ???	
 	my $bmrca = $backbone->get_mrca(\@copy);
+	my $nodes_to_root = $bmrca->calc_nodes_to_root;
+	$log->info("backbone MRCA distance from root : " . $nodes_to_root);
 	if ( $bmrca->is_root ){
 		$log->fatal("Something goes wrong here: MRCA of exemplar species in backbone is the backbone root!");
 	}
@@ -356,16 +359,16 @@ sub graft_tree {
 		my $node = shift;
 		my $bl = $node->get_branch_length || 0; # zero for root
           		$node->set_branch_length( $bl * ( $bmrca_depth / $cmrca_depth ) );
-                $log->info("adjusting branch length for ".$node->get_internal_name." to ".$bl * ( $bmrca_depth / $cmrca_depth ));
+                $log->debug("adjusting branch length for ".$node->get_internal_name." to ".$bl * ( $bmrca_depth / $cmrca_depth ));
                       });
-	$log->info("re-scaled clade by $bmrca_depth / $cmrca_depth");
+	$log->debug("re-scaled clade by $bmrca_depth / $cmrca_depth");
 	
 	# calculate the depth of the root in the clade, adjust backbone depth accordingly
 	my $crd  = $clade->get_root->calc_max_path_to_tips;
 	my $diff = $bmrca_depth - $crd;
         my $branch_length = $bmrca->get_branch_length || 0;
         $bmrca->set_branch_length( $branch_length + $diff );
-	$log->info("adjusted backbone MRCA depth by $bmrca_depth - $crd");
+		$log->debug("adjusted backbone MRCA depth by $bmrca_depth - $crd");
         # now graft!
         $bmrca->clear();
         $clade->visit(
@@ -386,6 +389,9 @@ sub graft_tree {
 			}
 		}
             );
+            
+    my $num_terminals_after = scalar @{ $backbone->get_terminals };
+	$log->info("Grafting changed number of taxa from " . $num_terminals . " to " . $num_terminals_after);
 	return $backbone;
 }
 
