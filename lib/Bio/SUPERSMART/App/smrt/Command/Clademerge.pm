@@ -11,11 +11,29 @@ use Bio::Phylo::Util::CONSTANT ':objecttypes';
 use base 'Bio::SUPERSMART::App::smrt::SubCommand';
 use Bio::SUPERSMART::App::smrt qw(-command);
 
+# ABSTRACT: merges sets of alignments into input files for clade inference
+
+=head1 NAME
+
+Clademerge.pm - For each decomposed clade, merges the set of alignments assembled for this clade into an input file for tree inference.
+
+=head1 SYNOPSYS
+
+smrt clademerge [-h ] [-v ] [-w <dir>] [-o <format>]
+
+=head1 DESCRIPTION
+
+Given a working directory, traverses it looking for subdirectories of the pattern
+clade*. Perusing each of these, it merges the *.fa (FASTA) files in it and
+produces a single output file that can be analysed by the subcommand cladeinfer.
+
+=cut
+
 
 sub options {
 	my ($self, $opt, $args) = @_;		
 	return (
-		[ "outformat|o=s", "output format for merged clade files (phylip or nexml), defaults to 'nexml'", { arg=>"string", default=> 'nexml'} ],
+		[ "outformat|o=s", "output format for merged clade files (phylip or nexml), defaults to 'nexml'", { arg=>"format", default=> 'nexml'} ],
 	);	
 }
 

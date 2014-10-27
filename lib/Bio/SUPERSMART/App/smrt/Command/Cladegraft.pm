@@ -10,6 +10,26 @@ use Bio::Phylo::IO 'parse_tree';
 use base 'Bio::SUPERSMART::App::smrt::SubCommand';
 use Bio::SUPERSMART::App::smrt qw(-command);
 
+# ABSTRACT: grafts the inferred clade trees on the backbone chronogram
+
+=head1 NAME
+
+Cladegraft.pm - Grafts the inferred clade trees on the backbone chronogram.
+
+=head1 SYNOPSYS
+
+smrt cladegraft [-h ] [-v ] [-w <dir>] -b <file> [-o <file>] [-c <file>]
+
+=head1 DESCRIPTION
+
+Combines a backbone tree of representative genera with one or more clade trees which have been
+infered independently. Given a directory as argument 'workdir', traverses it, looks for subdirectories
+and files that match the pattern clade*.nex. These must be NEXUS files. 
+Given a single NEXUS file file as 'cladetree' argument, grafts this tree onto the backbone.
+The resulting tree is exported in the NEWICK format.
+
+=cut
+
 sub options {
 	my ($self, $opt, $args) = @_;
 	my $outfile_default = "final.dnd";

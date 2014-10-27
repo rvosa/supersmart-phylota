@@ -11,6 +11,52 @@ use Bio::Phylo::PhyLoTA::Service::ParallelService 'pthreads';
 use base 'Bio::SUPERSMART::App::smrt::SubCommand';
 use Bio::SUPERSMART::App::smrt qw(-command);
 
+# ABSTRACT: infers a species tree for each individual clade using *BEAST.
+
+=head1 NAME
+
+Cladeinfer.pm - For each decomposed clade, infers the species tree. This is 
+done using the multispecies, multilocus coalescent as implemented in *BEAST 
+on the basis of the merged set of alignments for that clade.
+
+=head1 SYNOPSYS
+
+smrt cladeinfer [-h ] [-v ] [-w <dir>] [-n <int>] [-s <int>] [-l <int>] [-f ] 
+
+=head1 DESCRIPTION
+
+Infers a species-level phylogeny using the multi-species, multi-locus coalescent as
+implemented in *BEAST. Given a directory, traverses it, looks for subdirectories
+and files that match the pattern clade*.xml>. These must be NeXML files
+with one or more alignments that link to the same taxa block in them. Given a file
+argument, analyses a single file. *BEAST is run for each clade with one chain. Here we 
+make use of parallel processing by simultaneously running *BEAST for different clades
+on different processors. 
+
+=over
+
+=item ngens
+
+Specifies the number of generations. The default, which is strictly for testing, is 100.
+Instead this should be something that is more on the order of 30_000_000 if not much
+more.
+
+=item sfreq
+    
+Specifies the sampling frequency. The default, which is strictly for testing, is 100.
+Instead this should be something that is more on the order of 300_000 if not much
+more. For example, this could be 0.1% of ngens so that you end up with a thousand trees.
+
+=item lfreq
+
+Species the logging frequency. The default, which is strictly for testing, is 100.
+Instead this should be something that is more on the order of 300_000 if not much
+more. For example, this could be 0.1% of ngens so that you end up with a thousand logged
+samples.
+
+=cut
+
+
 sub options {
 	my ($self, $opt, $args) = @_;
 	return (

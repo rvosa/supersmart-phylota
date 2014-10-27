@@ -16,6 +16,37 @@ use Bio::Phylo::PhyLoTA::Service::ParallelService 'pthreads'; # can be either 'p
 use base 'Bio::SUPERSMART::App::smrt::SubCommand';
 use Bio::SUPERSMART::App::smrt qw(-command);
 
+# ABSTRACT: decomposes a backbone tree into individual clades
+
+=head1 NAME
+
+BBdecompose.pm - decomposes a backbone tree into individual clades
+
+=head1 SYNOPSYS
+
+smrt bbdecompose [-h ] [-v ] [-w <dir>] -b <file> -c <file> -a <file> -t <file> [-g ] [-o <file>] 
+
+=head1 DESCRIPTION
+
+Given a rooted backbone phylogeny, a list of superclusters and a table of resolved taxa, 
+decomposes the backbone into its constituent, most recent, monophyletic clades, expands 
+these clades into all taxa from the provided table and assembles sets of alignments for 
+each clade that can be used for further tree inference within that clade.
+
+Traverses the backbone tree to find the nearest monophyletic clade that groups
+the exemplar leaves. In the default case, the clade is the genus that subtends the
+two exemplars provided they are monophyletic in the backbone tree. If they are not, we
+traverse upwards to find the nearest monophyletic set of genera.
+
+Each clade is then expanded into its constituent set of species on the basis of the
+taxon mapping file taxa. For those sets of species, the list of alignment values
+is evaluated, and for each alignment whose average divergence does not exceed 
+CLADE_MAX_DISTANCE (given in the configuration file) but whose density of species 
+in the sets does exceed CLADE_MIN_DENSITY
+the sequences for the focal species are written to a new file, in a directory that
+groups them with the other relevant alignments for that clade.
+
+=cut
 
 sub options {
 	my ($self, $opt, $args) = @_;		
