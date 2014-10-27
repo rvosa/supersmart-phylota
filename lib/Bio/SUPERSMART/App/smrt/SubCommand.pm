@@ -5,6 +5,7 @@ use Bio::Phylo::Util::Logger ':levels';
 my $_verbosity = INFO;
 my $_logger;
 my $_outfile; 
+my $_workdir;
 
 =head1 NAME
 
@@ -48,6 +49,21 @@ sub outfile {
 	return $_outfile;
 }
 
+=item outfile
+
+returns the working directory the subcommand
+
+=cut
+
+sub workdir {
+	my $self = shift;
+	if ( @_ ) {
+		$_workdir = shift;		
+	}
+	return $_workdir;
+}
+
+
 =item run
 
 This is the method in which the functionality of the subcommand
@@ -89,6 +105,7 @@ sub init {
     #  leave as is; if it is a single filename or a relative path, prepend the working
     #  directory    	
 	($wd = $opt->workdir) =~ s/\/$//g;
+	$_workdir = $wd;
     my $of = eval { $opt->outfile };
     if ( $of ){
     	$_outfile = $of =~ /^\// ? $of : $wd . "/" . $of;  
