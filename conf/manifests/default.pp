@@ -112,7 +112,12 @@ file {
 		ensure  => link,
 		target  => "${tools_dir}/exabayes-1.2.1/bin/exabayes",
 		require => Exec["compile_exabayes"];
-   "treepl_link":
+  "raxml_link":
+    path    => "${tools_bin_dir}/raxml",
+    ensure  => link,
+    target  => "${tools_dir}/standard-RAxML/raxmlHPC-AVX",
+    require => Exec["compile_raxml"];		 
+  "treepl_link":
 	  path    => "${tools_bin_dir}/treePL",
 		ensure  => link,
 		target  => "${tools_dir}/treePL/src/treePL",
@@ -411,7 +416,7 @@ exec {
 		command => "git clone https://github.com/stamatak/ExaML.git",
 		cwd     => $tools_dir,
 		creates => "${tools_dir}/ExaML/",
-	        require => Package[ 'git', 'zlib1g-dev' ];
+	  require => Package[ 'git', 'zlib1g-dev' ];
 	"compile_examl":
 		command => "make -f Makefile.SSE3.gcc LD_LIBRARY_PATH=/usr/lib",
 		cwd     => "${tools_dir}/ExaML/examl",
@@ -423,6 +428,19 @@ exec {
 		creates => "${tools_dir}/ExaML/parser/parser",
 		require => Exec["clone_examl","install_openmpi"];
 
+	# install raxml
+  "clone_raxml":
+    command => "git clone https://github.com/stamatak/standard-RAxML.git",
+    cwd     => $tools_dir,
+    creates => "${tools_dir}/standard-RAxML/",
+          require => Package[ 'git' ];
+  "compile_raxml":
+    command => "make -f Makefile.AVX.gcc LD_LIBRARY_PATH=/usr/lib",
+    cwd     => "${tools_dir}/standard-RAxML/",
+    creates => "${tools_dir}/standard-RAxML/raxmlHPC-AVX",
+    require => Exec["clone_raxml"];
+	 
+		  
     # install exabayes
    "download_exabayes":
      command => "wget http://sco.h-its.org/exelixis/material/exabayes/1.2.1/exabayes-1.2.1-linux-openmpi-avx.tar.gz",
