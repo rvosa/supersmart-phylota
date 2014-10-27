@@ -170,28 +170,15 @@ sub remap_to_name {
 # Changes taxon names in a given tree to taxon identifiers
 sub remap_to_ti { 
         my ($self, $tree, @records) = @_;
-        if (! @records) {
-                die "Need both, tree and species table!";
-        }
         $tree->visit(sub{
                 my $n = shift;
                 if ( $n->is_terminal ) {
                         my $name = $n->get_name;
-                        $name =~ s/\'//g;
-                        my $tid;
-                        for my $rec (@records) {
-                                my $curr_name = $rec->{"name"};
-                                $curr_name =~ s/\ /_/g;
-                                if ( $curr_name eq $name=~s/\'//r) {
-                                        $tid = $rec->{"species"};
-                                        last;
-                                }
-                        }
-                        if ( !$tid ) {
-                                #die "no taxon ID found for name $name";
-                                $tid = $name;
-                        }
-                        $n->set_name( $tid );
+                        $name =~ s/_/ /g;
+                        my @nodes = $self->search_node({taxon_name=>$name})->all;
+						$log->warn("found more than one database entry for taxon $name, using first entry.") if scalar (@nodes) > 1;						
+						die "could not find database entry for taxon name $name " if scalar (@nodes) == 0;						
+                        $n->set_name( $nodes[0]->ti );
                 }
                      });
         return $tree;       
