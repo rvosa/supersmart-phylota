@@ -92,8 +92,8 @@ file {
 		ensure  => link,
 		target  => "${tools_bin_dir}/muscle3.8.31_i86linux64",
 		require => Exec["unzip_muscle"];
-	"consense_link":
-		path    => "/usr/local/bin/consense",
+	"phylip-consense_link":
+		path    => "/usr/local/bin/consense-phylip",
 		ensure  => link,
 		target  => "${tools_dir}/phylip-3.696/src/consense",
 		require => Exec["make_phylip"];
@@ -112,7 +112,18 @@ file {
 		ensure  => link,
 		target  => "${tools_dir}/exabayes-1.2.1/bin/exabayes",
 		require => Exec["compile_exabayes"];
-  "raxml_link":
+	 "parse_exabayes_link":
+    path  => "${tools_bin_dir}/parse-exabayes",
+    ensure  => link,
+    target  => "${tools_dir}/exabayes-1.2.1/bin/parser",
+    require => Exec["compile_exabayes"];     	 
+   "exabayes_consense_link":
+    path  => "${tools_bin_dir}/consense-exabayes",
+    ensure  => link,
+    target  => "${tools_dir}/exabayes-1.2.1/bin/consense",
+    require => Exec["compile_exabayes"];       
+
+   "raxml_link":
     path    => "${tools_bin_dir}/raxml",
     ensure  => link,
     target  => "${tools_dir}/standard-RAxML/raxmlHPC-AVX",
