@@ -120,19 +120,20 @@ sub run {
     	# here we need to read the names from the phylip file and adjust the
         # common tree accordingly: it must only retain the taxa in the supermatrix,
         # and it must be fully resolved.
-  
+		
 		my @tipnames = $ts->read_tipnames($supermatrix);
 		my $tree = parse(
                 '-format' => 'newick',
                 '-file'   => $starttree,
-            )->first
-            ->keep_tips( \@tipnames )
+            )->first;
+        $ts->remap_to_ti($tree);
+		           
+        $tree->keep_tips( \@tipnames )
             ->resolve
             ->remove_unbranched_internals
-            ->deroot;
+            ->deroot;		
 
 		my @terminals = @{$tree->get_terminals()};
-
 		die("Number of taxa in supermatrix (" . scalar(@tipnames) .  
 			") does not match number of taxa in NCBI classification tree ("
 			 . scalar(@terminals) . ")") if not scalar(@terminals) == scalar(@tipnames);
@@ -216,9 +217,13 @@ elsif ( lc $inferencetool eq "exabayes" ) {
 		'-as_project' => 1,
 	);
 	
+	$ts->remap_to_name($bbtree);
+	
 	open my $outfh, '>', $outfile or die $!;
 	print $outfh $bbtree->to_newick;
 	close $outfh;
+	
+	
 	
 	$logger->info("DONE, results written to $outfile");
 	

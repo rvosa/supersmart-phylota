@@ -77,10 +77,10 @@ sub validate {
 	if ( (my $ngens = $opt->ngens) <  30_000_000 ) {
 		$self->logger->warn("chain length $ngens seem very low, are you just testing?");		
 	}
-	if ( my $sfreq = $opt->sfreq <  300_000 ) {
+	if ( (my $sfreq = $opt->sfreq) <  300_000 ) {
 		$self->logger->warn("sampling frequency $sfreq seem very low, are you just testing?");		
 	}
-	if ( my $lfreq = $opt->lfreq <  300_000 ) {
+	if ( (my $lfreq = $opt->lfreq) <  300_000 ) {
 		$self->logger->warn("logging frequency $lfreq seems very low, are you just testing?");		
 	}		
 }
@@ -136,7 +136,7 @@ sub run {
 		$beast->outfile_name( "${file}.nex" );
 		$beast->logfile_name( "${file}.log" );
 		$logger->info("Setting beast input file name to ${file}.bxml");
-		$beast->beastfile_name( "${file}-beast-in.xml" );
+		$beast->beastfile_name( "${file}.bxml" );
 		$beast->run( $file );
 		$logger->info("done. trees are in ${file}.nex, BEAST log in ${file}.log");
 	}

@@ -86,7 +86,7 @@ sub run{
             );
 		
 	# filenames for nexus trees written by BEAST
-    
+    $ts->remap_to_ti($backbone_tree);
     
 	my $grafted = $backbone_tree;
         
@@ -104,13 +104,22 @@ sub run{
                 open my $fh, '>', $stem.".dnd" or die $!;
                 print $fh $ts->write_newick_tree($consensus);
                 close $fh;
+                
+                # also save remapped consensus tree                
+                my $remapped_consensus = parse_tree('-string'=>$consensus->to_newick, '-format'=>'newick');
+				open my $fhr, '>', $stem."-remapped.dnd" or die $!;
+                print $fhr $ts->write_newick_tree($remapped_consensus);
+                close $fhr;
+                
+                # finally graft clade tree onto backbone
                 $grafted = $ts->graft_tree( $grafted, $consensus );                
            	}                                                                   
         }       
 	}
 
-    # save final tree in newick format
-    open my $outfh, '>', $outfile or die $!;
+    # save final tree with taxon names in newick format
+    open my $outfh, '>', $outfile or die $!;    
+    $ts->remap_to_name($grafted);    
     print $outfh $ts->write_newick_tree($grafted);
     close $outfh;	
 

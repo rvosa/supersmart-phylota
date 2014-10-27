@@ -6,6 +6,7 @@ use warnings;
 use Bio::Phylo::IO qw(unparse);
 use Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector;
 use Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa;
+use Bio::Phylo::PhyLoTA::Service::TreeService;
 
 use base 'Bio::SUPERSMART::App::smrt::SubCommand';
 use Bio::SUPERSMART::App::smrt qw(-command);
@@ -62,10 +63,8 @@ sub run {
 	# instantiate helper objects
 	my $mts = Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector->new;
 	my $mt =  Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa->new;
-	use Bio::Phylo::PhyLoTA::Service::TreeService;
-	
 	my $ts = Bio::Phylo::PhyLoTA::Service::TreeService->new;
-	
+		
 	my $log = $self->logger;
 
 	# parse the taxa file 
@@ -83,6 +82,8 @@ sub run {
 		my $label = $node->get_guid;		
 		$node->set_name( $label );
 	});
+	
+	$ts->remap_to_name($tree);
 	
 	# write output
 	open my $out, '>', $outfile or die $!;

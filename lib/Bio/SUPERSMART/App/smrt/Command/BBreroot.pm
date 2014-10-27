@@ -70,8 +70,11 @@ sub run {
 		'-file'   => $backbone,
 		'-format' => 'newick',
 	);
+
+	# work wih taxon IDs instead of names
+	$ts->remap_to_ti($tree);
 	
-	# Perform rerooting of outgroup, if given		
+	# Perform rerooting at outgroup, if given		
 	if ($opt->outgroup){
 		my $ogstr = $opt->outgroup;
 		
@@ -101,6 +104,9 @@ sub run {
 	
 	# write rerooted tree to output file
 	open my $out, '>', $outfile or die $!;
+	
+	$ts->remap_to_name($tree);
+	
 	print $out $tree->resolve->to_newick;
 	close $out;
 	

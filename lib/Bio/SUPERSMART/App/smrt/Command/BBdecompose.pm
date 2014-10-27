@@ -99,11 +99,15 @@ sub run{
 		'-file'       => $backbone,
 		'-as_project' => 1,
 	);
+	$ts->remap_to_ti($tree);
+	
 	my $commontree = parse_tree(
 		'-format'     => 'newick',
 		'-file'       => $common,
 		'-as_project' => 1,
 	);
+			
+	$ts->remap_to_ti($commontree);
 			
 	# parse taxon mapping
 	$logger->info("going to read taxa mapping $taxafile");
