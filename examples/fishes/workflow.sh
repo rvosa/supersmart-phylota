@@ -8,7 +8,7 @@ app/smrt orthologize -w examples/fishes/ -i examples/fishes/aligned.txt
 
 app/smrt bbmerge -w examples/fishes/ -a examples/fishes/merged.txt -t examples/fishes/species.tsv
 
-app/smrt bbinfer -w examples/fishes/ -s examples/fishes/supermatrix.phy -t examples/fishes/classification-tree.dnd
+app/smrt bbinfer -w examples/fishes/ -s examples/fishes/supermatrix.phy -t examples/fishes/classification-tree.dnd -i raxml
 
 app/smrt bbreroot -w examples/fishes/ -b examples/fishes/backbone.dnd -t examples/fishes/species.tsv
 
