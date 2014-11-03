@@ -70,10 +70,15 @@ sub import {
                 use Sys::Info::Constants qw( :device_cpu );
                 my $info = Sys::Info->new;
                 my $cpu  = $info->device('CPU');
-                $num_workers = $cpu->count - 1;
+                $num_workers = $cpu->count;
  				$logger->debug("Initializing pthread ParallelService with $num_workers workers");
  
         }
+       # elsif ( $mode eq 'pfm' ) {
+       # 	use Parallel::ForkManager;
+       # 	
+        	
+        #}
 	my ( $caller ) = caller();
         eval "sub ${caller}::pmap(\&\@);";
 	eval "*${caller}::pmap = \\&${package}::pmap;";
@@ -127,7 +132,6 @@ sub pmap_pthreads (&@) {
 
 Does a parallel version of map using MPI. The function pmap deletages to this 
 function if ParallelService was called with 'mpi' as its argument. 
-
 
 =cut
 
@@ -188,6 +192,50 @@ sub pmap_mpi (&@) {
 	}
 }
 
+=item pmap_pfm
+
+Does a parallel version of map using the parallel fork manager (PFM). The function pmap deletages to this 
+function if ParallelService was called with 'pfm' as its argument. 
+
+=cut
+
+sub pmap_pfm {
+	my ( $func, @all_data ) = @_;
+
+	use Parallel::ForkManager;
+
+	my $pm = Parallel::ForkManager->new( 5 );
+			
+    my $counter = 0;
+	
+	# store the results coming from the single threads
+	my @all_results;
+	
+	# tell the fork manager to return values (references) to the main process
+	$pm -> run_on_finish ( 	    
+    	sub {
+			my ($pid, $exit_code, $ident, $exit_signal, $core_dump, $data_structure_reference) = @_;
+			push @all_results, $$data_structure_reference;
+    	});	
+	
+	foreach my $data ( @all_data ) {    
+    	$counter++;
+    	my $pid = $pm->start and next;
+    	
+    	$logger->info("Processing item $counter of " . scalar(@all_data));
+
+		my $res = &$func($data);  
+
+    	$pm->finish (0, \$res); # Terminates the child process
+	}
+	
+	$pm->wait_all_children;
+	
+	return @all_results;	
+	
+}
+
+
 =item sequential
 
 This wrapper allows code to be executed in sequential mode. This is needed
@@ -208,7 +256,7 @@ simply evaluates the code given as argument.
 sub sequential (&) {        
         my ($func) = @_;
         croak "Need mode argument!" if not $mode;
-        if ( $mode eq 'pthreads' ) {
+        if ( $mode eq 'pthreads' || 'pfm' ) {
                 # simply call the function
                 $func->();
         }
@@ -241,6 +289,9 @@ sub pmap (&@) {
 	}
 	elsif ( $mode eq 'mpi' ) {
 		goto &pmap_mpi;
+	}
+	elsif ( $mode eq 'pfm' ){
+		goto &pmap_pfm;			
 	}
 }
 
