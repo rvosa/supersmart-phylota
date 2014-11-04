@@ -107,6 +107,7 @@ sub run{
                 
                 # also save remapped consensus tree                
                 my $remapped_consensus = parse_tree('-string'=>$consensus->to_newick, '-format'=>'newick');
+                $ts->remap_to_name($remapped_consensus);
 				open my $fhr, '>', $stem."-remapped.dnd" or die $!;
                 print $fhr $ts->write_newick_tree($remapped_consensus);
                 close $fhr;
