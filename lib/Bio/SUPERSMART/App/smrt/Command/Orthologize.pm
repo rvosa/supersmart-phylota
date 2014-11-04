@@ -72,32 +72,29 @@ sub run {
 	$log->info("creating database file $dbname");
 	
 	# read list of alignments
-	my @alignments;
-	{
-		$log->info("going to read file list $infile");
-		my %seen; # for some reason there might be duplicates
-		open my $fh, '<', $infile or die $!;
-		while(<$fh>) {
-			chomp;
-			$seen{$_}++;
-		}
-		close $fh;
-		@alignments = keys %seen;	
-	}
-	
-	# write seed sequences
+	$log->info("going to read file list $infile");
+	open my $fh, '<', $infile or die $!;
+	my @alignments = <$fh>;
+	chomp @alignments; 
+	close $fh;
+		
+	# write seed sequences, filter out seqs that have the same seed
+	my %seen;
 	$log->info("going to write sequences to $dbname");
-	open my $fh, '>', $dbname or die $!;
+	open my $sfh, '>', $dbname or die $!;
 	for my $aln ( @alignments ) {
-		if ( $aln =~ /(\d+)\.fa/ ) {
+		if ( $aln =~ /(\d+)-.+\.fa/ ) {
 			my $gi = $1;
-			my $seq = $service->find_seq($gi);
-			print $fh '>', $gi, "\n", $seq->seq, "\n";
-			print $fh "alignment\n";
+			if ( ! exists($seen{$gi}) )  {
+				$seen{$gi}++;
+				my $seq = $service->find_seq($gi);
+				print $sfh '>', $gi, "\n", $seq->seq, "\n";
+				print $sfh "alignment\n";
+			}
 		}	
 	}
 	$log->info("read ".scalar(@alignments)." alignments");
-	
+
 	# make blast db
 	$log->info("going to make BLAST db for $dbname");
 	my @cmd = (
@@ -122,8 +119,7 @@ sub run {
 	$result = `@cmd`;
 	
 	die "BLAST result empty" if not length($result) > 0;
-	
-	
+		
 	$log->info("going to process BLAST results");	
 	
 	open my $out, '<', \$result;
@@ -135,7 +131,7 @@ sub run {
 		push @blastresults, $result;
 	}	
 	$log->info("number of blast results : ".scalar(@blastresults));
-	
+			
 	# process results, this is all-vs-all so many results with many hits. we will discard
 	# all hits where the overlapping region is smaller than 0.51 (default) times of the length 
 	# of both query and hit
@@ -209,8 +205,10 @@ sub run {
 	
 		$log->info("merging alignments in cluster # $clusterid");
 		
-		# turn GIs into file names, check for singletons
-		my @files = map { File::Spec->catfile( $workdir, $_ . '.fa' ) } @seqids;
+		# turn GIs into file names 
+		my @files = map { glob ( "$workdir/" .  $_. "*.fa" ) } @seqids;
+		
+		# check for singletons
 		if ( scalar(@files) == 1 ) {
 			$log->info("singleton cluster $i: @files");
 			open my $outfh, '>>', $workdir . '/' . $outfile or die $!;
@@ -265,33 +263,33 @@ sub run {
 		$i++;
 	} @clusters;
 
-
-	# Helpler subroutines
-	sub _cluster {
-		my ( $clusters, $hitset, $hitmap) = @_;
-		
-		# iterate over GIs in focal hit set
-		for my $gi ( @{ $hitset } ) {
-		
-			# if focal GI has itself a set of hits, add those hits 
-			# to current focal set and keep processing it
-			if ( my $hits = delete $hitmap->{$gi} ) {
-				_merge( $hitset, $hits );
-				_cluster( $clusters, $hitset, $hitmap );
-			}
-		}
-		
-		# when all GIs are processed, the grown hit set has become a cluster
-		push @{ $clusters }, $hitset;	
-		#$log->info("built single-linkage cluster ".scalar(@{ $clusters }));
-	}
-	
-	sub _merge {
-		my ( $set1, $set2 ) = @_;
-		@$set1 = sort { $a <=> $b } keys %{ { map { $_ => 1 } ( @$set1, @$set2 ) } };
-	}
-
+	$log->info("DONE, results written to $outfile");
 	return 1;
+}
+
+
+# Helpler subroutines
+sub _cluster {
+	my ( $clusters, $hitset, $hitmap) = @_;
+		
+	# iterate over GIs in focal hit set
+	for my $gi ( @{ $hitset } ) {
+		
+		# if focal GI has itself a set of hits, add those hits 
+		# to current focal set and keep processing it
+		if ( my $hits = delete $hitmap->{$gi} ) {
+			_merge( $hitset, $hits );
+			_cluster( $clusters, $hitset, $hitmap );
+		}
+	}		
+	# when all GIs are processed, the grown hit set has become a cluster
+	push @{ $clusters }, $hitset;	
+	#$log->info("built single-linkage cluster ".scalar(@{ $clusters }));
+}
+	
+sub _merge {
+	my ( $set1, $set2 ) = @_;
+	@$set1 = sort { $a <=> $b } keys %{ { map { $_ => 1 } ( @$set1, @$set2 ) } };
 }
 
 

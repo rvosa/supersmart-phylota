@@ -81,6 +81,23 @@ sub run {
 	# this is sorted from more to less inclusive
 	my @clusters = $mts->get_clusters_for_nodes(@nodes); 
 	
+		# distribute clusters such that the amount of sequences to be aligned
+		#  is approximately even (for faster parallell processing)
+	
+	
+	#	my @clusters;	
+	#	my @subset;	
+	#	my $nworkers = num_workers();	
+	#	for my $i ( 0 .. $#sorted_clusters ) {
+	#		my $j = $i % $nworkers;
+	#		$subset[$j] = [] if not $subset[$j];
+	#		push @{ $subset[$j] }, $sorted_clusters[$i];
+	#	}
+			    
+	# now we flatten the subsets again
+	# push @clusters, @{ $subset[$_] } for 0 .. ( $nworkers - 1 );
+		
+		
 	# this is a simple mapping to see whether a taxon is of interest
 	my %ti =  map { $_->ti => 1 } @nodes;        
 		
@@ -88,13 +105,15 @@ sub run {
 	# make the alignments in parallel mode
 	my @result = pmap {        		
 		my ($cl) = @_;
+	 	 
 	   	my $ti = \%ti;
-	    my %h = %$cl;             
-
+	   	
         # get cluster id
-        my $ci = $h{'ci'};
+        my $ci = $cl->{'ci'};
 		$log->info("processing cluster with id $ci");
-
+		
+		my $type = $cl->{'cl_type'};
+		
         my @res = ();
         # fetch ALL sequences for the cluster, reduce data set
         my $sg = Bio::Phylo::PhyLoTA::Service::SequenceGetter->new;
@@ -130,7 +149,7 @@ sub run {
                         push @matrix, [ ">gi|${gi}|seed_gi|${seed_gi}|taxon|${ti}|mrca|${mrca}" => $seq ];
                           });
                                 
-                my $filename = $workdir . '/' . $seed_gi . '.fa';   # '-' . $mrca . '-' . $ci . '.fa';
+                my $filename = $workdir . '/' . $seed_gi . '-' . $mrca . '-' . $ci . '-' . $type . '.fa';
                 open my $fh, '>', $filename or die $!;
                 for my $row ( @matrix ) {
                         print $fh $row->[0], "\n", $row->[1], "\n";
@@ -150,7 +169,7 @@ sub run {
         return @res;
 	} @clusters;
 	
-	$log->info("DONE, results written to $workdir/$outfile");
+	$log->info("DONE, results written to $outfile");
 	
 	return 1;
 }
