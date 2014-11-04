@@ -22,6 +22,7 @@ BBinfer.pm - inference of genus-level backbone tree
 
 =head1 SYNOPSIS
 
+smrt bbinfer [-h ] [-v ] [-w <dir>] -s <file> -t <file> [-i <tool>] [-o <file>] 
 
 =head1 DESCRIPTION
 
@@ -95,6 +96,7 @@ sub run {
 	);
 	
 	$ts->remap_to_name($bbtree);
+	$bbtree->resolve;		
 	
 	open my $outfh, '>', $outfile or die $!;
 	print $outfh $bbtree->to_newick;
@@ -102,6 +104,7 @@ sub run {
 	
 	$logger->info("DONE, results written to $outfile");
 	
+	return 1;
 }
 
 
@@ -109,17 +112,17 @@ sub run {
 sub _infer_raxml {
 	my ($self, $supermatrix) = @_;
 	
-	my $workdir = $self->workdir;
-	my $tool = Bio::Tools::Run::Phylo::Raxml->new(-p => 100);
+	my $tool = Bio::Tools::Run::Phylo::Raxml->new(-N => 100, -p => 1	);
 			
-	# set mock outfile name, because raxml combines this with 'RAxML_bestTree.' etc, we will rename later		
-	use Cwd;
-    my $dir = getcwd;
 	$tool->outfile_name("out");   
+			
 	$tool->w( $tool->tempdir );
+
 	$tool->m("GTRGAMMA");	
+	
 	my $bptree = $tool->run($supermatrix);		
-	$tool->cleanup;
+	
+	##$tool->cleanup;
 	
 	# bioperl gives is back a tree object, 
 	# and to keep consistent with the exabayes and examl subroutines,
