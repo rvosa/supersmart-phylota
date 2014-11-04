@@ -2,6 +2,7 @@ package Bio::SUPERSMART::App::smrt::SubCommand;
 
 use Bio::Phylo::Util::Logger ':levels';
 
+
 my $_verbosity = INFO;
 my $_logger;
 my $_outfile; 
@@ -98,7 +99,7 @@ sub init {
 	# create logger object with user-defined verbosity
 	$_logger = Bio::Phylo::Util::Logger->new(
 		'-level' => $_verbosity,
-		'-class' => [ ref( $class ) ],
+		'-class' => [ ref( $class ), 'Bio::Phylo::PhyLoTA::Service::ParallelService', 'Bio::Phylo::PhyLoTA::Service::TreeService' ],		
     );
     
     # make output file name. If output file is given and it is an absolute path, 
@@ -110,7 +111,6 @@ sub init {
     if ( $of ){
     	$_outfile = $of =~ /^\// ? $of : $wd . "/" . $of;  
     }
-	#return $class->run( $opt, $args );
 }
 
 =item opt_spec
