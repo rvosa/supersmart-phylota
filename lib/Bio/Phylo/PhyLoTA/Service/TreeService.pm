@@ -162,7 +162,9 @@ sub remap_to_name {
                 my $n = shift;
                 if ( $n->is_terminal ) {
                         my $id = $n->get_name;
-                        $n->set_name( $self->find_node($id)->taxon_name );
+                        my $dbnode = $self->find_node($id);
+                        $log->fatal("Could not find name for taxon id $id in database!") if not $dbnode;
+                        $n->set_name( $dbnode->taxon_name );
                 }
                      });
         return $tree;
