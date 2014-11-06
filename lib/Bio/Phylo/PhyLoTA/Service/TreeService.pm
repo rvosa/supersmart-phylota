@@ -57,6 +57,7 @@ sub reroot_tree {
 		foreach my $level (@levels) {
 			my $para_count =
 				$self->_count_paraphyletic_species( $current_tree, $level, @records );
+			$log->debug("Paraphyletic species (counted from level $level) : $para_count");
 			$scores{$level}{$i} = $para_count;
 		}
 	}
@@ -76,6 +77,7 @@ sub reroot_tree {
 	# now we take the intersection of all indices for all the levels
 	my @best_indices =
 	  @{ $best_node_idx{ $levels[0] } };   #initialize with set from first level
+		
 	my $count = @levels;
 	for my $ii ( 1 .. $count - 1 ) {
 		@best_indices =
