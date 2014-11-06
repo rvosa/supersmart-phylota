@@ -4,12 +4,12 @@ use strict;
 use warnings;
 
 use Bio::Phylo::IO qw(parse parse_tree);
+use Bio::Phylo::Factory;
 use Bio::Phylo::PhyLoTA::Config;
 use Bio::Phylo::PhyLoTA::Service::TreeService;
 use Bio::Tools::Run::Phylo::Raxml;
 use Bio::Tools::Run::Phylo::ExaML;
 use Bio::Tools::Run::Phylo::ExaBayes;
-	
 	
 use base 'Bio::SUPERSMART::App::smrt::SubCommand';
 use Bio::SUPERSMART::App::smrt qw(-command);
@@ -186,10 +186,12 @@ sub _infer_examl {
     # and it must be fully resolved.
 		
 	my @tipnames = $ts->read_tipnames($supermatrix);
+
 	my $tree = parse(
                 '-format' => 'newick',
                 '-file'   => $starttree,
         )->first;
+
     $ts->remap_to_ti($tree);
 		           
     $tree->keep_tips( \@tipnames )
@@ -198,14 +200,42 @@ sub _infer_examl {
             ->deroot;		
 
 	my @terminals = @{$tree->get_terminals()};
-	die("Number of taxa in supermatrix (" . scalar(@tipnames) .  
-			") does not match number of taxa in NCBI classification tree ("
-			 . scalar(@terminals) . ")") if not scalar(@terminals) == scalar(@tipnames);
+	
+	# it can occur that a taxon which has been chosen as an exemplar is
+	#  not in the classification tree. For example, if a species has one subspecies,
+	#  but the species and not the subspecies is an exemplar. Then this node
+	#  is an unbranched internal and not in the classification tree. We therefore
+	#  add a node to the starting tree
+
+	if ( not scalar(@terminals) == scalar(@tipnames) ) {
+		$logger->warn("Number of taxa in supermatrix (" . scalar(@tipnames) .  
+			") does not match number of taxa in starting tree ("
+			 . scalar(@terminals) . "). Could one of the exemplars be an internal node?");
+
+		# get taxa that are in the supermatrix but not in the classification tree
+		
+		my @terminal_ids = map{ $_->get_name } @terminals;	
+		my %diff;
+		@diff {@terminal_ids} = ();
+		my @diffs =  grep !exists($diff{$_}), @tipnames;
+		
+		# insert new node into starting tree
+		
+		my $fac = Bio::Phylo::Factory->new;
+		foreach my $d (@diffs){
+			$logger->warn("Adding node $d (" . $ts->find_node($d)->get_name . ") to starting tree");
+			my $node = $fac->create_node('-guid' => $d, '-name' => $d);
+			$node->set_parent(@{$tree->get_internals}[0]);
+			$tree->insert($node);
+			$tree->resolve;
+		}	
+	}
 
 	my $intree = File::Spec->catfile( $workdir, 'user.dnd' );
     open my $fh, '>', $intree or die $!;
     print $fh $tree->to_newick;
 	close $fh;
+	$logger->info("Writing starting tree for examl inference to $intree");
 	
 	my $backbone = $tool->run(
 	        '-phylip' => $supermatrix,
