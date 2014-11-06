@@ -7,6 +7,8 @@ use Bio::Phylo::PhyLoTA::Service::CalibrationService;
 use Bio::Phylo::PhyLoTA::Service::TreeService;
 use Bio::Phylo::PhyLoTA::Config;
 
+use Bio::Phylo::IO qw(parse_tree);
+
 use base 'Bio::SUPERSMART::App::smrt::SubCommand';
 use Bio::SUPERSMART::App::smrt qw(-command);
 
@@ -15,7 +17,7 @@ use Bio::SUPERSMART::App::smrt qw(-command);
 
 =head1 NAME
 
-BBinfer.pm - inference of genus-level backbone tree
+BBcalibrate.pm - inference of genus-level backbone tree
 
 =head1 SYNOPSIS
 
@@ -37,7 +39,7 @@ sub options {
 	my ($self, $opt, $args) = @_;		
 	my $outfile_default = "chronogram.dnd";
 	return (
-		["tree|t=s", "starting tree for ML tree inference as for instance produced by 'smrt classify'", { arg => "file", mandatory => 1}],
+		["tree|t=s", "backbone tree to calibrate as produced by 'smrt bbinfer' or 'smrt bbreroot'", { arg => "file", mandatory => 1}],
 		["supermatrix|s=s", "matrix of concatenated multiple sequece alignments which was used to generate the tree", { arg => "file", mandatory => 1}],	
 		["fossiltable|f=s", "tsv (tab-separated value) file containing fossil table with at least 5 columns (id, name, crown/stem, taxon, age)", { arg => "file", mandatory => 1}],	
 		["outfile|o=s", "name of the output tree file (in newick format), defaults to '$outfile_default'", {default => $outfile_default, arg => "file"}],			
@@ -81,6 +83,7 @@ sub run {
         '-as_project' => 1 
     );
 	$tree->resolve;
+	$tree = $ts->remap_to_ti($tree);
 	
     # read the table with calibration points
     $logger->info( "reading fossils from file $fossiltable" );
