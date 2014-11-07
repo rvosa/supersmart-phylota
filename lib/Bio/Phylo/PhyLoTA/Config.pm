@@ -151,6 +151,9 @@ sub AUTOLOAD {
     }
     if ( exists $root->{$key} ) {
         $root->{$key} = shift if @_;
+		
+		# dereference environment variables if present        
+        $root->{$key} =~ s/\$\{(\w+)\}/$ENV{$1}/g;        
         
         # make paths absolute if that resolves an otherwise non-existant path
         if ( $key =~ /(?:FILE|DIR)$/ ) {
