@@ -99,7 +99,7 @@ sub run {
 		
 		# reroot the tree
 		$logger->info("rerooting backone tree");	
-		$ts->reroot_tree($tree, \@records, [$level]);
+		$tree = $ts->reroot_tree($tree, \@records, [$level]);
 	}
 	
 	# write rerooted tree to output file

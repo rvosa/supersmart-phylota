@@ -77,11 +77,15 @@ sub validate {
 	if ( (my $ngens = $opt->ngens) <  30_000_000 ) {
 		$self->logger->warn("chain length $ngens seem very low, are you just testing?");		
 	}
-	if ( (my $sfreq = $opt->sfreq) <  300_000 ) {
-		$self->logger->warn("sampling frequency $sfreq seem very low, are you just testing?");		
+	if ( my $sfreq = $opt->sfreq ) {
+		if ( $sfreq <  300_000 ) {
+			$self->logger->warn("sampling frequency $sfreq seem very low, are you just testing?");		
+		}
 	}
-	if ( (my $lfreq = $opt->lfreq) <  300_000 ) {
-		$self->logger->warn("logging frequency $lfreq seems very low, are you just testing?");		
+	if ( my $lfreq = $opt->lfreq ) {
+		if ( $lfreq <  300_000 ) {
+			$self->logger->warn("logging frequency $lfreq seems very low, are you just testing?");		
+		}
 	}		
 }
 

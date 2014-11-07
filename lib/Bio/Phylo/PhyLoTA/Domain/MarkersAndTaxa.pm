@@ -215,7 +215,7 @@ sub get_highest_informative_level{
 =item get_root_level
 
 Returns the level of the 'root' taxon. This is the lowest taxonomic rank which
-comprises all entries in the species table.
+is the same for all entries in the species table.
 
 =cut
 

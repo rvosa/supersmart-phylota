@@ -12,10 +12,12 @@ app/smrt bbinfer -w examples/primates/ -s examples/primates/supermatrix.phy -t e
 
 app/smrt bbreroot -w examples/primates/ -b examples/primates/backbone.dnd -t examples/primates/species.tsv
 
-app/smrt bbdecompose -w examples/primates/ -b examples/primates/backbone-rerooted.dnd -c examples/primates/classification-tree.dnd -a examples/primates/merged.txt -t examples/primates/species.tsv
+app/smrt bbcalibrate -t examples/primates/backbone-rerooted.dnd -s examples/primates/supermatrix.phy -f examples/primates/fossils.tsv -o examples/primates/backbone-calibrated.dnd
+
+app/smrt bbdecompose -w examples/primates/ -b examples/primates/backbone-calibrated.dnd -c examples/primates/classification-tree.dnd -a examples/primates/merged.txt -t examples/primates/species.tsv
 
 app/smrt clademerge -w examples/primates/ 
 
 app/smrt cladeinfer -w examples/primates
 
-app/smrt cladegraft -w examples/primates/ -b examples/primates/backbone-rerooted.dnd 
+app/smrt cladegraft -w examples/primates/ -b examples/primates/backbone-calibrated.dnd 

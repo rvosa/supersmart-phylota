@@ -230,6 +230,7 @@ sub create_calibration_table {
                 $table->add_row(
 				'taxa'    => [ sort { $a cmp $b } map { $_->get_name } @{ $tips_for_id{$id} } ],
 				'min_age' => $fd_for_id{$id}->{'fd'}->min_age,
+				'max_age' => $fd_for_id{$id}->{'fd'}->max_age,
 				'name'    => $fd_for_id{$id}->{'fd'}->calibrated_taxon,	    
                                 'nfos'    => $fd_for_id{$id}->{'fd'}->nfos,	    
                             );    	

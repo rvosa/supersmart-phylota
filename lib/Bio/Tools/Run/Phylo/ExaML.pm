@@ -244,7 +244,7 @@ sub run {
 		my ($taxa) = @{ $project->get_items(_TAXA_) };
 	
 		# create input files
-                my $phylipfile = File::Spec->catfile( $self->work_dir, $self->run_id . '.phy' );
+        my $phylipfile = File::Spec->catfile( $self->work_dir, $self->run_id . '.phy' );
 		$phylip = $treeservice->make_phylip_from_matrix( $taxa, $phylipfile, @matrix );
 		$intree = $self->_make_intree( $taxa, $tree );		
 	} 
