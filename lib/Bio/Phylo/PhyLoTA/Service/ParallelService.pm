@@ -18,10 +18,12 @@ jobs have finished, therefore this is done in the END block.
 
 =cut
 
-END { 
-        if ( $mode eq 'mpi' ){
-                MPI_Finalize();
-        }
+END {
+	if ( $mode ) {
+		if ( $mode eq 'mpi' ) {
+			MPI_Finalize();
+		}
+	}
 }
 
 =item import
@@ -50,47 +52,54 @@ mode, the number of processes is set to the number of cores present on the machi
 
 sub import {
 	my $package = shift;
-	( $mode ) = @_;	
-        $logger = $package->logger;
-        if ( ! $mode ) {
-                $mode = 'pthreads';                
-                $logger->warn("parallel mode not provided in import of  ParallelService class. Using default mode 'pthreads'");
-        }
-        if ( $mode eq 'mpi' ){
-                use Parallel::MPI::Simple;
-                MPI_Init();       
-                $num_workers = MPI_Comm_size(MPI_COMM_WORLD())-1; 
-              	$logger->debug("Initializing MPI ParallelService with $num_workers workers");
-        }
-        elsif ( $mode eq 'pthreads' ) {
-                use threads;
-                use threads::shared;
-                # get and set number of processes
-                use Sys::Info;
-                use Sys::Info::Constants qw( :device_cpu );
-                my $info = Sys::Info->new;
-                my $cpu  = $info->device('CPU');
-                $num_workers = $cpu->count;
- 				$logger->debug("Initializing pthread ParallelService with $num_workers workers");
- 
-        }
-       # elsif ( $mode eq 'pfm' ) {
-       # 	use Parallel::ForkManager;
-       # 	
-        	
-        #}
-	my ( $caller ) = caller();
-        eval "sub ${caller}::pmap(\&\@);";
+	($mode) = @_;
+	$logger = $package->logger;
+	if ( !$mode ) {
+		$mode = 'pthreads';
+		$logger->warn(
+"parallel mode not provided in import of  ParallelService class. Using default mode 'pthreads'"
+		);
+	}
+	if ( $mode eq 'mpi' ) {
+		require Parallel::MPI::Simple;
+		MPI_Init();
+		$num_workers = MPI_Comm_size( MPI_COMM_WORLD() ) - 1;
+	}
+	elsif ( $mode eq 'pthreads' || $mode eq 'pfm' ) {
+		my $threads = 1;
+
+		if ( $mode eq 'pthreads' ) {
+			require threads;
+			require threads::shared;
+		}
+		else {
+			require Parallel::ForkManager;
+		}
+
+		# get and set number of processes
+		require Sys::Info;
+		require Sys::Info::Constants;
+
+		my $info = Sys::Info->new;
+		my $cpu  = $info->device('CPU');
+
+		$num_workers = $cpu->hyper_threading > 0 ? $cpu->hyper_threading : $cpu->count;
+		$num_workers -= 1;
+	}
+	$logger->debug(
+		"Initializing $mode ParallelService with $num_workers workers");
+
+	my ($caller) = caller();
+	eval "sub ${caller}::pmap(\&\@);";
 	eval "*${caller}::pmap = \\&${package}::pmap;";
-        	
-        eval "sub ${caller}::sequential(\&);";
+
+	eval "sub ${caller}::sequential(\&);";
 	eval "*${caller}::sequential = \\&${package}::sequential;";
 
-        eval "sub ${caller}::num_workers;";
+	eval "sub ${caller}::num_workers;";
 	eval "*${caller}::num_workers = \\&${package}::num_workers;";
-        
-}
 
+}
 
 =item pmap_pthreads
 
@@ -102,28 +111,33 @@ function if ParallelService was called with 'pthreads' as its argument.
 sub pmap_pthreads (&@) {
 	my ( $func, @data ) = @_;
 	my $counter = 0;
-	my $size = scalar @data;
-    my @threads;
+	my $size    = scalar @data;
+	my @threads;
 	my @result;
-	my $inc = ceil($size/$num_workers);
+	my $inc = ceil( $size / $num_workers );
 	$logger->info("pmap pthreads has $num_workers nodes available");
 	my $thread = 0;
-	for ( my $i = 0; $i < $size; $i += $inc ) {
+
+	for ( my $i = 0 ; $i < $size ; $i += $inc ) {
 		++$thread;
 		my $max = ( $i + $inc - 1 ) >= $size ? $size - 1 : $i + $inc - 1;
-		my @subset = @data[$i..$max];
-       	$logger->info("Detaching " . scalar(@subset) . " items to thread # " . $thread);
-       	push @threads, threads->create( 
-           								sub {           									
-           									map  {
-           										$counter++;
-           										$logger->info("Thread $thread is processing item # $counter / " . scalar(@subset) );
+		my @subset = @data[ $i .. $max ];
+		$logger->info(
+			"Detaching " . scalar(@subset) . " items to thread # " . $thread );
+		push @threads, threads->create(
+			sub {
+				map {
+					$counter++;
+					$logger->info(
+						"Thread $thread is processing item # $counter / "
+						  . scalar(@subset) );
 
-												# execute code block given in $func with argument
-           										$func->($_);
-           									} @subset 
-          								} );
-        }
+					# execute code block given in $func with argument
+					$func->($_);
+				} @subset;
+			}
+		);
+	}
 	push @result, $_->join for @threads;
 	return @result;
 }
@@ -137,58 +151,65 @@ function if ParallelService was called with 'mpi' as its argument.
 
 sub pmap_mpi (&@) {
 	my ( $func, @data ) = @_;
-    my $counter = 0;
-	my $WORLD  = MPI_COMM_WORLD();
-	my $BOSS   = 0;
-	my $JOB    = 1;
-	my $RESULT = 2;
-	my $rank = MPI_Comm_rank($WORLD);
-	
+	my $counter = 0;
+	my $WORLD   = MPI_COMM_WORLD();
+	my $BOSS    = 0;
+	my $JOB     = 1;
+	my $RESULT  = 2;
+	my $rank    = MPI_Comm_rank($WORLD);
+
 	if ( num_workers() == 0 ) {
-		return map { 
-                	$counter++;
-                	$logger->info("Worker $rank is processing item # $counter / " . scalar(@data) );
-                	$func->($_) ;
-                } @data;                
+		return map {
+			$counter++;
+			$logger->info( "Worker $rank is processing item # $counter / "
+				  . scalar(@data) );
+			$func->($_);
+		} @data;
 	}
-	
+
 	# this is the boss node
 	if ( $rank == 0 ) {
-                # submit the data in chunks
-                my @chunks = map { [] } 1..$num_workers;
-                my @idx = sort map { $_ % $num_workers } 0..$#data;
-                
-                for my $i ( 0..$#data ){
-                        my $worker = $idx[$i-1]+1;
-                        push @chunks[$idx[$i]],  $data[ $i ];
-                }
-                
-                # send subset of data to worker
-                for my $worker ( 1 .. $num_workers){                        
-                        my $subset = $chunks[$worker-1];
-                        $logger->info("Sending ".scalar(@$subset)." items to worker # $worker");
-                        MPI_Send($subset,$worker,$JOB,$WORLD);              
-                }          
-                # receive the result
-                my @result;
-                for my $worker ( 1 .. $num_workers){                        
-                        my $subset = $chunks[$worker-1];
-                        my $result_subset = MPI_Recv($worker,$RESULT,$WORLD);
-                        $logger->info("Received results from worker # $worker");
-                        push @result, @{ $result_subset };
-                }
-                return @result;
+
+		# submit the data in chunks
+		my @chunks = map      { [] } 1 .. $num_workers;
+		my @idx    = sort map { $_ % $num_workers } 0 .. $#data;
+
+		for my $i ( 0 .. $#data ) {
+			my $worker = $idx[ $i - 1 ] + 1;
+			push @chunks[ $idx[$i] ], $data[$i];
+		}
+
+		# send subset of data to worker
+		for my $worker ( 1 .. $num_workers ) {
+			my $subset = $chunks[ $worker - 1 ];
+			$logger->info(
+				"Sending " . scalar(@$subset) . " items to worker # $worker" );
+			MPI_Send( $subset, $worker, $JOB, $WORLD );
+		}
+
+		# receive the result
+		my @result;
+		for my $worker ( 1 .. $num_workers ) {
+			my $subset = $chunks[ $worker - 1 ];
+			my $result_subset = MPI_Recv( $worker, $RESULT, $WORLD );
+			$logger->info("Received results from worker # $worker");
+			push @result, @{$result_subset};
+		}
+		return @result;
 	}
 	else {
+
 		# receive my job and process it
-		my $subset = MPI_Recv($BOSS,$JOB,$WORLD);
-                my @result = map { 
-                	$counter++;
-                	$logger->info("Worker $rank is processing item # $counter / " . scalar(@{$subset}));
-                	$func->($_) ;
-                } @{ $subset };                
+		my $subset = MPI_Recv( $BOSS, $JOB, $WORLD );
+		my @result = map {
+			$counter++;
+			$logger->info( "Worker $rank is processing item # $counter / "
+				  . scalar( @{$subset} ) );
+			$func->($_);
+		} @{$subset};
+
 		# send the result back to the boss
-		MPI_Send(\@result,$BOSS,$RESULT,$WORLD);
+		MPI_Send( \@result, $BOSS, $RESULT, $WORLD );
 	}
 }
 
@@ -202,39 +223,39 @@ function if ParallelService was called with 'pfm' as its argument.
 sub pmap_pfm {
 	my ( $func, @all_data ) = @_;
 
-	use Parallel::ForkManager;
+	my $pm = Parallel::ForkManager->new( num_workers() );
 
-	my $pm = Parallel::ForkManager->new( 5 );
-			
-    my $counter = 0;
-	
+	my $counter = 0;
+
 	# store the results coming from the single threads
 	my @all_results;
-	
+
 	# tell the fork manager to return values (references) to the main process
-	$pm -> run_on_finish ( 	    
-    	sub {
-			my ($pid, $exit_code, $ident, $exit_signal, $core_dump, $data_structure_reference) = @_;
+	$pm->run_on_finish(
+		sub {
+			my ( $pid, $exit_code, $ident, $exit_signal, $core_dump,
+				$data_structure_reference )
+			  = @_;
 			push @all_results, $$data_structure_reference;
-    	});	
-	
-	foreach my $data ( @all_data ) {    
-    	$counter++;
-    	my $pid = $pm->start and next;
-    	
-    	$logger->info("Processing item $counter of " . scalar(@all_data));
+		}
+	);
 
-		my $res = &$func($data);  
+	foreach my $data (@all_data) {
+		$counter++;
+		my $pid = $pm->start and next;
 
-    	$pm->finish (0, \$res); # Terminates the child process
+		$logger->info( "Processing item $counter of " . scalar(@all_data) );
+
+		my $res = &$func($data);
+
+		$pm->finish( 0, \$res );    # Terminates the child process
 	}
-	
-	$pm->wait_all_children;
-	
-	return @all_results;	
-	
-}
 
+	$pm->wait_all_children;
+
+	return @all_results;
+
+}
 
 =item sequential
 
@@ -253,21 +274,23 @@ simply evaluates the code given as argument.
 
 =cut
 
-sub sequential (&) {        
-        my ($func) = @_;
-        croak "Need mode argument!" if not $mode;
-        if ( $mode eq 'pthreads' || 'pfm' ) {
-                # simply call the function
-                $func->();
-        }
-        elsif ( $mode eq 'mpi' ) {    
-                # only allow master node to perform operation
-                my $WORLD  = MPI_COMM_WORLD();
-                my $rank = MPI_Comm_rank($WORLD);
-                if ($rank==0){
-                        $func->();
-                }
-        }
+sub sequential (&) {
+	my ($func) = @_;
+	croak "Need mode argument!" if not $mode;
+	if ( $mode eq 'pthreads' || 'pfm' ) {
+
+		# simply call the function
+		$func->();
+	}
+	elsif ( $mode eq 'mpi' ) {
+
+		# only allow master node to perform operation
+		my $WORLD = MPI_COMM_WORLD();
+		my $rank  = MPI_Comm_rank($WORLD);
+		if ( $rank == 0 ) {
+			$func->();
+		}
+	}
 }
 
 =item pmap
@@ -290,8 +313,8 @@ sub pmap (&@) {
 	elsif ( $mode eq 'mpi' ) {
 		goto &pmap_mpi;
 	}
-	elsif ( $mode eq 'pfm' ){
-		goto &pmap_pfm;			
+	elsif ( $mode eq 'pfm' ) {
+		goto &pmap_pfm;
 	}
 }
 
@@ -302,8 +325,8 @@ Getter/setter for the number of worker nodes.
 =cut
 
 sub num_workers {
-        $num_workers = shift if @_;
-        return $num_workers;
+	$num_workers = shift if @_;
+	return $num_workers;
 }
 
 =back
