@@ -178,7 +178,13 @@ is generated as input for *BEAST
 
 sub beastfile_name {
 	my $self = shift;
-	$self->{'_beastfile_name'} = shift if @_;
+	$self->{'_beastfile_name'} = shift if @_;			
+	
+	# set filename to temporary one if not present
+	if ( ! $self->{'_beastfile_name'} ) {
+		my ($fh, $fn) = tempfile();
+		$self->{'_beastfile_name'} = $fn; 
+	}	
 	return $self->{'_beastfile_name'};
 }
 
@@ -329,6 +335,7 @@ sub run {
 	my $twig = $self->_make_beast_xml;
 
 	my $filename = $self->beastfile_name();
+	$log->warn("writing beast input file to $filename");
 	open (my $fh, ">", $filename) or die "Error writing BEAST input file: $!"; 
 	$twig->print($fh);
 	$log->info("beast xml written to $filename");
