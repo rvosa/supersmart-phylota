@@ -333,7 +333,7 @@ sub graft_tree {
 	my $nodes_to_root = $bmrca->calc_nodes_to_root;
 	$log->info("backbone MRCA distance from root : " . $nodes_to_root);
 	if ( $bmrca->is_root ){
-		$log->fatal("Something goes wrong here: MRCA of exemplar species in backbone is the backbone root!");
+		$log->fatal("Something goes wrong here: MRCA of exemplar species " . join(',', map{$_->id} @exemplars) . " in backbone is the backbone root!");
 	}
     # find the exemplars in the clade tree and find their MRCA
 	my @clade_exemplars = map { $clade->get_by_name($_->get_name) } @exemplars;
