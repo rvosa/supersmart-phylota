@@ -62,6 +62,7 @@ sub import {
 	}
 	if ( $mode eq 'mpi' ) {
 		require Parallel::MPI::Simple;
+		Parallel::MPI::Simple->import;
 		MPI_Init();
 		$num_workers = MPI_Comm_size( MPI_COMM_WORLD() ) - 1;
 	}
