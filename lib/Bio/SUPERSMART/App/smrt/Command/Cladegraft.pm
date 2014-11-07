@@ -87,37 +87,31 @@ sub run{
 		
 	# filenames for nexus trees written by BEAST
     $ts->remap_to_ti($backbone_tree);
-    
+
 	my $grafted = $backbone_tree;
-        
-	opendir my $dh, $workdir or die $!;
-	while( my $entry = readdir $dh ) {                        
-    	if ( $entry =~ /clade\d+/ && -d "${workdir}/${entry}" ) {                                
-        	# this should be a nexus file			
-  			my $stem = "${workdir}/${entry}/${entry}";
-            my $file = "${stem}.nex";
-            if ( -e $file ) {
-            	$logger->info( "Processing clade $entry" );
-                my $consensus = $ts->consense_trees( '-infile' => $file ); 
-
-              	# save consensus tree
-                open my $fh, '>', $stem.".dnd" or die $!;
-                print $fh $ts->write_newick_tree($consensus);
-                close $fh;
-                
-                # also save remapped consensus tree                
-                my $remapped_consensus = parse_tree('-string'=>$consensus->to_newick, '-format'=>'newick');
-                $ts->remap_to_name($remapped_consensus);
-				open my $fhr, '>', $stem."-remapped.dnd" or die $!;
-                print $fhr $ts->write_newick_tree($remapped_consensus);
-                close $fhr;
-                
-                # finally graft clade tree onto backbone
-                $grafted = $ts->graft_tree( $grafted, $consensus );                
-           	}                                                                   
-        }       
-	}
-
+         
+    # graft single clade tree 
+    if ( $cladetree=~ /(clade\d+)/ ) {
+    	$logger->info("Grafting tree $cladetree");
+    	my $stem = $1;
+ 		$grafted = $self->_graft_single_tree( $cladetree, $grafted, $stem, $ts );
+    }
+    # graft all clades in working directory
+    else {
+    	$logger->info("Grafting all clades in workind directory $workdir");
+		opendir my $dh, $workdir or die $!;
+		while( my $entry = readdir $dh ) {                        
+	    	if ( $entry =~ /clade\d+/ && -d "${workdir}/${entry}" ) {                                
+	        	# this should be a nexus file			
+	  			my $stem = "${workdir}/${entry}/${entry}";
+	            my $file = "${stem}.nex";
+	            if ( -e $file ) {
+	            	$logger->info( "Processing clade $entry" );
+					$grafted = $self->_graft_single_tree( $file, $grafted, $stem, $ts );					
+	           	}                                                                   
+	        }       
+		}
+    }
     # save final tree with taxon names in newick format
     open my $outfh, '>', $outfile or die $!;    
     $ts->remap_to_name($grafted);    
@@ -125,6 +119,29 @@ sub run{
     close $outfh;	
 
 	$logger->info("DONE, results written to $outfile");
+}
+
+sub _graft_single_tree {
+	my ( $self, $file, $tree, $stem, $ts ) = @_;
+	my $logger = $self->logger;
+	my $consensus = $ts->consense_trees( '-infile' => $file ); 
+	
+	# save consensus tree
+	open my $fh, '>', $stem.".dnd" or die $!;
+	print $fh $ts->write_newick_tree($consensus);
+	close $fh;
+                
+	# also save remapped consensus tree                
+	my $remapped_consensus = parse_tree('-string'=>$consensus->to_newick, '-format'=>'newick');
+	$ts->remap_to_name($remapped_consensus);
+	open my $fhr, '>', $stem."-remapped.dnd" or die $!;
+	print $fhr $ts->write_newick_tree($remapped_consensus);
+	close $fhr;
+                
+	# finally graft clade tree onto backbone
+	my $grafted = $ts->graft_tree( $tree, $consensus );                
+	return $grafted;
+	
 }
 
 1;
