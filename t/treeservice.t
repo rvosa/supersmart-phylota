@@ -32,7 +32,7 @@ $tree = parse_tree(
     );
 
 # test rerooting a tree
-my $rerooted = $ts->reroot_tree($tree, @records);
+my $rerooted = $ts->reroot_tree($tree, \@records, ["suborder"]);
 isa_ok ($rerooted, 'Bio::Tree::TreeI');
 
 # rerooted tree should be different
