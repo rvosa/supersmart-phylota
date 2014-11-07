@@ -65,6 +65,21 @@ sub min_age {
         return $self->{'min_age'};
 }
 
+=item max_age
+
+    Getter/setter for maximum age for a L<Bio::Phylo::PhyLoTA::Domain::CalibrationPoint> object.
+    Note that this corresponds to the column named "MaxAge" in the fossil table.
+
+=cut 
+
+sub max_age {
+        my $self = shift;
+        if ( @_ ) {
+                $self->{'max_age'} = shift;
+        }
+        return $self->{'max_age'};
+}
+
 =item name
 
     Getter/setter for the calibrated taxon name  for a  L<Bio::Phylo::PhyLoTA::Domain::CalibrationPoint> object.
