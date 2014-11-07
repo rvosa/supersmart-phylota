@@ -24,8 +24,6 @@ L<Bio::Phylo::PhyLoTA::Domain::CalibrationTable>, which passes it the named argu
 These properties subsequently become available as object methods, i.e. $point->min_age and
 so on.
 
-=back
-
 =cut
 
 sub new {
@@ -95,6 +93,8 @@ sub name {
         return $self->{'name'};
 }
 
+=back 
 
+=cut
 			
 1;

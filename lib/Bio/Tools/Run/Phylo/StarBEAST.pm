@@ -1239,4 +1239,8 @@ sub _make_beast_xml {
 	return $twig;
 }
 
+=back
+
+=cut
+
 1;

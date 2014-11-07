@@ -29,8 +29,6 @@ value is a node in the taxonomy.
 
 The constructor takes no arguments.
 
-=back
-
 =cut
 
 sub new {
@@ -175,5 +173,9 @@ sub calibration_points {
     $self->{'calibration_points'} = [@_] if @_;
     return $self->{'calibration_points'} ? @{ $self->{'calibration_points'} } : ();
 }
+
+=back
+
+=cut
 
 1;

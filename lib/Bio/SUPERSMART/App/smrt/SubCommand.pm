@@ -17,7 +17,10 @@ Bio::SUPERSMART::App::smrt::SubCommand Superclass for C<smrt> subcommands
 This class provides global options (e.g. verbosity, working directory) that are
 inherited by all subcommand classes.
 
+
 =head1 METHODS
+
+All methods below are ingerited by child classes.
 
 =over
 
@@ -199,6 +202,8 @@ string for a given subcommand with options and arguments
 of the form 'smrt subcommand option1 <arg1> [option2 <arg2>] [option3]'.  
 Options that require arguments followed by the argument name enclosed in '<>'.
 Options that are not mandatory are enclosed in []. 
+
+=back
 
 =cut 
 

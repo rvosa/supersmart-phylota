@@ -71,6 +71,8 @@ our @ExaBayes_SWITCHES = (
 
 # Create function aliases for (one letter) command line arguments and switches
 
+=over
+
 =item work_dir
 
 Getter/setter. Intermediate files will be written here.
@@ -365,5 +367,9 @@ sub _set_consense_params {
         $param_string .= " > $null 2> $null" if $self->quiet() || $self->verbose < 0;
         return $param_string;
 }
+
+=back
+
+=cut
 
 1;

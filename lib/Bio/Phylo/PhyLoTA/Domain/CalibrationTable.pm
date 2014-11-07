@@ -60,8 +60,6 @@ Returns a string representation suitable for input into a tree calibration progr
 present this simply means a serialization in the syntax that treePL uses for identifying
 and dating MRCAs.
 
-=back
-
 =cut
 
 sub to_string {
@@ -122,10 +120,15 @@ extant species. This functin removes these 'orphan' calibration points from the 
 
 =cut
 
+
 sub remove_orphan_taxa {
         my $self = shift;
         @{$self} = grep { $_->taxa > 1 } $self->get_rows;
         return;
 }
+
+=back
+
+=cut
 
 1;
