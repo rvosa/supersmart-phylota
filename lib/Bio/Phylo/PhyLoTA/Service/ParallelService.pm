@@ -77,15 +77,10 @@ sub import {
 			require Parallel::ForkManager;
 		}
 
-		# get and set number of processes
-		require Sys::Info;
-		require Sys::Info::Constants;
-
-		my $info = Sys::Info->new;
-		my $cpu  = $info->device('CPU');
-
-		$num_workers = $cpu->hyper_threading > 0 ? $cpu->hyper_threading : $cpu->count;
-		$num_workers -= 1;
+		# get number of processes from config file
+		require Bio::Phylo::PhyLoTA::Service;
+		my $config  = Bio::Phylo::PhyLoTA::Config->new;
+		$num_workers = $config->NODES - 1;
 	}
 	$logger->debug(
 		"Initializing $mode ParallelService with $num_workers workers");
@@ -278,7 +273,7 @@ simply evaluates the code given as argument.
 sub sequential (&) {
 	my ($func) = @_;
 	croak "Need mode argument!" if not $mode;
-	if ( $mode eq 'pthreads' || 'pfm' ) {
+	if ( $mode eq 'pthreads' || $mode eq 'pfm' ) {
 
 		# simply call the function
 		$func->();
