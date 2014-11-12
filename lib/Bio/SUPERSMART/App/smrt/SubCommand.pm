@@ -8,6 +8,7 @@ my $_logger;
 my $_outfile; 
 my $_workdir;
 
+
 =head1 NAME
 
 Bio::SUPERSMART::App::smrt::SubCommand Superclass for C<smrt> subcommands
@@ -98,13 +99,7 @@ sub init {
 	my ($class, $opt, $args) = @_;
 	my $str = ref($class);
 	$_verbosity += $opt->verbose ? $opt->verbose : 0;
-	
-	# create logger object with user-defined verbosity
-	$_logger = Bio::Phylo::Util::Logger->new(
-		'-level' => $_verbosity,
-		'-class' => [ ref( $class ), 'Bio::Phylo::PhyLoTA::Service::ParallelService', 'Bio::Phylo::PhyLoTA::Service::TreeService' ],		
-    );
-    
+
     # make output file name. If output file is given and it is an absolute path, 
     #  leave as is; if it is a single filename or a relative path, prepend the working
     #  directory    	
@@ -114,6 +109,21 @@ sub init {
     if ( $of ){
     	$_outfile = $of =~ /^\// ? $of : $wd . "/" . $of;  
     }
+	
+	# create logger object with user-defined verbosity
+	$_logger = Bio::Phylo::Util::Logger->new(
+		'-level' => $_verbosity,
+		'-class' => [ ref( $class ), 'Bio::Phylo::PhyLoTA::Service::ParallelService', 'Bio::Phylo::PhyLoTA::Service::TreeService' ],		
+    );
+    
+    # redirect logger output to file if specified by command call
+    if ( my $logfile = $opt->logfile ) {
+    	$logfile = $logfile =~ /^\// ? $logfile : $wd . "/" . $logfile;
+    	open my $logfh, '>', $logfile or die $!;
+		$_logger->set_listeners(sub{$logfh->print(shift)});
+    } 
+    
+
 }
 
 =item opt_spec
@@ -129,7 +139,8 @@ sub opt_spec {
 	return (
 		[ "help|h", "display help screen", {} ],
 		[ "verbose|v+", "increase verbosity level", {} ],
-		[ "workdir|w=s", "directory in which results and intermediate files are stored", { default => "./", arg => "dir"} ],	
+		[ "workdir|w=s", "directory in which results and intermediate files are stored", { default => "./", arg => "dir"} ],
+		[ "logfile|l=s", "write run-time information to logfile", { arg => "file" }],	
 		$class->options($app),
 	);	
 }
