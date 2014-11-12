@@ -21,6 +21,7 @@ BBcalibrate.pm - inference of genus-level backbone tree
 
 =head1 SYNOPSIS
 
+smrt bbcalibrate [-h ] [-v ] [-w <dir>] -t <file> -s <file> -f <file> [-o <file>] 
 
 =head1 DESCRIPTION
 
@@ -32,6 +33,19 @@ The treePL algorithm requires a smoothing parameter and number of sites, which m
 arguments. Also the supermatrix which has been used for tree inference has to be provided because the number of alignment sites has
 to be given to TreePL. Writes the calibrated tree in newick format to the 
 file specified by the 'outfile' argument. 
+
+=cut
+
+
+=head1 METHODS
+
+All methods below are ingerited by child classes.
+
+=over
+
+=item options
+
+specifies options for subcommand
 
 =cut
 
@@ -47,6 +61,12 @@ sub options {
 	);	
 }
 
+=item validate
+
+specifies options for subcommand
+
+=cut
+
 sub validate {
 	my ($self, $opt, $args) = @_;		
 
@@ -59,6 +79,17 @@ sub validate {
 	}
 }
 
+=head1 METHODS
+
+All methods below are ingerited by child classes.
+
+=over
+
+=item run
+
+runs the subcommand
+
+=cut
 
 sub run {
 	my ($self, $opt, $args) = @_;		
@@ -115,5 +146,8 @@ sub run {
 	return 1;		
 }
 
+=back
+
+=cut
 
 1;
