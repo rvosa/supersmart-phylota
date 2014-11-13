@@ -140,7 +140,7 @@ sub opt_spec {
 		[ "help|h", "display help screen", {} ],
 		[ "verbose|v+", "increase verbosity level", {} ],
 		[ "workdir|w=s", "directory in which results and intermediate files are stored", { default => "./", arg => "dir"} ],
-		[ "logfile|l=s", "write run-time information to logfile", { arg => "file" }],	
+		[ "logfile|l=s", "write run-time information to logfile", { arg => "filename" }],	
 		$class->options($app),
 	);	
 }
