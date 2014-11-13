@@ -7,7 +7,7 @@ use List::MoreUtils qw(firstidx uniq);
 
 use Bio::Phylo::PhyLoTA::Config;
 use Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector;
-use Bio::Phylo::PhyLoTA::Service::ParallelService 'pthreads'; # can be either 'pthreads' or 'mpi';
+use Bio::Phylo::PhyLoTA::Service::ParallelService 'pfm'; # can be either 'pthreads' or 'mpi';
 
 use base 'Bio::SUPERSMART::App::smrt::SubCommand';
 use Bio::SUPERSMART::App::smrt qw(-command);
@@ -36,7 +36,7 @@ sub options {
 	my $outfile_default = "species.tsv";
 	return (
 		["infile|i=s", "file with list of taxon names", { arg => "file", mandatory => 1}],
-		["outfile|o=s", "name of the output file, defaults to '$outfile_default'", {default => $outfile_default, arg => "file"}],
+		["outfile|o=s", "name of the output file, defaults to '$outfile_default'", {default => $outfile_default, arg => "filename"}],
 		["expand_rank|e=s", "rank to which root taxa are expanded", { default => 0, arg => "rank"}],	
 	);	
 }
@@ -99,7 +99,7 @@ sub run {
 	                
 	                # for each node, fetch the IDs of all taxonomic levels of interest
 	                for my $node ( @nodes ) {
-	                        
+	      
 	                        # create hash of taxonomic levels so that when we walk up the
 	                        # taxonomy tree we can more easily check to see if we are at a
 	                        # level of interest
@@ -123,6 +123,7 @@ sub run {
 	                $log->warn("couldn't resolve name $name");
 	        }                
 	        return  @res;
+	
 	} @names; 
 	
 	# clean the results for duplicates and rows that represent taxa with levels higher 

@@ -44,7 +44,7 @@ sub options {
 		["supermatrix|s=s", "matrix of concatenated multiple sequece alignments as produced by 'smrt bbmerge'", { arg => "file", mandatory => 1}],	
 		["starttree|t=s", "starting tree for ML tree inference as for instance produced by 'smrt classify'", { arg => "file", mandatory => 1}],
 		["inferencetool|i=s", "software tool for backbone inference (RaXML, ExaML or ExaBayes), defaults to ExaML", {default => 'examl', arg => "tool"}],			
-		["outfile|o=s", "name of the output tree file (in newick format), defaults to '$outfile_default'", {default => $outfile_default, arg => "file"}],			
+		["outfile|o=s", "name of the output tree file (in newick format), defaults to '$outfile_default'", {default => $outfile_default, arg => "filename"}],			
 
 	);	
 }

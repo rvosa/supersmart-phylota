@@ -56,7 +56,7 @@ sub options {
 		["tree|t=s", "backbone tree to calibrate as produced by 'smrt bbinfer' or 'smrt bbreroot'", { arg => "file", mandatory => 1}],
 		["supermatrix|s=s", "matrix of concatenated multiple sequece alignments which was used to generate the tree", { arg => "file", mandatory => 1}],	
 		["fossiltable|f=s", "tsv (tab-separated value) file containing fossil table with at least 5 columns (id, name, crown/stem, taxon, age)", { arg => "file", mandatory => 1}],	
-		["outfile|o=s", "name of the output tree file (in newick format), defaults to '$outfile_default'", {default => $outfile_default, arg => "file"}],			
+		["outfile|o=s", "name of the output tree file (in newick format), defaults to '$outfile_default'", {default => $outfile_default, arg => "filename"}],			
 
 	);	
 }

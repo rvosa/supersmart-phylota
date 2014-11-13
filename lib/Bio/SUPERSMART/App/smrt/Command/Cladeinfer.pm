@@ -65,7 +65,7 @@ sub options {
 		[ "ngens|n=i", "number of generations in *BEAST, defaults to 100_000 (strictly for testing!)", { arg=>"int", default=>100_000} ],
 		[ "sfreq|s=i", "sampling frequency, defaults to ngens/100", { arg=>"int"} ],
 		[ "lfreq|l=i", "logging frequency, defaults to ngens/100", { arg=>"int"} ],
-		[ "file|f=s", "file (nexml format) to start a single inference from" ],
+		[ "file|f=s", "file (nexml format) to start a single inference from", { arg=>"file" } ],
     );
 }
 

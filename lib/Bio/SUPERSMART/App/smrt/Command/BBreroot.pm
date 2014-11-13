@@ -37,7 +37,7 @@ sub options {
 		["taxafile|t=s", "tsv (tab-seperated value) taxa file as produced by 'smrt taxize'", { arg => "file", mandatory => 1}],
 		["backbone|b=s", "a genus level backbone tree as produced by 'smrt bbinfer'", { arg => "file", mandatory => 1}],	
 		["outgroup|g=s", "one or multiple taxa (names or NCBI identifiers, seperated by commata) representing the outgroup at which the tree is rerooted", {} ],
-		["outfile|o=s", "name of the output tree file (in newick format), defaults to '$outfile_default'", {default => $outfile_default, arg => "file"}],
+		["outfile|o=s", "name of the output tree file (in newick format), defaults to '$outfile_default'", {default => $outfile_default, arg => "filename"}],
 	);	
 }
 
