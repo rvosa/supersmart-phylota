@@ -318,52 +318,6 @@ exec {
 		cwd     => "${tools_dir}/Math-Random-0.70",		
 		creates => "/usr/local/lib64/perl5/Math/Random.pm",
 		require => Exec["make_makefile_math_random"];	
-
-    #install perl package Sys::Info::Base
-   "download_sys_info_base":
-    command => "wget http://search.cpan.org/CPAN/authors/id/B/BU/BURAK/Sys-Info-Base-0.7802.tar.gz",
-    cwd     => $tools_dir,
-    creates => "${tools_dir}/Sys-Info-Base-0.7802.tar.gz",
-    require => Package[ 'wget', 'tar' ];
-   "unzip_sys_info_base":
-    command => "tar -xvzf ${tools_dir}/Sys-Info-Base-0.7802.tar.gz",
-    creates => "${tools_dir}/Sys-Info-Base-0.7802/Makefile.PL",
-    cwd     => $tools_dir,
-    require => Exec["download_sys_info_base"];
-   "make_makefile_sys_info_base":
-    command => "perl Makefile.PL",
-		cwd     => "${tools_dir}/Sys-Info-Base-0.7802",
-		creates => "${tools_dir}/Sys-Info-Base-0.7802/Makefile",
-		require => Exec["unzip_sys_info_base"];
-   "make_sys_info_base":
-		command => "make install",
-		cwd     => "${tools_dir}/Sys-Info-Base-0.7802",		
-		creates => "${tools_dir}/Sys-Info-Base-0.7802/lib/Sys/Info.pm",		
-		require => Exec["make_makefile_sys_info_base"];	
- 	  
-   #install perl package Sys::Info
-   "download_sys_info":
-    command => "wget http://search.cpan.org/CPAN/authors/id/B/BU/BURAK/Sys-Info-0.78.tar.gz",
-    cwd     => $tools_dir,
-    creates => "${tools_dir}/Sys-Info-0.78.tar.gz",
-    require => Package[ 'wget', 'tar' ];
-   "unzip_sys_info":
-    command => "tar -xvzf ${tools_dir}/Sys-Info-0.78.tar.gz",
-    creates => "${tools_dir}/Sys-Info-0.78/Makefile.PL",
-    cwd     => $tools_dir,
-    require => Exec["download_sys_info"];
-   "make_makefile_sys_info":
-    command => "perl Makefile.PL",
-    cwd     => "${tools_dir}/Sys-Info-0.78",
-    creates => "${tools_dir}/Sys-Info-0.78/Makefile",
-    require => Exec["unzip_sys_info"];
-   "make_sys_info":
-    command => "make install",
-    cwd     => "${tools_dir}/Sys-Info-0.78",		
-    creates => "${tools_dir}/Sys-Info-0.78/lib/Sys/Info.pm",		
-    require => Exec["make_makefile_sys_info"];	
-  
-
                                
   #install perl package Parallel::MPI::Simple
 	"download_parallel_mpi_simple":
