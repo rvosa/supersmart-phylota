@@ -77,13 +77,13 @@ sub run {
 	my $tree = $mts->get_tree_for_nodes(@nodes);
 	
 	# create node labels
-	$tree->visit(sub{
-		my $node = shift;
-		my $label = $node->get_guid;		
-		$node->set_name( $label );
-	});
-	
-	$ts->remap_to_name($tree);
+	#$tree->visit(sub{
+	#	my $node = shift;
+	#	my $label = $node->get_guid;		
+	#	$node->set_name( $label );
+	#});
+	#
+	#$ts->remap_to_name($tree);
 	
 	# write output
 	open my $out, '>', $outfile or die $!;
