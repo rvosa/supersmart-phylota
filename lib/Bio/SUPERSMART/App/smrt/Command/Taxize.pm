@@ -7,7 +7,7 @@ use List::MoreUtils qw(firstidx uniq);
 
 use Bio::Phylo::PhyLoTA::Config;
 use Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector;
-use Bio::Phylo::PhyLoTA::Service::ParallelService 'pfm'; # can be either 'pthreads' or 'mpi';
+use Bio::Phylo::PhyLoTA::Service::ParallelService 'pfm';
 
 use base 'Bio::SUPERSMART::App::smrt::SubCommand';
 use Bio::SUPERSMART::App::smrt qw(-command);
@@ -84,7 +84,7 @@ sub run {
 	# this will take some time to do the taxonomic name resolution in the
 	# database and with webservices. The below code runs in parallel
 	my @result = pmap {
-	        my $name = $_; 
+	        my ($name) = @_; 
 	        # replace consecutive whitespaces with one
 	        $name =~ s/\s+/ /g;               
 	        my @res = ();
@@ -125,6 +125,8 @@ sub run {
 	        return  @res;
 	
 	} @names; 
+	
+	$log->info("Data received, writing outfile!");
 	
 	# clean the results for duplicates and rows that represent taxa with levels higher 
 	# than 'Species', then write the results to the output file
