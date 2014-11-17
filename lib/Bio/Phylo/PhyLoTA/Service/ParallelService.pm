@@ -80,7 +80,7 @@ sub import {
 		# get number of processes from config file
 		require Bio::Phylo::PhyLoTA::Service;
 		my $config  = Bio::Phylo::PhyLoTA::Config->new;
-		$num_workers = $config->NODES - 1;
+		$num_workers = $config->NODES - 1 || 1; 
 	}
 	$logger->debug(
 		"Initializing $mode ParallelService with $num_workers workers");
@@ -103,6 +103,18 @@ Does a parallel version of map using pthreads. The function pmap deletages to th
 function if ParallelService was called with 'pthreads' as its argument.
 
 =cut
+
+sub pmap_pthreads_mock (&@) {
+	my ( $func, @data ) = @_;
+
+	my @result;
+	for (@data)	{
+		my @r = $func->($_);
+		push @result, @r;
+		
+	}
+	return @result;
+}
 
 sub pmap_pthreads (&@) {
 	my ( $func, @data ) = @_;
@@ -232,7 +244,7 @@ sub pmap_pfm {
 			my ( $pid, $exit_code, $ident, $exit_signal, $core_dump,
 				$data_structure_reference )
 			  = @_;
-			push @all_results, $$data_structure_reference;
+			push @all_results, @$data_structure_reference;
 		}
 	);
 
@@ -241,10 +253,8 @@ sub pmap_pfm {
 		my $pid = $pm->start and next;
 
 		$logger->info( "Processing item $counter of " . scalar(@all_data) );
-
-		my $res = &$func($data);
-
-		$pm->finish( 0, \$res );    # Terminates the child process
+		my @res = &$func($data);
+		$pm->finish( 0, \@res );    # Terminates the child process
 	}
 
 	$pm->wait_all_children;
@@ -273,7 +283,7 @@ simply evaluates the code given as argument.
 sub sequential (&) {
 	my ($func) = @_;
 	croak "Need mode argument!" if not $mode;
-	if ( $mode eq 'pthreads' || $mode eq 'pfm' ) {
+	if ( ($mode eq 'pthreads') or ($mode eq 'pfm') ) {
 
 		# simply call the function
 		$func->();
