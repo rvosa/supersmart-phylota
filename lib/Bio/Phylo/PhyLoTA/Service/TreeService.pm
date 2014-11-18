@@ -389,15 +389,6 @@ sub graft_tree {
 	return $backbone;
 }
 
-# builds a tree using the configured tree inference method
-sub infer_backbone_tree {
-        
-}
-
-sub infer_clade_tree {
-        
-}
-
 sub make_phylip_binary {
 	my ( $self, $phylip, $binfilename, $parser, $work_dir) = @_;
 	$log->info("going to make binary representation of $phylip => $binfilename");	
@@ -493,6 +484,7 @@ sub extract_clades {
         # traverse tree, retrieve monophyletic genera, which we will compare to all
         $log->info("going to identify putatively monophyletic genera");
         my ( %monophyletic, %all );
+        
         $tree->visit_depth_first(
                 '-post' => sub {
                         my $node = shift;
@@ -590,6 +582,15 @@ sub extract_clades {
                 my @s = map { $mt->get_species_and_lower_for_taxon( 'genus' => $_, @records ) } @g;
                 push @set, \@s if scalar(@s) > 2;
         }
+        
+        # one special case can be that all genera are monotypic. 
+        # in this case, all leaves are returned in one set to
+        # be inferred together.
+        if ( !%monophyletic and !%paraphyletic ) {
+        	$log->info("all genera in backbone are monotypic, all species will form a single clade ");
+        	my @s = map { $mt->get_species_and_lower_for_taxon( 'genus' => $_, @records ) } keys(%all);
+        	push @set, \@s;
+        } 
         
         return @set;        
 }
