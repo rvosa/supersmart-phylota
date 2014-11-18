@@ -154,17 +154,17 @@ sub run {
 		
 		sequential { 
 				while( my $entry = readdir $dh ) {
-				# peruse directories named cladeXXX
+					# peruse directories named cladeXXX
 					if ( $entry =~ /clade\d+/ && -d "${workdir}/${entry}" ) {
-			                        push   @cladedirs, $entry;
+			        	push   @cladedirs, $entry;
 			        }
 		    }        
 		};
 		die("no clade directories found in workdir $workdir") if scalar(@cladedirs) == 0;
-			
+
     # infer clades in parallel mode
     pmap {
-                my $clade = $_;
+                my ($clade) = @_;
                 # this should be a nexml file with one taxa block and
                 # multiple matrices                
                 my $stem = "${workdir}/${clade}/${clade}";
