@@ -53,8 +53,8 @@ sub options {
 	my $outfile_default = "summary.tsv";
 	return (
 		["backbone|b=s", "backbone tree as produced by 'smrt bbinfer'", { arg => "file", mandatory => 1}],
-		["commontree|c=s", "classification tree as produced by 'smrt classify'", { arg => "file", mandatory => 1}],
-		["alnfile|a=s", "list of file locations of merged alignments  as produced by 'smrt orthologize'", { arg => "file", mandatory => 1}],	
+		["classtree|c=s", "classification tree as produced by 'smrt classify'", { arg => "file", mandatory => 1}],
+		["alnfile|a=s", "list of file locations of merged alignments  as produced by 'smrt align'", { arg => "file", mandatory => 1}],	
 		["taxafile|t=s", "tsv (tab-seperated value) taxa file as produced by 'smrt taxize'", { arg => "file", mandatory => 1}],
 		["add_outgroups|g", "automatically add outgroup for each clade", { default=> 0} ],
 		["outfile|o=s", "name of the output file (summary table with included accessions), defaults to $outfile_default", { default=> $outfile_default, arg => "filename"}],
@@ -65,7 +65,7 @@ sub validate {
 	my ($self, $opt, $args) = @_;		
 
 	#  If alignment or taxa file is absent or empty, abort  
-	my @files = ( $opt->alnfile, $opt->backbone, $opt->taxafile, $opt->commontree );
+	my @files = ( $opt->alnfile, $opt->backbone, $opt->taxafile, $opt->classtree );
 	foreach my $file ( @files ){
 		$self->usage_error("need alignment and taxa files and classification and backbone tree file") if not $file;
 		$self->usage_error("file $file does not exist") unless (-e $file);
@@ -80,7 +80,7 @@ sub run{
 	my $alnfile = $opt->alnfile;
 	my $taxafile = $opt->taxafile;
 	my $backbone = $opt->backbone;
-	my $common = $opt->commontree;
+	my $common = $opt->classtree;
 	my $add_outgroup = $opt->add_outgroups;
 	(my $workdir = $opt->workdir) =~ s/\/$//g;
 	my $outfile= $self->outfile;	
@@ -100,14 +100,14 @@ sub run{
 		'-as_project' => 1,
 	);
 	$ts->remap_to_ti($tree);
-	
-	my $commontree = parse_tree(
+		
+	my $classtree = parse_tree(
 		'-format'     => 'newick',
 		'-file'       => $common,
 		'-as_project' => 1,
 	);
 			
-	$ts->remap_to_ti($commontree);
+	$ts->remap_to_ti($classtree);
 			
 	# parse taxon mapping
 	$logger->info("going to read taxa mapping $taxafile");
@@ -131,16 +131,16 @@ sub run{
 	if ( $add_outgroup ){
 		my $counter = 0;
 		foreach (@set){
-			my @og = $mts->get_outgroup_taxa( $commontree, $_ );
+			my @og = $mts->get_outgroup_taxa( $classtree, $_ );
 			push @{$_}, @og;
 			$logger->info("Adding outgroup species " . join (', ', @og) . " to clade #" . ++$counter);
 		}	
 	}
-	
+
 	# write suitable alignments to their respective clade folders
 	#  and return a table with markers for all species
 	my @table = pmap {
-	    my $aln = $_;
+	    my ($aln) = @_;
 		$logger->info("checking whether alignment $aln can be included");
 		my %fasta = $mt->parse_fasta_file($aln);
 		my $dist  = $mt->calc_mean_distance(%fasta);
