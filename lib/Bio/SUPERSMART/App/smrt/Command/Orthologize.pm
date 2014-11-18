@@ -7,7 +7,7 @@ use Bio::SearchIO;
 use Bio::Phylo::PhyLoTA::Config;
 use Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa;
 use Bio::Phylo::PhyLoTA::Service::SequenceGetter;
-use Bio::Phylo::PhyLoTA::Service::ParallelService 'pthreads'; # can be either 'pthreads' or 'mpi';
+use Bio::Phylo::PhyLoTA::Service::ParallelService 'pfm'; 
 
 use base 'Bio::SUPERSMART::App::smrt::SubCommand';
 use Bio::SUPERSMART::App::smrt qw(-command);
@@ -199,7 +199,8 @@ sub run {
 	my $total = scalar @clusters;
 
 	my @cres = pmap{
-		my %cluster = %{$_};
+		my ($clref) = @_; 
+	        my %cluster = %{$clref};
 		my $clusterid = $cluster{'id'};
 		my @seqids = @{$cluster{'seq'}};
 	
