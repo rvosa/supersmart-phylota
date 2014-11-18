@@ -137,7 +137,7 @@ sub run {
 	# of both query and hit
 	my $overlap = $config->MERGE_OVERLAP;
 	my @res = pmap {
-		my $result = $_;
+		my ($result) = @_;
 		my $query = $result->query_name;
 		$log->info("querying for $query");
 		my $q_l = length($service->find_seq($query)->seq);
