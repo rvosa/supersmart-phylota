@@ -8,10 +8,12 @@ use Bio::Phylo::Matrices::Matrix;
 use Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa;
 use Bio::Phylo::PhyLoTA::Service::SequenceGetter;
 use Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector;
-use Bio::Phylo::PhyLoTA::Service::ParallelService 'pthreads'; # can be either 'pthreads' or 'mpi';
+use Bio::Phylo::PhyLoTA::Service::ParallelService 'pthreads';
 
 use base 'Bio::SUPERSMART::App::smrt::SubCommand';
+
 use Bio::SUPERSMART::App::smrt qw(-command);
+
 
 # ABSTRACT: writes multiple sequence alignments for a list of taxa
 
@@ -33,6 +35,7 @@ can be configured, effective methods include those provided by muscle and mafft.
 =cut
 
 sub options {
+
 	my ($self, $opt, $args) = @_;		
 	my $outfile_default = "aligned.txt";
 	return (
@@ -81,9 +84,8 @@ sub run {
 	# this is sorted from more to less inclusive
 	my @clusters = $mts->get_clusters_for_nodes(@nodes); 
 	
-		# distribute clusters such that the amount of sequences to be aligned
-		#  is approximately even (for faster parallell processing)
-	
+	# distribute clusters such that the amount of sequences to be aligned
+	#  is approximately even (for faster parallell processing)
 	
 	#	my @clusters;	
 	#	my @subset;	
@@ -100,75 +102,94 @@ sub run {
 		
 	# this is a simple mapping to see whether a taxon is of interest
 	my %ti =  map { $_->ti => 1 } @nodes;        
-		
+	
 	$log->info("Processing " . scalar(@clusters) . " clusters");
+	
 	# make the alignments in parallel mode
 	my @result = pmap {        		
 		my ($cl) = @_;
-	 	 
 	   	my $ti = \%ti;
-	   	
-        # get cluster id
-        my $ci = $cl->{'ci'};
-		$log->info("processing cluster with id $ci");
-		
-		my $type = $cl->{'cl_type'};
-		
+		        
+        # returned result: cluster information: seed_gi, mrca, cluster id and -type and finally the alignment
         my @res = ();
-        # fetch ALL sequences for the cluster, reduce data set
-        my $sg = Bio::Phylo::PhyLoTA::Service::SequenceGetter->new;
-        my @ss = $sg->get_sequences_for_cluster_object($cl);
-        my @seqs    = $sg->filter_seq_set($sg->get_sequences_for_cluster_object($cl));
+        
+        # get cluster information
+        my $ci = $cl->{'ci'};
+        my $type = $cl->{'cl_type'};
         my $single  = $sg->single_cluster($cl);
         my $seed_gi = $single->seed_gi;
         my $mrca    = $single->ti_root->ti;
-		$log->info("fetched ".scalar(@seqs)." sequences for cluster id $ci");                
-        my @matching = grep { $ti->{$_->ti} } @seqs;
-         
-        # let's not keep the ones we can't build trees out of
-        if ( scalar @matching > 3 ) {
-                
-                # this runs muscle or mafft, so should be on your PATH.
-                # this also requires bioperl-live and bioperl-run
-                                                              
-                $log->info("going to align ".scalar(@matching)." sequences for cluster $ci");
-                my $aln = $sg->align_sequences(@matching);
-                
-                # convert AlignI to matrix for pretty NEXUS generation
-                my $m = Bio::Phylo::Matrices::Matrix->new_from_bioperl($aln);
-                
-                # iterate over all matrix rows
-                my @matrix;
-                $m->visit(sub{					
-                        my $row = shift;
-                        
-                        # the GI is set as the name by the alignment method
-                        my $gi  = $row->get_name;
-                        my $ti  = $sg->find_seq($gi)->ti;
-                        my $seq = $row->get_char;
-                        push @matrix, [ ">gi|${gi}|seed_gi|${seed_gi}|taxon|${ti}|mrca|${mrca}" => $seq ];
-                          });
-                                
-                my $filename = $workdir . '/' . $seed_gi . '-' . $mrca . '-' . $ci . '-' . $type . '.fa';
-                open my $fh, '>', $filename or die $!;
-                for my $row ( @matrix ) {
-                        print $fh $row->[0], "\n", $row->[1], "\n";
-                }
-                close $fh;
-                push @res, {
-                        'seed_gi' => $seed_gi,
-                        'matrix'  => \@matrix,
-                };
-                $log->info("aligning sequences for cluster $ci finished and written to $filename");
- 				
- 				#print alignment file name to output file so it can be saved in output file of script          
- 				open my $outfh, '>>', $workdir . '/' . $outfile or die $!;
- 				print $outfh $filename . "\n";
- 				close $outfh;
-        } 
-        return @res;
+
+	   	$log->info("processing cluster with id $ci");
+        
+        # some alignments can be pre-computed so don't align again if fasta file already exists 
+        my $filename = $workdir . '/' . $seed_gi . '-' . $mrca . '-' . $ci . '-' . $type . '.fa';
+		
+		if ( not ( -e  $filename ) ) {	
+	        # fetch ALL sequences for the cluster, reduce data set
+	        my $sg = Bio::Phylo::PhyLoTA::Service::SequenceGetter->new;
+	        my @ss = $sg->get_sequences_for_cluster_object($cl);
+	        my @seqs    = $sg->filter_seq_set($sg->get_sequences_for_cluster_object($cl));
+	        
+			$log->info("fetched ".scalar(@seqs)." sequences for cluster id $ci");                
+	        my @matching = grep { $ti->{$_->ti} } @seqs;
+	        
+	        # let's not keep the ones we can't build trees out of
+	        if ( scalar @matching > 3 ) {
+	                
+	                # this runs muscle or mafft, so should be on your PATH.
+	                # this also requires bioperl-live and bioperl-run
+	                                                              
+	                $log->info("going to align ".scalar(@matching)." sequences for cluster $ci");
+	                my $aln = $sg->align_sequences(@matching);
+	                
+	                # convert AlignI to matrix for pretty NEXUS generation
+	                my $m = Bio::Phylo::Matrices::Matrix->new_from_bioperl($aln);
+	                
+	                # iterate over all matrix rows
+	                my @matrix;
+	                $m->visit(sub{					
+	                        my $row = shift;
+	                        
+	                        # the GI is set as the name by the alignment method
+	                        my $gi  = $row->get_name;
+	                        my $ti  = $sg->find_seq($gi)->ti;
+	                        my $seq = $row->get_char;
+	                        push @matrix, [ ">gi|${gi}|seed_gi|${seed_gi}|taxon|${ti}|mrca|${mrca}" => $seq ];
+	                          });
+	                                
+	                
+	                open my $fh, '>', $filename or die $!;
+	                for my $row ( @matrix ) {
+	                        print $fh $row->[0], "\n", $row->[1], "\n";
+	                }
+	                close $fh;
+	                push @res, {
+	                        'seed_gi' => $seed_gi,
+	                       	'mrca'	  => $mrca,
+	                       	'ci'	  => $ci,
+	                       	'cl_type' => $type,
+	                        'matrix'  => \@matrix,
+	                };
+	                $log->info("aligning sequences for cluster $ci finished and written to $filename");
+	 				
+	 				#print alignment file name to output file so it can be saved in output file of script          
+	 				open my $outfh, '>>', $workdir . '/' . $outfile or die $!;
+	 				print $outfh $filename . "\n";
+	 				close $outfh;
+	        } 
+		}
+		else {
+			$log->debug("alignment with name $filename already exists, skipping");
+			# have to report to output file anyways! 
+			open my $outfh, '>>', $workdir . '/' . $outfile or die $!;
+	 		print $outfh $filename . "\n";
+	 		close $outfh;
+			
+		}
+        return @res;	
 	} @clusters;
-	
+
 	$log->info("DONE, results written to $outfile");
 	
 	return 1;
