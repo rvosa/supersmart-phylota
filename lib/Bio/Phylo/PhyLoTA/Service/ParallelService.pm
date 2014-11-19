@@ -81,6 +81,9 @@ sub import {
 		require Bio::Phylo::PhyLoTA::Service;
 		my $config  = Bio::Phylo::PhyLoTA::Config->new;
 		$num_workers = $config->NODES - 1 || 1; 
+	} 
+	else {
+		$num_workers = 1;
 	}
 	$logger->debug(
 		"Initializing $mode ParallelService with $num_workers workers");
@@ -104,11 +107,14 @@ function if ParallelService was called with 'pthreads' as its argument.
 
 =cut
 
-sub pmap_pthreads_mock (&@) {
+sub pmap_mock (&@) {
 	my ( $func, @data ) = @_;
 
 	my @result;
+	my $counter = 0;
 	for (@data)	{
+		$counter++;
+		$logger->info("processing item $counter of " . scalar(@data));
 		my @r = $func->($_);
 		push @result, @r;
 		
@@ -283,12 +289,7 @@ simply evaluates the code given as argument.
 sub sequential (&) {
 	my ($func) = @_;
 	croak "Need mode argument!" if not $mode;
-	if ( ($mode eq 'pthreads') or ($mode eq 'pfm') ) {
-
-		# simply call the function
-		$func->();
-	}
-	elsif ( $mode eq 'mpi' ) {
+	if ( $mode eq 'mpi' ) {
 
 		# only allow master node to perform operation
 		my $WORLD = MPI_COMM_WORLD();
@@ -296,6 +297,9 @@ sub sequential (&) {
 		if ( $rank == 0 ) {
 			$func->();
 		}
+	} else {
+		# simply call the function
+		$func->();
 	}
 }
 
@@ -321,6 +325,9 @@ sub pmap (&@) {
 	}
 	elsif ( $mode eq 'pfm' ) {
 		goto &pmap_pfm;
+	} 
+	elsif ( $mode eq 'mock' ) {
+		goto &pmap_mock;
 	}
 }
 
@@ -333,6 +340,17 @@ Getter/setter for the number of worker nodes.
 sub num_workers {
 	$num_workers = shift if @_;
 	return $num_workers;
+}
+
+=item num_workers
+
+Getter/setter for the parallel mode
+
+=cut
+
+sub mode {
+	$mode = shift if @_;
+	return $mode;	
 }
 
 =back
