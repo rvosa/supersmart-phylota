@@ -7,7 +7,7 @@ use List::MoreUtils qw(firstidx uniq);
 
 use Bio::Phylo::PhyLoTA::Config;
 use Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector;
-use Bio::Phylo::PhyLoTA::Service::ParallelService 'pfm';
+use Bio::Phylo::PhyLoTA::Service::ParallelService 'mock';
 
 use base 'Bio::SUPERSMART::App::smrt::SubCommand';
 use Bio::SUPERSMART::App::smrt qw(-command);
