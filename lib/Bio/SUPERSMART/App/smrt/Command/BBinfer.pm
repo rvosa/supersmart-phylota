@@ -27,7 +27,7 @@ smrt bbinfer [-h ] [-v ] [-w <dir>] -s <file> -t <file> [-i <tool>] [-o <file>]
 =head1 DESCRIPTION
 
 Given an input supermatrix (in interleaved PHYLIP format), infers either a maximum likelihood tree 
-using ExaML or uses ExaBayes to sample a posterior distribution of trees. If ExaBayes is used, a 
+using ExaML or RaXML or uses ExaBayes to sample a posterior distribution of trees. If ExaBayes is used, a 
 'consense' tree is calculated from the posterior. The tree resulting from this script is written to file.
 For tree inference with examl, an NCBI classification tree (in Newick format) has to be supplied 
 as a starting tree. ExaML and ExaBayes produce many intermediate checkpoint files, for which a
