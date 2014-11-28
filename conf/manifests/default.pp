@@ -51,8 +51,8 @@ service {
 }
 
 # set default paths for storing data, tools and source code
-$username = "hettling"
-$supersmart_dir	= "/home/${username}/SUPERSMART"  ##"/home/${id}/SUPERSMART"
+$username = "vagrant"
+$supersmart_dir	= "/home/${username}/SUPERSMART"
 $tools_dir		= "${supersmart_dir}/tools"
 $tools_bin_dir	= "${tools_dir}/bin"
 $src_dir		= "${supersmart_dir}/src"
