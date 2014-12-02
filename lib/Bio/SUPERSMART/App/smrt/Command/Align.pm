@@ -8,7 +8,11 @@ use Bio::Phylo::Matrices::Matrix;
 use Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa;
 use Bio::Phylo::PhyLoTA::Service::SequenceGetter;
 use Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector;
-use Bio::Phylo::PhyLoTA::Service::ParallelService 'pthreads';
+
+use Bio::Seq;
+use Bio::AlignIO;
+
+use Parallel::parallel_map;
 
 use base 'Bio::SUPERSMART::App::smrt::SubCommand';
 
@@ -84,30 +88,14 @@ sub run {
 	# this is sorted from more to less inclusive
 	my @clusters = $mts->get_clusters_for_nodes(@nodes); 
 	
-	# distribute clusters such that the amount of sequences to be aligned
-	#  is approximately even (for faster parallell processing)
-	
-	#	my @clusters;	
-	#	my @subset;	
-	#	my $nworkers = num_workers();	
-	#	for my $i ( 0 .. $#sorted_clusters ) {
-	#		my $j = $i % $nworkers;
-	#		$subset[$j] = [] if not $subset[$j];
-	#		push @{ $subset[$j] }, $sorted_clusters[$i];
-	#	}
-			    
-	# now we flatten the subsets again
-	# push @clusters, @{ $subset[$_] } for 0 .. ( $nworkers - 1 );
-		
-		
 	# this is a simple mapping to see whether a taxon is of interest
 	my %ti =  map { $_->ti => 1 } @nodes;        
 	
 	$log->info("Processing " . scalar(@clusters) . " clusters");
 	
 	# make the alignments in parallel mode
-	my @result = pmap {        		
-		my ($cl) = @_;
+	my @result = parallel_map {        		
+		my $cl = $_;
 	   	my $ti = \%ti;
 		        
         # returned result: cluster information: seed_gi, mrca, cluster id and -type and finally the alignment
@@ -141,38 +129,27 @@ sub run {
 	                # this also requires bioperl-live and bioperl-run
 	                                                              
 	                $log->info("going to align ".scalar(@matching)." sequences for cluster $ci");
-	                my $aln = $sg->align_sequences(@matching);
+	                my @convertedseqs;
+			    	for my $seq(@matching){						
+						my $gi = $seq->gi;
+						my $ti  = $sg->find_seq($gi)->ti;
+						my $seqobj = Bio::Seq->new( -display_id => "gi|${gi}|seed_gi|${seed_gi}|taxon|${ti}|mrca|${mrca}" ,
+                             						-seq => $seq->seq, 
+                             						-name => $gi,
+                             						-type => 'dna');														
+						push @convertedseqs,$seqobj;
+	     
+			    	}
+			  
+	                my $aligner = $sg->_make_aligner;
+    				my $aln = $aligner->align(\@convertedseqs);
+	                 
+	              	# write alignemnt to fasta file  	                
+	                my $out = Bio::AlignIO->new(
+	                							-file => ">$filename",
+                        		  				-format => 'fasta');
+	                $out->write_aln($aln);
 	                
-	                # convert AlignI to matrix for pretty NEXUS generation
-	                my $m = Bio::Phylo::Matrices::Matrix->new_from_bioperl($aln);
-	                
-	                # iterate over all matrix rows
-	                my @matrix;
-	                $m->visit(sub{					
-	                        my $row = shift;
-	                        
-	                        # the GI is set as the name by the alignment method
-	                        my $gi  = $row->get_name;
-	                        my $ti  = $sg->find_seq($gi)->ti;
-	                        my $seq = $row->get_char;
-	                        push @matrix, [ ">gi|${gi}|seed_gi|${seed_gi}|taxon|${ti}|mrca|${mrca}" => $seq ];
-	                          });
-	                                
-	                
-	                open my $fh, '>', $filename or die $!;
-	                for my $row ( @matrix ) {
-	                        print $fh $row->[0], "\n", $row->[1], "\n";
-	                }
-	                close $fh;
-	                push @res, {
-	                        'seed_gi' => $seed_gi,
-	                       	'mrca'	  => $mrca,
-	                       	'ci'	  => $ci,
-	                       	'cl_type' => $type,
-	                        'matrix'  => \@matrix,
-	                };
-	                $log->info("aligning sequences for cluster $ci finished and written to $filename");
-	 				
 	 				#print alignment file name to output file so it can be saved in output file of script          
 	 				open my $outfh, '>>', $workdir . '/' . $outfile or die $!;
 	 				print $outfh $filename . "\n";
@@ -187,7 +164,6 @@ sub run {
 	 		close $outfh;
 			
 		}
-        return @res;	
 	} @clusters;
 
 	$log->info("DONE, results written to $outfile");
