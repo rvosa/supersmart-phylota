@@ -44,7 +44,7 @@ constructor can be used as methods as well. For example, the argument C<-B> beco
 =cut
 
 our $PROGRAM_NAME = 'examl';
-our @ExaML_PARAMS = qw(B c e f i m);
+our @ExaML_PARAMS = qw(B c e f i m p);
 our @ExaML_SWITCHES = qw(a D M Q S);
 my $log = Bio::Phylo::Util::Logger->new;
 my $treeservice = Bio::Phylo::PhyLoTA::Service::TreeService->new;
