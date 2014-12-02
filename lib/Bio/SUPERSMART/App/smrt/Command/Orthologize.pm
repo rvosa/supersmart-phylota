@@ -7,7 +7,8 @@ use Bio::SearchIO;
 use Bio::Phylo::PhyLoTA::Config;
 use Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa;
 use Bio::Phylo::PhyLoTA::Service::SequenceGetter;
-use Bio::Phylo::PhyLoTA::Service::ParallelService 'mock'; 
+
+use Parallel::parallel_map;
 
 use base 'Bio::SUPERSMART::App::smrt::SubCommand';
 use Bio::SUPERSMART::App::smrt qw(-command);
@@ -136,8 +137,8 @@ sub run {
 	# all hits where the overlapping region is smaller than 0.51 (default) times of the length 
 	# of both query and hit
 	my $overlap = $config->MERGE_OVERLAP;
-	my @res = pmap {
-		my ($result) = @_;
+	my @res = parallel_map {
+		my $result = $_;
 		my $query = $result->query_name;
 		$log->info("querying for $query");
 		my $q_l = length($service->find_seq($query)->seq);
@@ -198,9 +199,9 @@ sub run {
 	# align
 	my $total = scalar @clusters;
 
-	my @cres = pmap{
-		my ($clref) = @_; 
-	        my %cluster = %{$clref};
+	my @cres = parallel_map {
+		my $clref = $_; 
+	    my %cluster = %{$clref};
 		my $clusterid = $cluster{'id'};
 		my @seqids = @{$cluster{'seq'}};
 	

@@ -10,8 +10,8 @@ use Bio::Phylo::PhyLoTA::Config;
 use Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa;
 use Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector;
 use Bio::Phylo::PhyLoTA::Service::TreeService;
-use Bio::Phylo::PhyLoTA::Service::ParallelService 'pthreads'; # can be either 'pthreads' or 'mpi';
 
+use Parallel::parallel_map;
 
 use base 'Bio::SUPERSMART::App::smrt::SubCommand';
 use Bio::SUPERSMART::App::smrt qw(-command);
@@ -118,14 +118,12 @@ sub run{
 	
 	# now read the list of alignments
 	my @alignments;
-	sequential {
-		$logger->info("going to read list of alignments $alnfile");
-		open my $fh, '<', $alnfile or die $!;
-		while(<$fh>) {
-			chomp;
-			push @alignments, $_ if /\S/ and -e $_;
-		}
-	};
+	$logger->info("going to read list of alignments $alnfile");
+	open my $fh, '<', $alnfile or die $!;
+	while(<$fh>) {
+		chomp;
+		push @alignments, $_ if /\S/ and -e $_;
+	}
 	
 	# get one outgroup species for each clade and append to species sets
 	if ( $add_outgroup ){
@@ -139,7 +137,7 @@ sub run{
 
 	# write suitable alignments to their respective clade folders
 	#  and return a table with markers for all species
-	my @table = pmap {
+	my @table = parallel_map {
 	    my ($aln) = @_;
 		$logger->info("checking whether alignment $aln can be included");
 		my %fasta = $mt->parse_fasta_file($aln);

@@ -6,7 +6,7 @@ use warnings;
 use Bio::Phylo::PhyLoTA::Config;
 use Bio::Tools::Run::Phylo::StarBEAST;
 
-use Bio::Phylo::PhyLoTA::Service::ParallelService 'pthreads'; 
+use Parallel::parallel_map;
 
 use base 'Bio::SUPERSMART::App::smrt::SubCommand';
 use Bio::SUPERSMART::App::smrt qw(-command);
@@ -66,6 +66,7 @@ sub options {
 		[ "sfreq|s=i", "sampling frequency, defaults to ngens/100", { arg=>"int"} ],
 		[ "lfreq|l=i", "logging frequency, defaults to ngens/100", { arg=>"int"} ],
 		[ "file|f=s", "file (nexml format) to start a single inference from", { arg=>"file" } ],
+		[ "outfile|f=s", "location of output directory", {arg=>"location", default => "cladeinfer_out.txt"} ],		
     );
 }
 
@@ -99,6 +100,7 @@ sub run {
     my $sfreq = $opt->sfreq ? $opt->sfreq : $ngens/100;
     my $lfreq = $opt->lfreq ? $opt->lfreq : $ngens/100;
 	my  $file = $opt->file;
+	my $outfile= $self->outfile;	
 	(my $workdir = $opt->workdir) =~ s/\/$//g;
 	
 		
@@ -152,18 +154,16 @@ sub run {
 		opendir my $dh, $workdir or die $!;
 	    my @cladedirs;
 		
-		sequential { 
-				while( my $entry = readdir $dh ) {
-					# peruse directories named cladeXXX
-					if ( $entry =~ /clade\d+/ && -d "${workdir}/${entry}" ) {
-			        	push   @cladedirs, $entry;
-			        }
-		    }        
-		};
+		while( my $entry = readdir $dh ) {
+			# peruse directories named cladeXXX
+			if ( $entry =~ /clade\d+/ && -d "${workdir}/${entry}" ) {
+				push   @cladedirs, $entry;
+			}
+		}        
 		die("no clade directories found in workdir $workdir") if scalar(@cladedirs) == 0;
 
     # infer clades in parallel mode
-    pmap {
+    parallel_map {
                 my ($clade) = @_;
                 # this should be a nexml file with one taxa block and
                 # multiple matrices                
@@ -182,6 +182,9 @@ sub run {
                 }
         } @cladedirs;
 	}
+	open my $fh, '>', $outfile;
+	print $fh "Cladeinfer done\n";
+	close $fh;
 	
 	$logger->info("DONE.");	
 }
