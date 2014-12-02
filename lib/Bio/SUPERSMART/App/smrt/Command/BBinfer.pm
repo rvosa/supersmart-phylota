@@ -40,10 +40,11 @@ determined in the configuration file, but can optionally also be given as a comm
 sub options {
 	my ($self, $opt, $args) = @_;		
 	my $outfile_default = "backbone.dnd";
+	my $tool_default = "examl";
 	return (
 		["supermatrix|s=s", "matrix of concatenated multiple sequece alignments as produced by 'smrt bbmerge'", { arg => "file", mandatory => 1}],	
 		["starttree|t=s", "starting tree for ML tree inference as for instance produced by 'smrt classify'", { arg => "file", mandatory => 1}],
-		["inferencetool|i=s", "software tool for backbone inference (RaXML, ExaML or ExaBayes), defaults to ExaML", {default => 'examl', arg => "tool"}],			
+		["inferencetool|i=s", "software tool for backbone inference (RaXML, ExaML or ExaBayes), defaults to $tool_default", {default => $tool_default, arg => "tool"}],			
 		["outfile|o=s", "name of the output tree file (in newick format), defaults to '$outfile_default'", {default => $outfile_default, arg => "filename"}],			
 
 	);	
@@ -124,12 +125,13 @@ sub _infer_raxml {
 	
 	##$tool->cleanup;
 	
-	# bioperl gives is back a tree object, 
+	# bioperl gives back a tree object, 
 	# and to keep consistent with the exabayes and examl subroutines,
 	# we write the tree to the specified outfile
 	my $tree = Bio::Phylo::Forest::Tree->new_from_bioperl( $bptree );
-	open my $fh, ">", $self->outfile;
-	print $fh $tree->to_newick;
+
+	open my $fh, '>', $self->outfile;
+	print $fh $tree->to_newick;	
 	close $fh;
 	
 	return $self->outfile;	
@@ -180,6 +182,9 @@ sub _infer_examl {
     # set substitution model
     $logger->info("setting substitution model ".$config->EXAML_MODEL);
     $tool->m($config->EXAML_MODEL);
+
+	# set random seed
+	$tool->p(1); 
 
     # here we need to read the names from the phylip file and adjust the
     # common tree accordingly: it must only retain the taxa in the supermatrix,
