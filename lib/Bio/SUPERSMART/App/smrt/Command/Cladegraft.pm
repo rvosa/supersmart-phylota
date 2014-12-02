@@ -70,7 +70,7 @@ sub run{
 	
 	# collect command-line arguments
 	my $backbone = $opt->backbone;
-	my $cladetree = $opt->cladetree;
+	my $cladetree = $opt->cladetree || 0;
 	my $outfile = $self->outfile;
 	(my $workdir = $opt->workdir) =~ s/\/$//g;
  
