@@ -189,7 +189,7 @@ sub get_highest_informative_level{
 	
 	# get all possible taxonomic ranks, ordered from highest to lowest
 	my @all_ranks = $mts->get_taxonomic_ranks;
-	my %ranks_in_table = map { $_=>1 } keys $records[0];
+	my %ranks_in_table = map { $_=>1 } keys %{$records[0]};
 	
 	# iterate over all ranks; the first informative taxon level is the level that 
 	# does not contain NA values and that has distinct taxon IDs
@@ -226,7 +226,7 @@ sub get_root_taxon_level {
 	
 	# get all possible taxonomic ranks, ordered from lowest to highest
 	my @all_ranks = reverse $mts->get_taxonomic_ranks;
-	my %ranks_in_table = map { $_=>1 } keys $records[0];
+	my %ranks_in_table = map { $_=>1 } keys %{$records[0]};
 	
 	# iterate over all ranks; the root taxon level is the first rank for which all 
 	#  entries in the taxa table are the same!
