@@ -66,8 +66,8 @@ sub reroot_tree {
 	my %best_node_idx = ();
 	foreach my $level (@levels) {
 		$best_node_idx{$level} = ();
-		my $minscore = min( values $scores{$level} );
-		foreach my $k ( keys $scores{$level} ) {
+		my $minscore = min( values %{$scores{$level}} );
+		foreach my $k ( keys %{$scores{$level}} ) {
 			if ( $scores{$level}{$k} == $minscore ) {
 				push @{ $best_node_idx{$level} }, $k;
 			}
@@ -317,7 +317,7 @@ sub graft_tree {
                          });
         
     my @names = map { $_->get_name } @{ $clade->get_terminals };
-	$log->debug("@names");
+	$log->debug("Clade terminals : @names");
 	
 	# retrieve the tips from the clade tree that also occur in the backbone, i.e. the 
 	# exemplars, and locate their MRCA on the backbone
@@ -364,6 +364,7 @@ sub graft_tree {
         $bmrca->set_branch_length( $branch_length + $diff );
 		$log->debug("adjusted backbone MRCA depth by $bmrca_depth - $crd");
         # now graft!
+        $log->debug("Backbone tree before grafting: \n " . $backbone->to_newick);
         $bmrca->clear();
         $clade->visit(
 		sub {
@@ -371,18 +372,21 @@ sub graft_tree {
 			my $name = $node->get_internal_name;
 			if ( my $p = $node->get_parent ) {
 				if ( $p->is_root ) {
-					$log->info("grafted $name onto backbone MRCA");
+					$log->info("grafted node with id $name onto backbone MRCA");
 					$node->set_parent($bmrca);								
 				}
 			}
 			if ( $node->is_root ) {
-				$log->info("replacing root $name with backbone MRCA");
+				$log->info("replacing root with id $name with backbone MRCA");
+				##$node->set_parent($bmrca);								
+
 			}
 			else {
 				$backbone->insert($node);
 			}
 		}
             );
+       $log->debug("Backbone tree after grafting: \n " . $backbone->to_newick);
             
     my $num_terminals_after = scalar @{ $backbone->get_terminals };
 	$log->info("Grafting changed number of taxa from " . $num_terminals . " to " . $num_terminals_after);
