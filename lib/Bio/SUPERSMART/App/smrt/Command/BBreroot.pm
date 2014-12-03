@@ -71,7 +71,7 @@ sub run {
 		'-format' => 'newick',
 	);
 
-	# work wih taxon IDs instead of names
+	# use taxon IDs instead of names
 	$ts->remap_to_ti($tree);
 	
 	# Perform rerooting at outgroup, if given		
@@ -80,10 +80,17 @@ sub run {
 		
 		# get nodes in the tree that correspond to outgroup species and
 		#  get their mrca
-		my %og = map{ $_=>1 } split(',', $ogstr);;
-
+		my @names = split(',', $ogstr);
+		# remap outgroup species names to taxon identifiers
+		my @ids = map {
+						(my $name = $_) =~ s/_/ /g;
+						my @nodes = $ts->search_node({taxon_name=>$name})->all;
+						$logger->warn("found more than one database entry for taxon $name, using first entry.") if scalar (@nodes) > 1;						
+						die "could not find database entry for taxon name $name" if scalar (@nodes) == 0;						
+						$nodes[0]->ti;
+		} @names;
+		my %og = map{ $_=>1 } @ids;
 		my @ognodes = grep { exists($og{$_->get_name}) } @{$tree->get_terminals};
-		
 		my $mrca = $tree->get_mrca(\@ognodes);
 		
 		# reroot at mrca of outgroup
