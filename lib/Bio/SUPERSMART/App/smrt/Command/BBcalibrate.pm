@@ -36,19 +36,6 @@ file specified by the 'outfile' argument.
 
 =cut
 
-
-=head1 METHODS
-
-All methods below are ingerited by child classes.
-
-=over
-
-=item options
-
-specifies options for subcommand
-
-=cut
-
 sub options {
 	my ($self, $opt, $args) = @_;		
 	my $outfile_default = "chronogram.dnd";
@@ -61,12 +48,6 @@ sub options {
 	);	
 }
 
-=item validate
-
-specifies options for subcommand
-
-=cut
-
 sub validate {
 	my ($self, $opt, $args) = @_;		
 
@@ -78,18 +59,6 @@ sub validate {
 		$self->usage_error("file $file is empty") unless (-s $file);			
 	}
 }
-
-=head1 METHODS
-
-All methods below are ingerited by child classes.
-
-=over
-
-=item run
-
-runs the subcommand
-
-=cut
 
 sub run {
 	my ($self, $opt, $args) = @_;		
@@ -145,9 +114,5 @@ sub run {
 	
 	return 1;		
 }
-
-=back
-
-=cut
 
 1;
