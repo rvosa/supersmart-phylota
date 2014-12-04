@@ -18,6 +18,7 @@ BBinfer.pm - reroots backbone tree such that the amount of paraphyletic species 
 
 =head1 SYNOPSIS
 
+smrt bbreroot [-h ] [-v ] [-w <dir>] [-l <filename>] -t <file> -b <file> [-g ] [-o <filename>] 
 
 =head1 DESCRIPTION
 
