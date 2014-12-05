@@ -381,7 +381,8 @@ sub get_outgroup_taxa {
 	$tree->visit(
 		sub{ 
 			my $node = shift;
-			if ( $node->get_name ~~ @ids ){
+			my $name = $node->get_name;
+			if (  grep ( $_ eq $name, @ids )) {
 				push @nodes, $node; 
 			}
 		}
