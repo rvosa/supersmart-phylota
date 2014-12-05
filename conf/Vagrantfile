@@ -1,7 +1,11 @@
 VAGRANTFILE_API_VERSION = "2"
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
-  config.vm.box_url = "https://oss-binaries.phusionpassenger.com/vagrant/boxes/latest/ubuntu-14.04-amd64-vbox.box"
-  config.vm.box = "supersmart"
-  config.vm.hostname = "supersmart"
-  config.vm.provision "puppet"
+ 	config.vm.box_url = "https://oss-binaries.phusionpassenger.com/vagrant/boxes/latest/ubuntu-14.04-amd64-vbox.box"
+ 	config.vm.box = "supersmart"
+ 	config.vm.hostname = "supersmart"
+ 	config.vm.provision "puppet"
+
+	config.vm.provider :virtualbox do |vb|
+    	vb.customize ["modifyvm", :id, "--cpus", "4"]   
+  	end  
 end
