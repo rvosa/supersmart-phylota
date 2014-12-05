@@ -1,0 +1,9 @@
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+
+die 'environment variable SUPERSMART_HOME must be set' if ( ! (my $path = $ENV{'SUPERSMART_HOME'}) ); 
+die 'default editor must be set in environment variable EDITOR' if ( ! (my $editor = $ENV{'EDITOR'}) );
+
+system ( "$editor $path/conf/supersmart.ini" ) == 0 or die $?;
