@@ -133,9 +133,6 @@ file {
 		ensure  => link,
 		target  => "${tools_dir}/treePL/src/treePL",
 		require => Exec["compile_treepl"];
-	"inparanoid_dir":
-		path    => "${data_dir}/inparanoid",
-		ensure  => directory;
 }
 
 # command line tasks
@@ -200,20 +197,6 @@ exec {
  		cwd     => "${tools_dir}/mafft-7.130-without-extensions/core",		
  		creates => "$tools_dir/bin/mafft", 		
  		require => Exec[ 'make_nonroot_makefile_mafft' ];
-
-	# make inparanoid blast db
-	"dl_inparanoid_seq":
-		command => "curl http://inparanoid.sbc.su.se/download/current/sequences/processed/FASTA -o inparanoid.fa",
-		cwd     => $data_dir,
-		creates => "${data_dir}/inparanoid.fa",
-		timeout => 0,		
-		require => [ File[ $data_dir ], Package[ 'curl' ] ];	
-	"inparanoid_formatdb":
-		command => "makeblastdb -in inparanoid.fa -logfile inparanoid-blast.log -dbtype prot -parse_seqids",
-		cwd     => $data_dir,
-		creates => "${data_dir}/inparanoid-blast.log",
-		timeout => 0,
-		require => [ Exec[ 'dl_inparanoid_seq' ], Package[ 'ncbi-blast+' ] ];		
 
 	# install muscle multiple sequence alignment
 	"download_muscle":
@@ -297,6 +280,28 @@ exec {
     creates => "/etc/profile.d/app_cmd.csh",
     require => Exec[ 'clone_app_cmd' ]; 
   	  
+  #install perl package String::RewritePrefix, needed by App::Cmd     
+  "download_string_rewrite_prefix":
+    command => "wget http://search.cpan.org/CPAN/authors/id/R/RJ/RJBS/String-RewritePrefix-0.006.tar.gz",
+    cwd     => $tools_dir,
+    creates => "${tools_dir}/String-RewritePrefix-0.006.tar.gz",
+    require => Package[ 'wget', 'tar' ];
+   "unzip_string_rewrite_prefix":
+    command => "tar -xvzf ${tools_dir}/String-RewritePrefix-0.006.tar.gz",
+    creates => "${tools_dir}/String-RewritePrefix-0.006/Makefile.PL",
+    cwd     => $tools_dir,
+    require => Exec["download_string_rewrite_prefix"];
+  "make_string_rewrite_prefix_run_sh":
+    command => "echo 'export PERL5LIB=\$PERL5LIB:${tools_dir}/String-RewritePrefix-0.006/lib' > string_rewrite_prefix.sh",
+    cwd     => "/etc/profile.d",
+    creates => "/etc/profile.d/string_rewrite_prefix.sh",
+    require => Exec[ 'unzip_string_rewrite_prefix' ];
+  "make_string_rewrite_prefix_run_csh":
+    command => "echo 'setenv PERL5LIB \$PERL5LIB:${tools_dir}/String-RewritePrefix-0.006/lib' > string_rewrite_prefix.csh",
+    cwd     => "/etc/profile.d",
+    creates => "/etc/profile.d/string_rewrite_prefix.csh",
+    require => Exec[ 'unzip_string_rewrite_prefix' ]; 	
+  	  
    #install perl package Math::Random
   "download_math_random":
     command => "wget http://search.cpan.org/CPAN/authors/id/G/GR/GROMMEL/Math-Random-0.70.tar.gz",
@@ -318,29 +323,51 @@ exec {
 		cwd     => "${tools_dir}/Math-Random-0.70",		
 		creates => "/usr/local/lib64/perl5/Math/Random.pm",
 		require => Exec["make_makefile_math_random"];	
-                               
-  #install perl package Parallel::MPI::Simple
-	"download_parallel_mpi_simple":
-		command => "wget http://search.cpan.org/CPAN/authors/id/A/AJ/AJGOUGH/Parallel-MPI-Simple-0.10.tar.gz",
-		cwd     => $tools_dir,
-		creates => "${tools_dir}/Parallel-MPI-Simple-0.10.tar.gz",
-		require => Package[ 'wget', 'tar' ];		
-	"unzip_parallel_mpi_simple":
-		command => "tar -xzvf ${tools_dir}/Parallel-MPI-Simple-0.10.tar.gz",
-		cwd     => $tools_dir,		
-		creates => "${tools_dir}/Parallel-MPI-Simple-0.10/Makefile.PL",
-		require => Exec["download_parallel_mpi_simple"];
-	"make_makefile_parallel_mpi_simple":
-		command => "perl Makefile.PL CCFLAGS='-I/usr/include' LDFLAGS='-L/usr/lib/ -lmpi' CC=mpicc LD=mpicc",
-		cwd     => "${tools_dir}/Parallel-MPI-Simple-0.10/",
-		creates => "${tools_dir}/Parallel-MPI-Simple-0.10/Makefile",
-		require => Exec["unzip_parallel_mpi_simple","install_openmpi"];
-	"make_install_parallel_mpi_simple":
-		command => "make install LD_LIBRARY_PATH=/usr/lib",
-		cwd     => "${tools_dir}/Parallel-MPI-Simple-0.10/",		
-		creates => "${tools_dir}/Parallel-MPI-Simple-0.10/Simple.so",
-		require => Exec["make_makefile_parallel_mpi_simple"];	
-	      
+    
+   # install perl package Parallel::parallel_map 
+  "download_parallel_map":
+    command => "wget http://search.cpan.org/CPAN/authors/id/O/OK/OKHARCH/Parallel-parallel_map-0.02.tar.gz",
+    cwd     => $tools_dir,
+    creates => "${tools_dir}/Parallel-parallel_map-0.02.tar.gz",
+    require => Package[ 'wget', 'tar' ];
+   "unzip_parallel_map":
+    command => "tar -xvzf ${tools_dir}/Parallel-parallel_map-0.02.tar.gz",
+    creates => "${tools_dir}/Parallel-parallel_map-0.02/Makefile.PL",
+    cwd     => $tools_dir,
+    require => Exec["download_parallel_map"];
+  "make_parallel_map_run_sh":
+    command => "echo 'export PERL5LIB=\$PERL5LIB:${tools_dir}/Parallel-parallel_map-0.02/lib' > parallel_map.sh",
+    cwd     => "/etc/profile.d",
+    creates => "/etc/profile.d/parallel_map.sh",
+    require => Exec[ 'unzip_parallel_map' ];
+  "make_parallel_map_run_csh":
+    command => "echo 'setenv PERL5LIB \$PERL5LIB:${tools_dir}/Parallel-parallel_map-0.02/lib' > parallel_map.csh",
+    cwd     => "/etc/profile.d",
+    creates => "/etc/profile.d/parallel_map.csh",
+    require => Exec[ 'unzip_parallel_map' ]; 
+    
+    # install perl package Parallel::parallel_datapipe 
+  "download_parallel_datapipe":
+    command => "wget http://search.cpan.org/CPAN/authors/id/O/OK/OKHARCH/Parallel-DataPipe-0.11.tar.gz",
+    cwd     => $tools_dir,
+    creates => "${tools_dir}/Parallel-DataPipe-0.11.tar.gz",
+    require => Package[ 'wget', 'tar' ];
+   "unzip_parallel_datapipe":
+    command => "tar -xvzf ${tools_dir}/Parallel-DataPipe-0.11.tar.gz",
+    creates => "${tools_dir}/Parallel-DataPipe-0.11/Makefile.PL",
+    cwd     => $tools_dir,
+    require => Exec["download_parallel_datapipe"];
+  "make_parallel_datapipe_run_sh":
+    command => "echo 'export PERL5LIB=\$PERL5LIB:${tools_dir}/Parallel-DataPipe-0.11/lib' > parallel_datapipe.sh",
+    cwd     => "/etc/profile.d",
+    creates => "/etc/profile.d/parallel_datapipe.sh",
+    require => Exec[ 'unzip_parallel_datapipe' ];
+  "make_parallel_datapipe_run_csh":
+    command => "echo 'setenv PERL5LIB \$PERL5LIB:${tools_dir}/Parallel-DataPipe-0.11/lib' > parallel_datapipe.csh",
+    cwd     => "/etc/profile.d",
+    creates => "/etc/profile.d/parallel_datapipe.csh",
+    require => Exec[ 'unzip_parallel_datapipe' ]; 
+                                	      
 	# install openmpi
 	"download_openmpi":
 		command => "wget http://www.open-mpi.org/software/ompi/v1.6/downloads/openmpi-1.6.5.tar.gz",
@@ -438,13 +465,7 @@ exec {
 		command => "echo 'setenv LD_LIBRARY_PATH /usr/lib:/usr/lib64:/usr/local/lib' > supersmart.csh && echo 'setenv SUPERSMART_HOME ${src_dir}/supersmart' >> supersmart.csh && echo 'setenv PERL5LIB \$PERL5LIB:\$SUPERSMART_HOME/lib' >> supersmart.csh",
 		cwd     => "/etc/profile.d",
 		creates => "/etc/profile.d/supersmart.csh";		
-    
-  # change permissions of SUPERSMART install directory
-  "chown_supersmart":  
-		command => "chmod -R ${username} .", 
-    cwd     => $supersmart_dir,
-    require => Exec [ "clone_supersmart" ];
-		    
+    		    
   # install BEAST
   "download_beast":
     command => "wget https://beast-mcmc.googlecode.com/files/BEASTv1.8.0.tgz",
