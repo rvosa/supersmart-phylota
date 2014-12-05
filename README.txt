@@ -1,14 +1,25 @@
+INFO
+
+Constantly updated information about the pipeline can be retrieved from the 
+project website at www.supersmart-project.org.
+
+COMMANDS
+
+The functionality of the pipeline is exposed via the 'smrt' command located in app/.
+The 'smrt' command offers twelve subcommands, representing each step of the pipeline. 
+
 PRE-REQUISITES
 
-All dependencies are now managed by puppet, see conf/manifests/*.pp, see ./INSTALL
+Installation depends on vagrant and Virtualbox, see ./INSTALL
+and the project website.
 
 CONFIGURATION
 
-The pipeline API has a single point of configuration: the conf/supersmart.ini file.
-Locations of 3rd party executables, run-time parameters, input and output file
-names etc. are defined there (and only there).
+Basic configuration is done via options passed to the 'smrt' command. 
+Advanced configuration of the pipeline API is possible in the conf/supersmart.ini file.
+The app/smrt-config command provides an interface for changing the configuration file.
 
 EXAMPLES
 
 The examples/* directories contain instructional examples to demonstrate the input
-file formats, the run.sh shell script shows how the steps are chained together.
+file formats.
