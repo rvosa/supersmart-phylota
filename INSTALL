@@ -14,15 +14,17 @@ Quick installation guide
    install VirtualBox (https://www.virtualbox.org/wiki/Downloads)
 -- If not already installed, download and
    install Vagrant (http://www.vagrantup.com/downloads.html).
--- Change to the configuration directory 'conf/'
+-- Change to the SUPERSMART configuration directory 'conf/'
 -- Issue command 'vagrant up'
 -- Log in to the virtual guest machine using 'vagrant ssh'
--- SUPERSMART is installed in the directory '/usr/local/src/supersmart', i.e. $SUPERSMART_HOME
+-- SUPERSMART is installed in the directory '/home/vagrant/SUPERSMART', i.e. $SUPERSMART_HOME
 
 
 Extended installation instructions
 ==================================
 
+For installation instructions, please also refer to the project 
+website at http://www.supersmart-project.org/.
 The SUPERSMART pipeline is designed to run on a virtual 
 guest operating system within the 'VirtualBox' software, 
 using the 'Vagrant' and 'puppet' environments. 
