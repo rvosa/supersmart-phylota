@@ -100,7 +100,7 @@ sub min_age {
     return $self->{'MinAge'};
 }
 
-=item min_age
+=item max_age
 
 Getter/Setter for the maximum age of the fossil.
 
@@ -136,7 +136,7 @@ sub fossil_author {
     return $self->{'NUsrcrFos'};
 }
 
-=item fossil_author
+=item nfos
 
 Getter/Setter for the record number (Nfos column in the table).
 
