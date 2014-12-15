@@ -6,7 +6,7 @@ use warnings;
 use Bio::Phylo::PhyLoTA::Config;
 use Bio::Tools::Run::Phylo::StarBEAST;
 
-use Parallel::parallel_map;
+use Bio::Phylo::PhyLoTA::Service::ParallelService 'pthreads';
 
 use base 'Bio::SUPERSMART::App::smrt::SubCommand';
 use Bio::SUPERSMART::App::smrt qw(-command);
@@ -163,7 +163,7 @@ sub run {
 		die("no clade directories found in workdir $workdir") if scalar(@cladedirs) == 0;
 
     # infer clades in parallel mode
-    parallel_map {
+    pmap {
                 my ($clade) = @_;
                 # this should be a nexml file with one taxa block and
                 # multiple matrices                

@@ -8,7 +8,7 @@ use List::MoreUtils qw(firstidx uniq);
 use Bio::Phylo::PhyLoTA::Config;
 use Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector;
 
-use Parallel::parallel_map;
+use Bio::Phylo::PhyLoTA::Service::ParallelService 'pthreads';
 
 use base 'Bio::SUPERSMART::App::smrt::SubCommand';
 use Bio::SUPERSMART::App::smrt qw(-command);
@@ -100,7 +100,7 @@ sub run {
 
 	# this will take some time to do the taxonomic name resolution in the
 	# database and with webservices. The below code runs in parallel
-	my @result = parallel_map {
+	my @result = pmap {
 		my ($name) = @_;
 
 		# replace consecutive whitespaces with one

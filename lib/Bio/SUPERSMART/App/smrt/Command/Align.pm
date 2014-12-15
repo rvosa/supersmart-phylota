@@ -9,10 +9,10 @@ use Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa;
 use Bio::Phylo::PhyLoTA::Service::SequenceGetter;
 use Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector;
 
+use Bio::Phylo::PhyLoTA::Service::ParallelService 'pthreads';
+
 use Bio::Seq;
 use Bio::AlignIO;
-
-use Parallel::parallel_map;
 
 use base 'Bio::SUPERSMART::App::smrt::SubCommand';
 
@@ -86,7 +86,18 @@ sub run {
 	$log->info("Found " . scalar(@nodes) . " nodes for taxa table");
 	
 	# this is sorted from more to less inclusive
-	my @clusters = $mts->get_clusters_for_nodes(@nodes); 
+	my @sorted_clusters = $mts->get_clusters_for_nodes(@nodes); 
+	
+	my @clusters;	
+	my @subset;	
+	my $nworkers = num_workers();	
+	for my $i ( 0 .. $#sorted_clusters ) {
+		my $j = $i % $nworkers;
+			$subset[$j] = [] if not $subset[$j];
+			push @{ $subset[$j] }, $sorted_clusters[$i];
+	}
+	
+	push @clusters, @{ $subset[$_] } for 0 .. ( $nworkers -1 );
 	
 	# this is a simple mapping to see whether a taxon is of interest
 	my %ti =  map { $_->ti => 1 } @nodes;        
@@ -94,8 +105,8 @@ sub run {
 	$log->info("Processing " . scalar(@clusters) . " clusters");
 	
 	# make the alignments in parallel mode
-	my @result = parallel_map {        		
-		my $cl = $_;
+	my @result = pmap {        		
+		my ($cl) = @_;
 	   	my $ti = \%ti;
 		        
         # returned result: cluster information: seed_gi, mrca, cluster id and -type and finally the alignment
