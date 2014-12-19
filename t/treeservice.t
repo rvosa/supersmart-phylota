@@ -66,3 +66,12 @@ my $grafted = $ts->graft_tree( $bbtree, $consensus );
 isa_ok($grafted,'Bio::Tree::TreeI');
 ok (length $grafted->to_newick > length $bbstr, "tree is larger after grafting");
 
+# test remapping a tree back to taxon identifiers 
+my $newick = "((('Echinochloa_crus-galli',Echinochloa_colona),Echinochloa_stagnina),Panicum_turgidum);";
+$tree = parse_tree(
+	'-string'   => $newick,
+	'-format' => 'newick',
+	'-as_project' => 1,
+    );
+my $remapped = $ts->remap_to_ti($tree);
+isa_ok ($remapped, 'Bio::Tree::TreeI');
