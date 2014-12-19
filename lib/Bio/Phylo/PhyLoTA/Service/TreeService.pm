@@ -173,12 +173,13 @@ sub remap_to_name {
 
 # Changes taxon names in a given tree to taxon identifiers
 sub remap_to_ti { 
-        my ($self, $tree, @records) = @_;
+        my ($self, $tree) = @_;
         $tree->visit(sub{
                 my $n = shift;
                 if ( $n->is_terminal ) {
                         my $name = $n->get_name;
                         $name =~ s/_/ /g;
+                        $name =~ s/'//g;
                         my @nodes = $self->search_node({taxon_name=>$name})->all;
 						$log->warn("found more than one database entry for taxon $name, using first entry.") if scalar (@nodes) > 1;						
 						die "could not find database entry for taxon name $name " if scalar (@nodes) == 0;						
