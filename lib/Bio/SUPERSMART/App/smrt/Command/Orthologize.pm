@@ -8,7 +8,7 @@ use Bio::Phylo::PhyLoTA::Config;
 use Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa;
 use Bio::Phylo::PhyLoTA::Service::SequenceGetter;
 
-use Bio::Phylo::PhyLoTA::Service::ParallelService 'pthreads';
+use Bio::Phylo::PhyLoTA::Service::ParallelService 'pfm';
 
 use base 'Bio::SUPERSMART::App::smrt::SubCommand';
 use Bio::SUPERSMART::App::smrt qw(-command);
@@ -237,7 +237,8 @@ sub run {
 			my $file2 = $files[$i+1];
 			
 			# do the profile alignment
-			$log->debug("attempting to merge $file1 and $file2");
+			my $count = $i + 1;
+			$log->info("attempting to merge $file1 and $file2 (# " .  $count  . " of " . $#files . ")");
 			my $result = $service->profile_align_files($file1,$file2);
 			
 			# evaluate how this went
