@@ -11,7 +11,7 @@ use Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector;
 
 use Bio::Phylo::PhyLoTA::Service::ParallelService 'pthreads';
 
-use Bio::Seq;
+use Bio::PrimarySeq;
 use Bio::AlignIO;
 
 use base 'Bio::SUPERSMART::App::smrt::SubCommand';
@@ -144,7 +144,7 @@ sub run {
 			    	for my $seq(@matching){						
 						my $gi = $seq->gi;
 						my $ti  = $sg->find_seq($gi)->ti;
-						my $seqobj = Bio::Seq->new( -display_id => "gi|${gi}|seed_gi|${seed_gi}|taxon|${ti}|mrca|${mrca}" ,
+						my $seqobj = Bio::PrimarySeq->new( -display_id => "gi|${gi}|seed_gi|${seed_gi}|taxon|${ti}|mrca|${mrca}" ,
                              						-seq => $seq->seq, 
                              						-name => $gi,
                              						-type => 'dna');														
