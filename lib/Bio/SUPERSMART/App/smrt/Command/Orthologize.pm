@@ -3,12 +3,14 @@ package Bio::SUPERSMART::App::smrt::Command::Orthologize;
 use strict;
 use warnings;
 
+use File::Copy qw(copy);
+	
 use Bio::SearchIO;
 use Bio::Phylo::PhyLoTA::Config;
 use Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa;
 use Bio::Phylo::PhyLoTA::Service::SequenceGetter;
 
-use Bio::Phylo::PhyLoTA::Service::ParallelService 'pfm';
+use Bio::Phylo::PhyLoTA::Service::ParallelService 'pthreads';
 
 use base 'Bio::SUPERSMART::App::smrt::SubCommand';
 use Bio::SUPERSMART::App::smrt qw(-command);
@@ -193,8 +195,8 @@ sub run {
 	@$sets = values %{ { map { join('|', sort { $a <=> $b } @{$_}) => $_ } @$sets } };
 	
 	# assign ids to clusters
-	my $i = 1;
-	my @clusters = map { {'id'=>$i++, 'seq'=>$_} } @$sets;
+	my $clustid = 1;
+	my @clusters = map { {'id'=>$clustid++, 'seq'=>$_} } @$sets;
 	
 	# align
 	my $total = scalar @clusters;
@@ -204,64 +206,64 @@ sub run {
 	    my %cluster = %{$clref};
 		my $clusterid = $cluster{'id'};
 		my @seqids = @{$cluster{'seq'}};
-			
+					
 		# turn GIs into file names 
 		my @files = map { glob ( "$workdir/" .  $_. "*.fa" ) } @seqids;
-		
-		# check for singletons
-		if ( scalar(@files) == 1 ) {
-			$log->info("singleton cluster $i: @files");
-			open my $outfh, '>>', $workdir . '/' . $outfile or die $!;
-			print $outfh @files, "\n";
-			close $outfh;
-			$i++;
-			return (0);
-		}
-		
+	
 		# the name of the file that contains the merger of this cluster
 		my $merged = File::Spec->catfile( $workdir, "cluster${clusterid}.fa" );
 		
+		# check for singletons
+		if ( scalar(@files) == 1 ) {
+			copy $files[0], $merged;
+			$log->info("singleton cluster $clusterid: @files");
+			open my $outfh, '>>', $workdir . '/' . $outfile or die $!;
+			print $outfh $merged, "\n";
+			close $outfh;
+			return (0);
+		} 
 		# (the effectiveness of this procedure may depend on the input order). I was trying
 		# to do this using List::Util::reduce, but it segfaults.
 		$log->info("going to reduce @files");		
-		my $file1;
-		for my $i ( 0 .. ( $#files - 1 ) ) {
-		
+				
+		if ( $files[0] ) {
+			copy $files[0], $merged;
+		}
+				
+		for my $i ( 1 .. ( $#files ) ) {
 			# as long as merges are unsuccessful, we will continue to attempt
 			# profile align the subsequence files against the first input file. TODO:
 			# sort the input files by size so that if all mergers fail, we end up with
 			# the largest input file
-			if ( not $file1 ) {
-				$file1 = $files[0];
-			}
-			my $file2 = $files[$i+1];
-			
+
+			my $file2 = $files[$i];
+						
 			# do the profile alignment
-			my $count = $i + 1;
-			$log->info("attempting to merge $file1 and $file2 (# " .  $count  . " of " . $#files . ")");
-			my $result = $service->profile_align_files($file1,$file2);
+			$log->info("attempting to merge $merged and $file2 (# " .  $i  . " of " . $#files . ")");
+			my $result = $service->profile_align_files($merged,$file2);
 			
 			# evaluate how this went
 			my %fasta  = $mts->parse_fasta_string($result);
+
+			$mts->calc_mean_distance(%fasta);
+			
 			if ( $mts->calc_mean_distance(%fasta) < $config->BACKBONE_MAX_DISTANCE ) {
 				%fasta = $mts->dedup(%fasta);
+				
 				open my $fh, '>', $merged or die $!;
 				for my $defline ( keys %fasta ) {
 					print $fh '>', $defline, "\n", $fasta{$defline}, "\n";
 				}
-				$log->info("merged $file1 and $file2");
+				$log->info("merged $merged and $file2");
 				
-				# from now on we will continue to append to the merged file
-				$file1 = $merged;
 			}
 			else {
-				$log->info("rejecting $file2 from $file1");
+				$log->info("rejecting $file2 from $merged");
 			}		
 		}
 		open my $outfh, '>>', $workdir . '/' . $outfile or die $!;
-		print $outfh $file1 || $merged, "\n";
+		print $outfh $merged, "\n";
 		close $outfh;
-		$i++;
 	} @clusters;
 
 	$log->info("DONE, results written to $outfile");
@@ -269,7 +271,7 @@ sub run {
 }
 
 
-# Helpler subroutines
+# Helper subroutines
 sub _cluster {
 	my ( $clusters, $hitset, $hitmap) = @_;
 		
