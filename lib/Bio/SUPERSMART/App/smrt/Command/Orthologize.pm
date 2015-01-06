@@ -245,8 +245,6 @@ sub run {
 			# evaluate how this went
 			my %fasta  = $mts->parse_fasta_string($result);
 
-			$mts->calc_mean_distance(%fasta);
-			
 			if ( $mts->calc_mean_distance(%fasta) < $config->BACKBONE_MAX_DISTANCE ) {
 				%fasta = $mts->dedup(%fasta);
 				
