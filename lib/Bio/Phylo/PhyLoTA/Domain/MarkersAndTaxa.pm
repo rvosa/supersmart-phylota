@@ -84,18 +84,10 @@ Calculates the average pairwise distance within the alignment.
 =cut
 
 sub calc_mean_distance {
-	my ( $class, %fasta ) = @_;
-	my $dat  = 'Bio::Phylo::Matrices::Datum';
-	my @seqs = map { $dat->new( '-type' => 'dna', '-char' => $_ ) } values %fasta;
-	my $count = 0;
-	my $distance = 0;
-	for my $i ( 0 .. ( $#seqs - 1 ) ) {
-		for my $j ( ( $i + 1 ) .. $#seqs ) {
-			$count++;
-			$distance += $seqs[$i]->calc_distance($seqs[$j]);
-		}
-	}
-	return $distance / $count;
+	my ( $class, $fastastr ) = @_;
+	my $stream = Bio::AlignIO->new(-string=>$fastastr, -format=>"fasta");  
+	my $aln = $stream->next_aln;  
+	return (1 - $aln->average_percentage_identity/100)
 }
 
 =item dedup

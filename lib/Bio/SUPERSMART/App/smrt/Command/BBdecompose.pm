@@ -141,7 +141,7 @@ sub run{
 	    my ($aln) = @_;
 		$logger->info("checking whether alignment $aln can be included");
 		my %fasta = $mt->parse_fasta_file($aln);
-		my $dist  = $mt->calc_mean_distance(%fasta);
+		my $dist  = $mt->calc_mean_distance($aln);
 		my $nchar = $mt->get_nchar(%fasta);
 		my $mdens = $config->CLADE_MIN_DENSITY;
 		
