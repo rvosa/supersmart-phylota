@@ -241,10 +241,6 @@ sub run {
 			# do the profile alignment
 			$log->info("attempting to merge $merged and $file2 (# " .  $i  . " of " . $#files . ")");
 			my $result = $service->profile_align_files($merged,$file2);
-
-			open my $fh, '>', 'alnfile.fa' or die $!;
-			print $fh $result;
-			close $fh;
 			
 			# evaluate how this went
 			if ( $mts->calc_mean_distance($result) < $config->BACKBONE_MAX_DISTANCE ) {
