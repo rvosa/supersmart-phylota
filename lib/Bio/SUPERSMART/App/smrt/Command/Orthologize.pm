@@ -256,7 +256,7 @@ sub run {
 					$log->info("rejecting $file2 from $merged");
 				}		
 			} else {
-				$log->warn("profile alignment of $merged and $file2 failed")
+				$log->warn("profile alignment of $merged and $file2 failed");
 			}
 		}
 		open my $outfh, '>>', $workdir . '/' . $outfile or die $!;
