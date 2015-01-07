@@ -240,21 +240,24 @@ sub run {
 						
 			# do the profile alignment
 			$log->info("attempting to merge $merged and $file2 (# " .  $i  . " of " . $#files . ")");
-			my $result = $service->profile_align_files($merged,$file2);
 			
-			# evaluate how this went
-			if ( $mts->calc_mean_distance($result) < $config->BACKBONE_MAX_DISTANCE ) {
-				my %fasta  = $mts->parse_fasta_string($result);				
-				%fasta = $mts->dedup(%fasta);
-				open my $fh, '>', $merged or die $!;
-				for my $defline ( keys %fasta ) {
-					print $fh '>', $defline, "\n", $fasta{$defline}, "\n";
+			if ( my $result = $service->profile_align_files($merged,$file2) ){
+				# evaluate how this went
+				if ( $mts->calc_mean_distance($result) < $config->BACKBONE_MAX_DISTANCE ) {
+					my %fasta  = $mts->parse_fasta_string($result);				
+					%fasta = $mts->dedup(%fasta);
+					open my $fh, '>', $merged or die $!;
+					for my $defline ( keys %fasta ) {
+						print $fh '>', $defline, "\n", $fasta{$defline}, "\n";
+					}
+					$log->info("merged $merged and $file2");				
 				}
-				$log->info("merged $merged and $file2");				
+				else {
+					$log->info("rejecting $file2 from $merged");
+				}		
+			} else {
+				$log->warn("profile alignment of $merged and $file2 failed")
 			}
-			else {
-				$log->info("rejecting $file2 from $merged");
-			}		
 		}
 		open my $outfh, '>>', $workdir . '/' . $outfile or die $!;
 		print $outfh $merged, "\n";
