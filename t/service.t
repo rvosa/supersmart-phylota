@@ -15,12 +15,24 @@ my $node = shift @nodes;
 my $id = $node->get_id();
 is ( $id, 50543, "found $name");
 
-# test searching for smilodon
+# search for smilodon
 $name = 'Smilodon populator';
 @nodes = $service->search_node( { taxon_name => $name } )->all;
 ok ( scalar @nodes > 0, "found at least one node for $name");
 
-# test searching for Echinochloa crus-galli
+# search for Echinochloa crus-galli
 $name = "Echinochloa crus-galli";
 @nodes = $service->search_node( { taxon_name => $name } )->all;
 ok ( scalar @nodes > 0, "found at least one node for $name");
+
+# search for Bletia sp. Chase O-581
+$name = "Bletia sp. Chase O-581";
+@nodes = $service->search_node( { taxon_name => $name } )->all;
+ok ( scalar @nodes > 0, "found at least one node for $name");
+
+# search for x Brassolaeliocattleya 'Sung Ya Green'
+$name = "x Brassolaeliocattleya 'Sung Ya Green'";
+@nodes = $service->search_node( { taxon_name => $name } )->all;
+ok ( scalar @nodes > 0, "found at least one node for $name");
+
+
