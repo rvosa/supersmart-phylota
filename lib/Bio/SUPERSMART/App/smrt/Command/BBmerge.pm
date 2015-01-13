@@ -317,10 +317,10 @@ sub run {
 	
 	$log->info("using ".scalar(@filtered_alignments)." alignments for supermatrix");
 	$log->info("number of filtered exemplars : " . scalar(@filtered_exemplars));
-	
+		
+	#_write_supermatrix( \@filtered_alignments, \@filtered_exemplars );
+
 	open my $outfh, '>', $outfile or die $!;
-	
-	#$ts->make_phylip_from_matrix()
 		
 	# produce interleaved phylip output
 	my $nchar = sum( @nchar{@filtered_alignments} );
@@ -368,6 +368,60 @@ sub run {
 	
 }
 
+sub _write_supermatrix {
+	my $alnfiles = shift;
+	my $ex = shift;
+
+	my %exemplars = map{ $_ => 1 } @{$ex}; 
+		
+	# create empty alignment which will store all concatenated sequences
+	my $final_aln = Bio::SimpleAlign->new();
+	map {$final_aln->add_seq(-id=>$_, seq=>"") } keys %exemplars;
+	
+	
+	# iterate over all alignment files to be included in supermatrix
+	foreach my $file ( @$alnfiles ) {
+		my $in  = Bio::AlignIO->new(-file   => $file,
+        	                     -format => 'fasta');
+		while ( my $aln = $in->next_aln ){
+
+			# if exemplar species are given, remove file from alignment if taxon id not in exemplars				
+			foreach my $seq ( $aln->each_seq() ){
+				my ($taxid) = $seq->id=~/taxon\|([0-9]+)\|.*/; 	
+	
+				
+			
+				# look for missing sequences and fill them up with '?' characters
+				foreach my $id ( keys %exemplars ) {										
+					my $seqstr;
+	
+					my $prev_seq = $final_aln->remove_seq($id); #$final_aln->get_seq_by_id($id)
+						
+									
+					$seq = ($aln->each_seq())[0];
+					my $length = $seq->length;
+					$seqstr = "?" x $length;
+					
+					#my $ss = Bio::LocatableSeq->new(-seq => $seq, -id => $id);
+					#$final_aln->add_seq( Bio::LocatableSeq->new(-seq => $seqstr, -id => $id)); 							 
+			
+			}	
+		}								
+	}
+	}
+
+	# concatenate alignments
+	#use Bio::Align::Utilities qw(cat);
+	#my $concat = cat(@alignments);
+	
+	my $stream = Bio::AlignIO->new(-format	=> 'phylip',
+                                         -file      	=> '>myphylip.phy',
+                                         -idlength	=> 10 );
+	$stream->interleaved(0);
+	
+	$stream->write_aln($final_aln);
+	
+}
 
 
 1;
