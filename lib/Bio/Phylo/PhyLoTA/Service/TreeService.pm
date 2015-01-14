@@ -463,9 +463,9 @@ sub read_tipnames {
 	LINE: while(<$fh>) {
 		chomp;
 		my $word;                     
-		if ( /^(\S+)/ ) {                        
+		if ( /^\s?(\S+)/ ) {                        
 			$word = $1;
-                }
+        }
 		if ( not $ntax ) {
 			$ntax = $word;                        
 			$log->debug("$supermatrix has $ntax taxa");

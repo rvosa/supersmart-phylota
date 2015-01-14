@@ -83,11 +83,12 @@ cases.
 sub options {
 	my ($self, $opt, $args) = @_;		
 	my $outfile_default = "supermatrix.phy";
+	my $outformat_default = "phylip";
 	return (
 		["alnfile|a=s", "list of file locations of merged alignments  as produced by 'smrt orthologize'", { arg => "file", mandatory => 1}],	
 		["taxafile|t=s", "tsv (tab-seperated value) taxa file as produced by 'smrt taxize'", { arg => "file", mandatory => 1}],
 		["outfile|o=s", "name of the output file, defaults to '$outfile_default'", {default => $outfile_default, arg => "filename"}],	
-		
+		["format|f=s", "format of supermatrix, defaults to '$outformat_default'; possible formats: bl2seq, clustalw, emboss, fasta, maf, mase, mega, meme, msf, nexus, pfam, phylip, prodom, psi, selex, stockholm", {default => $outformat_default}],	
 	);	
 }
 
@@ -111,6 +112,7 @@ sub run {
 	my $alnfile = $opt->alnfile;
 	my $taxafile = $opt->taxafile;
 	my $outfile= $self->outfile;	
+	my $format = $opt->format;
 
 	# instantiate helper objects
 	my $mts     = Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector->new;
@@ -317,50 +319,9 @@ sub run {
 	
 	$log->info("using ".scalar(@filtered_alignments)." alignments for supermatrix");
 	$log->info("number of filtered exemplars : " . scalar(@filtered_exemplars));
-		
-	#_write_supermatrix( \@filtered_alignments, \@filtered_exemplars );
-
-	open my $outfh, '>', $outfile or die $!;
-		
-	# produce interleaved phylip output
-	my $nchar = sum( @nchar{@filtered_alignments} );
-	my $ntax  = scalar(@filtered_exemplars);
-	my $names_printed;
 	
-	print  $outfh $ntax, ' ', $nchar, "\n"; # phylip header
-	for my $aln ( @filtered_alignments ) {
-		my %fasta = $mt->parse_fasta_file($aln);
-		for my $taxon ( @filtered_exemplars ) {
-	        		# in interleaved phylip, only the first part of the sequences are
-					# preceded by their name, hence this flag:
-					# http://evolution.genetics.washington.edu/phylip/doc/sequence.html
-	                my $pref = ' ' x10;
-	                if ( not $names_printed ) {
-			
-				# pad the names with spaces to make 10 characters
-				print  $outfh $taxon, ' ' x ( 10 - length($taxon) );
-	                        $pref = '';
-	                }
-			
-			# write aligned sequence or missing data of the same length
-			my ( $seq ) = $mt->get_sequences_for_taxon($taxon,%fasta);
-			if ( $seq ) {
-				
-	                        print $outfh $pref . $seq;
-			}
-			else {
-	                        print $outfh $pref . '?' x $nchar{$aln};
-			}
-			
-			# note that optionally there could be an additional blank line
-			# between every chunk. We don't do that, this break is just
-			# to move on to the next taxon, not the next chunk.
-			print $outfh "\n";
-	        }
-	        print $outfh "\n";
-		$names_printed++;
-	}
-	close $outfh;
+	# filter supermatrix for gap-only columns and write to file
+	$self->_write_supermatrix( \@filtered_alignments, \@filtered_exemplars, $outfile, $format );
 	
 	$log->info("DONE, results written to $outfile");
 	
@@ -369,58 +330,53 @@ sub run {
 }
 
 sub _write_supermatrix {
-	my $alnfiles = shift;
-	my $ex = shift;
+	my ($self, $alnfiles, $exemplars, $filename, $format) = @_;
+	my $log = $self->logger;
 
-	my %exemplars = map{ $_ => 1 } @{$ex}; 
-		
-	# create empty alignment which will store all concatenated sequences
-	my $final_aln = Bio::SimpleAlign->new();
-	map {$final_aln->add_seq(-id=>$_, seq=>"") } keys %exemplars;
+	my %allseqs = map{ $_ => "" } @{$exemplars}; 
 	
+	my $mt = Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa->new;
 	
-	# iterate over all alignment files to be included in supermatrix
-	foreach my $file ( @$alnfiles ) {
-		my $in  = Bio::AlignIO->new(-file   => $file,
-        	                     -format => 'fasta');
-		while ( my $aln = $in->next_aln ){
-
-			# if exemplar species are given, remove file from alignment if taxon id not in exemplars				
-			foreach my $seq ( $aln->each_seq() ){
-				my ($taxid) = $seq->id=~/taxon\|([0-9]+)\|.*/; 	
-	
-				
-			
-				# look for missing sequences and fill them up with '?' characters
-				foreach my $id ( keys %exemplars ) {										
-					my $seqstr;
-	
-					my $prev_seq = $final_aln->remove_seq($id); #$final_aln->get_seq_by_id($id)
-						
-									
-					$seq = ($aln->each_seq())[0];
-					my $length = $seq->length;
-					$seqstr = "?" x $length;
-					
-					#my $ss = Bio::LocatableSeq->new(-seq => $seq, -id => $id);
-					#$final_aln->add_seq( Bio::LocatableSeq->new(-seq => $seqstr, -id => $id)); 							 
-			
-			}	
-		}								
-	}
+	# Retrieve sequences for all exemplar species
+	for my $alnfile ( @$alnfiles ) {
+		my %fasta = $mt->parse_fasta_file($alnfile);
+		my $nchar = length $fasta{(keys(%fasta))[0]};
+		for my $taxid ( @$exemplars ) {			
+			my ( $seq ) = $mt->get_sequences_for_taxon($taxid, %fasta);
+			if ( ! $seq ) {	
+	        	$seq = '?' x $nchar;
+			}
+			$allseqs{$taxid} .= $seq; 
+		}
 	}
 
-	# concatenate alignments
-	#use Bio::Align::Utilities qw(cat);
-	#my $concat = cat(@alignments);
+	# Delete columns that only consist of gaps
+	my $nchar = length $allseqs{(keys(%allseqs))[0]};
+	my $vals = values %allseqs;
+	my %ind;
+	for my $v (values %allseqs) {
+	  # check if column only consists of gap characters
+	  $ind{ pos($v) -1 }++ while $v =~ /[-Nn\?]/g;
+	}
+	my @to_remove = sort {$b <=> $a} grep { $ind{$_} == $vals } keys %ind;
 	
-	my $stream = Bio::AlignIO->new(-format	=> 'phylip',
-                                         -file      	=> '>myphylip.phy',
-                                         -idlength	=> 10 );
-	$stream->interleaved(0);
+	# remove columns at specified indices
+	for my $v (values %allseqs) {
+	  substr($v, $_, 1, "") for @to_remove;
+	}
+
+	my $removed = $nchar - length $allseqs{(keys(%allseqs))[0]};
+	$log->info("Removed $removed gap-only columns from supermatrix");
+
+	# Write supermatrix to file
+	my $aln = Bio::SimpleAlign->new();
+	map {$aln->add_seq(Bio::LocatableSeq->new(-id=>$_, seq=>$allseqs{$_}, start=>1)) } keys %allseqs;
 	
-	$stream->write_aln($final_aln);
+	my $stream = Bio::AlignIO->new(-format	 => $format,
+                                   -file     => ">$filename",
+                                   -idlength => 10 );
 	
+	$stream->write_aln($aln);	
 }
 
 
