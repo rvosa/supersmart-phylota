@@ -157,31 +157,31 @@ sub run {
 	my %seen = ();
 	foreach my $res (@result) {
 
-		# flatten list of references
-		my @entry = map { @$_ } @$res;
-
-		my $name = shift @entry;
-		my $ids = join "\t", @entry;
-
-		# omit all taxa with higher taxonomic rank than 'Species'
-		my $highest_rank = "Species";
-		my $idx          = firstidx { lc($_) eq lc($highest_rank) } @levels;
-		my @subset       = @entry[ 0 .. $idx ];
-		if ( uniq(@subset) == 1 ) {
-			$log->debug(
-"rank of taxon with resolved name $name is higher than $highest_rank, omitting"
-			);
-		}
-
-		# filter taxa with duplicate species id
-		elsif ( exists $seen{$ids} ) {
-			$log->debug(
-"taxon with resolved name $name already in species table, omitting"
-			);
-		}
-		else {
-			print $out "$name \t $ids \n";
-			$seen{$ids} = 1;
+		# flatten list of references		
+		if ( my @entry = map { @$_ } @$res ){
+			my $name = shift @entry;
+			my $ids = join "\t", @entry;
+	
+			# omit all taxa with higher taxonomic rank than 'Species'
+			my $highest_rank = "Species";
+			my $idx          = firstidx { lc($_) eq lc($highest_rank) } @levels;
+			my @subset       = @entry[ 0 .. $idx ];
+			if ( uniq(@subset) == 1 ) {
+				$log->debug(
+	"rank of taxon with resolved name $name is higher than $highest_rank, omitting"
+				);
+			}
+	
+			# filter taxa with duplicate species id
+			elsif ( exists $seen{$ids} ) {
+				$log->debug(
+	"taxon with resolved name $name already in species table, omitting"
+				);
+			}
+			else {
+				print $out "$name \t $ids \n";
+				$seen{$ids} = 1;
+			}
 		}
 	}
 	close $out;
