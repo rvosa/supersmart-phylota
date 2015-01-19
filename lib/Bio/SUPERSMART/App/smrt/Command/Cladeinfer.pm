@@ -101,7 +101,7 @@ sub run {
     my $lfreq = $opt->lfreq ? $opt->lfreq : $ngens/100;
 	my  $file = $opt->file;
 	my $outfile= $self->outfile;	
-	(my $workdir = $opt->workdir) =~ s/\/$//g;
+	my $workdir = $self->workdir;
 	
 		
     # instantiate helper objects

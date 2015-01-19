@@ -37,7 +37,7 @@ sub options {
 	my $outfile_default = "merged.txt";
 	return (
 		["infile|i=s", "list of file locations of multiple sequence alignments  as produced by 'smrt align'", { arg => "file", mandatory => 1}],
-		["outfile|o=s", "name of the output file, defaults to '$outfile_default'", {default => $outfile_default, arg => "filename"}],	
+		["outfile|o=s", "name of the output file, defaults to '$outfile_default'", {default => $outfile_default, arg => "file"}],	
 	);	
 }
 
@@ -59,10 +59,10 @@ sub run {
 	# collect command-line arguments
 	my $infile = $opt->infile;
 	my $outfile = $opt->outfile;
-	(my $workdir = $opt->workdir) =~ s/\/$//g;
+	my $workdir = $self->workdir;
 	
 	# create empty output file 
-	open my $outfh, '>', $workdir . '/' . $outfile or die $!;
+	open my $outfh, '>', $outfile or die $!;
 	close $outfh;
 	
 	# instantiate helper objects
@@ -217,7 +217,7 @@ sub run {
 		if ( scalar(@files) == 1 ) {
 			copy $files[0], $merged;
 			$log->info("singleton cluster $clusterid: @files");
-			open my $outfh, '>>', $workdir . '/' . $outfile or die $!;
+			open my $outfh, '>>', $outfile or die $!;
 			print $outfh $merged, "\n";
 			close $outfh;
 			return (0);
@@ -259,7 +259,7 @@ sub run {
 				$log->warn("profile alignment of $merged and $file2 failed");
 			}
 		}
-		open my $outfh, '>>', $workdir . '/' . $outfile or die $!;
+		open my $outfh, '>>', $outfile or die $!;
 		print $outfh $merged, "\n";
 		close $outfh;
 	} @clusters;

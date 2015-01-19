@@ -35,7 +35,7 @@ sub options {
 	my $outfile_default = "final.dnd";
 	return (                               	
   		["backbone|b=s", "backbone tree as produced by 'smrt bbinfer'", { arg => "file", mandatory => 1}],
-		["outfile|o=s", "name of the output tree file (newick format) defaults to $outfile_default", { default=> $outfile_default, arg => "filename"}],    	    
+		["outfile|o=s", "name of the output tree file (newick format) defaults to $outfile_default", { default=> $outfile_default, arg => "file"}],    	    
 		["cladetree|c=s", "name of tree file for single clade (newick format) if only a single cladetree should be grafted", { arg => "file"}],    	    		
     );
 }
@@ -58,7 +58,7 @@ sub validate {
 
 	# check if there exist 'clade folders' in working directory
 	if (! $opt->cladetree){
-		(my $workdir = $opt->workdir) =~ s/\/$//g;
+		my $workdir = $self->workdir;
 		if ( ! -d glob "$workdir/clade*" ){			
         	$self->usage_error("no cladetree argument given and no clade folders found in working directory $workdir");
 		}
@@ -72,7 +72,7 @@ sub run{
 	my $backbone = $opt->backbone;
 	my $cladetree = $opt->cladetree || 0;
 	my $outfile = $self->outfile;
-	(my $workdir = $opt->workdir) =~ s/\/$//g;
+	my $workdir = $self->workdir;
  
 	# instantiate helper objects
 	my $ts = Bio::Phylo::PhyLoTA::Service::TreeService->new;

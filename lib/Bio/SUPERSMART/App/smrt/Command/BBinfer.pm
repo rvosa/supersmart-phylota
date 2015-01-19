@@ -45,7 +45,7 @@ sub options {
 		["supermatrix|s=s", "matrix of concatenated multiple sequece alignments as produced by 'smrt bbmerge'", { arg => "file", mandatory => 1}],	
 		["starttree|t=s", "starting tree for ML tree inference as for instance produced by 'smrt classify'", { arg => "file", mandatory => 1}],
 		["inferencetool|i=s", "software tool for backbone inference (RaXML, ExaML or ExaBayes), defaults to $tool_default", {default => $tool_default, arg => "tool"}],			
-		["outfile|o=s", "name of the output tree file (in newick format), defaults to '$outfile_default'", {default => $outfile_default, arg => "filename"}],			
+		["outfile|o=s", "name of the output tree file (in newick format), defaults to '$outfile_default'", {default => $outfile_default, arg => "file"}],			
 
 	);	
 }
@@ -71,7 +71,6 @@ sub run {
 	my $outfile = $self->outfile;
 	my $starttree = $opt->starttree;
 	my $inferencetool = $opt->inferencetool;
-	(my $workdir = $opt->workdir) =~ s/\/$//g;
 	
 	# instantiate helper objects
 	my $ts = Bio::Phylo::PhyLoTA::Service::TreeService->new;
@@ -246,6 +245,7 @@ sub _infer_examl {
 	        '-phylip' => $supermatrix,
 	        '-intree' => $intree,
 	 );
+	 $logger->info("examl tree inference was succesful");
 	return $backbone;
 }
 

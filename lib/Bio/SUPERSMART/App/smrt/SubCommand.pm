@@ -1,13 +1,7 @@
 package Bio::SUPERSMART::App::smrt::SubCommand;
 
+use Cwd;
 use Bio::Phylo::Util::Logger ':levels';
-
-
-my $_verbosity = INFO;
-my $_logger;
-my $_outfile; 
-my $_workdir;
-
 
 =head1 NAME
 
@@ -35,9 +29,9 @@ verbosity can be de- or increased by  the argument -v for all subcommands.
 sub logger {
 	my $self = shift;
 	if ( @_ ) {
-		$_logger = shift;		
+		$self->{'logger'} = shift;		
 	}
-	return $_logger;
+	return $self->{'logger'};
 }
 
 =item outfile
@@ -49,25 +43,45 @@ returns the output file name of the subcommand
 sub outfile {
 	my $self = shift;
 	if ( @_ ) {
-		$_outfile = shift;		
+		$self->{'outfile'} = $self->absolute_path(shift);		
 	}
-	return $_outfile;
+	return $self->{'outfile'};
 }
 
 =item outfile
 
-returns the working directory the subcommand
+returns the working directory for the subcommand
 
 =cut
 
 sub workdir {
 	my $self = shift;
 	if ( @_ ) {
-		$_workdir = shift;		
+		$self->{'workdir'} = shift;		
 	}
-	return $_workdir;
+	return $self->{'workdir'};
 }
 
+=item make_path
+
+creates an absolute path to a file location, if file is not yet
+given as absolute path. This is done by prepending the working directory
+to the file name.
+
+=cut
+
+sub absolute_path {
+	my $self = shift;
+	my $filename = shift;
+	if (not $filename =~ /\//) {
+		if ( my $wd = $self->workdir ) {	
+			$filename = $filename =~ /^\// ? $filename : $wd . "/" . $filename;
+		} else {
+			$self->logger->warn("no working directory specified, using relative paths ")
+		}
+	}
+	return $filename; 
+}
 
 =item run
 
@@ -96,34 +110,40 @@ sub execute {
 
 
 sub init {
-	my ($class, $opt, $args) = @_;
-	my $str = ref($class);
-	$_verbosity += $opt->verbose ? $opt->verbose : 0;
+	my ($self, $opt, $args) = @_;
+	my $verbosity = INFO;
+	$verbosity += $opt->verbose ? $opt->verbose : 0;
+    
+	# set working directory
+	($wd = $opt->workdir || getcwd()) =~ s/\/$//g;
+	$self->workdir($wd);
 
-    # make output file name. If output file is given and it is an absolute path, 
-    #  leave as is; if it is a single filename or a relative path, prepend the working
-    #  directory    	
-	($wd = $opt->workdir) =~ s/\/$//g;
-	$_workdir = $wd;
-    my $of = eval { $opt->outfile };
-    if ( $of ){
-    	$_outfile = $of =~ /^\// ? $of : $wd . "/" . $of;  
+	# loop through options to see which ones are file options; 
+	#  set absolute path for all filenames given
+	my %file_opts = map { (my $optname= $_->[0])=~s/\|.+//g; $_->[2]->{'arg'} eq 'file' ? ($optname=>1) : () } $self->options;
+	$file_opts{'logfile'} = 1;
+	for my $given_opt ( keys %$opt ) {
+		if ( exists $file_opts{$given_opt} ) {
+			my $new_filename = 
+			$opt->{$given_opt} = $self->absolute_path($opt->{$given_opt});
+		}		
+	}
+ 	# set outfile name
+    if ( my $of = eval { $opt->outfile } ) {
+    	$self->outfile($of);
     }
-	
-	# create logger object with user-defined verbosity
-	$_logger = Bio::Phylo::Util::Logger->new(
-		'-level' => $_verbosity,
-		'-class' => [ ref( $class ), 'Bio::Phylo::PhyLoTA::Service::ParallelService', 'Bio::Phylo::PhyLoTA::Service::TreeService' ],		
-    );
+ 
+ 	# create logger object with user-defined verbosity
+	$self->logger( Bio::Phylo::Util::Logger->new(
+		'-level' => $verbosity,
+		'-class' => [ ref( $self ), 'Bio::Phylo::PhyLoTA::Service::ParallelService', 'Bio::Phylo::PhyLoTA::Service::TreeService' ],		
+    ));
     
     # redirect logger output to file if specified by command call
     if ( my $logfile = $opt->logfile ) {
-    	$logfile = $logfile =~ /^\// ? $logfile : $wd . "/" . $logfile;
     	open my $logfh, '>', $logfile or die $!;
-		$_logger->set_listeners(sub{$logfh->print(shift)});
+		$self->logger->set_listeners(sub{$logfh->print(shift)});
     } 
-    
-
 }
 
 =item opt_spec
@@ -140,7 +160,7 @@ sub opt_spec {
 		[ "help|h", "display help screen", {} ],
 		[ "verbose|v+", "increase verbosity level", {} ],
 		[ "workdir|w=s", "directory in which results and intermediate files are stored", { default => "./", arg => "dir"} ],
-		[ "logfile|l=s", "write run-time information to logfile", { arg => "filename" }],	
+		[ "logfile|l=s", "write run-time information to logfile", { arg => "file" }],	
 		$class->options($app),
 	);	
 }
