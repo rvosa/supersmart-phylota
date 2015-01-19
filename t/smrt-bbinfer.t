@@ -20,8 +20,8 @@ sub _output_ok {
 	ok ( -s $outfile, "outfile not empty" );
 }
 
-my $matrix = "$Bin/testdata/supermatrix-primates.phy";
-my $classtree = "$Bin/testdata/classificationtree-primates.dnd";
+my $matrix = "$Bin/testdata/supermatrix-fishes.phy";
+my $classtree = "$Bin/testdata/classificationtree-fishes.dnd";
 
 my ($fh, $outfile) = tempfile( 'CLEANUP' => 1 );
 
