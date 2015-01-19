@@ -44,7 +44,7 @@ sub options {
 	my $outfile_default = "aligned.txt";
 	return (
 		["infile|i=s", "taxa file (tab-seperated value format) as produced by 'smrt taxize'", { arg => "file", mandatory => 1}],
-		["outfile|o=s", "name of the output file, defaults to '$outfile_default'", {default => $outfile_default, arg => "filename"}],	
+		["outfile|o=s", "name of the output file, defaults to '$outfile_default'", {default => $outfile_default, arg => "file"}],	
 	);	
 }
 
@@ -65,10 +65,9 @@ sub run {
 	# collect command-line arguments
 	my $infile = $opt->infile;
 	my $outfile = $opt->outfile;
-	(my $workdir = $opt->workdir) =~ s/\/$//g;
 
 	# create empty output file 
-	open my $outfh, '>', $workdir . '/' . $outfile or die $!;
+	open my $outfh, '>', $outfile or die $!;
 	close $outfh;
 
 	# instantiate helper objects
@@ -122,7 +121,7 @@ sub run {
 	   	$log->info("processing cluster with id $ci");
         
         # some alignments can be pre-computed so don't align again if fasta file already exists 
-        my $filename = $workdir . '/' . $seed_gi . '-' . $mrca . '-' . $ci . '-' . $type . '.fa';
+        my $filename = $self->workdir . '/' . $seed_gi . '-' . $mrca . '-' . $ci . '-' . $type . '.fa';
 		
 		if ( not ( -e  $filename ) ) {	
 	        # fetch ALL sequences for the cluster, reduce data set
@@ -162,7 +161,7 @@ sub run {
 	                $out->write_aln($aln);
 	                
 	 				#print alignment file name to output file so it can be saved in output file of script          
-	 				open my $outfh, '>>', $workdir . '/' . $outfile or die $!;
+	 				open my $outfh, '>>', $outfile or die $!;
 	 				print $outfh $filename . "\n";
 	 				close $outfh;
 	        } 
@@ -170,7 +169,7 @@ sub run {
 		else {
 			$log->debug("alignment with name $filename already exists, skipping");
 			# have to report to output file anyways! 
-			open my $outfh, '>>', $workdir . '/' . $outfile or die $!;
+			open my $outfh, '>>', $outfile or die $!;
 	 		print $outfh $filename . "\n";
 	 		close $outfh;
 			

@@ -32,7 +32,6 @@ produces a single output file that can be analysed by the subcommand cladeinfer.
 
 sub options {
 	my ($self, $opt, $args) = @_;		
-	#my $outfile_default = $opt->workdir;
 	return (
 		[ "outformat|o=s", "output format for merged clade files (phylip or nexml), defaults to 'nexml'", { arg=>"format", default=> 'nexml'} ],
 		[ "outfile|f=s", "location of output directory", {arg=>"location", default => "clademerge_out.txt"} ],
@@ -44,7 +43,7 @@ sub validate {};
 sub run {
 	my ($self, $opt, $args) = @_;		
 	
-	(my $workdir = $opt->workdir) =~ s/\/$//g;
+	my $workdir = $self->workdir;
 	my $outformat = $opt->outformat;
 	my $outfile= $self->outfile;	
 		

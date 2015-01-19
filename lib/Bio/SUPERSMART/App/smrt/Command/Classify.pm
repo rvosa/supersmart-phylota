@@ -34,7 +34,7 @@ sub options {
 	my $outfile_default = "classification-tree.dnd";
 	return (
 		["infile|i=s", "tsv (tab-seperated value) taxa file as produced by 'smrt taxize'", { arg => "file", mandatory => 1}],
-		["outfile|o=s", "name of the output file, defaults to '$outfile_default'", {default => $outfile_default, arg => "filename"}],
+		["outfile|o=s", "name of the output file, defaults to '$outfile_default'", {default => $outfile_default, arg => "file"}],
 		["outformat|f=s", "format of generated tree, defaults to 'newick'", {default => 'newick'}],
 	
 	);	
@@ -57,7 +57,6 @@ sub run {
 	# collect command-line arguments
 	my $infile = $opt->infile;
 	my $outfile = $self->outfile;
-	(my $workdir = $opt->workdir) =~ s/\/$//g;
 	my $outformat = $opt->outformat;
 	
 	# instantiate helper objects

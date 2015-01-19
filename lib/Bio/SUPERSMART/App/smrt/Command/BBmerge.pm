@@ -87,7 +87,7 @@ sub options {
 	return (
 		["alnfile|a=s", "list of file locations of merged alignments  as produced by 'smrt orthologize'", { arg => "file", mandatory => 1}],	
 		["taxafile|t=s", "tsv (tab-seperated value) taxa file as produced by 'smrt taxize'", { arg => "file", mandatory => 1}],
-		["outfile|o=s", "name of the output file, defaults to '$outfile_default'", {default => $outfile_default, arg => "filename"}],	
+		["outfile|o=s", "name of the output file, defaults to '$outfile_default'", {default => $outfile_default, arg => "file"}],	
 		["format|f=s", "format of supermatrix, defaults to '$outformat_default'; possible formats: bl2seq, clustalw, emboss, fasta, maf, mase, mega, meme, msf, nexus, pfam, phylip, prodom, psi, selex, stockholm", {default => $outformat_default}],	
 	);	
 }

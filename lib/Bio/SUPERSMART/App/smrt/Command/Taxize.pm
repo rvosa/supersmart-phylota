@@ -44,7 +44,7 @@ sub options {
 		[
 			"outfile|o=s",
 			"name of the output file, defaults to '$outfile_default'",
-			{ default => $outfile_default, arg => "filename" }
+			{ default => $outfile_default, arg => "file" }
 		],
 		[
 			"expand_rank|e=s",
@@ -72,7 +72,6 @@ sub run {
 	my $infile      = $opt->infile;
 	my $expand_rank = $opt->expand_rank;
 	my $outfile     = $self->outfile;
-	( my $workdir = $opt->workdir ) =~ s/\/$//g;
 
 	# instantiate helper objects
 	my $log    = $self->logger;
