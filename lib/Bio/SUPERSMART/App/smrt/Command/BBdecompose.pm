@@ -141,7 +141,10 @@ sub run{
 	    my ($aln) = @_;
 		$logger->info("checking whether alignment $aln can be included");
 		my %fasta = $mt->parse_fasta_file($aln);
-		my $dist  = $mt->calc_mean_distance($aln);
+		open my $fh, '<', $aln or die $!;
+		my $fastastr = join('', <$fh>);
+		close $fh;
+		my $dist  = $mt->calc_mean_distance($fastastr);
 		my $nchar = $mt->get_nchar(%fasta);
 		my $mdens = $config->CLADE_MIN_DENSITY;
 		
@@ -181,7 +184,7 @@ sub run{
 				else {
 					my $dens = sprintf ( "%.2f", $distinct/scalar(@species));
 					$logger->info("$aln is not informative or dense enough: density " 
-					. $dens . " < $mdens, number of distinct taxa: $distinct");
+					. $dens . " < $mdens, number of distinct taxa in clade $i: $distinct");
 				}
 			}
 		}
