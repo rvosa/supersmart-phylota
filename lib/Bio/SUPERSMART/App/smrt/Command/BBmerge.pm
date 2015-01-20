@@ -84,11 +84,14 @@ sub options {
 	my ($self, $opt, $args) = @_;		
 	my $outfile_default = "supermatrix.phy";
 	my $outformat_default = "phylip";
+	my $markerstable_default = "markers-backbone.tsv";
 	return (
 		["alnfile|a=s", "list of file locations of merged alignments  as produced by 'smrt orthologize'", { arg => "file", mandatory => 1}],	
 		["taxafile|t=s", "tsv (tab-seperated value) taxa file as produced by 'smrt taxize'", { arg => "file", mandatory => 1}],
 		["outfile|o=s", "name of the output file, defaults to '$outfile_default'", {default => $outfile_default, arg => "file"}],	
 		["format|f=s", "format of supermatrix, defaults to '$outformat_default'; possible formats: bl2seq, clustalw, emboss, fasta, maf, mase, mega, meme, msf, nexus, pfam, phylip, prodom, psi, selex, stockholm", {default => $outformat_default}],	
+		["markersfile|o=s", "name for summary table with included accessions, defaults to $markerstable_default", { default=> $markerstable_default, arg => "file"}],
+	
 	);	
 }
 
@@ -113,6 +116,7 @@ sub run {
 	my $taxafile = $opt->taxafile;
 	my $outfile= $self->outfile;	
 	my $format = $opt->format;
+	my $markersfile  = $opt->markersfile;
 
 	# instantiate helper objects
 	my $mts     = Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector->new;
@@ -289,7 +293,7 @@ sub run {
 	}
 	
 	# filter exemplars: only take the ones with sufficient coverage
-	my @filtered_exemplars = grep { $seen{$_} >= 1 } keys %seen; #$config->BACKBONE_MIN_COVERAGE
+	my @filtered_exemplars = grep { $seen{$_} >= $config->BACKBONE_MIN_COVERAGE } keys %seen;
 	my @sorted_alignments  = keys %aln;
 	
 	# filter the alignments: only include alignments in supermatrix which have
@@ -321,7 +325,7 @@ sub run {
 	$log->info("number of filtered exemplars : " . scalar(@filtered_exemplars));
 	
 	# filter supermatrix for gap-only columns and write to file
-	$self->_write_supermatrix( \@filtered_alignments, \@filtered_exemplars, $outfile, $format );
+	$self->_write_supermatrix( \@filtered_alignments, \@filtered_exemplars, $outfile, $format, $markersfile );
 	
 	$log->info("DONE, results written to $outfile");
 	
@@ -330,25 +334,41 @@ sub run {
 }
 
 sub _write_supermatrix {
-	my ($self, $alnfiles, $exemplars, $filename, $format) = @_;
+	my ($self, $alnfiles, $exemplars, $filename, $format, $markersfile) = @_;
 	my $log = $self->logger;
 
+	# make has with concatenated sequences per exemplar
 	my %allseqs = map{ $_ => "" } @{$exemplars}; 
 	
+	# also store which markers have been chosen for each exemplar
+	#my %allmarkers;
+	my @marker_table;
+	
 	my $mt = Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa->new;
+	my $mts = Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector->new;
 	
 	# Retrieve sequences for all exemplar species
 	for my $alnfile ( @$alnfiles ) {
 		my %fasta = $mt->parse_fasta_file($alnfile);
 		my $nchar = length $fasta{(keys(%fasta))[0]};
+		my %row;
 		for my $taxid ( @$exemplars ) {			
 			my ( $seq ) = $mt->get_sequences_for_taxon($taxid, %fasta);
+			
+			my ($header) = grep {/$taxid/} keys(%fasta);
+			$row{$taxid} = $header if $seq;
+			
 			if ( ! $seq ) {	
 	        	$seq = '?' x $nchar;
 			}
-			$allseqs{$taxid} .= $seq; 
+			$allseqs{$taxid} .= $seq;
 		}
+		push @marker_table, \%row;
 	}
+
+
+	$mts->write_marker_summary( $markersfile, \@marker_table, $exemplars );
+
 
 	# Delete columns that only consist of gaps
 	my $nchar = length $allseqs{(keys(%allseqs))[0]};
