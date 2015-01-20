@@ -50,7 +50,7 @@ groups them with the other relevant alignments for that clade.
 
 sub options {
 	my ($self, $opt, $args) = @_;		
-	my $outfile_default = "summary.tsv";
+	my $outfile_default = "markers-clades.tsv";
 	return (
 		["backbone|b=s", "backbone tree as produced by 'smrt bbinfer'", { arg => "file", mandatory => 1}],
 		["classtree|c=s", "classification tree as produced by 'smrt classify'", { arg => "file", mandatory => 1}],
@@ -176,7 +176,7 @@ sub run{
 							for my $j ( 0 .. $#{ $seq{$s} } ) {
 								my $seq = $seq{$s}->[$j];
 								print $fh '>', $seq, "\n", $fasta{$seq}, "\n";
-								$ret{$s} = $seq;		
+								$ret{$s} = $seq;	
 							}
 						}
 					}
@@ -194,59 +194,14 @@ sub run{
 		return \%ret;
 	} @alignments;
 	
+
 	my @all_species = uniq map {@$_} @set;
-	
-	_write_marker_summary( $outfile, $mts, \@table, \@all_species );
+
+	$mts->write_marker_summary( $outfile, \@table, \@all_species );
 
 	$logger->info("DONE, results written into working directory $workdir");
 
 	return 1;
-}
-
-
-# writes a table containing all species as rows and all chosen markers 
-#  as columns, reports the genbank accession of a specific marker for a species
-sub _write_marker_summary {
-	my ( $file, $mts, $tab, $specs ) = @_;
-	my @table = @$tab;
-	my @all_species = @$specs;
-	
-	# remove empty columns (for markers that are never included)
-	@table = grep {keys %{$_}} @table;
-	
-	my @seed_gis = map { (values(%{$_}))[0] =~ /seed_gi\|([0-9]+)\|/ } @table;
-	
-	open my $outfh, '>', $file or die $!;
-	
-	# print table header
-	print $outfh "taxon\t";
-	print $outfh "marker" . $_ ."\t" for 1..$#seed_gis+1;
-	print $outfh "\n";
-	foreach my $species ( @all_species ) {
-		my $name = $mts->find_node($species)->taxon_name;
-		print $outfh $name . "\t";
-		foreach my $column ( @table ) {
-			my %h = %{$column};
-			if (  my $seq = $h{$species} ) {
-				# parse the GI from fasta descripion
-				my ($gi) = $seq =~ /gi\|([0-9]+)\|/;
-				my $seqobj = $mts->find_seq($gi);
-				print $outfh $seqobj->acc . "\t";
-			}
-			else {
-				print $outfh "\t";
-			}
-		}
-		print $outfh "\n";
-	}
-	print $outfh "\n";
-	
-	# print information about markers at the bottom of the table
-	foreach my $i ( 1..$#seed_gis+1 ) {
-		my $seqobj = $mts->find_seq( $seed_gis[$i-1] );
-		print $outfh "# marker$i cluster seed: " . $seqobj->acc . ", description: " . $seqobj->def . "\n"; 
-	}
-	close $outfh;
 }
 
 # makes file handle for alignment file to be written in clade directory
