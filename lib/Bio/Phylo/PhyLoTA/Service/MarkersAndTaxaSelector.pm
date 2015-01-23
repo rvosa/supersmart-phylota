@@ -527,6 +527,54 @@ sub _process_matches {
     return;
 }
 
+
+# writes a table containing all species as rows and all chosen markers 
+#  as columns, reports the genbank accession of a specific marker for a species
+sub write_marker_summary {
+	my ( $self, $file, $tab, $specs ) = @_;
+	my @table = @$tab;
+	my @all_species = @$specs;
+	
+	# remove empty columns (for markers that are never included)
+	@table = grep {keys %{$_}} @table;
+	
+	my @seed_gis = map { (values(%{$_}))[0] =~ /seed_gi\|([0-9]+)\|/ } @table;
+	
+	open my $outfh, '>', $file or die $!;
+	
+	# print table header
+	print $outfh "taxon\t";
+	print $outfh "marker" . $_ ."\t" for 1..$#seed_gis+1;
+	print $outfh "\n";
+	foreach my $species ( @all_species ) {
+		my $name = $self->find_node($species)->taxon_name;
+		print $outfh $name . "\t";
+		foreach my $column ( @table ) {
+			my %h = %{$column};
+			if (  my $seq = $h{$species} ) {
+				# parse the GI from fasta descripion
+				my ($gi) = $seq =~ /gi\|([0-9]+)\|/;
+				my $seqobj = $self->find_seq($gi);
+				print $outfh $seqobj->acc . "\t";
+			}
+			else {
+				print $outfh "\t";
+			}
+		}
+		print $outfh "\n";
+	}
+	print $outfh "\n";
+	
+	# print information about markers at the bottom of the table
+	foreach my $i ( 1..$#seed_gis+1 ) {
+		my $seqobj = $self->find_seq( $seed_gis[$i-1] );
+		print $outfh "# marker$i cluster seed: " . $seqobj->acc . ", description: " . $seqobj->def . "\n"; 
+	}
+	close $outfh;
+}
+
+
+
 =begin comment
 
 Private method to retrieve the contents of a URL
