@@ -159,6 +159,12 @@ sub run {
 		# flatten list of references		
 		if ( my @entry = map { @$_ } @$res ){
 			my $name = shift @entry;
+			
+			# taxon names in NCBI taxonomy can contain the character "_", which can cause problems,
+			# since Bio::Phylo internally translates spaces with "_". We therefore substitute all "_" charachers
+			# by "|".
+			$name =~ s/_/\|/g;
+			
 			my $ids = join "\t", @entry;
 	
 			# omit all taxa with higher taxonomic rank than 'Species'

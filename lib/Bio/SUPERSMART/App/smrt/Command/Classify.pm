@@ -76,14 +76,13 @@ sub run {
 	my $tree = $mts->get_tree_for_nodes(@nodes);
 	
 	# create node labels
-	#$tree->visit(sub{
-	#	my $node = shift;
-	#	my $label = $node->get_guid;		
-	#	$node->set_name( $label );
-	#});
-	#
-	#$ts->remap_to_name($tree);
-	
+	$tree->visit(sub{
+		my $node = shift;		
+		my $label = $node->get_name;
+		$label =~ s/_/\|/g;		
+		$node->set_name( $label );
+	});
+		
 	# write output
 	open my $out, '>', $outfile or die $!;
 	print $out $tree->remove_unbranched_internals->to_newick;
