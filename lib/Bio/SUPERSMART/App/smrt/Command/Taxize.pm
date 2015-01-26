@@ -85,6 +85,8 @@ sub run {
 	open my $fh, '<', $infile or die $!;
 	@names = <$fh>;
 	chomp(@names);
+	# remove empty lines if present
+	@names = grep /\S/, @names;
 	close $fh;
 
 	$log->info( "read " . scalar(@names) . " species names from $infile" );
