@@ -3,11 +3,13 @@ package Bio::SUPERSMART::App::smrt::Command::BBmerge;
 use strict;
 use warnings;
 
-use List::Util qw(min max sum);
 use Bio::Phylo::Matrices::Datum;
 use Bio::Phylo::PhyLoTA::Config;
 use Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa;
 use Bio::Phylo::PhyLoTA::Service::TreeService;
+
+use List::MoreUtils qw(uniq);
+use List::Util qw(max);
 
 use base 'Bio::SUPERSMART::App::smrt::SubCommand';
 use Bio::SUPERSMART::App::smrt qw(-command);
@@ -90,7 +92,7 @@ sub options {
 		["taxafile|t=s", "tsv (tab-seperated value) taxa file as produced by 'smrt taxize'", { arg => "file", mandatory => 1}],
 		["outfile|o=s", "name of the output file, defaults to '$outfile_default'", {default => $outfile_default, arg => "file"}],	
 		["format|f=s", "format of supermatrix, defaults to '$outformat_default'; possible formats: bl2seq, clustalw, emboss, fasta, maf, mase, mega, meme, msf, nexus, pfam, phylip, prodom, psi, selex, stockholm", {default => $outformat_default}],	
-		["markersfile|o=s", "name for summary table with included accessions, defaults to $markerstable_default", { default=> $markerstable_default, arg => "file"}],
+		["markersfile|m=s", "name for summary table with included accessions, defaults to $markerstable_default", { default=> $markerstable_default, arg => "file"}],
 	
 	);	
 }
@@ -313,8 +315,6 @@ sub run {
 	        if ( $count > 0 ) {
 	                $log->info("including $aln in supermatrix");
 	                push @filtered_alignments, $aln; 
-	                #my @markers = get_seed_gi_description($aln);
-	                #$log->info("marker : ".$markers[0])
 	        } 
 	        else {
 	                $log->info("alignment $aln not included in supermatrix");
@@ -347,7 +347,7 @@ sub _write_supermatrix {
 	my $mt = Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa->new;
 	my $mts = Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector->new;
 	
-	# Retrieve sequences for all exemplar species
+	# Retrieve sequences for all exemplar species and populate marker table
 	for my $alnfile ( @$alnfiles ) {
 		my %fasta = $mt->parse_fasta_file($alnfile);
 		my $nchar = length $fasta{(keys(%fasta))[0]};
@@ -366,10 +366,34 @@ sub _write_supermatrix {
 		push @marker_table, \%row;
 	}
 
-
-	$mts->write_marker_summary( $markersfile, \@marker_table, $exemplars );
-
-
+	$log->info("Filtering exemplars for subsets that do not have marker overlap");
+	my $pruned_exemplars = $self->_prune_exemplars (\@marker_table);
+		
+	my @excluded = grep {my $ex = $_; ! grep($_ == $ex, @$pruned_exemplars)} @$exemplars;
+	$log->warn("Found "  . scalar(@excluded) . " exemplars that do not share markers with other exemplars") if scalar (@excluded);
+	
+	foreach my $exc (@excluded){
+		my $name = $mts->find_node($exc)->get_name;
+		$log->warn("Excluding exemplar with name $name and id $exc");		
+	}
+	
+	
+	# remove exemplars that are not considered from marker table
+	my %valid_exemplars = map {$_=>1} @$pruned_exemplars;
+	foreach my $m (@marker_table){		
+		foreach my $k ( keys $m ) {			
+			if ( ! exists $valid_exemplars{$k} ){
+				delete $m->{$k};
+			}
+		}		
+	}
+	
+	# write table listing all marker accessions for taxa
+	$mts->write_marker_summary( $markersfile, \@marker_table, $pruned_exemplars );
+	
+	# only keep the sequences that belong to the pruned exemplars
+	%allseqs = map { $_=> $allseqs{$_} } grep {exists $allseqs{$_} } @$pruned_exemplars;
+		
 	# Delete columns that only consist of gaps
 	my $nchar = length $allseqs{(keys(%allseqs))[0]};
 	my $vals = values %allseqs;
@@ -397,6 +421,78 @@ sub _write_supermatrix {
                                    -idlength => 10 );
 	
 	$stream->write_aln($aln);	
+}
+
+
+# It often happens that there are subsets of exemplars that do not share markers with other sets of exemplars.
+#  When inferring a tree with such a disconnected supermatrix, disconnected sets show very long branch lengths.
+#  This subroutine returns the largest subset of exemplars that have common markers. This is done by doing a 
+#  breadth-first search on the adjaceny matrix of exemplars connected by their respective markers.
+sub _prune_exemplars {
+	my ($self, $tab ) = @_;
+	my @marker_table = @$tab;
+	
+	# create adjacency matrix
+	my %adj;
+	foreach my $column ( @marker_table ) {
+		my @species = keys (%$column); 
+		for my $i ( 0..$#species ) {
+			
+			for my $j ( $i+1..$#species ) {				
+				my %specs_i = map { $_ => 1 } @{$adj{$species[$i]}}	;
+				my %specs_j = map { $_ => 1 } @{$adj{$species[$j]}};
+				
+				if ( ! exists $specs_i{$species[$j]}) {
+					push @{$adj{$species[$i]}}, $species[$j];			
+				}
+				if ( ! exists $specs_j{$species[$i]}) {								
+					push @{$adj{$species[$j]}}, $species[$i];
+				}							
+			}			
+		}						
+	}
+	
+	# do a BFS to get the unconnected subgraphs from the adjacency matrix	
+	my @sets;	
+	my @current_set;
+	
+	my @queue = ( keys (%adj))[0];
+		
+	while ( @queue ) {
+		my $current_node = shift (@queue);						
+		push @current_set, $current_node;				
+		if (exists $adj{$current_node}){						
+			my @neighbors = @{$adj{$current_node}};
+			if ( @neighbors ) {
+				foreach my $node ( @neighbors ) {
+					if ($node != $current_node){
+						push @queue, $node;			
+					}		
+				}		
+			}
+			delete $adj{$current_node};
+		}				
+		@current_set = uniq (@current_set);
+		@queue = uniq (@queue);
+
+		if (scalar (@queue) == 0){
+			my @cs = @current_set;
+			push @sets, \@cs;			
+			@current_set = ();			
+			if ( keys %adj ){
+				my ($key) = keys %adj; 
+				push @queue, $key;
+			}
+		}		
+	}	
+	
+	my $max_exemplars = max( map {scalar (@$_)} @sets);
+	foreach my $s (@sets) {
+		if ( scalar @$s == $max_exemplars ) {
+			return $s;
+		}
+		
+	}	
 }
 
 
