@@ -1,0 +1,2 @@
+NFos	FossilName	CrownvsStem	CalibratedTaxon	MinAge	MaxAge	BestPracticeScore	NUsrcrFos	DcrFos
+1	cal1	crown	Syngnathus	20	20
