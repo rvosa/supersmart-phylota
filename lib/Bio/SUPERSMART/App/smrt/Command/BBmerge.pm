@@ -381,7 +381,7 @@ sub _write_supermatrix {
 	# remove exemplars that are not considered from marker table
 	my %valid_exemplars = map {$_=>1} @$pruned_exemplars;
 	foreach my $m (@marker_table){		
-		foreach my $k ( keys $m ) {			
+		foreach my $k ( keys %{$m} ) {			
 			if ( ! exists $valid_exemplars{$k} ){
 				delete $m->{$k};
 			}
