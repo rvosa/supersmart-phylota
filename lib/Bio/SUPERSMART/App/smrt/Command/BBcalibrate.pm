@@ -94,10 +94,11 @@ sub run {
     $logger->info( "going to make calibration table" );
     my @points = map { $cs->find_calibration_point($_) } @fossils;
     my $table = $cs->create_calibration_table( $tree, @points );
-
+	
 	# parse number of sites in alignment from first line in supermatrix
 	open my $file, '<', $supermatrix or die $!;
 	my $firstline = <$file>;
+	$firstline =~ s/^\s+//;
 	my $numsites = (split(/\s/, $firstline))[1];
 	close $file;
 	
