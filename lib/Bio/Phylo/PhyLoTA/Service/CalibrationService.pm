@@ -243,7 +243,6 @@ sub create_calibration_table {
     	}    
     }
     $table->sort_by_min_age;
-    $logger->info($tree->to_newick());
     return $table;
 }
 
