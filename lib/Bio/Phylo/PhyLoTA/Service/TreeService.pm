@@ -164,7 +164,9 @@ sub remap_to_name {
                         my $id = $n->get_name;
                         my $dbnode = $self->find_node($id);
                         $log->fatal("Could not find name for taxon id $id in database!") if not $dbnode;
-                        $n->set_name( $dbnode->taxon_name );
+                        my $name = $dbnode->taxon_name;
+                        $name =~ s/_/\|/g;
+                        $n->set_name( $name );
                 }
                      });
         return $tree;
