@@ -136,7 +136,7 @@ sub init {
  	# create logger object with user-defined verbosity
 	$self->logger( Bio::Phylo::Util::Logger->new(
 		'-level' => $verbosity,
-		'-class' => [ ref( $self ), 'Bio::Phylo::PhyLoTA::Service::ParallelService', 'Bio::Phylo::PhyLoTA::Service::TreeService' ],		
+		'-class' => [ ref( $self ), 'Bio::Phylo::PhyLoTA::Service::ParallelService', 'Bio::Phylo::PhyLoTA::Service::TreeService', 'Bio::Phylo::PhyLoTA::Service::CalibrationService' ],		
     ));
     
     # redirect logger output to file if specified by command call
