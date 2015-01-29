@@ -37,7 +37,7 @@ sub options {
 	return (
 		["taxafile|t=s", "tsv (tab-seperated value) taxa file as produced by 'smrt taxize'", { arg => "file", mandatory => 1}],
 		["backbone|b=s", "a genus level backbone tree as produced by 'smrt bbinfer'", { arg => "file", mandatory => 1}],	
-		["outgroup|g=s", "one or multiple taxa (names or NCBI identifiers, seperated by commata) representing the outgroup at which the tree is rerooted", {} ],
+		["outgroup|g=s", "one or multiple taxa (names or NCBI identifiers, seperated by commata) representing the outgroup at which the tree is rerooted. Outgroup must be enclosed in quotes.", {} ],
 		["outfile|o=s", "name of the output tree file (in newick format), defaults to '$outfile_default'", {default => $outfile_default, arg => "file"}],
 	);	
 }
@@ -74,11 +74,10 @@ sub run {
 
 	# use taxon IDs instead of names
 	$ts->remap_to_ti($tree);
-	
 	# Perform rerooting at outgroup, if given		
 	if ($opt->outgroup){
 		my $ogstr = $opt->outgroup;
-		
+		$logger->info("Attempting to reroot tree at outgroup $ogstr");
 		# get nodes in the tree that correspond to outgroup species and
 		#  get their mrca
 		my @names = split(',', $ogstr);
