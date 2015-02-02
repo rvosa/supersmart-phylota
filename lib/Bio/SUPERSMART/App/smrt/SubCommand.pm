@@ -105,6 +105,10 @@ method then calls the 'run' subroutine, which must be implemented for all child 
 
 sub execute {
 	my ($class, $opt, $args) = @_;
+	my $config 	= Bio::Phylo::PhyLoTA::Config->new;
+	my $release = $config->RELEASE;
+	$class->logger->info("This is SUPERSMART release " . $config->RELEASE);
+	
 	return $class->run( $opt, $args );	
 }
 
@@ -136,7 +140,10 @@ sub init {
  	# create logger object with user-defined verbosity
 	$self->logger( Bio::Phylo::Util::Logger->new(
 		'-level' => $verbosity,
-		'-class' => [ ref( $self ), 'Bio::Phylo::PhyLoTA::Service::ParallelService', 'Bio::Phylo::PhyLoTA::Service::TreeService', 'Bio::Phylo::PhyLoTA::Service::CalibrationService' ],		
+		'-class' => [ ref( $self ), 'Bio::SUPERSMART::App::smrt::SubCommand', 
+									'Bio::Phylo::PhyLoTA::Service::ParallelService', 
+									'Bio::Phylo::PhyLoTA::Service::TreeService', 
+									'Bio::Phylo::PhyLoTA::Service::CalibrationService' ],		
     ));
     
     # redirect logger output to file if specified by command call

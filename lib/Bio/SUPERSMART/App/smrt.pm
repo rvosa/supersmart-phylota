@@ -1,6 +1,11 @@
 package Bio::SUPERSMART::App::smrt;
-our $VERSION = 0.1;
+
+use Bio::Phylo::PhyLoTA::Config;
+my $config 	= Bio::Phylo::PhyLoTA::Config->new;
+our $VERSION = $config->RELEASE;
+
 use App::Cmd::Setup -app;
+
 
 =head1 NAME
 
