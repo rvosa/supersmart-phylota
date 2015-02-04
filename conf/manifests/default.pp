@@ -328,51 +328,7 @@ exec {
 		cwd     => "${tools_dir}/Math-Random-0.70",		
 		creates => "/usr/local/lib64/perl5/Math/Random.pm",
 		require => Exec["make_makefile_math_random"];	
-    
-  	# install perl package Parallel::parallel_map 
-  	"download_parallel_map":
-    	command => "wget http://search.cpan.org/CPAN/authors/id/O/OK/OKHARCH/Parallel-parallel_map-0.02.tar.gz",
-    	cwd     => $tools_dir,
-    	creates => "${tools_dir}/Parallel-parallel_map-0.02.tar.gz",
-    	require => Package[ 'wget', 'tar' ];
-   	"unzip_parallel_map":
-    	command => "tar -xvzf ${tools_dir}/Parallel-parallel_map-0.02.tar.gz",
-    	creates => "${tools_dir}/Parallel-parallel_map-0.02/Makefile.PL",
-    	cwd     => $tools_dir,
-    	require => Exec["download_parallel_map"];
-  	"make_parallel_map_run_sh":
-    	command => "echo 'export PERL5LIB=\$PERL5LIB:${tools_dir}/Parallel-parallel_map-0.02/lib' > parallel_map.sh",
-    	cwd     => "/etc/profile.d",
-    	creates => "/etc/profile.d/parallel_map.sh",
-    	require => Exec[ 'unzip_parallel_map' ];
-  	"make_parallel_map_run_csh":
-    	command => "echo 'setenv PERL5LIB \$PERL5LIB:${tools_dir}/Parallel-parallel_map-0.02/lib' > parallel_map.csh",
-    	cwd     => "/etc/profile.d",
-    	creates => "/etc/profile.d/parallel_map.csh",
-    	require => Exec[ 'unzip_parallel_map' ]; 
-    
-    # install perl package Parallel::parallel_datapipe 
-  	"download_parallel_datapipe":
-    	command => "wget http://search.cpan.org/CPAN/authors/id/O/OK/OKHARCH/Parallel-DataPipe-0.11.tar.gz",
-    	cwd     => $tools_dir,
-    	creates => "${tools_dir}/Parallel-DataPipe-0.11.tar.gz",
-    	require => Package[ 'wget', 'tar' ];
-   	"unzip_parallel_datapipe":
-    	command => "tar -xvzf ${tools_dir}/Parallel-DataPipe-0.11.tar.gz",
-    	creates => "${tools_dir}/Parallel-DataPipe-0.11/Makefile.PL",
-    	cwd     => $tools_dir,
-    	require => Exec["download_parallel_datapipe"];
-  	"make_parallel_datapipe_run_sh":
-    	command => "echo 'export PERL5LIB=\$PERL5LIB:${tools_dir}/Parallel-DataPipe-0.11/lib' > parallel_datapipe.sh",
-    	cwd     => "/etc/profile.d",
-    	creates => "/etc/profile.d/parallel_datapipe.sh",
-    	require => Exec[ 'unzip_parallel_datapipe' ];
-  	"make_parallel_datapipe_run_csh":
-    	command => "echo 'setenv PERL5LIB \$PERL5LIB:${tools_dir}/Parallel-DataPipe-0.11/lib' > parallel_datapipe.csh",
-    	cwd     => "/etc/profile.d",
-    	creates => "/etc/profile.d/parallel_datapipe.csh",
-    	require => Exec[ 'unzip_parallel_datapipe' ]; 
-                                	      
+                                   	      
 	# install openmpi
 	"download_openmpi":
 		command => "wget http://www.open-mpi.org/software/ompi/v1.6/downloads/openmpi-1.6.5.tar.gz",
