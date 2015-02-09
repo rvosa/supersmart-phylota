@@ -66,7 +66,7 @@ sub options {
 		[ "sfreq|s=i", "sampling frequency, defaults to ngens/100", { arg=>"int"} ],
 		[ "lfreq|l=i", "logging frequency, defaults to ngens/100", { arg=>"int"} ],
 		[ "file|f=s", "file (nexml format) to start a single inference from", { arg=>"file" } ],
-		[ "outfile|f=s", "location of output directory", {arg=>"location", default => "cladeinfer_out.txt"} ],		
+		[ "outfile|o=s", "location of output directory", {arg=>"location", default => "cladeinfer_out.txt"} ],		
     );
 }
 
@@ -141,10 +141,12 @@ sub run {
 	
 	# run either one file or a directory
 	if ( $file and -e $file ) {
-		$beast->outfile_name( "${file}.nex" );
-		$beast->logfile_name( "${file}.log" );
-		$logger->info("Setting beast input file name to ${file}.bxml");
-		$beast->beastfile_name( "${file}.bxml" );
+		(my $stem = $file) =~ s/\..+//g; 
+		$logger->info("Starting inference for single clade tree");
+		$beast->outfile_name( "${stem}.nex" );
+		$beast->logfile_name( "${stem}.log" );
+		$logger->info("Setting beast input file name to ${stem}-beast-in.xml");
+		$beast->beastfile_name( "${stem}-beast-in.xml" );
 		$beast->run( $file );
 		$logger->info("done. trees are in ${file}.nex, BEAST log in ${file}.log");
 	}
@@ -162,8 +164,8 @@ sub run {
 		}        
 		die("no clade directories found in workdir $workdir") if scalar(@cladedirs) == 0;
 
-    # infer clades in parallel mode
-    pmap {
+    	# infer clades in parallel mode
+    	pmap {
                 my ($clade) = @_;
                 # this should be a nexml file with one taxa block and
                 # multiple matrices                
