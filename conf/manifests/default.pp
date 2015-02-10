@@ -21,34 +21,42 @@ Exec {
 	    ]                      
 }
 
+# keep package information up to date
+exec { 
+  "apt_update":
+   command => "/usr/bin/apt-get update"
+}
+
 # install packages.
 package {
-	"mysql-server":                ensure => installed;
-	"mysql-client":                ensure => installed;
-	"ncbi-blast+":       	       ensure => installed;
-	"wget":                        ensure => installed;
-	"tar":                         ensure => installed;
-	"libdbi-perl":                 ensure => installed;
-	"libdbd-mysql-perl":           ensure => installed;
-	"libdbix-class-perl":          ensure => installed;
-	"libjson-perl":                ensure => installed;
-	"libmoose-perl":               ensure => installed;
-	"libxml-twig-perl":            ensure => installed;
-	"libhtml-html5-parser-perl":   ensure => installed;
-	"libconfig-tiny-perl":         ensure => installed;
-	"libio-string-perl":           ensure => installed;
-	"git":                         ensure => installed;
-	"libarchive-dev":              ensure => installed;
-  	"zlib1g-dev":                  ensure => installed;
- 	"autoconf":                    ensure => installed;
-	"automake":                    ensure => installed;
-	"libtool":                     ensure => installed;
-	"build-essential":             ensure => installed;	
-	"curl":                        ensure => installed;
-	"gzip":                        ensure => installed;
-  	"openjdk-6-jdk":               ensure => installed;
- 	"subversion":                  ensure => installed;
+  "mysql-server":                ensure => installed, require => Exec ["apt_update"];
+  "mysql-client":                ensure => installed, require => Exec ["apt_update"];
+  "ncbi-blast+":                 ensure => installed, require => Exec ["apt_update"];
+  "wget":                        ensure => installed, require => Exec ["apt_update"];
+  "tar":                         ensure => installed, require => Exec ["apt_update"];
+  "libdbi-perl":                 ensure => installed, require => Exec ["apt_update"];
+  "libdbd-mysql-perl":           ensure => installed, require => Exec ["apt_update"];
+  "libdbix-class-perl":          ensure => installed, require => Exec ["apt_update"];
+  "libjson-perl":                ensure => installed, require => Exec ["apt_update"];
+  "libmoose-perl":               ensure => installed, require => Exec ["apt_update"];
+  "libxml-twig-perl":            ensure => installed, require => Exec ["apt_update"];
+  "libhtml-html5-parser-perl":   ensure => installed, require => Exec ["apt_update"];
+  "libconfig-tiny-perl":         ensure => installed, require => Exec ["apt_update"];
+  "libio-string-perl":           ensure => installed, require => Exec ["apt_update"];
+  "git":                         ensure => installed, require => Exec ["apt_update"];
+  "libarchive-dev":              ensure => installed, require => Exec ["apt_update"];
+  "zlib1g-dev":                  ensure => installed, require => Exec ["apt_update"];
+  "autoconf":                    ensure => installed, require => Exec ["apt_update"];
+  "automake":                    ensure => installed, require => Exec ["apt_update"];
+  "libtool":                     ensure => installed, require => Exec ["apt_update"];
+  "build-essential":             ensure => installed, require => Exec ["apt_update"]; 
+  "curl":                        ensure => installed, require => Exec ["apt_update"];
+  "gzip":                        ensure => installed, require => Exec ["apt_update"];
+  "openjdk-6-jdk":               ensure => installed, require => Exec ["apt_update"];
+  "subversion":                  ensure => installed, require => Exec ["apt_update"];
+  
 }
+
 
 # set up the mysql daemon process
 service { 
@@ -328,7 +336,7 @@ exec {
 		cwd     => "${tools_dir}/Math-Random-0.70",		
 		creates => "/usr/local/lib64/perl5/Math/Random.pm",
 		require => Exec["make_makefile_math_random"];	
-                                   	      
+                                   	     
 	# install openmpi
 	"download_openmpi":
 		command => "wget http://www.open-mpi.org/software/ompi/v1.6/downloads/openmpi-1.6.5.tar.gz",
