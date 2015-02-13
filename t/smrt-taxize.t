@@ -28,7 +28,7 @@ _output_ok ( $result, $outfile );
 
 # test with wordir argument and output file name without path
 my $dir = tempdir ( 'CLEANUP' => 1 );
-$outfile= "out.txt";
+$outfile= $dir . "/out.txt";
 
 $result = test_app( Bio::SUPERSMART::App::smrt=> [ "taxize",  "-i",   $infile, "-o", $outfile, "-w", $dir ]);
 _output_ok ( $result, $outfile );
@@ -46,5 +46,12 @@ ok ( $result->error =~ /Usage/, "print usage on error" );
 
 # test root taxon expansion
 $infile = "$Bin/testdata/root-taxon.txt";
-$result = test_app( Bio::SUPERSMART::App::smrt=> [ "taxize",  "-i",   $infile, "-w", $dir, "-e", "species" ]);
+$result = test_app( Bio::SUPERSMART::App::smrt=> [ "taxize",  "-i",   $infile, "-w", $dir, "-e", "species", "-o", $outfile ]);
 _output_ok ( $result, $outfile );
+
+# test with root taxon expansion given vie -r option
+$result = test_app( Bio::SUPERSMART::App::smrt=> [ "taxize",  "-r",  "Homo,Felidae", "-w", $dir, "-o", $outfile ]);
+_output_ok ( $result, $outfile );
+
+
+

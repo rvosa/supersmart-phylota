@@ -47,6 +47,11 @@ sub options {
 			{ default => $outfile_default, arg => "file" }
 		],
 		[
+			"root_taxa|r=s",
+			"one or multiple taxon names (seperated by commata) to be expanded to either 'Species' or to taxonomic rank given in <expand_rank>. Taxon names containing spaces must be enclosed in quotes",
+			{}
+		],
+		[
 			"expand_rank|e=s",
 			"rank to which root taxa are expanded",
 			{ default => 0, arg => "rank" }
@@ -60,9 +65,12 @@ sub validate {
 	# We only have to check the 'infile' argument.
 	#  If the infile is absent or empty, abort
 	my $file = $opt->infile;
-	$self->usage_error("no infile argument given") if not $file;
-	$self->usage_error("file $file does not exist") unless ( -e $file );
-	$self->usage_error("file $file is empty")       unless ( -s $file );
+	my $root = $opt->root_taxa;
+	$self->usage_error("need infile and/or root_taxon argument") if not $file and not $root;
+	if ( $file ) {
+		$self->usage_error("file $file does not exist") unless ( -e $file );
+		$self->usage_error("file $file is empty")       unless ( -s $file );
+	}
 }
 
 sub run {
@@ -72,6 +80,7 @@ sub run {
 	my $infile      = $opt->infile;
 	my $expand_rank = $opt->expand_rank;
 	my $outfile     = $self->outfile;
+	my $root_taxa   = $opt->root_taxa;
 
 	# instantiate helper objects
 	my $log    = $self->logger;
@@ -81,19 +90,26 @@ sub run {
 	my @names;
 	my @levels;
 
-	# read names from file or STDIN, clean line breaks
-	open my $fh, '<', $infile or die $!;
-	@names = <$fh>;
-	chomp(@names);
-	# remove empty lines if present
-	@names = grep /\S/, @names;
-	close $fh;
+	if ( $infile ) {
+		# read names from file or STDIN, clean line breaks
+		open my $fh, '<', $infile or die $!;
+		@names = <$fh>;
+		chomp(@names);
+		# remove empty lines if present
+		@names = grep /\S/, @names;
+		close $fh;
+		$log->info( "read " . scalar(@names) . " species names from $infile" );
+	}
+	if ( $root_taxa ) {
+		my @taxa = split(',', $root_taxa);
+		push @names, @taxa;
+		$log->info( scalar(@taxa) . " root taxa given in argument" );
+	}
 
-	$log->info( "read " . scalar(@names) . " species names from $infile" );
 
 	# expand root taxa if argument is provided
-	if ($expand_rank) {
-		@names = $mts->expand_taxa( \@names, $expand_rank );
+	if ( $expand_rank or $root_taxa ) {
+		@names = $mts->expand_taxa( \@names, $expand_rank || "species" );
 	}
 
 	# get all possible taxonomic ranks
