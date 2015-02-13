@@ -353,14 +353,23 @@ sub graft_tree {
     # calculate the respective depths, scale the clade by the ratios of depths
 	my $cmrca_depth = $cmrca->calc_max_path_to_tips;
 	my $bmrca_depth = $bmrca->calc_max_path_to_tips;
+    $log->debug("Backbone tree before grafting: \n " . $backbone->to_newick);
+    $log->debug("Depth of exemplar mrca in backbone : $bmrca_depth");
+    $log->debug("Depth of exemplar mrca in clade : $cmrca_depth");
         
-        $clade->visit(sub{
+    $clade->visit(sub{
 		my $node = shift;
 		my $bl = $node->get_branch_length || 0; # zero for root
-          		$node->set_branch_length( $bl * ( $bmrca_depth / $cmrca_depth ) );
-                $log->debug("adjusting branch length for ".$node->get_internal_name." to ".$bl * ( $bmrca_depth / $cmrca_depth ));
-                      });
-	$log->debug("re-scaled clade by $bmrca_depth / $cmrca_depth");
+        if ( $bmrca_depth > 0 and $cmrca_depth > 0 ){  		
+       		$node->set_branch_length( $bl * ( $bmrca_depth / $cmrca_depth ) );
+        	$log->debug("adjusting branch length for ".$node->get_internal_name." to ".$bl * ( $bmrca_depth / $cmrca_depth ));
+        } 
+        else {
+        	$log->warn("mrca of clade or backbone has depth zero!");
+        	}
+    });
+		
+	#$log->debug("re-scaled clade by $bmrca_depth / $cmrca_depth");
 	
 	# calculate the depth of the root in the clade, adjust backbone depth accordingly
 	my $crd  = $clade->get_root->calc_max_path_to_tips;
@@ -369,7 +378,6 @@ sub graft_tree {
         $bmrca->set_branch_length( $branch_length + $diff );
 		$log->debug("adjusted backbone MRCA depth by $bmrca_depth - $crd");
         # now graft!
-        $log->debug("Backbone tree before grafting: \n " . $backbone->to_newick);
         $bmrca->clear();
         $clade->visit(
 		sub {
@@ -481,6 +489,69 @@ sub read_tipnames {
 		last LINE if ++$line == $ntax;
 	}
 	return @result;
+}
+
+sub my_extract_clades {
+	my ($self, $tree, @records) = @_;
+	use Data::Dumper;
+	my %genera;
+    my $mt = 'Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa';
+
+	my @terminals = @{ $tree->get_terminals };		
+	
+	# get exemplars for genera
+	foreach my $t ( @terminals ) {
+		my $id = $t->get_name;
+		my ($genus) = map { $_->{'genus'} } grep { $_->{'species'} eq $id || 
+        	$_->{'subspecies'} eq $id || 
+        	$_->{'varietas'} eq $id || 
+        	$_->{'forma'} eq $id} @records;
+			push @{$genera{$genus}->{'exemplars'}}, $id;			
+	}
+	
+	# get mrca and distance from root for all exemplars in each genus
+	foreach my $genus ( keys %genera ) {	
+		my %exemplar_ids = map {$_=>1} @{$genera{$genus}->{'exemplars'}};		
+		my @nodes = grep { exists( $exemplar_ids{$_->get_name}) }  @{$tree->get_terminals};
+		my $mrca = $tree->get_mrca( \@nodes );
+		
+		#my @mrca_genera = ();
+		#push @mrca_genera, @{ $mrca->get_generic('genera') };
+		#push @mrca_genera, $genus;
+		#$mrca->set_generic(\@mrca_genera);
+		
+		
+		$genera{$genus}->{'mrca'} = $mrca;
+		my $dist = $mrca->calc_nodes_to_root;
+		$genera{$genus}->{'dist_from_root'} = $dist;			
+	}
+	
+	# sort genera by depth of exemplar mrca
+	my @sorted_genera = sort { $genera{$a}->{'dist_from_root'} <=> $genera{$b}->{'dist_from_root'} } keys (%genera);
+	
+	# make sets of leaves that are in the subtree spanned from the respective mrca
+	my @sets;
+	for my $genus ( @sorted_genera ) {
+		my $mrca = $genera{$genus}->{'mrca'};
+		
+		# get genera within the subtree:
+		#my @mrca_genera = @{$mrca->get_generic('genera')};
+		#my @s = map { $mt->get_species_and_lower_for_taxon( 'genus' => $_, @records ) } @mrca_genera;
+				
+		#my @set = map  {$_->get_name} @{$mrca->get_terminals};
+	
+	
+		#push @sets, \@s;
+	}
+	
+	
+	
+	print Dumper(\@sets);
+	die;
+	#print $tree->to_newick;
+	return @sets;
+	
+	
 }
 
 sub extract_clades {
@@ -603,6 +674,5 @@ sub extract_clades {
         
         return @set;        
 }
-
 
 1;
