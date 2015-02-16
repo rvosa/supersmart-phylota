@@ -491,41 +491,40 @@ sub read_tipnames {
 	return @result;
 }
 
-sub my_extract_clades {
+=item extract clades
+
+Given a backbone tree and a list with the taxa classifications, 
+decomposes the backbone tree into single clades, represented by lists of 
+taxon ids. The decomposition identifies monophyletic genera which will form individual clades.
+If genera are paraphyletic in the tree (i.e. the the mrca of two exemplar species in one genus
+is not the direct parent of the two exemplars), we traverse up the tree and include all species 
+from sister clades until the paraphyly is resolved.
+
+=cut
+
+sub extract_clades {
 	my ($self, $tree, @records) = @_;
 	use Data::Dumper;
 	my %genera;
     my $mt = 'Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa';
-
-	my @terminals = @{ $tree->get_terminals };		
-	
+    
 	# get exemplars for genera
-	foreach my $t ( @terminals ) {
+	foreach my $t ( @{ $tree->get_terminals } ) {
 		my $id = $t->get_name;
-		my ($genus) = map { $_->{'genus'} } grep { $_->{'species'} eq $id || 
-        	$_->{'subspecies'} eq $id || 
-        	$_->{'varietas'} eq $id || 
-        	$_->{'forma'} eq $id} @records;
-			push @{$genera{$genus}->{'exemplars'}}, $id;			
+		my ($genus) = $mt->query_taxa_table($id, "genus", @records);
+		push @{$genera{$genus}->{'exemplars'}}, $id;			
 	}
-	
+
 	# get mrca and distance from root for all exemplars in each genus
 	foreach my $genus ( keys %genera ) {	
 		my %exemplar_ids = map {$_=>1} @{$genera{$genus}->{'exemplars'}};		
 		my @nodes = grep { exists( $exemplar_ids{$_->get_name}) }  @{$tree->get_terminals};
 		my $mrca = $tree->get_mrca( \@nodes );
 		
-		#my @mrca_genera = ();
-		#push @mrca_genera, @{ $mrca->get_generic('genera') };
-		#push @mrca_genera, $genus;
-		#$mrca->set_generic(\@mrca_genera);
-		
-		
 		$genera{$genus}->{'mrca'} = $mrca;
 		my $dist = $mrca->calc_nodes_to_root;
 		$genera{$genus}->{'dist_from_root'} = $dist;			
 	}
-	
 	# sort genera by depth of exemplar mrca
 	my @sorted_genera = sort { $genera{$a}->{'dist_from_root'} <=> $genera{$b}->{'dist_from_root'} } keys (%genera);
 	
@@ -533,146 +532,40 @@ sub my_extract_clades {
 	my @sets;
 	for my $genus ( @sorted_genera ) {
 		my $mrca = $genera{$genus}->{'mrca'};
-		
+
+		# replace mrca with parent node to include monotypic genera in sister clade
+		#if ($mrca->is_terminal) {
+		#	$mrca = @{$mrca->get_ancestors}[0];
+		#}
+
 		# get genera within the subtree:
-		#my @mrca_genera = @{$mrca->get_generic('genera')};
-		#my @s = map { $mt->get_species_and_lower_for_taxon( 'genus' => $_, @records ) } @mrca_genera;
-				
-		#my @set = map  {$_->get_name} @{$mrca->get_terminals};
-	
-	
-		#push @sets, \@s;
+		my @terminal_ids = map{$_->get_name} @{$mrca->get_terminals};
+		my @mrca_genera =  $mt->query_taxa_table(\@terminal_ids, 'genus', @records);
+		
+		print Dumper(\@mrca_genera);
+		
+		# get all species that are contained in the genera of the mrca 
+		my @valid_ranks = ("species", "subspecies", "varietas", "forma");		
+		my @s = $mt->query_taxa_table(\@mrca_genera, \@valid_ranks, @records);
+		
+		push @sets, \@s;
 	}
 	
+	# All sets with only one taxon represent monotypic genera. Since we have resolved 
+	#  paraphyly at this point, all monotypic genera nested in other clades are accounted for;
+	#  therefore it is safe to remove all non-nested monotypic genera.
 	
-	
-	print Dumper(\@sets);
-	die;
-	#print $tree->to_newick;
-	return @sets;
-	
-	
-}
-
-sub extract_clades {
-        my ($self, $tree, @records) = @_;
-        if (! @records) {
-                die "Need both, tree and species table!";
-        }                
-        my $mt = 'Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa';
-
-        # traverse tree, retrieve monophyletic genera, which we will compare to all
-        $log->info("going to identify putatively monophyletic genera");
-        my ( %monophyletic, %all );
-        
-        $tree->visit_depth_first(
-                '-post' => sub {
-                        my $node = shift;
-                        
-                        # for the tips, we keep a running tally of all seen genera. if a genus 
-                        # occurs on more than one tip we need to know if the genus is monophyletic
-                        if ( $node->is_terminal ) {
-                                my $id = $node->get_name;
-                                
-                                my ($genus) = map { $_->{'genus'} } grep { $_->{'species'} eq $id || 
-                                										   $_->{'subspecies'} eq $id || 
-                                										   $_->{'varietas'} eq $id || 
-                                										   $_->{'forma'} eq $id} @records;
-                                $node->set_generic( 'species' => [ $id ], 'genera' => { $genus => 1 } );
-                                
-                                # in the end, this will be either 1 (for monotypic genera), or 2 (for
-                                # exemplar genera).
-                                $all{$genus}++;
-                        }
-                        else {
-                                
-                                # here we simply carry over the species and genera from the
-                                # children to the focal node. in the second pass we will use
-                                # this to find the shallowest node that subtends all species
-                                # of a paraphyletic genus
-                                my ( @s, %g );						
-                                for my $child ( @{ $node->get_children } ) {
-                                        push @s, @{ $child->get_generic('species') };
-                                        my %genus = %{ $child->get_generic('genera') };
-                                        $g{$_} += $genus{$_} for keys %genus;
-                                }
-                                $node->set_generic( 'species' => \@s, 'genera' => \%g );
-                                
-                                # the node subtends two species that all belong to the same genus. 
-                                # hence, the node is monophyletic.
-                                if ( scalar(@s) >= 2 and scalar keys %g == 1 ) {
-                                        $monophyletic{$_} += $g{$_} for keys %g;
-                                }
-                        }
-                }
-            );        
-        
-        # all the genera that aren't putatively monophyletic but that do have two
-        # members are therefore paraphyletic. in the second pass we lump all the
-        # putatively monophyletic genera that nest inside paraphyletic ones within
-        # the mixed set of mono/para.
-        $log->info("going to reconstruct paraphyly");
-        my %paraphyletic = map { $_ => 1 } grep { !$monophyletic{$_} && $all{$_} == 2 } keys %all;
-        my @genera;
-        $tree->visit_depth_first(
-                '-post' => sub {
-                        my $node = shift;
-                        if ( $node->is_internal ) {
-                                my %g = %{ $node->get_generic('genera') };
-                                
-                                # the node is a paraphyletic mrca if it is the shallowest
-                                # node where a paraphyletic genus occurs and where it
-                                # subtends the two exemplars from that genus
-                                my $is_para;
-                                for my $genus ( keys %g ) {
-                                        if ( $paraphyletic{$genus} and $g{$genus} == 2 ) {
-                                                $is_para++;
-                                        }
-                                }
-                                
-                                # if the node is paraphyletic we store ALL its subtended
-                                # genera, removing them from the set of putative monophyletic
-                                # genera as well as from the paraphyletic ones. we remove
-                                # from the former set so that after this traversal we don't
-                                # put monophyletic genera that nest inside paraphyletic ones
-                                # in a separate set, and we remove the latter set so that
-                                # deeper nodes that also subtend the paraphyletic genera
-                                # don't trigger processing.
-                                if ( $is_para ) {
-                                        my @g = keys %g;
-                                        push @genera, \@g;
-                                        delete @paraphyletic{@g};
-                                        delete @monophyletic{@g};
-                                }	
-                        }	
-                }
-            );
-        # all remaining ones become their own set
-        push @genera, [ $_ ] for keys %monophyletic;
-        # now resolve the nesting of paraphyletic genera
-        my %index;
-        for my $i ( 0 .. $#genera ) {
-                $index{$_} = $i for @{ $genera[$i] };                
-        }
-        
-        # make species sets
-        my @set;
-        for my $i ( keys %{ { map { $_ => 1 } values %index } } ) {
-                my @g = @{ $genera[$i] };
-                my @s = map { $mt->get_species_and_lower_for_taxon( 'genus' => $_, @records ) } @g;
-                push @set, \@s if scalar(@s) > 2;
-        }
-        
-        # one special case can be that all genera are monotypic. 
-        # in this case, all leaves are returned in one set to
-        # be inferred together.
-        if ( !%monophyletic and !%paraphyletic ) {
-        	$log->info("all genera in backbone are monotypic, all species will form a single clade ");
-        	my @s = map { $mt->get_species_and_lower_for_taxon( 'genus' => $_, @records ) } keys(%all);
-        	push @set, \@s;
-        } 
-        
-        return @set;        
+	# There is one special case, however: All genera are monotypic, so all species will be
+	#  put together into one clade!
+	my @num_elems = uniq map{scalar(@$_)} @sets;
+	if ( scalar(@num_elems)==1 and $num_elems[0] ==1 ) {
+		@sets = [ map{$_} @sets ];
+	}
+	else {
+		# remove monotypic genera from clades
+		@sets = grep {scalar(@$_)>1} @sets;
+	}
+	return @sets;	
 }
 
 1;
