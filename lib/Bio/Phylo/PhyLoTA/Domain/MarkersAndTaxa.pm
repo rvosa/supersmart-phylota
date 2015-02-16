@@ -240,35 +240,26 @@ sub get_root_taxon_level {
 	return $result;
 }
 
-sub get_species_and_lower_for_taxon {
-	my ( $class, $tlevel, $id, @records ) = @_;
-	my @levels = ('species', 'subspecies', 'varietas', 'forma');
-	my @result;
-	foreach my $row ( @records ) {
-		if ( ($row->{$tlevel} =~m/[0-9]+/) and  ($row->{$tlevel} == $id) ) {
-			foreach my $level ( @levels ){
-				if ( $row->{$level}=~m/[0-9]+/ ) {
-					push @result, $row->{$level}; 
-				}
-			
-			}
-		}
-	}
-	return (uniq @result);
-}
+=item query_taxa_table
 
-=item get_species_for_taxon
-
-Returns the distinct species IDs for the provided taxon ID.
+given a taxon id or a reference to a list of taxon identifiers, and a single taxonomic rank or a reference to a list of ranks,
+returns all entries in the taxon table matching the rank(s) that are associated
+with the input taxon ID(s). 
 
 =cut
 
-sub get_species_for_taxon {
-	my ( $class, $taxon, $id, @records ) = @_;
-	my %ids = map { $_ => 1 } map { $_->{'species'} } grep { $_->{$taxon} == $id if $_->{$taxon}=~m/[0-9]+/ } @records;
-	# filter for e.g. 'NA' values
-	my @taxa = grep /[0-9]+/,  keys %ids;
-	return @taxa;
+sub query_taxa_table {
+	my ($self, $tids, $ranks, @records) = @_;
+	
+	# input can either be scalars or array refs
+	my %tids = ref($tids) ? map {$_=>1} @${tids} : ($tids=>1);
+	my %ranks = ref($ranks) ? map {$_=>1} @${ranks} : ($ranks=>1);
+	
+	my @matching = grep { my %h = %{$_}; grep{ exists($tids{$_}) } values%h } @records;	
+	my @ids = uniq map { @{$_}{keys(%ranks)} } @matching;
+	# remove NA values from result
+	my @result = grep /[0-9]+/, @ids;
+	return @result;
 }
 
 =item get_taxa_from_fasta
