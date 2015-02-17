@@ -148,8 +148,9 @@ sub run {
 	my @g = $mt->get_distinct_taxa( 'genus' => @records );
 	
 	for my $genus ( $mt->get_distinct_taxa( 'genus' => @records ) ) {
-		# extract the distinct species for the focal genus
-		my @species = $mt->get_species_for_taxon( 'genus' => $genus, @records );
+		# extract the distinct species (and lower) for the focal genus
+		my @ranks = ("species", "subspecies", "varietas", "forma");		
+		my @species = $mt->query_taxa_table( $genus, \@ranks, @records );
 		$species_for_genus{$genus} = \@species;
 	}
 
