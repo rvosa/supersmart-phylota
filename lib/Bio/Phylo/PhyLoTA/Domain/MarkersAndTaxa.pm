@@ -310,6 +310,24 @@ sub get_nchar {
 	return length $seq;
 }
 
+
+sub get_species_and_lower_for_taxon {
+	my ( $class, $tlevel, $id, @records ) = @_;
+	my @levels = ('species', 'subspecies', 'varietas', 'forma');
+	my @result;
+	foreach my $row ( @records ) {
+		if ( ($row->{$tlevel} =~m/[0-9]+/) and  ($row->{$tlevel} == $id) ) {
+			foreach my $level ( @levels ){
+				if ( $row->{$level}=~m/[0-9]+/ ) {
+					push @result, $row->{$level}; 
+				}
+			
+			}
+		}
+	}
+	return (uniq @result);
+}
+
 =item keep_taxa
 
 Retains the records for the provided taxon identifiers that occur in a hash such as is 
