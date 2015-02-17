@@ -504,13 +504,17 @@ from sister clades until the paraphyly is resolved.
 
 sub extract_clades {
 	my ($self, $tree, @records) = @_;
-	use Data::Dumper;
 	my %genera;
     my $mt = 'Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa';
     
+    # first get all taxa that will be included in the clades
+    my @valid_ranks = ("species", "subspecies", "varietas", "forma");
+    my ($lowest) = $mt->get_distinct_taxa("superkingdom", @records);
+    my %all_taxa = map{$_=>1 } $mt->query_taxa_table($lowest, \@valid_ranks, @records);
+    	    
 	# get exemplars for genera
-	foreach my $t ( @{ $tree->get_terminals } ) {
-		my $id = $t->get_name;
+	my %terminal_ids = map {$_=>1} map{$_->get_name} @{ $tree->get_terminals };
+	foreach my $id ( keys(%terminal_ids) ) {
 		my ($genus) = $mt->query_taxa_table($id, "genus", @records);
 		push @{$genera{$genus}->{'exemplars'}}, $id;			
 	}
@@ -532,6 +536,8 @@ sub extract_clades {
 	my @sets;
 	for my $genus ( @sorted_genera ) {
 		my $mrca = $genera{$genus}->{'mrca'};
+		my $dist = $genera{$genus}->{'dist_from_root'};
+		print "Genus : $genus dist from root : $dist \n";
 
 		# replace mrca with parent node to include monotypic genera in sister clade
 		#if ($mrca->is_terminal) {
@@ -539,16 +545,20 @@ sub extract_clades {
 		#}
 
 		# get genera within the subtree:
-		my @terminal_ids = map{$_->get_name} @{$mrca->get_terminals};
-		my @mrca_genera =  $mt->query_taxa_table(\@terminal_ids, 'genus', @records);
+		my @mrca_terminal_ids = map{$_->get_name} @{$mrca->get_terminals};
+		my @mrca_genera =  $mt->query_taxa_table(\@mrca_terminal_ids, 'genus', @records);
 		
-		print Dumper(\@mrca_genera);
-		
+				
 		# get all species that are contained in the genera of the mrca 
-		my @valid_ranks = ("species", "subspecies", "varietas", "forma");		
 		my @s = $mt->query_taxa_table(\@mrca_genera, \@valid_ranks, @records);
 		
-		push @sets, \@s;
+		# only include taxa in a set if they are not already part of a clade spanned higher in the hierarchy 
+		my @remaining_terminals = keys(%all_taxa);
+
+		my @clade = _intersect(\@remaining_terminals, \@s);
+		delete @all_taxa{@clade}; 
+		
+		push @sets, \@clade;
 	}
 	
 	# All sets with only one taxon represent monotypic genera. Since we have resolved 
@@ -558,13 +568,14 @@ sub extract_clades {
 	# There is one special case, however: All genera are monotypic, so all species will be
 	#  put together into one clade!
 	my @num_elems = uniq map{scalar(@$_)} @sets;
-	if ( scalar(@num_elems)==1 and $num_elems[0] ==1 ) {
+	if ( scalar(@num_elems)==1 and $num_elems[0] == 1 ) {
 		@sets = [ map{$_} @sets ];
 	}
 	else {
-		# remove monotypic genera from clades
-		@sets = grep {scalar(@$_)>1} @sets;
+		# remove monotypic genera from clades and sets that have <3 species thus cannot be resolved
+		@sets = grep {scalar(@$_)>2} @sets;
 	}
+	die;
 	return @sets;	
 }
 
