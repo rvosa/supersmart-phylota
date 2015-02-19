@@ -68,11 +68,11 @@ sub parse_fasta_string {
             $current = $1;
             if ( exists $fasta{$current} ) {
                 $fasta{$current} = '';
-            }            
+            }
         }
         else {
             $fasta{$current} .= $line;
-        }
+        }     
     }
     return %fasta;    
 }
@@ -290,7 +290,7 @@ produced by parse_fasta_string
 sub get_sequences_for_taxon {
 	my ( $class, $taxon, %fasta ) = @_;
 	my @sequences;
-	for my $key ( keys %fasta ) {
+	for my $key ( sort keys %fasta ) {
 		if ( $key =~ /taxon\|$taxon[^\d]/ ) {
 			push @sequences, $fasta{$key};
 		}
