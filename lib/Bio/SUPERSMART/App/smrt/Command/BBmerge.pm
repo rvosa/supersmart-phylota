@@ -92,6 +92,7 @@ sub options {
 		["taxafile|t=s", "tsv (tab-seperated value) taxa file as produced by 'smrt taxize'", { arg => "file", mandatory => 1}],
 		["outfile|o=s", "name of the output file, defaults to '$outfile_default'", {default => $outfile_default, arg => "file"}],	
 		["format|f=s", "format of supermatrix, defaults to '$outformat_default'; possible formats: bl2seq, clustalw, emboss, fasta, maf, mase, mega, meme, msf, nexus, pfam, phylip, prodom, psi, selex, stockholm", {default => $outformat_default}],	
+        ["include_taxa|i=s", "one or multiple names of taxa present in <taxafile> (e.g. species or genus names, separated by commata) whose representative species will be included in the output dataset, regardless of marker coverage and sequence divergence", {}],
 		["markersfile|m=s", "name for summary table with included accessions, defaults to $markerstable_default", { default=> $markerstable_default, arg => "file"}],
 	
 	);	
@@ -119,6 +120,7 @@ sub run {
 	my $outfile= $self->outfile;	
 	my $format = $opt->format;
 	my $markersfile  = $opt->markersfile;
+	my $include_taxa = $opt->include_taxa;
 
 	# instantiate helper objects
 	my $mts     = Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector->new;
@@ -142,18 +144,29 @@ sub run {
 	$log->info("going to read taxa table $taxafile");
 	my @records = $mt->parse_taxa_file($taxafile);
 	
-	# extract the distinct species for each genus
+	# valid ranks for taxa in supermatrix                                                                                                                                                                                                                                   
+    my @ranks = ("species", "subspecies", "varietas", "forma");
+	
+	# remember species (or lower) for taxa that have to be included in supermatrix, if given as argument                                                                                                                                                                    
+    my %user_taxa;
+    if ( $include_taxa ) {
+    	my @taxa = split(',', $include_taxa);
+    	my @ids = map { my @nodes = $ts->search_node( {taxon_name=>$_} )->all; $nodes[0]->ti } @taxa;
+    	my @species = $mt->query_taxa_table(\@ids, \@ranks, @records);
+    	%user_taxa = map { $_ => 1} @species;
+    }
+
+ 	# extract the distinct species for each genus
 	my %species_for_genus;
 	
 	my @g = $mt->get_distinct_taxa( 'genus' => @records );
-	
-	for my $genus ( $mt->get_distinct_taxa( 'genus' => @records ) ) {
-		# extract the distinct species (and lower) for the focal genus
-		my @ranks = ("species", "subspecies", "varietas", "forma");		
-		my @species = $mt->query_taxa_table( $genus, \@ranks, @records );
-		$species_for_genus{$genus} = \@species;
-	}
-
+	 	
+    for my $genus ( $mt->get_distinct_taxa( 'genus' => @records ) ) {
+                # extract the distinct species (and lower) for the focal genus                                                                                                                                                                                                  
+                my @species = $mt->query_taxa_table( $genus, \@ranks, @records );
+                $species_for_genus{$genus} = \@species;
+    }
+    
 	$log->info("read ".scalar(keys(%species_for_genus))." genera");
 	
 	# this will store distances within each genus
@@ -163,7 +176,7 @@ sub run {
 	ALN: for my $aln ( @alignments ) {
 		$log->debug("assessing exemplars in $aln");
 		my %fasta = $mt->parse_fasta_file($aln);
-		
+						
 		# iterate over genera, skip those with fewer than three species
 		GENUS: for my $genus ( keys %species_for_genus ) {
 			my $genus_name = $ts->find_node($genus)->taxon_name;
@@ -296,8 +309,9 @@ sub run {
 	}
 	
 	# filter exemplars: only take the ones with sufficient coverage
-	my @filtered_exemplars = grep { $seen{$_} >= $config->BACKBONE_MIN_COVERAGE } keys %seen;
-	my @sorted_alignments  = keys %aln;
+	my @filtered_exemplars = grep { $seen{$_} >= $config->BACKBONE_MIN_COVERAGE or exists $user_taxa{$_} } keys %seen;
+	
+	my @sorted_alignments  = sort keys %aln;
 	
 	# filter the alignments: only include alignments in supermatrix which have
 	#  at least one species from the filtered exemplars ==> no empty rows in supermatrix
@@ -326,7 +340,7 @@ sub run {
 	$log->info("number of filtered exemplars : " . scalar(@filtered_exemplars));
 	
 	# filter supermatrix for gap-only columns and write to file
-	$self->_write_supermatrix( \@filtered_alignments, \@filtered_exemplars, $outfile, $format, $markersfile );
+	$self->_write_supermatrix( \@filtered_alignments, \@filtered_exemplars, \%user_taxa, $outfile, $format, $markersfile );
 	
 	$log->info("DONE, results written to $outfile");
 	
@@ -335,14 +349,15 @@ sub run {
 }
 
 sub _write_supermatrix {
-	my ($self, $alnfiles, $exemplars, $filename, $format, $markersfile) = @_;
+	my ($self, $alnfiles, $exemplars, $user_taxa, $filename, $format, $markersfile) = @_;
+	
 	my $log = $self->logger;
+    my %user_taxa = %{$user_taxa};
 
 	# make has with concatenated sequences per exemplar
 	my %allseqs = map{ $_ => "" } @{$exemplars}; 
 	
 	# also store which markers have been chosen for each exemplar
-	#my %allmarkers;
 	my @marker_table;
 	
 	my $mt = Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa->new;
@@ -354,12 +369,14 @@ sub _write_supermatrix {
 		my $nchar = length $fasta{(keys(%fasta))[0]};
 		my %row;
 		for my $taxid ( @$exemplars ) {			
-			my ( $seq ) = $mt->get_sequences_for_taxon($taxid, %fasta);
-			
-			my ($header) = grep {/$taxid/} keys(%fasta);
-			$row{$taxid} = $header if $seq;
-			
-			if ( ! $seq ) {	
+			my @seqs = $mt->get_sequences_for_taxon($taxid, %fasta);
+			$log->warn("Found more than one sequence for taxon $taxid in alignment file $alnfile. Using first sequence.") if scalar(@seqs) > 1; 
+			my $seq;
+			if ( $seq = $seqs[0] ) {			
+				my ($header) = grep {/$taxid/} sort keys(%fasta);
+				$row{$taxid} = $header;
+			}
+			else {	
 	        	$seq = '?' x $nchar;
 			}
 			$allseqs{$taxid} .= $seq;
@@ -368,19 +385,28 @@ sub _write_supermatrix {
 	}
 
 	$log->info("Filtering exemplars for subsets that do not have marker overlap");
-	my $pruned_exemplars = $self->_prune_exemplars (\@marker_table);
+	my @pruned_exemplars = $self->_prune_exemplars (\@marker_table);
 		
-	my @excluded = grep {my $ex = $_; ! grep($_ == $ex, @$pruned_exemplars)} @$exemplars;
+	
+	my @excluded = grep {my $ex = $_; ! grep($_ == $ex, @pruned_exemplars) } @$exemplars;
 	$log->warn("Found "  . scalar(@excluded) . " exemplars that do not share markers with other exemplars") if scalar (@excluded);
+	
+	# if user specified exemplars were removed, add them back!                                                                                                                                                                                                              
+    my @excluded_user_taxa = grep {exists $user_taxa{$_}} @excluded;                                                                                                                                                                                                       
+
+    push @pruned_exemplars, @excluded_user_taxa;                                                                                                                                                                                                                           
+
+    foreach my $t (@excluded_user_taxa) {                                                                                                                                                                                                                                  
+           $log->warn("Taxon $t should be excluded due to insufficient marker coverage but is given by in include_taxa argument");                                                                                                                                         
+    }  
 	
 	foreach my $exc (@excluded){
 		my $name = $mts->find_node($exc)->get_name;
 		$log->warn("Excluding exemplar with name $name and id $exc");		
 	}
-	
-	
-	# remove exemplars that are not considered from marker table
-	my %valid_exemplars = map {$_=>1} @$pruned_exemplars;
+		
+	# remove rejected exemplars from marker table
+	my %valid_exemplars = map {$_=>1} @pruned_exemplars;
 	foreach my $m (@marker_table){		
 		foreach my $k ( keys %{$m} ) {			
 			if ( ! exists $valid_exemplars{$k} ){
@@ -390,10 +416,10 @@ sub _write_supermatrix {
 	}
 	
 	# write table listing all marker accessions for taxa
-	$mts->write_marker_summary( $markersfile, \@marker_table, $pruned_exemplars );
+	$mts->write_marker_summary( $markersfile, \@marker_table, \@pruned_exemplars );
 	
 	# only keep the sequences that belong to the pruned exemplars
-	%allseqs = map { $_=> $allseqs{$_} } grep {exists $allseqs{$_} } @$pruned_exemplars;
+	%allseqs = map { $_=> $allseqs{$_} } grep {exists $allseqs{$_} } @pruned_exemplars;
 		
 	# Delete columns that only consist of gaps
 	my $nchar = length $allseqs{(keys(%allseqs))[0]};
@@ -436,7 +462,7 @@ sub _prune_exemplars {
 	# create adjacency matrix
 	my %adj;
 	foreach my $column ( @marker_table ) {
-		my @species = keys (%$column); 
+		my @species = sort keys (%$column); 
 		for my $i ( 0..$#species ) {
 			
 			for my $j ( $i+1..$#species ) {				
@@ -457,7 +483,7 @@ sub _prune_exemplars {
 	my @sets;	
 	my @current_set;
 	
-	my @queue = ( keys (%adj))[0];
+	my @queue = ( sort keys (%adj))[0];
 		
 	while ( @queue ) {
 		my $current_node = shift (@queue);						
@@ -481,7 +507,7 @@ sub _prune_exemplars {
 			push @sets, \@cs;			
 			@current_set = ();			
 			if ( keys %adj ){
-				my ($key) = keys %adj; 
+				my ($key) = sort keys %adj; 
 				push @queue, $key;
 			}
 		}		
@@ -490,7 +516,7 @@ sub _prune_exemplars {
 	my $max_exemplars = max( map {scalar (@$_)} @sets);
 	foreach my $s (@sets) {
 		if ( scalar @$s == $max_exemplars ) {
-			return $s;
+			return @$s;
 		}
 		
 	}	
