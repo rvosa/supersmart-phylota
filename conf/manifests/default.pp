@@ -140,6 +140,12 @@ file {
 # command line tasks
 exec {
   
+    # set locale to US english to get rid of annoying perl warnings
+    "set_locale_sh":
+      command => "echo 'export LC_ALL=en_US.UTF-8' > set_locale.sh",
+      cwd     => "/etc/profile.d",
+      creates => "/etc/profile.d/set_locale.sh";
+            
    	# add bin directory for all required tools and smrt executables to PATH
   	"make_bindir_sh":
     	command => "echo 'export PATH=\$PATH:${tools_bin_dir}:${src_dir}/supersmart/app' > supersmart-tools-bin.sh",
