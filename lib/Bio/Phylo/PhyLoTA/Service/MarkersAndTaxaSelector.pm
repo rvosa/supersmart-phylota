@@ -528,8 +528,12 @@ sub _process_matches {
 }
 
 
-# writes a table containing all species as rows and all chosen markers 
-#  as columns, reports the genbank accession of a specific marker for a species
+=item write_marker_summary
+
+Writes a table containing all species as rows and all chosen markers  as columns, 
+reports the genbank accession of a specific marker for a species.
+
+=cut
 sub write_marker_summary {
 	my ( $self, $file, $tab, $specs ) = @_;
 	my @table = @$tab;
