@@ -204,7 +204,7 @@ sub get_highest_informative_level{
 	return $result;
 }
 
-=item get_root_level
+=item get_root_taxon_level
 
 Returns the level of the 'root' taxon. This is the lowest taxonomic rank which
 is the same for all entries in the species table.
@@ -308,24 +308,6 @@ sub get_nchar {
 	my ( $class, %fasta ) = @_;
 	my ($seq) = values %fasta;
 	return length $seq;
-}
-
-
-sub get_species_and_lower_for_taxon {
-	my ( $class, $tlevel, $id, @records ) = @_;
-	my @levels = ('species', 'subspecies', 'varietas', 'forma');
-	my @result;
-	foreach my $row ( @records ) {
-		if ( ($row->{$tlevel} =~m/[0-9]+/) and  ($row->{$tlevel} == $id) ) {
-			foreach my $level ( @levels ){
-				if ( $row->{$level}=~m/[0-9]+/ ) {
-					push @result, $row->{$level}; 
-				}
-			
-			}
-		}
-	}
-	return (uniq @result);
 }
 
 =item keep_taxa
