@@ -14,6 +14,26 @@ use List::Util 'min';
 my $config = Bio::Phylo::PhyLoTA::Config->new;
 my $log = Bio::Phylo::PhyLoTA::Service->logger->new;	
 
+=head1 NAME
+
+Bio::Phylo::PhyLoTA::Service::TreeService - Operations on phylogenetic Trees
+
+=head1 DESCRIPTION
+
+Provides functionality for handling trees, e.g. decomposing, rerooting and grafting
+clade trees onto a backbone tree.
+
+
+=over
+
+
+=item reroot_tree
+
+Reroots a backbone tree. All possible rerootings are evaluated an the tree is returned that
+minimizes the paraphyly with respect to the exemplar species of all genera.
+
+=cut
+
 sub reroot_tree {
 	my ( $self, $tree, $taxatable, $levels ) = @_;
 	
@@ -151,11 +171,14 @@ sub _array_minus {
 	return grep ( ! defined $b{$_}, @a );
 }
 
-# writes a tree description that spans provided taxa/clade to file
-sub write_tree {
-}
 
-# Changes NCBI taxon identifiers in a given tree to taxon names
+=item remap_to_name
+
+Given an object of class L<Bio::Phylo::Forest::Tree>, 
+changes the names of the terminal nodes from NCBI taxonomy identifiers to their respective taxon names. 
+
+=cut
+
 sub remap_to_name {
         my ($self, $tree) = @_;
         $tree->visit(sub{
@@ -173,7 +196,14 @@ sub remap_to_name {
         
 }
 
-# Changes taxon names in a given tree to taxon identifiers
+=item remap_to_ti
+
+Given an object of class L<Bio::Phylo::Forest::Tree>, 
+changes the names of all terminal nodes from taxon names to their respective identifiers 
+as given in the NCBI taxonomy database. 
+
+=cut
+
 sub remap_to_ti { 
         my ($self, $tree) = @_;
         $tree->visit(sub{
@@ -193,6 +223,15 @@ sub remap_to_ti {
         return $tree;       
 }
 
+
+=item consense_trees
+
+Given a file with multiple trees (in newick format), 
+creates a consensus tree using the tool specified by 
+"TREEANOTATOR_BIN" in the configuration file.
+Returns a single newick tree as a string.
+
+=cut
 
 # -infile, (optional: -burnin)
 sub consense_trees {
@@ -222,6 +261,16 @@ sub consense_trees {
         my $newicktree = $self->parse_newick_from_nexus( $outfile );
         return $newicktree;
 }
+
+=item parse_newick_from_nexus
+
+Given the file name of a phylogenetic tree in Nexus format, creates a tree in newick representation which is
+returned as a string. If information about the posterior value of a node is given (as present in the Nexus output of *BEAST),
+the posterior value is assigned to the respective inner nodes in the newick tree.
+
+
+
+=cut 
 
 sub parse_newick_from_nexus {
         my ($self, $nexusfile) = @_;
@@ -284,6 +333,13 @@ sub parse_newick_from_nexus {
         
 }
 
+=item write_newick_tree
+
+Given an object of class L<Bio::Phylo::Forest::Tree>, writes it in newick 
+representation to the specified filename.
+
+=cut
+
 sub write_newick_tree {
         my ($self, $tree) = @_;
         my $str = "";
@@ -301,7 +357,13 @@ sub write_newick_tree {
 
 }
 
-# grafts a clade tree into a backbone tree, returns backbone
+
+=item graft_tree
+
+Grafts a clade tree into a backbone tree, returns the altered backbone.
+
+=cut
+
 sub graft_tree {
 	my ( $self, $backbone, $clade ) = @_;
     my $num_terminals = scalar @{ $backbone->get_terminals };
@@ -406,6 +468,13 @@ sub graft_tree {
 	return $backbone;
 }
 
+=item make_phylip_binary
+
+Given the location of a file in phylip format, creates a binary representation of
+the phylip file and writes it to the specified file. 
+
+=cut
+
 sub make_phylip_binary {
 	my ( $self, $phylip, $binfilename, $parser, $work_dir) = @_;
 	$log->info("going to make binary representation of $phylip => $binfilename");	
@@ -430,6 +499,13 @@ sub make_phylip_binary {
 	chdir $curdir;
 	return "${binfilename}.binary";
 }
+
+=item make_phylip_from_matrix
+
+Given an object of class L<Bio::Phylo::Matrices::Datum>, writes the data into a phylip
+file to the specified file name.
+
+=cut
 
 sub make_phylip_from_matrix {
 	my ( $self, $taxa, $phylipfile, @matrix ) = @_;
@@ -464,7 +540,13 @@ sub make_phylip_from_matrix {
 	return $phylipfile;
 }
 
-# reads the supermatrix (phylip format) and returns the tip names from it
+
+=item read_tipnames
+
+Reads the supermatrix (phylip format) and returns the tip names from it
+
+=cut
+
 sub read_tipnames {
 	my ($self, $supermatrix) = @_;
 	my $ntax = 0;
@@ -491,7 +573,7 @@ sub read_tipnames {
 	return @result;
 }
 
-=item extract clades
+=item extract_clades
 
 Given a backbone tree and a list with the taxa classifications, 
 decomposes the backbone tree into single clades, represented by lists of 
@@ -578,5 +660,9 @@ sub extract_clades {
 	die;
 	return @sets;	
 }
+
+=back 
+
+=cut
 
 1;
