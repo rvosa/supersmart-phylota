@@ -181,6 +181,43 @@ sub version {
     return version->parse($1) || undef;
 }
 
+=item new
+
+This constructor takes the following mandatory arguments: 
+
+    -f alnFile       a alignment file (either binary and created by parser or plain-text phylip)
+    -s seed          a master seed for the MCMC
+    -n ruid          a run id
+    -r id            restart from checkpoint. Just specify the id of the previous run (-n) here. 
+                       Make sure, that all files created by the previous run are in the working directory.
+                       This option is not mandatory for the start-up, seed (via -s) will be ignored.
+    -q modelfile     a RAxML-style model file (see manual) for multi-partition alignments. Not needed 
+                       with binary files.
+    -t treeFile      a file containing starting trees (in Newick format) for chains. If the file provides less
+                       starting trees than chains to be initialized, parsimony/random trees will be used for
+                       remaining chains. If a tree contains branch lengths, these branch lengths will be used
+                       as initial values.
+    -m model         indicates the type of data for a single partition non-binary alignment file
+                       (valid values: DNA or PROT)
+
+Optional arguments are:
+
+    -d               execute a dry-run. Procesess the input, but does not execute any sampling.
+    -c confFile      a file configuring your ExaBayes run. For a template see the examples/ folder
+    -w dir           specify a working directory for output files
+    -R num           the number of runs (i.e., independent chains) to be executed in parallel
+    -C num           number of chains (i.e., coupled chains) to be executed in parallel
+    -Q               per-partition data distribution (use this only with many partitions, check manual
+                       for detailed explanation)
+    -S               try to save memory using the SEV-technique for gap columns on large gappy alignments
+                       Please refer to  http://www.biomedcentral.com/1471-2105/12/470
+                       On very gappy alignments this option yields considerable runtime improvements. 
+    -M mode          specifies the memory versus runtime trade-off (see manual for detailed discussion).
+                       <mode> is a value between 0 (fastest, highest memory consumption) and 3 (slowest,
+                       least memory consumption)
+
+=cut
+
 sub new {
         my ( $class, @args ) = @_;
         my $self = $class->SUPER::new(@args);
@@ -193,6 +230,13 @@ sub new {
         $self->outfile_name( $out || '' );
         return $self;
 }
+
+=item run
+
+Runs an analysis with ExaBayes. Input is an alignment file in phylip format.
+Returns the file location of the consense tree.
+
+=cut
 
 sub run {
 	my $self = shift;
@@ -218,14 +262,14 @@ sub run {
         $log->info("going to run '$string'");        
         system($string) and $self->warn("Couldn't run ExaBayes: $?");
         
-        $ret = $self->run_consense;
+        $ret = $self->_run_consense;
         
         #return $self->_cleanup;
         # return outfile name or 1 if it was a dry run
         return $ret || $self->dryRun;
 }
 
-sub run_consense {
+sub _run_consense {
         my $self = shift;
         my $ret = "";
         
