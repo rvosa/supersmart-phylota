@@ -35,4 +35,14 @@ $name = "x Brassolaeliocattleya 'Sung Ya Green'";
 @nodes = $service->search_node( { taxon_name => $name } )->all;
 ok ( scalar @nodes > 0, "found at least one node for $name");
 
+# search for Chagunius chagunio
+#$name = "Chagunius chagunio";
+#@nodes = $service->search_node( { taxon_name => $name } )->all;
+#ok ( scalar @nodes > 0, "found at least one node for $name");
+
+# search for a genus: Gobius
+$name = "Gobius";
+@nodes = $service->search_node( { taxon_name => $name } )->all;
+ok ( scalar @nodes > 0, "found at least one node for $name");
+
 
