@@ -265,9 +265,7 @@ exec {
 
 	# install bioperl-run
 	"clone_bioperl_run":
-		# NOTE: using forked version from hettling's repository in which RaXML wrapper works
-		#       This can be changed to the official bioperl repo if they accept the changes.
-		command => "git clone https://github.com/hettling/bioperl-run.git",
+		command => "git clone https://github.com/bioperl/bioperl-run.git",
 		cwd     => $tools_dir,
 		creates => "${tools_dir}/bioperl-run",
 		require => Package[ 'git' ];		
