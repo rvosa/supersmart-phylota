@@ -326,7 +326,7 @@ sub num_workers {
 	return $num_workers;
 }
 
-=item num_workers
+=item mode
 
 Getter/setter for the parallel mode
 
