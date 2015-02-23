@@ -48,9 +48,9 @@ sub outfile {
 	return $self->{'outfile'};
 }
 
-=item outfile
+=item workdir
 
-returns the working directory for the subcommand
+Getter/setter for the working directory for the subcommand
 
 =cut
 
@@ -62,7 +62,7 @@ sub workdir {
 	return $self->{'workdir'};
 }
 
-=item make_path
+=item absolute_path
 
 creates an absolute path to a file location, if file is not yet
 given as absolute path. This is done by prepending the working directory
@@ -112,6 +112,14 @@ sub execute {
 	return $class->run( $opt, $args );	
 }
 
+
+=item init
+
+The init subroutine initializes objects that are shared by all subcommands (as for instance the working 
+directory, output file and a L<Bio::Phylo::Util::Logger> instance). Also, we check for command line options that require a file argument
+and, if necessary, turn their paths into absolute paths.
+
+=cut
 
 sub init {
 	my ($self, $opt, $args) = @_;
@@ -241,8 +249,6 @@ of the form 'smrt subcommand option1 <arg1> [option2 <arg2>] [option3]'.
 Options that require arguments followed by the argument name enclosed in '<>'.
 Options that are not mandatory are enclosed in []. 
 
-=back
-
 =cut 
 
 sub usage_desc {
@@ -266,5 +272,42 @@ sub usage_desc {
 	return $usage;	
 }
 
+=item options
+
+This is a wrapper for L<App::Cmd>'s 'opt_spec' method and is implemente by the child classes to
+specify command-line options for a specific subcommand.
+
+=cut
+
+sub options {
+	die("subroutine 'options' must be implemented by the respective child class");
+}
+
+=item validate
+
+This is a wrapper for L<App::Cmd>'s 'validate_args' method and is implemente by the child classes to
+validate command-line options for a specific subcommand.
+
+=cut
+
+sub validate {
+	die("subroutine 'validate' must be implemented by the respective child class");
+
+}
+
+=item run
+
+This is a wrapper for L<App::Cmd>'s 'execute' method and is implemente by the child classes to
+run a specific subcommand
+=cut
+
+sub run {
+	die("subroutine 'run' must be implemented by the respective child class");
+
+}
+
+=back
+
+=cut
 
 1;
