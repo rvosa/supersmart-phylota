@@ -657,7 +657,6 @@ sub extract_clades {
 		# remove monotypic genera from clades and sets that have <3 species thus cannot be resolved
 		@sets = grep {scalar(@$_)>2} @sets;
 	}
-	die;
 	return @sets;	
 }
 
