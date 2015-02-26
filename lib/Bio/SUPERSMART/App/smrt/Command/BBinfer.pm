@@ -112,7 +112,9 @@ sub run {
 sub _infer_raxml {
 	my ($self, $supermatrix) = @_;
 	
-	my $tool = Bio::Tools::Run::Phylo::Raxml->new(-N => 100, -p => 1	);
+	my $config = Bio::Phylo::PhyLoTA::Config->new;
+	
+	my $tool = Bio::Tools::Run::Phylo::Raxml->new(-N => 100, -p => 1, -T => $config->NODES	);
 			
 	$tool->outfile_name("out");   
 			
