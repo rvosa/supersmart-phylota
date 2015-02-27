@@ -266,6 +266,26 @@ sub get_children {
 	return \@children;
 }
 
+=head2 get_terminal_ids
+
+Returns array ref to all terminal children
+
+=cut
+
+sub get_terminal_ids {
+	my $self = shift;
+	my %seen;
+	my @queue = @{ $self->get_children };
+	while(@queue) {
+		my $child = shift @queue;
+		$seen{$child->ti}++;
+		my @children = @{ $child->get_children };
+		push @queue, @children if @children;
+	}
+	my @terminals = keys(%seen);
+	return \@terminals;
+}
+
 =head2 get_branch_length 
 
 Returns nothing: in this implementation (i.e. a taxonomy) there are no branch lengths

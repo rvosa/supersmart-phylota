@@ -68,6 +68,10 @@ sub new {
     return $self;
 }
 
+sub add_calibration_point {
+	
+}
+
 =item calibrate_tree
 
 Calibrates an additive tree using a CalibrationTable object, returns an ultrametric tree.
@@ -90,7 +94,7 @@ sub calibrate_tree {
 	my $nthreads  = $config->NODES;
 	my ($ifh,$writetree) = tempfile();
 	my ($ofh,$readtree)  = tempfile();
-	my ($tfh,$tplfile)   = tempfile();
+	my ($tfh,$tplfile)   = 	tempfile();
 	print $ofh $tree->to_newick;
 	close $ofh;
 	close $ifh;
@@ -135,15 +139,22 @@ sub find_calibration_point {
     my $log = $self->logger;
     my $mts = Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector->new;
     
+    my @nodes;
+
     # search for all nodes for the calibrated taxon
-    my @nodes = $mts->get_nodes_for_names( $fd->calibrated_taxon() );
+	for my $ct ( @{$fd->calibrated_taxon }) {
+    	push @nodes, $mts->get_nodes_for_names( $ct );
+    }
     
     # if nodes are found, attach it as a calibration point 
     # to the FossilData object
     $log->debug("found ".scalar(@nodes)." nodes for fossil ".$fd->fossil_name);
+
     if ( scalar @nodes > 0 ){
 		$fd->calibration_points(@nodes);
-		$log->info($_->taxon_name) for @nodes;
+		for ( @nodes ) {
+			$log->info("Found node " .  $_->taxon_name . " for calibrated taxon");					
+		}
     }
     return $fd;
 }
@@ -155,6 +166,12 @@ L<Bio::Phylo::PhyLoTA::Domain::CalibrationTable>. Note that this method assumes 
 that whitespaces in species names in the tree are substituted to underscores 
 (e.g. Mandevilla emarginata -> Mandevilla_emarginata).
 
+For crown fossils, the mrca of the determined node will be the calibrated node.
+For stem fossils, we set the node to be calibrated as the parent of the calibrated 
+taxon found in the database; since there are only few extinct animals in the NCBI taxonomy, 
+which are most likely not present in the inferred tree, this parent node gives the best 
+approximation to the stem age. 
+
 =cut
 
 sub create_calibration_table {
@@ -163,87 +180,51 @@ sub create_calibration_table {
     my $logger = $self->logger;        
     my $table  = Bio::Phylo::PhyLoTA::Domain::CalibrationTable->new;
     my $cutoff = $config->FOSSIL_BEST_PRACTICE_CUTOFF;
-    my $mts    = Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector->new;
-    
-    # create mapping from fossil to all its subtended TIs
-    $logger->info("going to map fossils to calibrated taxon IDs");
-    my %fd_for_id;
-    for my $fd ( @fossildata ) {
-                $logger->info("New fossil data");
-		my @nodes = $fd->calibration_points; # returns higher taxa
-		my $score = $fd->best_practice_score || 0;
-		if ( $score >= $cutoff ) {
-			if ( scalar @nodes > 0 ) {
-				for my $n ( @nodes ) {
-					my $id = $n->ti;
-					$fd_for_id{$id} = { 'fd' => $fd };
-					
-					# traverse non-recursively
-					my %seen;
-					my @queue = @{ $n->get_children };
-					while(@queue) {
-						my $child = shift @queue;
-						$seen{$child->ti}++;
-						my @children = @{ $child->get_children };
-						push @queue, @children if @children;
-					}
-					$fd_for_id{$id}->{'desc'} = \%seen;			
+
+	my %taxa_in_tree = map { $_->get_name => 1 } @{$tree->get_terminals};
+	
+	# find all descendants of all calibrated higher taxa that are present in the tree
+	FOSSIL: for my $fd ( @fossildata ) {
+			my @nodes = $fd->calibration_points; # returns higher taxa
+			my $score = $fd->best_practice_score || 0;
+			if ( $score < $cutoff ) {
+				$logger->warn("Quality score of fossil for calibrated taxon " .  $fd->{"Calibrated_taxon"} .  " too low. Skipping.");
+				next FOSSIL;
+			}
+			
+			# for crown (and unknown) fossils, just add the terminals present in the tree for that calibrated taxon, so it's mrca
+			# will get calibrated			
+			my @terminals = map {@{$_->get_terminal_ids}} @nodes;
+
+			# only consider terminals that are present in our tree
+			@terminals = grep { exists($taxa_in_tree{$_}) } @terminals;
+
+			# for stem fossils, take the parent of the mrca
+			if ( lc $fd->{"CrownvsStem"} eq "stem" ) { 
+
+				my %t = map {$_=>1} @terminals;
+				my @tree_nodes =  grep { exists($t{$_->get_name})  }  @{$tree->get_terminals};					
+				my $mrca = $tree->get_mrca(\@tree_nodes);
+				my $parent = $mrca->get_parent;
+				if ( ! $parent ) {
+					$logger->warn("Could not calibrate stem fossil # " . $fd->nfos . " (" . $fd->fossil_name . ") because the mrca of all calibrated taxa has no parent node. Skipping.");
+					next FOSSIL;
 				}
+				@terminals = map{ $_->get_name } @{$parent->get_terminals};
+				@terminals =  grep { exists($taxa_in_tree{$_}) } @terminals;																							
 			}
-		} 
-		else {
-			$logger->info("Best practice score for fossil record for taxon"
-				  .$fd->calibrated_taxon()." too low.");
-		}		   	
-    }
-    
-    # assign each tip to all the fossils on its path to the root
-    $logger->info("going to assign tree leaves to calibrated ancestral taxa");
-    my %tips_for_id = map { $_ => [] } keys %fd_for_id;
-    my @sorted = sort { scalar(keys(%{$fd_for_id{$a}->{'desc'}})) <=> scalar(keys(%{$fd_for_id{$b}->{'desc'}})) } keys %fd_for_id;
-    for my $tip ( @{ $tree->get_terminals } ) {
-    	my $name = $tip->get_name;
-    	$logger->debug("trying to assign leaf $name...");
-    	my $node;
-    	if ( $name =~ /^\d+$/ ) {
-    		$node = $mts->find_node($name);
-    	}
-    	else {
-    		$name =~ s/_/ /g;
-    		($node) = $mts->get_nodes_for_names($name);
-    	}
-    	my $id = $node->ti;
-		for my $fid ( @sorted ) {                       
-                        if ( $fd_for_id{$fid}->{'desc'}->{$id} ) {
-				push @{ $tips_for_id{$fid} }, $tip;
-				my $ct = $fd_for_id{$fid}->{'fd'}->calibrated_taxon;
-				$logger->debug("assigning leaf $name to $ct");
-			}
-		}
-    }
-    
-    # add the fossils that we could place on the tree to the table
-    $logger->info("going to add within-clade calibrated taxa in table");
-    for my $id ( keys %tips_for_id ) {
-    	if ( scalar @{ $tips_for_id{$id} } ) {
-		# create record in table
-                $table->add_row(
-				'taxa'    => [ sort { $a cmp $b } map { $_->get_name } @{ $tips_for_id{$id} } ],
-				'min_age' => $fd_for_id{$id}->{'fd'}->min_age,
-				'max_age' => $fd_for_id{$id}->{'fd'}->max_age,
-				'name'    => $fd_for_id{$id}->{'fd'}->calibrated_taxon,	    
-                                'nfos'    => $fd_for_id{$id}->{'fd'}->nfos,	    
-                            );    	
-    	}
-    	else {
-    	
-    		# this can happen, for example, if the CalibratedTaxon was a 
-    		# homonym in a different kingdom
-    		$logger->warn("could not find descendants for id $id in focal tree");
-    	}    
-    }
+			$table->add_row(
+					'taxa'    => [ sort { $a cmp $b } @terminals ],
+					'min_age' => $fd->min_age,
+					'max_age' => $fd->max_age,
+					'name'    => $fd->nfos,	    
+	                'nfos'    => $fd->nfos,	    
+	        );  
+			
+	}	
+		
     $table->sort_by_min_age;
-    return $table;
+    return $table;	
 }
 
 =item read_fossil_table
@@ -270,7 +251,15 @@ sub read_fossil_table {
             push @records, Bio::Phylo::PhyLoTA::Domain::FossilData->new(\%record);
         }
     }
+    # calibratedTaxon field can have more than calibrated taxon split by commata
     close $fh;
+
+    for my $r ( @records ) {
+    	my $ct = $r->{"CalibratedTaxon"};
+    	my @taxa = split(',', $ct);
+    	$r->{"CalibratedTaxon"} = \@taxa;
+    }
+
     return @records;
 }
 

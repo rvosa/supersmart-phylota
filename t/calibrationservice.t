@@ -5,13 +5,14 @@ use FindBin '$Bin';
 use Test::More 'no_plan';
 use Bio::Phylo::IO 'parse_tree';
 use Bio::Phylo::Util::Logger 'INFO';
-use Data::Dumper;
+use Bio::Phylo::PhyLoTA::Service::TreeService;
 
 BEGIN {
 	use_ok('Bio::Phylo::PhyLoTA::Service::CalibrationService');
 }
 
 my $cs = new_ok('Bio::Phylo::PhyLoTA::Service::CalibrationService');
+my $ts = Bio::Phylo::PhyLoTA::Service::TreeService->new;
 
 # read a PROTEUS compatible tab-separated spreadsheet with fossils,
 # returns an array of Bio::Phylo::PhyLoTA::Domain::FossilData objects
@@ -33,6 +34,7 @@ my $tree = parse_tree(
 	'-as_project' => 1,
 );
 isa_ok( $tree, 'Bio::Tree::TreeI' );
+$tree = $ts->remap_to_ti($tree);
 
 # creates a Bio::Phylo::PhyLoTA::Domain::CalibrationTable
 my $ct = $cs->create_calibration_table( $tree, @identified );
