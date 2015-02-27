@@ -100,14 +100,12 @@ sub run {
 		'-format'     => 'newick',
 		'-file'       => $backbone,
 		'-as_project' => 1,
-	);
+	)->resolve;
 	
 	$ts->remap_to_name($bbtree);
 	
 	open my $outfh, '>', $outfile or die $!;
 	print $outfh $bbtree->to_newick('-nodelabels' => 1);
-	#print $outfh $ts->write_newick_tree($bbtree);
-
 	close $outfh;
 	
 	$logger->info("DONE, results written to $outfile");
@@ -122,34 +120,28 @@ sub _infer_raxml {
 	
 	my $config = Bio::Phylo::PhyLoTA::Config->new;
 	my $ts = Bio::Phylo::PhyLoTA::Service::TreeService->new;
-	
-	
+	my $logger = $self->logger;
 	
 	my $tool = Bio::Tools::Run::Phylo::Raxml->new(-N => 100, -p => 1, -T => $config->NODES	);			
 	$tool->outfile_name("out");   			
 	$tool->w( $tool->tempdir );
 	$tool->m("GTRGAMMA");	
 	
+	my $treefile = File::Spec->catfile( ($tool->w), 'RAxML_bestTree.' . $tool->outfile_name );
 	if ( $bootstrap ) {
 		# set rapid bootstrap analysis
 		$tool->f('a');		
 		# bootstrap random seed 
 		$tool->x(1);			
+		$treefile = File::Spec->catfile( ($tool->w), 'RAxML_bipartitions.' . $tool->outfile_name );		
 	}
 		
 	my $bptree = $tool->run($supermatrix);		
 	##$tool->cleanup;
 	
-	# bioperl gives back a tree object, 
-	# and to keep consistent with the exabayes and examl subroutines,
-	# we write the tree to the specified outfile
-	my $tree = Bio::Phylo::Forest::Tree->new_from_bioperl( $bptree );
-		
-	open my $fh, '>', $self->outfile;
-	print $fh $tree->to_newick('-nodelabels' => 1);	
-	close $fh;
-	
-	return $self->outfile;	
+	$logger->fatal('RaXML inference failed; outfile not present') if not -e $treefile; 
+
+	return $treefile;	
 
 }
 
