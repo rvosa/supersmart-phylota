@@ -114,7 +114,7 @@ sub run {
 	
 	$ts->remap_to_name($tree);
 	
-	print $out $tree->resolve->to_newick;
+	print $out $tree->to_newick(nodelabels=>1);
 	close $out;
 	
 	$logger->info("DONE, results written to $outfile");		

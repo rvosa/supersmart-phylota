@@ -333,31 +333,6 @@ sub parse_newick_from_nexus {
         
 }
 
-=item write_newick_tree
-
-Given an object of class L<Bio::Phylo::Forest::Tree>, writes it in newick 
-representation to the specified filename.
-
-=cut
-
-sub write_newick_tree {
-        my ($self, $tree) = @_;
-        my $str = "";
-        $tree->visit_depth_first(
-                '-pre_daughter'   => sub { $str .= '('             },     
-                '-post_daughter'  => sub { $str .= ')'             },     
-                '-in'             => sub { 
-                	my $n = shift; 
-                	$str .= $n->get_name;  
-                	$str .= ":"  . $n->get_branch_length if $n->get_branch_length;},
-                '-pre_sister'     => sub { $str.= ','             },     
-            );
-        $str .= ';';
-        return $str;
-
-}
-
-
 =item graft_tree
 
 Grafts a clade tree into a backbone tree, returns the altered backbone.

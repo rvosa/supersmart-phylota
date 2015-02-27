@@ -115,7 +115,8 @@ sub run{
     # save final tree with taxon names in newick format
     open my $outfh, '>', $outfile or die $!;    
     $ts->remap_to_name($grafted);    
-    print $outfh $ts->write_newick_tree($grafted);
+    $grafted->resolve;
+    print $outfh $grafted->to_newick('-nodelabels' => 1);
     close $outfh;	
 
 	$logger->info("DONE, results written to $outfile");
@@ -128,14 +129,14 @@ sub _graft_single_tree {
 	
 	# save consensus tree
 	open my $fh, '>', $stem.".dnd" or die $!;
-	print $fh $ts->write_newick_tree($consensus);
+	print $fh $consensus->to_newick('-nodelabels' => 1);
 	close $fh;
                 
 	# also save remapped consensus tree                
 	my $remapped_consensus = parse_tree('-string'=>$consensus->to_newick, '-format'=>'newick');
 	$ts->remap_to_name($remapped_consensus);
 	open my $fhr, '>', $stem."-remapped.dnd" or die $!;
-	print $fhr $ts->write_newick_tree($remapped_consensus);
+	print $fhr $remapped_consensus->to_newick('-nodelabels' => 1);
 	close $fhr;
                 
 	# finally graft clade tree onto backbone
