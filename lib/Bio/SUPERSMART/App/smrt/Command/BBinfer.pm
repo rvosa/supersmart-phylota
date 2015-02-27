@@ -43,22 +43,29 @@ sub options {
 	my $tool_default = "examl";
 	return (
 		["supermatrix|s=s", "matrix of concatenated multiple sequece alignments as produced by 'smrt bbmerge'", { arg => "file", mandatory => 1}],	
-		["starttree|t=s", "starting tree for ML tree inference as for instance produced by 'smrt classify'", { arg => "file", mandatory => 1}],
+		["starttree|t=s", "starting tree for ML tree inference as for instance produced by 'smrt classify', only needed when inferencetool is ExaML", { arg => "file", mandatory => 1}],
 		["inferencetool|i=s", "software tool for backbone inference (RaXML, ExaML or ExaBayes), defaults to $tool_default", {default => $tool_default, arg => "tool"}],			
+		["bootstrap|b", "do a bootstrap analysis and add the support values to the backbone tree. Currently only supported for inferencetool RaXML", {}],
 		["outfile|o=s", "name of the output tree file (in newick format), defaults to '$outfile_default'", {default => $outfile_default, arg => "file"}],			
 
 	);	
 }
 
 sub validate {
-	my ($self, $opt, $args) = @_;		
+	my ($self, $opt, $args) = @_;
 
-	#  If alignment or taxa file is absent or empty, abort  
-	my @files = ( $opt->supermatrix, $opt->starttree );
-	foreach my $file ( @files ){
-		$self->usage_error("need supermatrix and starttree arguments") if not $file;
-		$self->usage_error("file $file does not exist") unless (-e $file);
-		$self->usage_error("file $file is empty") unless (-s $file);			
+	my $sm = $opt->supermatrix;
+	my $st = $opt->starttree;
+	my $tool = $opt->inferencetool;
+	
+	$self->usage_error("need supermatrix") if not $sm;
+	$self->usage_error("file $sm does not exist") unless (-e $sm);
+	$self->usage_error("file $sm is empty") unless (-s $sm);
+	
+	if ( lc $tool eq 'examl') {
+		$self->usage_error("need starting tree") if not $st;
+		$self->usage_error("file $st does not exist") unless (-e $st);
+		$self->usage_error("file $st is empty") unless (-s $st);		
 	}
 }
 
@@ -82,13 +89,13 @@ sub run {
 		$backbone = $self->_infer_examl ($supermatrix, $starttree);
 	}	
 	elsif ( lc $inferencetool eq "raxml") {
-		$backbone = $self->_infer_raxml ($supermatrix);
+		$backbone = $self->_infer_raxml ($supermatrix, $opt->bootstrap);
 	}	
 	elsif ( lc $inferencetool eq "exabayes") {
 		$backbone = $self->_infer_exabayes ($supermatrix);
 	}
 	
-	# read generated backbone tree from file ane reroot it
+	# read generated backbone tree from file
 	my $bbtree = parse_tree(
 		'-format'     => 'newick',
 		'-file'       => $backbone,
@@ -96,10 +103,11 @@ sub run {
 	);
 	
 	$ts->remap_to_name($bbtree);
-	$bbtree->resolve;		
 	
 	open my $outfh, '>', $outfile or die $!;
-	print $outfh $bbtree->to_newick;
+	print $outfh $bbtree->to_newick('-nodelabels' => 1);
+	#print $outfh $ts->write_newick_tree($bbtree);
+
 	close $outfh;
 	
 	$logger->info("DONE, results written to $outfile");
@@ -110,29 +118,35 @@ sub run {
 
 # infers a backbone tree with raxml and returns the tree file
 sub _infer_raxml {
-	my ($self, $supermatrix) = @_;
+	my ($self, $supermatrix, $bootstrap) = @_;
 	
 	my $config = Bio::Phylo::PhyLoTA::Config->new;
+	my $ts = Bio::Phylo::PhyLoTA::Service::TreeService->new;
 	
-	my $tool = Bio::Tools::Run::Phylo::Raxml->new(-N => 100, -p => 1, -T => $config->NODES	);
-			
-	$tool->outfile_name("out");   
-			
+	
+	
+	my $tool = Bio::Tools::Run::Phylo::Raxml->new(-N => 100, -p => 1, -T => $config->NODES	);			
+	$tool->outfile_name("out");   			
 	$tool->w( $tool->tempdir );
-
 	$tool->m("GTRGAMMA");	
 	
+	if ( $bootstrap ) {
+		# set rapid bootstrap analysis
+		$tool->f('a');		
+		# bootstrap random seed 
+		$tool->x(1);			
+	}
+		
 	my $bptree = $tool->run($supermatrix);		
-	
 	##$tool->cleanup;
 	
 	# bioperl gives back a tree object, 
 	# and to keep consistent with the exabayes and examl subroutines,
 	# we write the tree to the specified outfile
 	my $tree = Bio::Phylo::Forest::Tree->new_from_bioperl( $bptree );
-
+		
 	open my $fh, '>', $self->outfile;
-	print $fh $tree->to_newick;	
+	print $fh $tree->to_newick('-nodelabels' => 1);	
 	close $fh;
 	
 	return $self->outfile;	

@@ -27,3 +27,11 @@ my ($fh, $outfile) = tempfile( 'CLEANUP' => 1 );
 
 my $result = test_app( Bio::SUPERSMART::App::smrt=> [ "bbinfer",  "-s",   $matrix, "-t", $classtree, "-o", $outfile ]);
 _output_ok ( $result, $outfile );
+
+# test inference with raxml and bootstrapping
+$result = test_app( Bio::SUPERSMART::App::smrt=> [ "bbinfer",  "-s",   $matrix, "-t", $classtree, "-i", "raxml", "-o", $outfile, "-b"]);
+_output_ok ( $result, $outfile );
+
+# test inference with exabayes
+$result = test_app( Bio::SUPERSMART::App::smrt=> [ "bbinfer",  "-s",   $matrix, "-i", "exabayes", "-o", $outfile, "-b"]);
+_output_ok ( $result, $outfile );
