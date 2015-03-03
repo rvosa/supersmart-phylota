@@ -4,7 +4,8 @@ use strict;
 use warnings;
 
 use File::Copy qw(copy);
-	
+use File::Spec;
+
 use Bio::SearchIO;
 use Bio::Phylo::PhyLoTA::Config;
 use Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa;
@@ -80,13 +81,14 @@ sub run {
 	my @alignments = <$fh>;
 	chomp @alignments; 
 	close $fh;
-		
+			
 	# write seed sequences, filter out seqs that have the same seed
 	my %seen;
 	$log->info("going to write sequences to $dbname");
 	open my $sfh, '>', $dbname or die $!;
 	for my $aln ( @alignments ) {
-		if ( $aln =~ /(\d+)-.+\.fa/ ) {
+		my ($volume,$directories,$filename) =  File::Spec->splitpath( $aln );
+		if ( $filename =~ /(\d+)-.+\.fa/ ) {
 			my $gi = $1;
 			if ( ! exists($seen{$gi}) )  {
 				$seen{$gi}++;
