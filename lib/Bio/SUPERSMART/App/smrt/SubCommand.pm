@@ -174,7 +174,7 @@ sub opt_spec {
 	return (
 		[ "help|h", "display help screen", {} ],
 		[ "verbose|v+", "increase verbosity level", {} ],
-		[ "workdir|w=s", "directory in which results and intermediate files are stored", { default => "./", arg => "dir"} ],
+		[ "workdir|w=s", "directory in which results and intermediate files are stored", { arg => "dir"} ],
 		[ "logfile|l=s", "write run-time information to logfile", { arg => "file" }],	
 		$class->options($app),
 	);	
@@ -225,9 +225,7 @@ sub validate_args {
 	
 	# first init the properties of the superclass
 	$class->init($opt, $args);
-		
-	$class->usage_error("workdir needs to be a valid directory") if not -d $opt->workdir;
-	
+			
 	if ($opt->help){
 		# This is a small hack to make the help screen called with the 
 		#  option (as here, e.g. "$ smrt command -h" ) look the same
