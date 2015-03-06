@@ -71,7 +71,7 @@ sub run{
 		$workdir = Cwd::getcwd . '/' . $date . '-' . $taxon;
 		$self->workdir($workdir);
 		$log->info("No working directory given in option. Creating working directory $workdir");
-		system("mkdir $workdir") and die $?;
+		system("mkdir $workdir") and $log->warn($?);
 	}
 	
 	# define file names for intermediate files
@@ -86,7 +86,7 @@ sub run{
 	my $finaltreefile = $self->absolute_path("final.dnd");
 	
 	# other parameters
-	my $beast_gens = 30000000;
+	my $beast_gens = 3000000;
 	
 	# Step 1: Taxize 
 	$log->info("Running pipeline step #1: smrt taxize");
@@ -120,7 +120,8 @@ sub run{
 		
 	# Step 6: BBinfer
 	$log->info("Running pipeline step #6: smrt bbinfer");
-	$success = $self->_run_subcommand( ("bbinfer",  "-w", $workdir, "-s", $supermatrixfile, "-t", $classtreefile, "-o", $backbonefile, "-l", "bbinfer.log") );	
+	
+	$success = $self->_run_subcommand( ("bbinfer",  "-w", $workdir, "-s", $supermatrixfile, "-t", $classtreefile, "-o", $backbonefile, "-i", "raxml", "-b", "-l", "bbinfer.log") );	
 	die ("Pipeline step 'bbinfer' failed. Try to run 'smrt bbinfer' manually with '-v' option to find out what went wrong.") unless ( $success and  -e $backbonefile and -s $backbonefile);
 	$log->info("Step #6 smrt bbinfer succeed");
 
@@ -165,7 +166,7 @@ sub run{
 	$log->info("Running pipeline step #12: smrt cladegraft");
 	$success = $self->_run_subcommand( ("cladegraft",  "-w", $workdir, "-b", $chronogramfile, "-o", $finaltreefile, "-l", "cladegraft.log") );	
 	die ("Pipeline step 'cladegraft' failed. Try to run 'smrt cladegraft' manually with '-v' option to find out what went wrong.") unless ( $success and  -e $finaltreefile and -s $finaltreefile);
-	$log->info("Final step #12 smrt clademerge succeed. Final file written to $finaltreefile");
+	$log->info("Final step #12 smrt cladegraft succeed. Final file written to $finaltreefile");
 
 	$log->info("DONE");
 	
