@@ -170,7 +170,7 @@ exec {
   
 	# make phylota database
 	"dl_phylota_dump":
-		command => "wget https://dl.dropboxusercontent.com/u/4180059/phylota.tar.gz",
+		command => "wget http://biovel.naturalis.nl/phylota.tar.gz",
 		cwd     => $data_dir,
 		creates => "${data_dir}/phylota.tar.gz",
 		timeout => 0,
