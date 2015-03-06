@@ -113,6 +113,8 @@ sub run {
 	open my $out, '>', $outfile or die $!;
 	
 	$ts->remap_to_name($tree);
+	$tree->resolve;
+	$ts->remove_internal_names($tree);
 	
 	print $out $tree->to_newick(nodelabels=>1);
 	close $out;

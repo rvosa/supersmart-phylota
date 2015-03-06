@@ -172,6 +172,29 @@ sub _array_minus {
 }
 
 
+=item remove_internal_names 
+
+Removes those labels of internal and nodes in a tree, that are not numeric, e.g. "root" of
+"e1" which may have been introduced by rerooting or resolving the tree
+
+=cut
+
+sub remove_internal_names {
+	my ($self, $tree) = @_;	
+    
+    for my $n ( @{$tree->get_internals} ) {
+    	print $n->get_name . "\n";
+		if ($n->get_name =~ m/[a-zA-Z]/){
+			$n->set_name('');
+		}
+    }
+    my $n = $tree->get_root;
+    if ($n->get_name =~ m/[a-zA-Z]/){
+		$n->set_name('');
+	}
+	return $tree;
+}
+
 =item remap_to_name
 
 Given an object of class L<Bio::Phylo::Forest::Tree>, 
@@ -180,7 +203,7 @@ changes the names of the terminal nodes from NCBI taxonomy identifiers to their 
 =cut
 
 sub remap_to_name {
-        my ($self, $tree) = @_;
+       	my ($self, $tree) = @_;
         $tree->visit(sub{
                 my $n = shift;
                 if ( $n->is_terminal ) {

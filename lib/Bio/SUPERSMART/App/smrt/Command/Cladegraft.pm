@@ -98,7 +98,7 @@ sub run{
     }
     # graft all clades in working directory
     else {
-    	$logger->info("Grafting all clades in workind directory $workdir");
+    	$logger->info("Grafting all clades in working directory $workdir");
 		opendir my $dh, $workdir or die $!;
 		while( my $entry = readdir $dh ) {                        
 	    	if ( $entry =~ /clade\d+/ && -d "${workdir}/${entry}" ) {                                
@@ -113,9 +113,11 @@ sub run{
 		}
     }
     # save final tree with taxon names in newick format
-    open my $outfh, '>', $outfile or die $!;    
     $ts->remap_to_name($grafted);    
     $grafted->resolve;
+    $ts->remove_internal_names($grafted);
+
+    open my $outfh, '>', $outfile or die $!;        
     print $outfh $grafted->to_newick('-nodelabels' => 1);
     close $outfh;	
 

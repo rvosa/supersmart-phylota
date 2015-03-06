@@ -104,6 +104,9 @@ sub run {
 	
 	$ts->remap_to_name($bbtree);
 	
+	$bbtree->resolve;
+	$ts->remove_internal_names($bbtree);
+		
 	open my $outfh, '>', $outfile or die $!;
 	print $outfh $bbtree->to_newick('-nodelabels' => 1);
 	close $outfh;
