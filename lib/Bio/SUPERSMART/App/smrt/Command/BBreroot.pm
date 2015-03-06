@@ -71,7 +71,7 @@ sub run {
 		'-file'   => $backbone,
 		'-format' => 'newick',
 	);
-
+	
 	# use taxon IDs instead of names
 	$ts->remap_to_ti($tree);
 	# Perform rerooting at outgroup, if given		
@@ -108,14 +108,12 @@ sub run {
 		$logger->info("rerooting backone tree");	
 		$tree = $ts->reroot_tree($tree, \@records, [$level]);
 	}
-	
-	# write rerooted tree to output file
-	open my $out, '>', $outfile or die $!;
-	
+		
 	$ts->remap_to_name($tree);
 	$tree->resolve;
-	$ts->remove_internal_names($tree);
 	
+	# write rerooted tree to output file
+	open my $out, '>', $outfile or die $!;	
 	print $out $tree->to_newick(nodelabels=>1);
 	close $out;
 	
