@@ -12,6 +12,9 @@ Bio::SUPERSMART::App::smrt::SubCommand Superclass for C<smrt> subcommands
 This class provides global options (e.g. verbosity, working directory) that are
 inherited by all subcommand classes.
 
+=cut
+
+my $logfh;
 
 =head1 METHODS
 
@@ -109,8 +112,11 @@ sub execute {
 	my $release = $config->RELEASE;
 	$class->logger->info("This is SUPERSMART release " . $config->RELEASE);
 	
-	return $class->run( $opt, $args );	
+	my $result = $class->run( $opt, $args );	
+	close $logfh;
+	return $result;
 }
+
 
 
 =item init
@@ -156,7 +162,7 @@ sub init {
     
     # redirect logger output to file if specified by command call
     if ( my $logfile = $opt->logfile ) {
-    	open my $logfh, '>', $logfile or die $!;
+    	open $logfh, '>', $logfile or die $!;
 		$self->logger->set_listeners(sub{$logfh->print(shift)});
     } 
 }
