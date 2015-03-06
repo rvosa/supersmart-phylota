@@ -51,7 +51,7 @@ sub reroot_tree {
 	my %rerooted_trees = ();
 
 	my $num_internals = scalar @{ $tree->get_internals };
-	my $newi          = $tree->to_newick;
+	my $newi          = $tree->to_newick(nodelabels=>1);
 
 	# iterate over all possible rerootings
 	for my $i (0 .. $num_internals - 1 ) {
@@ -69,10 +69,9 @@ sub reroot_tree {
 		$log->debug("rerooting tree at internal node # " . ($i+1) . "/" . $num_internals);
 
 		$node->set_root_below;
-
 		# store the tree for later
 		$rerooted_trees{$i} = $current_tree;
-
+				
 		# calculate the 'scores' : count the amount of paraphyly at each taxonomic level
 		foreach my $level (@levels) {
 			my $para_count =
@@ -105,7 +104,7 @@ sub reroot_tree {
 	}
 
 	if ( scalar @best_indices > 1 ) {
-		$log->warn ("Found more than one optimal rerooted trees. Returning the first one");
+		$log->warn ("Found more than one optimal rerooted tree. Returning the first one");
 	}
 	if ( scalar @best_indices == 0 ) {
 		$log->warn ("Found no optimal rerooted tree. Returning the original one");
