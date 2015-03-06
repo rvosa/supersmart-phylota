@@ -150,6 +150,41 @@ sub parse_taxa_string {
 	return @result;
 }
 
+=item get_supermatrix_numtaxa
+
+Given the file location of a supermatrix, returns the number of taxa
+
+=cut
+
+sub get_supermatrix_numtaxa {
+	my ($self, $supermatrix) = @_;
+	# parse number of sites in alignment from first line in supermatrix
+	open my $file, '<', $supermatrix or die $!;
+	my $firstline = <$file>;
+	$firstline =~ s/^\s+//;
+	my $numsites = (split(/\s/, $firstline))[0];
+	close $file;
+	return $numsites
+}
+
+=item get_supermatrix_numsites
+
+Given the file location of a supermatrix, returns the number of sites
+
+=cut
+
+sub get_supermatrix_numsites {
+	my ($self, $supermatrix) = @_;
+	# parse number of sites in alignment from first line in supermatrix
+	open my $file, '<', $supermatrix or die $!;
+	my $firstline = <$file>;
+	$firstline =~ s/^\s+//;
+	my $numsites = (split(/\s/, $firstline))[1];
+	close $file;
+	return $numsites
+}
+
+
 =item get_distinct_taxa
 
 Returns the distinct IDs for the provided taxonomic level.

@@ -5,6 +5,7 @@ use warnings;
 
 use Bio::Phylo::PhyLoTA::Service::CalibrationService;
 use Bio::Phylo::PhyLoTA::Service::TreeService;
+use Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa;
 use Bio::Phylo::PhyLoTA::Config;
 
 use Bio::Phylo::IO qw(parse_tree);
@@ -74,6 +75,7 @@ sub run {
 	my $config = Bio::Phylo::PhyLoTA::Config->new;
 	my $cs = Bio::Phylo::PhyLoTA::Service::CalibrationService->new;
 	my $ts = Bio::Phylo::PhyLoTA::Service::TreeService->new;
+	my $mt = Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa->new;
 	
 	# read the ML tree from newick (one tree in this file)
 	$logger->info( "reading tree from file $treefile" );
@@ -94,14 +96,9 @@ sub run {
     $logger->info( "going to make calibration table" );
     my @points = map { $cs->find_calibration_point($_) } @fossils;
     my $table = $cs->create_calibration_table( $tree, @points );
-	
-	# parse number of sites in alignment from first line in supermatrix
-	open my $file, '<', $supermatrix or die $!;
-	my $firstline = <$file>;
-	$firstline =~ s/^\s+//;
-	my $numsites = (split(/\s/, $firstline))[1];
-	close $file;
-	
+
+	my $numsites = $mt->get_supermatrix_numsites($supermatrix);
+
 	# calibrate the tree
 	my $chronogram = $cs->calibrate_tree (('-numsites' => $numsites, '-calibration_table' => $table, '-tree' => $tree));
 	
