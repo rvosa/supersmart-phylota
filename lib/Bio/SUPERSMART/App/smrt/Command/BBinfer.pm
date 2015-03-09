@@ -125,7 +125,7 @@ sub _infer_raxml {
 	my $ts = Bio::Phylo::PhyLoTA::Service::TreeService->new;
 	my $logger = $self->logger;
 	
-	my $tool = Bio::Tools::Run::Phylo::Raxml->new(-N => 100, -p => 1, -T => $config->NODES	);			
+	my $tool = Bio::Tools::Run::Phylo::Raxml->new(-N => $config->RAXML_RUNS, -p => $config->RANDOM_SEED, -T => $config->NODES	);			
 	$tool->outfile_name("out");   			
 	$tool->w( $tool->tempdir );
 	$tool->m("GTRGAMMA");	
@@ -194,7 +194,7 @@ sub _infer_examl {
     $tool->m($config->EXAML_MODEL);
 
 	# set random seed
-	$tool->p(1); 
+	$tool->p($config->RANDOM_SEED); 
 
     # here we need to read the names from the phylip file and adjust the
     # common tree accordingly: it must only retain the taxa in the supermatrix,
@@ -323,7 +323,7 @@ sub _infer_exabayes {
     $tool->run_id("infer_backbone_".$$);
         
     # set random seed to 1
-    $tool->seed(1);
+    $tool->seed($config->RANDOM_SEED);
         
     # set oufile format
     $logger->info("setting outfile format to 'newick'");
