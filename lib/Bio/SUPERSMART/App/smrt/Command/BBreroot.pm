@@ -111,6 +111,7 @@ sub run {
 		
 	$ts->remap_to_name($tree);
 	$tree->resolve;
+	$ts->remove_internal_names($tree);
 	
 	# write rerooted tree to output file
 	open my $out, '>', $outfile or die $!;	
