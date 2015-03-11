@@ -86,17 +86,21 @@ sub run {
 	
 	# this is sorted from more to less inclusive
 	my @sorted_clusters = $mts->get_clusters_for_nodes(@nodes); 
-	
 	my @clusters;	
-	my @subset;	
 	my $nworkers = num_workers();	
-	for my $i ( 0 .. $#sorted_clusters ) {
-		my $j = $i % $nworkers;
-			$subset[$j] = [] if not $subset[$j];
-			push @{ $subset[$j] }, $sorted_clusters[$i];
+
+	if (scalar @clusters >= $nworkers ) {
+		my @subset;	
+		for my $i ( 0 .. $#sorted_clusters ) {
+			my $j = $i % $nworkers;
+				$subset[$j] = [] if not $subset[$j];
+				push @{ $subset[$j] }, $sorted_clusters[$i];
+		}		
+		push @clusters, @{ $subset[$_] } for 0 .. ( $nworkers -1 );
 	}
-	
-	push @clusters, @{ $subset[$_] } for 0 .. ( $nworkers -1 );
+	else {
+		@clusters = @sorted_clusters;
+	}	
 	
 	# this is a simple mapping to see whether a taxon is of interest
 	my %ti =  map { $_->ti => 1 } @nodes;        
