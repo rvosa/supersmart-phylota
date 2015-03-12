@@ -31,8 +31,7 @@ using ExaML or RaXML or uses ExaBayes to sample a posterior distribution of tree
 'consense' tree is calculated from the posterior. The tree resulting from this script is written to file.
 For tree inference with examl, an NCBI classification tree (in Newick format) has to be supplied 
 as a starting tree. ExaML and ExaBayes produce many intermediate checkpoint files, for which a
-directory location needs to be specified. The software for tree inference (ExaML or ExaBayes) is
-determined in the configuration file, but can optionally also be given as a command-line argumet.
+directory location needs to be specified. 
 
 =cut
 
@@ -61,12 +60,6 @@ sub validate {
 	$self->usage_error("need supermatrix") if not $sm;
 	$self->usage_error("file $sm does not exist") unless (-e $sm);
 	$self->usage_error("file $sm is empty") unless (-s $sm);
-	
-	if ( lc $tool eq 'examl') {
-		$self->usage_error("need starting tree") if not $st;
-		$self->usage_error("file $st does not exist") unless (-e $st);
-		$self->usage_error("file $st is empty") unless (-s $st);		
-	}
 }
 
 
@@ -108,7 +101,7 @@ sub run {
 	$ts->remove_internal_names($bbtree);
 		
 	open my $outfh, '>', $outfile or die $!;
-	print $outfh $bbtree->to_newick('-nodelabels' => 1);
+	print $outfh $bbtree->to_newick('-nodelabels' => $opt->bootstrap ? 1 : 0);
 	close $outfh;
 	
 	$logger->info("DONE, results written to $outfile");
@@ -135,7 +128,7 @@ sub _infer_raxml {
 		# set rapid bootstrap analysis
 		$tool->f('a');		
 		# bootstrap random seed 
-		$tool->x(1);			
+		$tool->x($config->RANDOM_SEED);			
 		$treefile = File::Spec->catfile( ($tool->w), 'RAxML_bipartitions.' . $tool->outfile_name );		
 	}
 		
@@ -201,19 +194,27 @@ sub _infer_examl {
     # and it must be fully resolved.
 		
 	my @tipnames = $ts->read_tipnames($supermatrix);
+	
+	my $tree;
+	if ($starttree) {
 
-	my $tree = parse(
-                '-format' => 'newick',
-                '-file'   => $starttree,
-        )->first;
-
-    $ts->remap_to_ti($tree);
-		           
-    $tree->keep_tips( \@tipnames )
-            ->resolve
-            ->remove_unbranched_internals
-            ->deroot;		
-
+		$tree = parse(
+	                '-format' => 'newick',
+	                '-file'   => $starttree,
+	        )->first;
+	
+	    $ts->remap_to_ti($tree);
+			           
+	    $tree->keep_tips( \@tipnames )
+	            ->resolve
+	            ->remove_unbranched_internals
+	            ->deroot;		
+	}
+	else {
+		$logger->info("No starttree given in argument for ExaML inference. Generating random starting tree.");	
+		$tree = $self->_make_random_starttree(\@tipnames);	
+	}
+	
 	my @terminals = @{$tree->get_terminals()};
 	
 	# it can occur that a taxon which has been chosen as an exemplar is
@@ -247,8 +248,9 @@ sub _infer_examl {
 	}
 
 	my $intree = File::Spec->catfile( $workdir, 'user.dnd' );
+    $tree->resolve;
     open my $fh, '>', $intree or die $!;
-    print $fh $tree->to_newick;
+    print $fh $tree->to_newick();
 	close $fh;
 	$logger->info("Writing starting tree for examl inference to $intree");
 	
@@ -350,6 +352,26 @@ sub _infer_exabayes {
 	    );
 		
 	return $backbone;
+}
+
+sub _make_random_starttree {
+	my ( $self, $tipnames) = @_;
+	my $fac = Bio::Phylo::Factory->new;
+	my $taxa  = $fac->create_taxa;
+	for my $t (@{$tipnames}) {
+		$taxa->insert( $fac->create_taxon( '-name' => $t ) );
+	}
+	
+	my $gen = Bio::Phylo::Generator->new;
+	my $tree = $gen->gen_equiprobable( '-tips' => $taxa->get_ntax )->first;
+	my $i = 0;
+	$tree->visit(sub{
+		my $n = shift;
+		if ( $n->is_terminal ) {
+			$n->set_name( $taxa->get_by_index($i++)->get_name );
+		}
+	});
+	return $tree;
 }
 
 1;
