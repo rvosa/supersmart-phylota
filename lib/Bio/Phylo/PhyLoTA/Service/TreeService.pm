@@ -205,8 +205,7 @@ sub remap_to_name {
        	my ($self, $tree) = @_;
         $tree->visit(sub{
                 my $n = shift;
-                if ( $n->is_terminal ) {
-                        my $id = $n->get_name;
+                if ( $n->is_terminal and my $id = $n->get_name ) {
                         my $dbnode = $self->find_node($id);
                         $log->fatal("Could not find name for taxon id $id in database!") if not $dbnode;
                         my $name = $dbnode->taxon_name;
@@ -230,8 +229,8 @@ sub remap_to_ti {
         my ($self, $tree) = @_;
         $tree->visit(sub{
                 my $n = shift;
-                if ( $n->is_terminal ) {
-                        my $name = $n->get_name;
+                if ( $n->is_terminal and my $name = $n->get_name) {
+                        print "Searching for name : " . $n->get_name . "\n";
                         $name =~ s/_/ /g;                        
                         $name =~ s/\|/_/g;
                         $name =~ s/^'(.*)'$/$1/g;
