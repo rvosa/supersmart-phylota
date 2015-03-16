@@ -3,7 +3,8 @@ use strict;
 use warnings;
 use Cwd;
 use File::Temp 'tempfile';
-use Bio::Phylo::IO 'parse_tree';
+use Bio::Phylo::IO 'parse';
+use Bio::Phylo::Factory;
 use Bio::Phylo::PhyLoTA::Config;
 use Bio::Phylo::PhyLoTA::Service;
 use base 'Bio::Phylo::PhyLoTA::Service';
@@ -13,6 +14,7 @@ use List::Util 'min';
 
 my $config = Bio::Phylo::PhyLoTA::Config->new;
 my $log = Bio::Phylo::PhyLoTA::Service->logger->new;	
+my $fac = Bio::Phylo::Factory->new;
 
 =head1 NAME
 
@@ -57,27 +59,29 @@ sub reroot_tree {
 	for my $i (0 .. $num_internals - 1 ) {
 
 		# get fresh tree, so the node order etc. won't be messed up
-		my $current_tree = parse_tree(
+		my $current_tree = parse(
 			'-string' => $newi,
 			'-format' => 'newick',
-		);
+		)->first;
 
 		my @internals = @{ $current_tree->get_internals };
 
 		# reroot the tree
-		my $node = $internals[$i];
-		$log->debug("rerooting tree at internal node # " . ($i+1) . "/" . $num_internals);
+		if ( my $node = $internals[$i] ) {
+			$log->debug("rerooting tree at internal node # " . ($i+1) . "/" . $num_internals);
+			
+			$node->set_root_below;
 
-		$node->set_root_below;
-		# store the tree for later
-		$rerooted_trees{$i} = $current_tree;
-				
-		# calculate the 'scores' : count the amount of paraphyly at each taxonomic level
-		foreach my $level (@levels) {
-			my $para_count =
-				$self->_count_paraphyletic_species( $current_tree, $level, @records );
-			$log->debug("Paraphyletic species (counted from level $level) : $para_count");
-			$scores{$level}{$i} = $para_count;
+			# store the tree for later
+			$rerooted_trees{$i} = $current_tree;
+					
+			# calculate the 'scores' : count the amount of paraphyly at each taxonomic level
+			foreach my $level (@levels) {
+				my $para_count =
+					$self->_count_paraphyletic_species( $current_tree, $level, @records );
+				$log->debug("Paraphyletic species (counted from level $level) : $para_count");
+				$scores{$level}{$i} = $para_count;
+			}
 		}
 	}
 
@@ -182,7 +186,6 @@ sub remove_internal_names {
 	my ($self, $tree) = @_;	
     
     for my $n ( @{$tree->get_internals} ) {
-    	print $n->get_name . "\n";
 		if ($n->get_name =~ m/[a-zA-Z]/){
 			$n->set_name('');
 		}
@@ -201,11 +204,13 @@ changes the names of the terminal nodes from NCBI taxonomy identifiers to their 
 
 =cut
 
+
 sub remap_to_name {
        	my ($self, $tree) = @_;
         $tree->visit(sub{
                 my $n = shift;
-                if ( $n->is_terminal and my $id = $n->get_name ) {
+                if ( $n->is_terminal ) {
+                        my $id = $n->get_name;
                         my $dbnode = $self->find_node($id);
                         $log->fatal("Could not find name for taxon id $id in database!") if not $dbnode;
                         my $name = $dbnode->taxon_name;
@@ -227,23 +232,23 @@ as given in the NCBI taxonomy database.
 
 sub remap_to_ti { 
         my ($self, $tree) = @_;
+
         $tree->visit(sub{
                 my $n = shift;
-                if ( $n->is_terminal and my $name = $n->get_name) {
-                        print "Searching for name : " . $n->get_name . "\n";
+                if ( $n->is_terminal and my $name = $n->get_name ) {      
                         $name =~ s/_/ /g;                        
                         $name =~ s/\|/_/g;
                         $name =~ s/^'(.*)'$/$1/g;
                         $name =~ s/^"(.*)"$/$1/g;                        
-                        my @nodes = $self->search_node({taxon_name=>$name})->all;
-						$log->warn("found more than one database entry for taxon $name, using first entry.") if scalar (@nodes) > 1;						
-						die "could not find database entry for taxon name $name " if scalar (@nodes) == 0;						
-                        $n->set_name( $nodes[0]->ti );
+						my $dbnode = $self->find_node({taxon_name=>$name});                     
+						die "could not find database entry for taxon name $name " if not $dbnode;						
+         				my $ti = $dbnode->ti;
+                        $n->set_name( $ti );						
+                        $log->debug("Remapped name $name to $ti ");
                 }
                      });
         return $tree;       
 }
-
 
 =item consense_trees
 
@@ -587,16 +592,18 @@ sub extract_clades {
     
     # first get all taxa that will be included in the clades
     my @valid_ranks = ("species", "subspecies", "varietas", "forma");
-    my ($lowest) = $mt->get_distinct_taxa("superkingdom", @records);
-    my %all_taxa = map{$_=>1 } $mt->query_taxa_table($lowest, \@valid_ranks, @records);
+    my $level = $mt->get_highest_informative_level(@records);
+    my @highest_taxa = $mt->get_distinct_taxa($level, @records);
+    my %all_taxa = map{$_=>1 } $mt->query_taxa_table(\@highest_taxa, \@valid_ranks, @records);
     	    
 	# get exemplars for genera
 	my %terminal_ids = map {$_=>1} map{$_->get_name} @{ $tree->get_terminals };
+    
 	foreach my $id ( keys(%terminal_ids) ) {
 		my ($genus) = $mt->query_taxa_table($id, "genus", @records);
 		push @{$genera{$genus}->{'exemplars'}}, $id;			
 	}
-
+	    
 	# get mrca and distance from root for all exemplars in each genus
 	foreach my $genus ( keys %genera ) {	
 		my %exemplar_ids = map {$_=>1} @{$genera{$genus}->{'exemplars'}};		
@@ -615,7 +622,6 @@ sub extract_clades {
 	for my $genus ( @sorted_genera ) {
 		my $mrca = $genera{$genus}->{'mrca'};
 		my $dist = $genera{$genus}->{'dist_from_root'};
-		print "Genus : $genus dist from root : $dist \n";
 
 		# replace mrca with parent node to include monotypic genera in sister clade
 		#if ($mrca->is_terminal) {
@@ -629,7 +635,6 @@ sub extract_clades {
 				
 		# get all species that are contained in the genera of the mrca 
 		my @s = $mt->query_taxa_table(\@mrca_genera, \@valid_ranks, @records);
-		
 		# only include taxa in a set if they are not already part of a clade spanned higher in the hierarchy 
 		my @remaining_terminals = keys(%all_taxa);
 
@@ -650,9 +655,10 @@ sub extract_clades {
 		@sets = [ map{$_} @sets ];
 	}
 	else {
-		# remove monotypic genera from clades and sets that have <3 species thus cannot be resolved
+		# remove monotypic genera from clades and sets that have <3 species and thus cannot be resolved
 		@sets = grep {scalar(@$_)>2} @sets;
 	}
+	$log->info("Extracted " . scalar(@sets) . " clades");
 	return @sets;	
 }
 
