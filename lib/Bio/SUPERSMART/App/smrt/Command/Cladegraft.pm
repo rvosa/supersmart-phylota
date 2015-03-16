@@ -5,7 +5,7 @@ use warnings;
 
 use Bio::Phylo::PhyLoTA::Service::TreeService;
 
-use Bio::Phylo::IO 'parse_tree';
+use Bio::Phylo::IO 'parse';
 
 use base 'Bio::SUPERSMART::App::smrt::SubCommand';
 use Bio::SUPERSMART::App::smrt qw(-command);
@@ -79,11 +79,10 @@ sub run{
 	my $logger = $self->logger;
 	
 	# parse backbone tree
-	my $backbone_tree = parse_tree(
+	my $backbone_tree = parse(
                 '-file'   => $backbone,
                 '-format' => 'newick',
-                '-as_project' => 1,
-            );
+            )->first;
 		
 	# filenames for nexus trees written by BEAST
     $ts->remap_to_ti($backbone_tree);
@@ -135,8 +134,9 @@ sub _graft_single_tree {
 	close $fh;
                 
 	# also save remapped consensus tree                
-	my $remapped_consensus = parse_tree('-string'=>$consensus->to_newick, '-format'=>'newick');
+	my $remapped_consensus = parse('-string'=>$consensus->to_newick, '-format'=>'newick')->first;
 	$ts->remap_to_name($remapped_consensus);
+	$tree->resolve;
 	open my $fhr, '>', $stem."-remapped.dnd" or die $!;
 	print $fhr $remapped_consensus->to_newick('-nodelabels' => 1);
 	close $fhr;
