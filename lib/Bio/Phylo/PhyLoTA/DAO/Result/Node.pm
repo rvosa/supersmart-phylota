@@ -308,7 +308,7 @@ Alias for C<ti>.
 
 =cut
 
-sub get_id { 'NCBI:' . shift->ti }
+sub get_id { shift->ti }
 
 =head2 set_tree
 
