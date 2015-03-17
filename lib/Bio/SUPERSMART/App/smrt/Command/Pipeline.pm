@@ -121,7 +121,7 @@ sub run{
 	# Step 6: BBinfer
 	$log->info("Running pipeline step #6: smrt bbinfer");
 	
-	$success = $self->_run_subcommand( ("bbinfer",  "-w", $workdir, "-s", $supermatrixfile, "-t", $classtreefile, "-o", $backbonefile, "-i", "raxml", "-b", "-l", "bbinfer.log") );	
+	$success = $self->_run_subcommand( ("bbinfer",  "-w", $workdir, "-s", $supermatrixfile, "-t", $classtreefile, "-o", $backbonefile, "-i", "examl", "-l", "bbinfer.log") );	
 	die ("Pipeline step 'bbinfer' failed. Try to run 'smrt bbinfer' manually with '-v' option to find out what went wrong.") unless ( $success and  -e $backbonefile and -s $backbonefile);
 	$log->info("Step #6 smrt bbinfer succeed");
 
