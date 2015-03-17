@@ -86,7 +86,7 @@ sub run{
 	my $finaltreefile = $self->absolute_path("final.dnd");
 	
 	# other parameters
-	my $beast_gens = 3000000;
+	my $beast_gens = 100000;
 	
 	# Step 1: Taxize 
 	$log->info("Running pipeline step #1: smrt taxize");
