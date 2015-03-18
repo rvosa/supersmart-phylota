@@ -67,13 +67,16 @@ sub run {
 	my $mt = Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa->new;
 	my $logger = $self->logger;
 		
-	my $tree = parse_tree(
+	my $tree = parse(
 		'-file'   => $backbone,
 		'-format' => 'newick',
-	);
-	
+	)->first;
+
+	my @records = $mt->parse_taxa_file($taxafile);	
+
 	# use taxon IDs instead of names
 	$ts->remap_to_ti($tree);
+	$tree->resolve;
 	# Perform rerooting at outgroup, if given		
 	if ($opt->outgroup){
 		my $ogstr = $opt->outgroup;
@@ -81,6 +84,7 @@ sub run {
 		# get nodes in the tree that correspond to outgroup species and
 		#  get their mrca
 		my @names = split(',', $ogstr);
+		
 		# remap outgroup species names to taxon identifiers
 		my @ids = map {
 						(my $name = $_) =~ s/_/ /g;
@@ -89,7 +93,13 @@ sub run {
 						die "could not find database entry for taxon name $name" if scalar (@nodes) == 0;						
 						$nodes[0]->ti;
 		} @names;
-		my %og = map{ $_=>1 } @ids;
+
+		# expand taxa to species and lower if higher outgroup taxa are given
+		my @ranks = ('forma', 'varietas', 'subspecies', 'species');
+	
+		my @all_ids = $mt->query_taxa_table(\@ids, \@ranks, @records);
+
+		my %og = map{ $_=>1 } @all_ids;
 		my @ognodes = grep { exists($og{$_->get_name}) } @{$tree->get_terminals};
 		my $mrca = $tree->get_mrca(\@ognodes);
 		
@@ -100,7 +110,6 @@ sub run {
 	# Try to minimize paraphyly if no outgroup given
 	else {
 		
-		my @records = $mt->parse_taxa_file($taxafile);	
 		my $level = $mt->get_highest_informative_level(@records);	
 		$logger->info("highest informative taxon level : $level");
 		
@@ -108,8 +117,9 @@ sub run {
 		$logger->info("rerooting backone tree");	
 		$tree = $ts->reroot_tree($tree, \@records, [$level]);
 	}
-		
-	$ts->remap_to_name($tree);
+
+	##$ts->remove_internal_names($tree);
+	$tree = $ts->remap_to_name($tree);
 	$tree->resolve;
 	$ts->remove_internal_names($tree);
 	
