@@ -344,11 +344,10 @@ sub parse_newick_from_nexus {
         # note that there is possible trouble if node names for posteriors (e.g. 1) 
         #   overlap with nexus identifier. However, BEAST seems to write all posteriors
         #   as proper decimals
-		my $newicktree =  parse_tree(
+		my $newicktree =  parse(
                 '-string'   => $newick,
                 '-format' => 'newick',
-                '-as_project' => 1,
-        );
+        )->first;
 
   	    $newicktree->visit( sub{
                 my $n = shift;
