@@ -42,7 +42,7 @@ sub options {
 	my $tool_default = "examl";
 	return (
 		["supermatrix|s=s", "matrix of concatenated multiple sequece alignments as produced by 'smrt bbmerge'", { arg => "file", mandatory => 1}],	
-		["starttree|t=s", "starting tree for ML tree inference as for instance produced by 'smrt classify', only needed when inferencetool is ExaML", { arg => "file", mandatory => 1}],
+		["starttree|t=s", "starting tree for ExaML tree inference. If not given, a random starting tree is generated", { arg => "file", mandatory => 1}],
 		["inferencetool|i=s", "software tool for backbone inference (RaXML, ExaML or ExaBayes), defaults to $tool_default", {default => $tool_default, arg => "tool"}],			
 		["bootstrap|b", "do a bootstrap analysis and add the support values to the backbone tree. Currently only supported for inferencetool RaXML", {}],
 		["outfile|o=s", "name of the output tree file (in newick format), defaults to '$outfile_default'", {default => $outfile_default, arg => "file"}],			
@@ -90,18 +90,16 @@ sub run {
 	
 	# read generated backbone tree from file
 	my $bbtree = parse_tree(
-		'-format'     => 'newick',
-		'-file'       => $backbone,
-		'-as_project' => 1,
+		'-format' => 'newick',
+		'-file'   => $backbone,
 	)->resolve;
+
+	$bbtree = $ts->remap_to_name($bbtree);
 	
-	$ts->remap_to_name($bbtree);
-	
-	$bbtree->resolve;
 	$ts->remove_internal_names($bbtree);
 		
 	open my $outfh, '>', $outfile or die $!;
-	print $outfh $bbtree->to_newick('-nodelabels' => $opt->bootstrap ? 1 : 0);
+	print $outfh $bbtree->to_newick('-nodelabels'=>1);
 	close $outfh;
 	
 	$logger->info("DONE, results written to $outfile");
@@ -258,7 +256,7 @@ sub _infer_examl {
 	        '-phylip' => $supermatrix,
 	        '-intree' => $intree,
 	 );
-	 $logger->info("examl tree inference was succesful");
+	 $logger->info("examl tree inference was succesful") if $backbone;
 	return $backbone;
 }
 
@@ -358,19 +356,16 @@ sub _make_random_starttree {
 	my ( $self, $tipnames) = @_;
 	my $fac = Bio::Phylo::Factory->new;
 	my $taxa  = $fac->create_taxa;
+	my $tree = $fac->create_tree;
+	my $rootnode = $fac->create_node('-name'=>'root');
+	$tree->insert($rootnode);
 	for my $t (@{$tipnames}) {
-		$taxa->insert( $fac->create_taxon( '-name' => $t ) );
+		my $node = $fac->create_node('-name'=>$t, '-branch_length'=>0);
+		$node->set_parent($rootnode);
+		$tree->insert($node);
 	}
-	
-	my $gen = Bio::Phylo::Generator->new;
-	my $tree = $gen->gen_equiprobable( '-tips' => $taxa->get_ntax )->first;
-	my $i = 0;
-	$tree->visit(sub{
-		my $n = shift;
-		if ( $n->is_terminal ) {
-			$n->set_name( $taxa->get_by_index($i++)->get_name );
-		}
-	});
+	$tree->resolve;
+	$self->logger->info($tree->to_newick);
 	return $tree;
 }
 
