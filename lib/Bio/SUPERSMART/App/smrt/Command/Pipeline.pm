@@ -38,6 +38,12 @@ sub options {
 			"one or multiple taxon names (seperated by commata) to be expanded to rank 'species'. Taxon names containing spaces must be enclosed in quotes",
 			{ mandatory=>1 }
 		],
+
+		[
+			"outgroup|o=s",
+			"one or multiple taxon names (seperated by commata) to be included of outgroup. Taxon names containing spaces must be enclosed in quotes",
+		],
+
 		[
 			"fossiltable|f=s", 
 			"tsv (tab-separated value) file containing fossil table with at least 5 columns (id, name, crown/stem, taxon, age)", 
@@ -59,7 +65,8 @@ sub run{
 	my $log = $self->logger;
 
 	my $root_taxa = $opt->root_taxa;
-	
+	my $outgroup = $opt->outgroup;
+	$root_taxa .= "," . $outgroup if $outgroup;
 	my $workdir = $opt->workdir;	
 	
 	# if no workdir is given, create directory with name being a combination of date and first root taxon	
@@ -127,7 +134,12 @@ sub run{
 
 	# Step 7: BBreroot
 	$log->info("Running pipeline step #7: smrt bbreroot");
-	$success = $self->_run_subcommand( ("bbreroot",  "-w", $workdir, "-b", $backbonefile, "-t", $taxafile, "-o", $rerootedfile, "-l", "bbreroot.log") );	
+	if ( $outgroup ) {
+		$success = $self->_run_subcommand( ("bbreroot",  "-w", $workdir, "-b", $backbonefile, "-t", $taxafile, "-o", $rerootedfile, "-g", $outgroup, "-l", "bbreroot.log") );	
+	}
+	else {
+		$success = $self->_run_subcommand( ("bbreroot",  "-w", $workdir, "-b", $backbonefile, "-t", $taxafile, "-o", $rerootedfile, "-l", "bbreroot.log") );			
+	}
 	die ("Pipeline step 'bbreroot' failed. Try to run 'smrt bbreroot' manually with '-v' option to find out what went wrong.") unless ( $success and  -e $rerootedfile and -s $rerootedfile);
 	$log->info("Step #7 smrt bbreroot succeed");
 	
