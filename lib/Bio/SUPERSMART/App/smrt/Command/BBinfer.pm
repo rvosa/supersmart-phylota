@@ -45,6 +45,7 @@ sub options {
 		["starttree|t=s", "starting tree for ExaML tree inference. If not given, a random starting tree is generated", { arg => "file", mandatory => 1}],
 		["inferencetool|i=s", "software tool for backbone inference (RaXML, ExaML or ExaBayes), defaults to $tool_default", {default => $tool_default, arg => "tool"}],			
 		["bootstrap|b", "do a bootstrap analysis and add the support values to the backbone tree. Currently only supported for inferencetool RaXML", {}],
+		["ids|n", "Return tree with NCBI identifiers instead of taxon names", {}],		
 		["outfile|o=s", "name of the output tree file (in newick format), defaults to '$outfile_default'", {default => $outfile_default, arg => "file"}],			
 
 	);	
@@ -94,7 +95,7 @@ sub run {
 		'-file'   => $backbone,
 	)->resolve;
 
-	$bbtree = $ts->remap_to_name($bbtree);
+	$bbtree = $ts->remap_to_name($bbtree) if not $opt->ids;
 	
 	$ts->remove_internal_names($bbtree);
 		
