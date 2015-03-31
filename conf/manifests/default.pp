@@ -3,7 +3,7 @@
 
 # set user and default paths for storing data, tools and source code
 $username = "vagrant"
-$supersmart_dir	= "/${username}/SUPERSMART"
+$supersmart_dir	= "/home/${username}/SUPERSMART"
 $tools_dir		= "${supersmart_dir}/tools"
 $tools_bin_dir	= "${tools_dir}/bin"
 $src_dir		= "${supersmart_dir}/src"
@@ -74,23 +74,24 @@ file {
 		owner   => $username;
 	$data_dir:
 		ensure  => directory,
-    	group   => $username,
-    	owner   => $username;
+    		group   => $username,
+    		owner   => $username;
 	$src_dir:
 		ensure  => directory,
-    	group   => $username,
-    	owner   => $username,
-    	recurse => true;
+    		group   => $username,
+    		owner   => $username,
+    		recurse => true;
 	$tools_dir:
 		ensure  => directory,
 	  	group   => $username,
-    	owner   => $username;
+    		owner   => $username,
+    		recurse => true;
   	$tools_bin_dir:
 		ensure  => directory,
 	  	group   => $username,
-    	owner   => $username;
+    		owner   => $username;
 
-  "muscle_link":
+  	"muscle_link":
 		path    => "${tools_bin_dir}/muscle",
 		ensure  => link,
 		target  => "${tools_bin_dir}/muscle3.8.31_i86linux64",
@@ -106,31 +107,31 @@ file {
 		target  => "${tools_dir}/ExaML/examl/examl",
 		require => Exec["compile_examl"];
   	"parse_examl_link":
-    	path    => "${tools_bin_dir}/parse-examl",
-    	ensure  => link,
-    	target  => "${tools_dir}/ExaML/parser/parse-examl",
-    	require => Exec["compile_examl"];
+    		path    => "${tools_bin_dir}/parse-examl",
+    		ensure  => link,
+    		target  => "${tools_dir}/ExaML/parser/parse-examl",
+    		require => Exec["compile_examl"];
 	"exabayes_link":
 		path    => "${tools_bin_dir}/exabayes",
 		ensure  => link,
 		target  => "${tools_dir}/exabayes-1.2.1/bin/exabayes",
 		require => Exec["compile_exabayes"];
 	"parse_exabayes_link":
-    	path  => "${tools_bin_dir}/parse-exabayes",
-    	ensure  => link,
-    	target  => "${tools_dir}/exabayes-1.2.1/bin/parser",
-    	require => Exec["compile_exabayes"];
-   "exabayes_consense_link":
-    	path  => "${tools_bin_dir}/consense-exabayes",
-    	ensure  => link,
-    	target  => "${tools_dir}/exabayes-1.2.1/bin/consense",
-    	require => Exec["compile_exabayes"];
-   "raxml_link":
-    	path    => "${tools_bin_dir}/raxml",
-    	ensure  => link,
-    	target  => "${tools_dir}/standard-RAxML/raxmlHPC-PTHREADS-AVX",
-    	require => Exec["compile_raxml"];
-   "treepl_link":
+    		path  => "${tools_bin_dir}/parse-exabayes",
+    		ensure  => link,
+    		target  => "${tools_dir}/exabayes-1.2.1/bin/parser",
+    		require => Exec["compile_exabayes"];
+   	"exabayes_consense_link":
+    		path  => "${tools_bin_dir}/consense-exabayes",
+    		ensure  => link,
+    		target  => "${tools_dir}/exabayes-1.2.1/bin/consense",
+    		require => Exec["compile_exabayes"];
+   	"raxml_link":
+    		path    => "${tools_bin_dir}/raxml",
+    		ensure  => link,
+    		target  => "${tools_dir}/standard-RAxML/raxmlHPC-PTHREADS-AVX",
+    		require => Exec["compile_raxml"];
+   	"treepl_link":
 	  	path    => "${tools_bin_dir}/treePL",
 		ensure  => link,
 		target  => "${tools_dir}/treePL/src/treePL",
@@ -140,33 +141,33 @@ file {
 # command line tasks
 exec {
 
-    # set locale to US english to get rid of annoying perl warnings
-    "set_locale_sh":
-      command => "echo 'export LC_ALL=en_US.UTF-8' > set_locale.sh",
-      cwd     => "/etc/profile.d",
-      creates => "/etc/profile.d/set_locale.sh";
+    	# set locale to US english to get rid of annoying perl warnings
+    	"set_locale_sh":
+      		command => "echo 'export LC_ALL=en_US.UTF-8' > set_locale.sh",
+      		cwd     => "/etc/profile.d",
+      		creates => "/etc/profile.d/set_locale.sh";
 
    	# add bin directory for all required tools and smrt executables to PATH
   	"make_bindir_sh":
-    	command => "echo 'export PATH=\$PATH:${tools_bin_dir}:${src_dir}/supersmart/app' > supersmart-tools-bin.sh",
-    	cwd     => "/etc/profile.d",
-    	creates => "/etc/profile.d/supersmart-tools-bin.sh",
-    	require => File[ $tools_bin_dir ];
+    		command => "echo 'export PATH=\$PATH:${tools_bin_dir}:${src_dir}/supersmart/app' > supersmart-tools-bin.sh",
+    		cwd     => "/etc/profile.d",
+    		creates => "/etc/profile.d/supersmart-tools-bin.sh",
+    		require => File[ $tools_bin_dir ];
   	"make_bindir_csh":
-    	command => "echo 'setenv PATH \$PATH:${tools_bin_dir}:${src_dir}/supersmart/app' > supersmart-tools-bin.csh",
-    	cwd     => "/etc/profile.d",
-    	creates => "/etc/profile.d/supersmart-tools-bin.csh",
-    	require => File[ $tools_bin_dir ];
+    		command => "echo 'setenv PATH \$PATH:${tools_bin_dir}:${src_dir}/supersmart/app' > supersmart-tools-bin.csh",
+    		cwd     => "/etc/profile.d",
+    		creates => "/etc/profile.d/supersmart-tools-bin.csh",
+    		require => File[ $tools_bin_dir ];
 
   	# add default EDITOR environment variable
   	"make_editor_sh":
-    	command => "echo 'export EDITOR=/etc/alternatives/editor' > supersmart-editor.sh",
-    	cwd     => "/etc/profile.d",
-    	creates => "/etc/profile.d/supersmart-editor.sh";
+    		command => "echo 'export EDITOR=/etc/alternatives/editor' > supersmart-editor.sh",
+    		cwd     => "/etc/profile.d",
+    		creates => "/etc/profile.d/supersmart-editor.sh";
   	"make_editor_csh":
-    	command => "echo 'setenv EDITOR=/etc/alternatives/editor' > supersmart-editor.csh",
-    	cwd     => "/etc/profile.d",
-    	creates => "/etc/profile.d/supersmart-editor.csh";
+    		command => "echo 'setenv EDITOR=/etc/alternatives/editor' > supersmart-editor.csh",
+    		cwd     => "/etc/profile.d",
+    		creates => "/etc/profile.d/supersmart-editor.csh";
 
 	# make phylota database
 	"dl_phylota_dump":
@@ -179,10 +180,10 @@ exec {
  		command => "tar -xzvf phylota.tar.gz",
  		creates => "${data_dir}/phylota",
  		cwd     => $data_dir,
-    timeout => 0,
+    		timeout => 0,
  		require => Exec[ 'dl_phylota_dump'];
  	"mv_phylota_dump":
- 	    command => "mv ${data_dir}/phylota/ /var/lib/mysql",
+ 	    	command => "mv ${data_dir}/phylota/ /var/lib/mysql",
  		creates => "/var/lib/mysql/phylota/seqs.frm",
  		cwd     => "/var/lib/mysql/",
  		require => Exec[ 'unzip_phylota_dump' ];
@@ -240,7 +241,7 @@ exec {
 		creates => "/etc/profile.d/biophylo.sh",
 		require => Exec[ 'clone_bio_phylo' ];
 	"make_bio_phylo_csh":
-	  command => "echo 'setenv PERL5LIB \$PERL5LIB:${tools_dir}/bio-phylo/lib' > biophylo.csh",
+	  	command => "echo 'setenv PERL5LIB \$PERL5LIB:${tools_dir}/bio-phylo/lib' > biophylo.csh",
 		cwd     => "/etc/profile.d",
 		creates => "/etc/profile.d/biophylo.csh",
 		require => Exec[ 'clone_bio_phylo' ];
@@ -287,55 +288,55 @@ exec {
    		creates => "${tools_dir}/App-Cmd",
    		require => Package[ 'git' ];
   	"make_app_cmd_run_sh":
-    	command => "echo 'export PERL5LIB=\$PERL5LIB:${tools_dir}/App-Cmd/lib' > app_cmd.sh",
-    	cwd     => "/etc/profile.d",
-    	creates => "/etc/profile.d/app_cmd.sh",
-    	require => Exec[ 'clone_app_cmd' ];
+    		command => "echo 'export PERL5LIB=\$PERL5LIB:${tools_dir}/App-Cmd/lib' > app_cmd.sh",
+    		cwd     => "/etc/profile.d",
+    		creates => "/etc/profile.d/app_cmd.sh",
+    		require => Exec[ 'clone_app_cmd' ];
   	"make_app_cmd_run_csh":
-    	command => "echo 'setenv PERL5LIB \$PERL5LIB:${tools_dir}/App-Cmd/lib' > app_cmd.csh",
-    	cwd     => "/etc/profile.d",
-    	creates => "/etc/profile.d/app_cmd.csh",
-    	require => Exec[ 'clone_app_cmd' ];
+    		command => "echo 'setenv PERL5LIB \$PERL5LIB:${tools_dir}/App-Cmd/lib' > app_cmd.csh",
+    		cwd     => "/etc/profile.d",
+    		creates => "/etc/profile.d/app_cmd.csh",
+    		require => Exec[ 'clone_app_cmd' ];
 
   	#install perl package String::RewritePrefix, needed by App::Cmd
   	"download_string_rewrite_prefix":
-    	command => "wget http://search.cpan.org/CPAN/authors/id/R/RJ/RJBS/String-RewritePrefix-0.006.tar.gz",
-    	cwd     => $tools_dir,
-    	creates => "${tools_dir}/String-RewritePrefix-0.006.tar.gz",
-    	require => Package[ 'wget', 'tar' ];
+    		command => "wget http://search.cpan.org/CPAN/authors/id/R/RJ/RJBS/String-RewritePrefix-0.006.tar.gz",
+    		cwd     => $tools_dir,
+    		creates => "${tools_dir}/String-RewritePrefix-0.006.tar.gz",
+    		require => Package[ 'wget', 'tar' ];
    	"unzip_string_rewrite_prefix":
-    	command => "tar -xvzf ${tools_dir}/String-RewritePrefix-0.006.tar.gz",
-    	creates => "${tools_dir}/String-RewritePrefix-0.006/Makefile.PL",
-    	cwd     => $tools_dir,
-    	require => Exec["download_string_rewrite_prefix"];
+    		command => "tar -xvzf ${tools_dir}/String-RewritePrefix-0.006.tar.gz",
+    		creates => "${tools_dir}/String-RewritePrefix-0.006/Makefile.PL",
+    		cwd     => $tools_dir,
+    		require => Exec["download_string_rewrite_prefix"];
   	"make_string_rewrite_prefix_run_sh":
-    	command => "echo 'export PERL5LIB=\$PERL5LIB:${tools_dir}/String-RewritePrefix-0.006/lib' > string_rewrite_prefix.sh",
-    	cwd     => "/etc/profile.d",
-    	creates => "/etc/profile.d/string_rewrite_prefix.sh",
-    	require => Exec[ 'unzip_string_rewrite_prefix' ];
+    		command => "echo 'export PERL5LIB=\$PERL5LIB:${tools_dir}/String-RewritePrefix-0.006/lib' > string_rewrite_prefix.sh",
+    		cwd     => "/etc/profile.d",
+    		creates => "/etc/profile.d/string_rewrite_prefix.sh",
+    		require => Exec[ 'unzip_string_rewrite_prefix' ];
   	"make_string_rewrite_prefix_run_csh":
-    	command => "echo 'setenv PERL5LIB \$PERL5LIB:${tools_dir}/String-RewritePrefix-0.006/lib' > string_rewrite_prefix.csh",
-    	cwd     => "/etc/profile.d",
-    	creates => "/etc/profile.d/string_rewrite_prefix.csh",
-    	require => Exec[ 'unzip_string_rewrite_prefix' ];
+    		command => "echo 'setenv PERL5LIB \$PERL5LIB:${tools_dir}/String-RewritePrefix-0.006/lib' > string_rewrite_prefix.csh",
+    		cwd     => "/etc/profile.d",
+    		creates => "/etc/profile.d/string_rewrite_prefix.csh",
+    		require => Exec[ 'unzip_string_rewrite_prefix' ];
 
    	#install perl package Math::Random
-  	"download_math_random":
-    	command => "wget http://search.cpan.org/CPAN/authors/id/G/GR/GROMMEL/Math-Random-0.70.tar.gz",
-    	cwd     => $tools_dir,
-    	creates => "${tools_dir}/Math-Random-0.70.tar.gz",
-    	require => Package[ 'wget', 'tar' ];
+  		"download_math_random":
+    		command => "wget http://search.cpan.org/CPAN/authors/id/G/GR/GROMMEL/Math-Random-0.70.tar.gz",
+    		cwd     => $tools_dir,
+    		creates => "${tools_dir}/Math-Random-0.70.tar.gz",
+    		require => Package[ 'wget', 'tar' ];
    	"unzip_math_random":
-    	command => "tar -xvzf ${tools_dir}/Math-Random-0.70.tar.gz",
-    	creates => "${tools_dir}/Math-Random-0.70/Makefile.PL",
-    	cwd     => $tools_dir,
-    	require => Exec["download_math_random"];
-   "make_makefile_math_random":
-    	command => "perl Makefile.PL",
+    		command => "tar -xvzf ${tools_dir}/Math-Random-0.70.tar.gz",
+    		creates => "${tools_dir}/Math-Random-0.70/Makefile.PL",
+    		cwd     => $tools_dir,
+    		require => Exec["download_math_random"];
+   	"make_makefile_math_random":
+    		command => "perl Makefile.PL",
 		cwd     => "${tools_dir}/Math-Random-0.70",
 		creates => "${tools_dir}/Math-Random-0.70/Makefile",
 		require => Exec["unzip_math_random"];
-   "make_install_math_random":
+   	"make_install_math_random":
 		command => "make install LD_LIBRARY_PATH=/usr/lib",
 		cwd     => "${tools_dir}/Math-Random-0.70",
 		creates => "/usr/local/lib64/perl5/Math/Random.pm",
@@ -381,7 +382,7 @@ exec {
 		command => "git clone https://github.com/stamatak/ExaML.git",
 		cwd     => $tools_dir,
 		creates => "${tools_dir}/ExaML/",
-	  require => Package[ 'git', 'zlib1g-dev' ];
+		require => Package[ 'git', 'zlib1g-dev' ];
 	"compile_examl":
 		command => "make -f Makefile.SSE3.gcc LD_LIBRARY_PATH=/usr/lib",
 		cwd     => "${tools_dir}/ExaML/examl",
@@ -395,34 +396,33 @@ exec {
 
 	# install raxml
   	"clone_raxml":
-    	command => "git clone https://github.com/stamatak/standard-RAxML.git",
-    	cwd     => $tools_dir,
-    	creates => "${tools_dir}/standard-RAxML/",
-        require => Package[ 'git' ];
+    		command => "git clone https://github.com/stamatak/standard-RAxML.git",
+    		cwd     => $tools_dir,
+    		creates => "${tools_dir}/standard-RAxML/",
+        	require => Package[ 'git' ];
   	"compile_raxml":
-    	command => "make -f Makefile.AVX.PTHREADS.gcc LD_LIBRARY_PATH=/usr/lib",
-    	cwd     => "${tools_dir}/standard-RAxML/",
-    	creates => "${tools_dir}/standard-RAxML/raxmlHPC-PTHREADS-AVX",
-    	require => Exec["clone_raxml"];
+    		command => "make -f Makefile.AVX.PTHREADS.gcc LD_LIBRARY_PATH=/usr/lib",
+    		cwd     => "${tools_dir}/standard-RAxML/",
+    		creates => "${tools_dir}/standard-RAxML/raxmlHPC-PTHREADS-AVX",
+    		require => Exec["clone_raxml"];
 
-
-    # install exabayes
+    	# install exabayes
    	"download_exabayes":
-    	command => "wget http://sco.h-its.org/exelixis/material/exabayes/1.2.1/exabayes-1.2.1-linux-openmpi-avx.tar.gz",
-     	cwd     => $tools_dir,
-     	creates => "${tools_dir}/exabayes-1.2.1-linux-openmpi-avx.tar.gz",
-     	require => Exec[ "install_openmpi" ];
-    "unzip_exabayes":
-     	command => "tar -xvzf exabayes-1.2.1-linux-openmpi-avx.tar.gz",
-     	cwd     => $tools_dir,
-     	creates => "${tools_dir}/exabayes-1.2.1/",
-     	require => Exec[ "download_exabayes" ];
-    "compile_exabayes":
-      	command => "sh build.sh CC=mpicc CXX=mpicxx",
-      	cwd     => "${tools_dir}/exabayes-1.2.1/",
-      	creates => "${tools_dir}/exabayes-1.2.1/bin/exabayes",
-      	timeout => 0,
-      	require => Exec[ "unzip_exabayes" ];
+    		command => "wget http://sco.h-its.org/exelixis/material/exabayes/1.2.1/exabayes-1.2.1-linux-openmpi-avx.tar.gz",
+     		cwd     => $tools_dir,
+     		creates => "${tools_dir}/exabayes-1.2.1-linux-openmpi-avx.tar.gz",
+     		require => Exec[ "install_openmpi" ];
+    	"unzip_exabayes":
+     		command => "tar -xvzf exabayes-1.2.1-linux-openmpi-avx.tar.gz",
+     		cwd     => $tools_dir,
+     		creates => "${tools_dir}/exabayes-1.2.1/",
+     		require => Exec[ "download_exabayes" ];
+    	"compile_exabayes":
+      		command => "sh build.sh CC=mpicc CXX=mpicxx",
+      		cwd     => "${tools_dir}/exabayes-1.2.1/",
+      		creates => "${tools_dir}/exabayes-1.2.1/bin/exabayes",
+      		timeout => 0,
+      		require => Exec[ "unzip_exabayes" ];
 
 	# install supersmart
 	"clone_supersmart":
@@ -442,38 +442,37 @@ exec {
 
   	# install BEAST
   	"download_beast":
-    	command => "wget https://beast-mcmc.googlecode.com/files/BEASTv1.8.0.tgz",
-    	cwd     => $tools_dir,
-    	creates => "${tools_dir}/BEASTv1.8.0.tgz",
-    	require => Package[ 'wget' ];
+    		command => "wget https://beast-mcmc.googlecode.com/files/BEASTv1.8.0.tgz",
+    		cwd     => $tools_dir,
+    		creates => "${tools_dir}/BEASTv1.8.0.tgz",
+    		require => Package[ 'wget' ];
   	"unzip_beast":
-    	command => "tar -xvzf BEASTv1.8.0.tgz",
-    	cwd     => "$tools_dir",
-    	creates => "${tools_dir}/BEASTv1.8.0/bin/beast",
-    	require => Exec[ 'download_beast' ];
-
+    		command => "tar -xvzf BEASTv1.8.0.tgz",
+    		cwd     => "$tools_dir",
+    		creates => "${tools_dir}/BEASTv1.8.0/bin/beast",
+    		require => Exec[ 'download_beast' ];
   	"symlink_beast":
-    	command => "ln -s ${tools_dir}/BEASTv1.8.0/bin/* .",
-    	cwd     => "/usr/local/bin/",
-    	creates => "/usr/local/bin/beast",
-    	require => Exec[ 'unzip_beast' ];
+    		command => "ln -s ${tools_dir}/BEASTv1.8.0/bin/* .",
+    		cwd     => "/usr/local/bin/",
+    		creates => "/usr/local/bin/beast",
+    		require => Exec[ 'unzip_beast' ];
 
   	# install beagle-lib
   	"checkout_beagle_lib":
-    	command => "svn checkout http://beagle-lib.googlecode.com/svn/trunk/ beagle-lib",
-    	cwd     => $tools_dir,
-    	creates => "${tools_dir}/beagle-lib/autogen.sh",
-    	require => Package[ 'subversion', "openjdk-6-jdk" ];
+    		command => "svn checkout http://beagle-lib.googlecode.com/svn/trunk/ beagle-lib",
+    		cwd     => $tools_dir,
+    		creates => "${tools_dir}/beagle-lib/autogen.sh",
+    		require => Package[ 'subversion', "openjdk-6-jdk" ];
   	"generate_beagle_config":
    		command => "sh autogen.sh",
-    	cwd     => "${tools_dir}/beagle-lib/",
-    	creates => "${tools_dir}/beagle-lib/configure",
-    	require => Exec[ 'checkout_beagle_lib' ];
+    		cwd     => "${tools_dir}/beagle-lib/",
+    		creates => "${tools_dir}/beagle-lib/configure",
+    		require => Exec[ 'checkout_beagle_lib' ];
   	"build_beagle_lib":
-    	command => "sh configure && make install",
-    	cwd     => "${tools_dir}/beagle-lib/",
-    	creates => "/usr/local/lib/libhmsbeagle.so",
-    	require => Exec[ 'generate_beagle_config' ];
+    		command => "sh configure && make install",
+    		cwd     => "${tools_dir}/beagle-lib/",
+    		creates => "/usr/local/lib/libhmsbeagle.so",
+    		require => Exec[ 'generate_beagle_config' ];
 
 	# install treePL
 	"clone_treepl":
