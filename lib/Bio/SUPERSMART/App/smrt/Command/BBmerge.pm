@@ -110,9 +110,8 @@ sub validate {
 	}
 }
 
-
 sub run {
-	my ($self, $opt, $args) = @_;		
+        my ($self, $opt, $args) = @_;		       
 		
 	# collect command-line arguments
 	my $alnfile = $opt->alnfile;
@@ -143,29 +142,29 @@ sub run {
 	# read taxa table
 	$log->info("going to read taxa table $taxafile");
 	my @records = $mt->parse_taxa_file($taxafile);
+		
+	# valid ranks for taxa in supermatrix                                                                                             
+	my @ranks = ("species", "subspecies", "varietas", "forma");
 	
-	# valid ranks for taxa in supermatrix                                                                                                                                                                                                                                   
-    my @ranks = ("species", "subspecies", "varietas", "forma");
-	
-	# remember species (or lower) for taxa that have to be included in supermatrix, if given as argument                                                                                                                                                                    
-    my %user_taxa;
-    if ( $include_taxa ) {
-    	my @taxa = split(',', $include_taxa);
-    	my @ids = map { my @nodes = $ts->search_node( {taxon_name=>$_} )->all; $nodes[0]->ti } @taxa;
-    	my @species = $mt->query_taxa_table(\@ids, \@ranks, @records);
-    	%user_taxa = map { $_ => 1} @species;
-    }
+	# remember species (or lower) for taxa that have to be included in supermatrix, if given as argument
+	my %user_taxa;
+	if ( $include_taxa ) {
+	    my @taxa = split(',', $include_taxa);
+	    my @ids = map { my @nodes = $ts->search_node( {taxon_name=>$_} )->all; $nodes[0]->ti } @taxa;
+	    my @species = $mt->query_taxa_table(\@ids, \@ranks, @records);
+	    %user_taxa = map { $_ => 1} @species;
+	}
 
  	# extract the distinct species for each genus
 	my %species_for_genus;
 	
 	my @g = $mt->get_distinct_taxa( 'genus' => @records );
 	 	
-    for my $genus ( $mt->get_distinct_taxa( 'genus' => @records ) ) {
-                # extract the distinct species (and lower) for the focal genus                                                                                                                                                                                                  
-                my @species = $mt->query_taxa_table( $genus, \@ranks, @records );
-                $species_for_genus{$genus} = \@species;
-    }
+	for my $genus ( $mt->get_distinct_taxa( 'genus' => @records ) ) {
+	    # extract the distinct species (and lower) for the focal genus                                                                                                                                                                                                  
+	    my @species = $mt->query_taxa_table( $genus, \@ranks, @records );
+	    $species_for_genus{$genus} = \@species;
+	}
     
 	$log->info("read ".scalar(keys(%species_for_genus))." genera");
 	
@@ -174,7 +173,7 @@ sub run {
 	
 	# iterate over alignments
 	ALN: for my $aln ( @alignments ) {
-		$log->debug("assessing exemplars in $aln");
+		$log->debug("checking for species in $aln");
 		my %fasta = $mt->parse_fasta_file($aln);
 						
 		# iterate over genera, skip those with fewer than three species
@@ -195,10 +194,9 @@ sub run {
 					$sequences_for_species{$species} = \@seq;
 				}
 			}
-			
 			# check if we've seen enough sequenced species
 			my @species = keys %sequences_for_species;
-			if ( scalar(@species) <= 2 ) {
+			if ( scalar(@species) < 2 ) {
 				$log->debug("not enough sequenced species for genus $genus ($genus_name) in $aln");
 				next GENUS;
 			}		
@@ -224,7 +222,6 @@ sub run {
 					$dist{$key} = $dist;
 				}
 			}
-			
 			# pick the most distal pair, weight it by number of pairs minus one
 			my ($farthest) = sort { $dist{$b} <=> $dist{$a} } keys %dist;
 			$distance{$genus}->{$farthest} += scalar(keys(%dist))-1;
@@ -239,17 +236,19 @@ sub run {
 		# there were 2 or fewer species in the genus, add all the species
 		# from the table
 		if ( not scalar keys %{ $distance{$genus} } ) {
-			push @exemplars, @{ $species_for_genus{$genus} };
-		
+		    push @exemplars, @{ $species_for_genus{$genus} };
+		    my @names = map {$ts->find_node($_)->taxon_name} @{ $species_for_genus{$genus} };
+		    $log->debug('adding species ' . join(', ', @names) . ' to exemplars');		
 		}
 		else {
-			my %p = %{ $distance{$genus} };
-			my ($sp1,$sp2) = map { split (/\|/, $_) } sort { $p{$b} <=> $p{$a} } keys %p;
-			push @exemplars, $sp1, $sp2;
+		    my %p = %{ $distance{$genus} };
+		    my ($sp1,$sp2) = map { split (/\|/, $_) } sort { $p{$b} <=> $p{$a} } keys %p;
+		    push @exemplars, $sp1, $sp2;
+		    $log->debug('adding species ' . $ts->find_node($sp1)->taxon_name . ', ' . $ts->find_node($sp2)->taxon_name . ' to exemplars');
 		}
 	}
 	
-	# this includes species for which we may end up not having sequences after all
+	# This includes species for which we may end up not having sequences after all
 	$log->info("identified ".scalar(@exemplars)." exemplars");
 	
 	# make the best set of alignments:
@@ -391,13 +390,13 @@ sub _write_supermatrix {
 	my @excluded = grep {my $ex = $_; ! grep($_ == $ex, @pruned_exemplars) } @$exemplars;
 	$log->warn("Found "  . scalar(@excluded) . " exemplars that do not share markers with other exemplars") if scalar (@excluded);
 	
-	# if user specified exemplars were removed, add them back!                                                                                                                                                                                                              
-    my @excluded_user_taxa = grep {exists $user_taxa{$_}} @excluded;                                                                                                                                                                                                       
+    # if user specified exemplars were removed, add them back!                        
+    my @excluded_user_taxa = grep {exists $user_taxa{$_}} @excluded;                                                                                        
 
-    push @pruned_exemplars, @excluded_user_taxa;                                                                                                                                                                                                                           
+    push @pruned_exemplars, @excluded_user_taxa;                                                                                   
 
-    foreach my $t (@excluded_user_taxa) {                                                                                                                                                                                                                                  
-           $log->warn("Taxon $t should be excluded due to insufficient marker coverage but is given by in include_taxa argument");                                                                                                                                         
+    foreach my $t (@excluded_user_taxa) {                                       
+           $log->warn("Taxon $t should be excluded due to insufficient marker coverage but is given by in include_taxa argument");                                              
     }  
 	
 	foreach my $exc (@excluded){
@@ -466,7 +465,7 @@ sub _prune_exemplars {
 		for my $i ( 0..$#species ) {
 			
 			for my $j ( $i+1..$#species ) {				
-				my %specs_i = map { $_ => 1 } @{$adj{$species[$i]}}	;
+				my %specs_i = map { $_ => 1 } @{$adj{$species[$i]}};
 				my %specs_j = map { $_ => 1 } @{$adj{$species[$j]}};
 				
 				if ( ! exists $specs_i{$species[$j]}) {
