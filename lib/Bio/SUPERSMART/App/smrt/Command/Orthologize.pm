@@ -202,10 +202,9 @@ sub run {
 	
 	# align
 	my $total = scalar @clusters;
-
 	my @cres = pmap {
 		my ($clref) = @_; 
-	    my %cluster = %{$clref};
+		my %cluster = %{$clref};
 		my $clusterid = $cluster{'id'};
 		my @seqids = @{$cluster{'seq'}};
 					
@@ -214,16 +213,33 @@ sub run {
 	
 		# the name of the file that contains the merger of this cluster
 		my $merged = File::Spec->catfile( $workdir, "cluster${clusterid}.fa" );
-		
+
 		# check for singletons
 		if ( scalar(@files) == 1 ) {
-			copy $files[0], $merged;
-			$log->info("singleton cluster $clusterid: @files");
+		    open my $fh, '<', $files[0] or die "Could not open $files[0]: $!";
+		    my $num_seqs = scalar(grep m|>|, <$fh>);
+		    close $fh;
+		    $log->info("writing singleton cluster $clusterid: @files");
+		    if ($num_seqs > 2) {
+			copy $files[0], $merged;			
 			open my $outfh, '>>', $outfile or die $!;
 			print $outfh $merged, "\n";
 			close $outfh;
-			return (0);
+		    }
+		    else {
+			$log->info("rejecting singleton cluster $clusterid (too few sequences), @files not written");
+		    }
+		    return (0);
 		} 
+		my %sizes = map {  
+		    open my $fh, '<', $_ or die "Could not open $files[0]: $!";		    
+		    my $sizes = scalar(grep m|>|, <$fh>); 
+		    close $fh;
+		    $_=>$sizes;		    
+		} @files;
+
+		@files = sort { $sizes{$b} <=> $sizes{$a} } keys(%sizes);
+		
 		# (the effectiveness of this procedure may depend on the input order). I was trying
 		# to do this using List::Util::reduce, but it segfaults.
 		$log->info("going to reduce @files");		
@@ -234,9 +250,7 @@ sub run {
 				
 		for my $i ( 1 .. ( $#files ) ) {
 			# as long as merges are unsuccessful, we will continue to attempt
-			# profile align the subsequence files against the first input file. TODO:
-			# sort the input files by size so that if all mergers fail, we end up with
-			# the largest input file
+			# profile align the subsequence files against the first input file. 
 
 			my $file2 = $files[$i];
 						
@@ -248,14 +262,21 @@ sub run {
 				if ( $mts->calc_mean_distance($result) < $config->BACKBONE_MAX_DISTANCE ) {
 					my %fasta  = $mts->parse_fasta_string($result);				
 					%fasta = $mts->dedup(%fasta);
-					open my $fh, '>', $merged or die $!;
-					for my $defline ( keys %fasta ) {
+					
+					# only keep if we have more than two sequences
+					if ( scalar(keys %fasta)  > 2 ) { 
+					    open my $fh, '>', $merged or die $!;
+					    for my $defline ( keys %fasta ) {
 						print $fh '>', $defline, "\n", $fasta{$defline}, "\n";
+					    }
+					    $log->info("merged $merged and $file2");				
 					}
-					$log->info("merged $merged and $file2");				
+					else {
+					    $log->info("rejecting $file2 from $merged, too few sequences");
+					}
 				}
 				else {
-					$log->info("rejecting $file2 from $merged");
+					$log->info("rejecting $file2 from $merged, too distant");
 				}		
 			} else {
 				$log->warn("profile alignment of $merged and $file2 failed");

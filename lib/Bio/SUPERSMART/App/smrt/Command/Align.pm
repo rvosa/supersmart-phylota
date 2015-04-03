@@ -107,79 +107,84 @@ sub run {
 	
 	$log->info("Processing " . scalar(@clusters) . " clusters");
 	
+	my %seen;
 	# make the alignments in parallel mode
 	my @result = pmap {        		
 		my ($cl) = @_;
 	   	my $ti = \%ti;
 		        
-        # returned result: cluster information: seed_gi, mrca, cluster id and -type and finally the alignment
-        my @res = ();
+		# returned result: cluster information: seed_gi, mrca, cluster id and -type and finally the alignment
+		my @res = ();
         
-        # get cluster information
-        my $ci = $cl->{'ci'};
-        my $type = $cl->{'cl_type'};
-        my $single  = $sg->single_cluster($cl);
-        my $seed_gi = $single->seed_gi;
-        my $mrca    = $single->ti_root->ti;
+		# get cluster information
+		my $ci = $cl->{'ci'};
+		my $type = $cl->{'cl_type'};
+		my $single  = $sg->single_cluster($cl);
+		my $seed_gi = $single->seed_gi;
+		my $mrca    = $single->ti_root->ti;
 
 	   	$log->info("processing cluster with id $ci");
         
-        # some alignments can be pre-computed so don't align again if fasta file already exists 
-        my $filename = $self->workdir . '/' . $seed_gi . '-' . $mrca . '-' . $ci . '-' . $type . '.fa';
+		# alignments could be pre-computed so don't align again if fasta file already exists 
+		my $filename = $self->workdir . '/' . $seed_gi . '-' . $mrca . '-' . $ci . '-' . $type . '.fa';
 		
 		if ( not ( -e  $filename ) ) {	
-	        # fetch ALL sequences for the cluster, reduce data set
-	        my $sg = Bio::Phylo::PhyLoTA::Service::SequenceGetter->new;
-	        my @ss = $sg->get_sequences_for_cluster_object($cl);
-	        my @seqs    = $sg->filter_seq_set($sg->get_sequences_for_cluster_object($cl));
-	        
-			$log->info("fetched ".scalar(@seqs)." sequences for cluster id $ci");                
-	        my @matching = grep { $ti->{$_->ti} } @seqs;
-	        
-	        # let's not keep the ones we can't build trees out of
-	        if ( scalar @matching > 3 ) {
-	                
+		    # fetch ALL sequences for the cluster, reduce data set
+		    my $sg = Bio::Phylo::PhyLoTA::Service::SequenceGetter->new;
+		    my @seqs    = $sg->filter_seq_set($sg->get_sequences_for_cluster_object($cl));
+		    
+		    $log->info("fetched ".scalar(@seqs)." sequences for cluster id $ci");                
+		    my @matching = grep { $ti->{$_->ti} } @seqs;
+
+		    # filter out sequences that we have processed before
+		    @matching = grep { ! $seen{$_->gi} } @matching;
+
+		    # let's not keep the ones we can't build alignemnts from
+		    if ( scalar @matching > 1 ) {
+			foreach my $s (@matching) {
+			    $seen{$s->gi} = 1;			    
+			}
+       
 	                # this runs muscle or mafft, so should be on your PATH.
-	                # this also requires bioperl-live and bioperl-run
-	                                                              
+	                # this also requires bioperl-live and bioperl-run			
 	                $log->info("going to align ".scalar(@matching)." sequences for cluster $ci");
 	                my @convertedseqs;
-			    	for my $seq(@matching){						
-						my $gi = $seq->gi;
-						my $ti  = $sg->find_seq($gi)->ti;
-						my $seqobj = Bio::PrimarySeq->new( -display_id => "gi|${gi}|seed_gi|${seed_gi}|taxon|${ti}|mrca|${mrca}" ,
-                             						-seq => $seq->seq, 
-                             						-name => $gi,
-                             						-type => 'dna');														
-						push @convertedseqs,$seqobj;
-	     
-			    	}
-			  
+			for my $seq(@matching){						
+			    my $gi = $seq->gi;
+			    my $ti  = $sg->find_seq($gi)->ti;
+			    my $seqobj = Bio::PrimarySeq->new( -display_id => "gi|${gi}|seed_gi|${seed_gi}|taxon|${ti}|mrca|${mrca}" ,
+							       -seq => $seq->seq, 
+							       -name => $gi,
+							       -type => 'dna');
+			    push @convertedseqs,$seqobj;
+			    
+			}
+			
 	                my $aligner = $sg->_make_aligner;
-    				my $aln = $aligner->align(\@convertedseqs);
-	                 
+			my $aln = $aligner->align(\@convertedseqs);
+			
 	              	# write alignemnt to fasta file  	                
 	                my $out = Bio::AlignIO->new(
-	                							-file => ">$filename",
-                        		  				-format => 'fasta');
+			    -file => ">$filename",
+			    -format => 'fasta');
 	                $out->write_aln($aln);
 	                
-	 				#print alignment file name to output file so it can be saved in output file of script          
-	 				open my $outfh, '>>', $outfile or die $!;
-	 				print $outfh $filename . "\n";
-	 				close $outfh;
-	        } 
+			#print alignment file name to output file so it can be saved in output file of script          
+			open my $outfh, '>>', $outfile or die $!;
+			print $outfh $filename . "\n";
+			close $outfh;
+		    } 
 		}
 		else {
-			$log->debug("alignment with name $filename already exists, skipping");
-			# have to report to output file anyways! 
-			open my $outfh, '>>', $outfile or die $!;
-	 		print $outfh $filename . "\n";
-	 		close $outfh;
-			
+		    $log->debug("alignment with name $filename already exists, skipping");
+		    # have to report to output file anyways! 
+		    open my $outfh, '>>', $outfile or die $!;
+		    print $outfh $filename . "\n";
+		    close $outfh;
+		    
 		}
 	} @clusters;
-
+	
 	$log->info("DONE, results written to $outfile");
 	
 	return 1;
