@@ -177,7 +177,7 @@ sub _get_connected_subsets {
 	my $current_node = shift (@queue);						
 	push @current_set, $current_node;				
 	if (exists $adj{$current_node}){						
-	    my @neighbors = grep { $adj{$current_node}->{$_} }  keys $adj{$current_node}; ##%{$adj{$current_node}};
+	    my @neighbors = grep { $adj{$current_node}{$_} }  keys $adj{$current_node};
 	    if ( @neighbors ) {
 		foreach my $node ( @neighbors ) {
 		    if ($node != $current_node){
