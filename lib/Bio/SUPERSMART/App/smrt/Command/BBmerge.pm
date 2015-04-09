@@ -110,99 +110,6 @@ sub validate {
 	}
 }
 
-sub _calc_aln_distances {
-    my ($self, $aln, $tax) = @_;
-    my @taxa = @$tax;
-    
-    my $ts = Bio::Phylo::PhyLoTA::Service::TreeService->new;	
-    my $mt = Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa->new;
-    my $dat    	= 'Bio::Phylo::Matrices::Datum';
-    my $log = $self->logger;
-    my %fasta = $mt->parse_fasta_file($aln);
-    my %dist;
-    
-    # aggregate sequence objects by species within this genus	      
-    my %sequences_for_species;
-    for my $taxon ( @taxa ) {
-	my $name = $ts->find_node($taxon)->taxon_name;
-	if ( my @raw = $mt->get_sequences_for_taxon( $taxon, %fasta ) ) {
-	    $log->debug("$aln contained ".scalar(@raw)." sequences for species $taxon ($name)");
-	    my @seq = map { $dat->new( '-type' => 'dna', '-char' => $_ ) } @raw;
-	    $sequences_for_species{$taxon} = \@seq;
-	}
-    }
-    
-    # check if we've seen enough sequenced species	     
-    if ( scalar(keys(%sequences_for_species)) < 3 ) {
-	$log->debug("less than 3 species in $aln, no distance calculated");
-	return;
-    }
-
-    # calculate the distances between give taxa, take the 
-    # average if species have multiple sequences
-    for my $i ( 0 .. ( $#taxa - 1 ) ) {
-	for my $j ( ( $i + 1 ) .. $#taxa ) {
-	    my $sp1 = $taxa[$i];
-	    my $sp2 = $taxa[$j];
-	    if ( $sequences_for_species{$sp1} and $sequences_for_species{$sp2} ) {
-		$log->debug("going to compute average distance between $sp1 and $sp2");
-		my @seqs1 = @{ $sequences_for_species{$sp1} };
-		my @seqs2 = @{ $sequences_for_species{$sp2} };
-		my $dist;
-		for my $seq1 ( @seqs1 ) {
-		    for my $seq2 ( @seqs2 ) {
-			$dist += $seq1->calc_distance($seq2);
-		    }
-		}
-		$dist /= ( scalar(@seqs1) * scalar(@seqs2) );
-		my $key = join '|', sort { $a <=> $b } ( $sp1, $sp2 );
-		$dist{$key} = $dist;
-	    }
-	}
-    }
-    return \%dist;
-}
-
-# given an adjacency matrix, does a BFS in the graph and enumerates all connected subsets
-sub _get_connected_subsets {
-    my ($self, $adjmatrix) = @_;
-    my %adj = %{$adjmatrix};
-    # do a BFS to get the unconnected subgraphs from the adjacency matrix	
-    my @sets;	
-    my @current_set;
-
-    my @queue = ( sort keys (%adj))[0];
-    
-    while ( @queue ) {
-	my $current_node = shift (@queue);						
-	push @current_set, $current_node;				
-	if (exists $adj{$current_node}){						
-	    my @neighbors = grep { $adj{$current_node}{$_} }  keys $adj{$current_node};
-	    if ( @neighbors ) {
-		foreach my $node ( @neighbors ) {
-		    if ($node != $current_node){
-			push @queue, $node;			
-		    }		
-		}		
-	    }
-	    delete $adj{$current_node};
-	}				
-	@current_set = uniq (@current_set);
-	@queue = uniq (@queue);
-	
-	if (scalar (@queue) == 0){
-	    my @cs = @current_set;
-	    push @sets, \@cs;			
-	    @current_set = ();			
-	    if ( keys %adj ){
-		my ($key) = sort keys %adj; 
-		push @queue, $key;
-	    }
-	}		
-    }	    
-    return \@sets;
-}
-
 sub run {
         my ($self, $opt, $args) = @_;		       
 		
@@ -390,9 +297,8 @@ sub run {
 	# sort the taxa by increasing occurrence in alignments, so rarely sequenced species
 	#    are treated preferentially by including their most speciose alignments first
 	my @sorted_exemplars = sort { scalar(@{$alns_for_taxa{$a}}) <=> scalar(@{$alns_for_taxa{$b}}) } grep { $alns_for_taxa{$_} } @exemplars;
-
 	
-	# now collect the alignments (just as many to give all members asufficient coverage!)
+	# now collect the alignments (just as many to give all taxa asufficient coverage!)
 	#  starting with the least well-represented taxa
 	my ( %aln, %seen );
       TAXON: for my $taxon ( @sorted_exemplars ) {
@@ -430,6 +336,8 @@ sub run {
 	
 }
 
+# given a set of alignment files and exemplar taxa, and a file format (default phylip), 
+# writes out a supermstrix to file
 sub _write_supermatrix {
     my ($self, $alnfiles, $exemplars, $user_taxa, $filename, $format, $markersfile) = @_;
     
@@ -508,77 +416,103 @@ sub _write_supermatrix {
     $stream->write_aln($aln);	
 }
 
-
-# It often happens that there are subsets of exemplars that do not share markers with other sets of exemplars.
-#  When inferring a tree with such a disconnected supermatrix, disconnected sets show very long branch lengths.
-#  This subroutine returns the largest subset of exemplars that have common markers. This is done by doing a 
-#  breadth-first search on the adjaceny matrix of exemplars connected by their respective markers.
-sub _prune_exemplars {
-	my ($self, $tab ) = @_;
-	my @marker_table = @$tab;
-	
-	# create adjacency matrix
-	my %adj;
-	foreach my $column ( @marker_table ) {
-		my @species = sort keys (%$column); 
-		for my $i ( 0..$#species ) {
-			
-			for my $j ( $i+1..$#species ) {				
-				my %specs_i = map { $_ => 1 } @{$adj{$species[$i]}};
-				my %specs_j = map { $_ => 1 } @{$adj{$species[$j]}};
-				
-				if ( ! exists $specs_i{$species[$j]}) {
-					push @{$adj{$species[$i]}}, $species[$j];			
-				}
-				if ( ! exists $specs_j{$species[$i]}) {								
-					push @{$adj{$species[$j]}}, $species[$i];
-				}							
-			}			
-		}						
+# given an alignment file (fasta) and a reference to an array of taxon ids,
+# calculates the distance between the taxa with respect to the sequences 
+# given (if taxa share markers). Returned is a hashref with keys being a combination 
+# of taxa, separated by '|', the values being the molecular distance between these taxa,
+# normalized by sequence length
+sub _calc_aln_distances {
+    my ($self, $aln, $tax) = @_;
+    my @taxa = @$tax;
+    
+    my $ts = Bio::Phylo::PhyLoTA::Service::TreeService->new;	
+    my $mt = Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa->new;
+    my $dat    	= 'Bio::Phylo::Matrices::Datum';
+    my $log = $self->logger;
+    my %fasta = $mt->parse_fasta_file($aln);
+    my %dist;
+    
+    # aggregate sequence objects by species within this genus	      
+    my %sequences_for_species;
+    for my $taxon ( @taxa ) {
+	my $name = $ts->find_node($taxon)->taxon_name;
+	if ( my @raw = $mt->get_sequences_for_taxon( $taxon, %fasta ) ) {
+	    $log->debug("$aln contained ".scalar(@raw)." sequences for species $taxon ($name)");
+	    my @seq = map { $dat->new( '-type' => 'dna', '-char' => $_ ) } @raw;
+	    $sequences_for_species{$taxon} = \@seq;
 	}
-	
-	# do a BFS to get the unconnected subgraphs from the adjacency matrix	
-	my @sets;	
-	my @current_set;
-	
-	my @queue = ( sort keys (%adj))[0];
-		
-	while ( @queue ) {
-		my $current_node = shift (@queue);						
-		push @current_set, $current_node;				
-		if (exists $adj{$current_node}){						
-			my @neighbors = @{$adj{$current_node}};
-			if ( @neighbors ) {
-				foreach my $node ( @neighbors ) {
-					if ($node != $current_node){
-						push @queue, $node;			
-					}		
-				}		
-			}
-			delete $adj{$current_node};
-		}				
-		@current_set = uniq (@current_set);
-		@queue = uniq (@queue);
+    }
+    
+    # check if we've seen enough sequenced species	     
+    if ( scalar(keys(%sequences_for_species)) < 3 ) {
+	$log->debug("less than 3 species in $aln, no distance calculated");
+	return;
+    }
 
-		if (scalar (@queue) == 0){
-			my @cs = @current_set;
-			push @sets, \@cs;			
-			@current_set = ();			
-			if ( keys %adj ){
-				my ($key) = sort keys %adj; 
-				push @queue, $key;
-			}
-		}		
-	}	
-	
-	my $max_exemplars = max( map {scalar (@$_)} @sets);
-	foreach my $s (@sets) {
-		if ( scalar @$s == $max_exemplars ) {
-			return @$s;
+    # calculate the distances between give taxa, take the 
+    # average if species have multiple sequences
+    for my $i ( 0 .. ( $#taxa - 1 ) ) {
+	for my $j ( ( $i + 1 ) .. $#taxa ) {
+	    my $sp1 = $taxa[$i];
+	    my $sp2 = $taxa[$j];
+	    if ( $sequences_for_species{$sp1} and $sequences_for_species{$sp2} ) {
+		$log->debug("going to compute average distance between $sp1 and $sp2");
+		my @seqs1 = @{ $sequences_for_species{$sp1} };
+		my @seqs2 = @{ $sequences_for_species{$sp2} };
+		my $dist;
+		for my $seq1 ( @seqs1 ) {
+		    for my $seq2 ( @seqs2 ) {
+			$dist += $seq1->calc_distance($seq2);
+		    }
 		}
-		
-	}	
+		$dist /= ( scalar(@seqs1) * scalar(@seqs2) );
+		my $key = join '|', sort { $a <=> $b } ( $sp1, $sp2 );
+		$dist{$key} = $dist;
+	    }
+	}
+    }
+    return \%dist;
 }
 
+# given an adjacency matrix, does a BFS in the graph and enumerates all connected subsets of 
+# taxa
+sub _get_connected_subsets {
+    my ($self, $adjmatrix) = @_;
+    my %adj = %{$adjmatrix};
+    # do a BFS to get the unconnected subgraphs from the adjacency matrix	
+    my @sets;	
+    my @current_set;
+
+    my @queue = ( sort keys (%adj))[0];
+    
+    while ( @queue ) {
+	my $current_node = shift (@queue);						
+	push @current_set, $current_node;				
+	if (exists $adj{$current_node}){						
+	    my @neighbors = grep { $adj{$current_node}{$_} }  keys %{$adj{$current_node}};
+	    if ( @neighbors ) {
+		foreach my $node ( @neighbors ) {
+		    if ($node != $current_node){
+			push @queue, $node;			
+		    }		
+		}		
+	    }
+	    delete $adj{$current_node};
+	}				
+	@current_set = uniq (@current_set);
+	@queue = uniq (@queue);
+	
+	if (scalar (@queue) == 0){
+	    my @cs = @current_set;
+	    push @sets, \@cs;			
+	    @current_set = ();			
+	    if ( keys %adj ){
+		my ($key) = sort keys %adj; 
+		push @queue, $key;
+	    }
+	}		
+    }	    
+    return \@sets;
+}
 
 1;
