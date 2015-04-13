@@ -126,7 +126,7 @@ sub pmap_pthreads (&@) {
 			sub {
 				map {
 					$counter++;
-					$logger->info(
+					$logger->debug(
 						"Thread $thread is processing item # $counter / "
 						  . scalar(@subset) );
 
