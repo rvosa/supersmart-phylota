@@ -1,18 +1,16 @@
 ![SUPERSMART](http://www.supersmart-project.org/images/logo200x480.png "SUPERSMART")
 
-
 INFO
 ----
-This is the source code repository of the Self-Updating Platform for the 
-Estimation of Rates of Speciation, Migration, And Relationships of Taxa
-(SUPERSMART), a pipeline for estimating time-calibrated species trees from
-public data. Constantly updated information about the pipeline can be 
-retrieved from the project website at www.supersmart-project.org.
+This is the source code repository of the Self-Updating Platform for the Estimation 
+of Rates of Speciation, Migration, And Relationships of Taxa (SUPERSMART), a 
+pipeline for estimating time-calibrated species trees from public data. Constantly 
+updated information about the pipeline can be retrieved from the project website at 
+www.supersmart-project.org.
 
 INSTALLATION
 ------------
-Installation depends on vagrant and Virtualbox, see ./INSTALL
-and the project website.
+Installation depends on vagrant and Virtualbox, see INSTALL.md and the project website.
 
 COMMANDS
 --------
