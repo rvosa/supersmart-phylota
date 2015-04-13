@@ -8,6 +8,7 @@ use Moose;
 use URI::Escape;
 use Data::Dumper;
 use LWP::UserAgent;
+use Encode 'encode';
 use Bio::Phylo::Factory;
 use Bio::Phylo::Util::Logger;
 use Bio::Phylo::Util::Exceptions 'throw';
@@ -85,9 +86,6 @@ sub get_nodes_for_names {
 	    		@nodes = $self->search_node( {  ti => $id } )->all;
 	    	$log->info("found match $id for $name through TNRS");
 	    }
-            else {
-                $log->warn("couldn't find name $name anywhere!");
-            }
         }
         else {
             $log->info("found  exact match(es) for $name in local database");
@@ -458,7 +456,11 @@ sub _do_tnrs_search {
     # sometimes there are UTF-8 encoding errors, which the JSON parser
     # chokes on. the best we can do is try to trap these and give up.
     my $obj;
-    eval { $obj = decode_json($result); };
+    eval { 
+    	my $json_bytes = encode('UTF-8', $result);
+    	$obj = JSON->new->utf8->decode($json_bytes); 
+    
+    };
     if ( $@ ) {
     	$log->warn( "error decoding JSON $result: $@" );
     	return;

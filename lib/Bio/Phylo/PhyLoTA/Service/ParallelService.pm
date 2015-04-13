@@ -113,20 +113,20 @@ sub pmap_pthreads (&@) {
 	my @threads;
 	my @result;
 	my $inc = ceil( $size / $num_workers );
-	$logger->info("pmap pthreads has $num_workers nodes available");
+	$logger->debug("pmap pthreads has $num_workers nodes available");
 	my $thread = 0;
 
 	for ( my $i = 0 ; $i < $size ; $i += $inc ) {
 		++$thread;
 		my $max = ( $i + $inc - 1 ) >= $size ? $size - 1 : $i + $inc - 1;
 		my @subset = @data[ $i .. $max ];
-		$logger->info(
+		$logger->debug(
 			"Detaching " . scalar(@subset) . " items to thread # " . $thread );
 		push @threads, threads->create(
 			sub {
 				map {
 					$counter++;
-					$logger->info(
+					$logger->debug(
 						"Thread $thread is processing item # $counter / "
 						  . scalar(@subset) );
 
