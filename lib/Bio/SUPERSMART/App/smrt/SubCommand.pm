@@ -18,7 +18,7 @@ my $logfh;
 
 =head1 METHODS
 
-All methods below are ingerited by child classes.
+All methods below are inherited by child classes.
 
 =over
 
@@ -117,8 +117,6 @@ sub execute {
 	return $result;
 }
 
-
-
 =item init
 
 The init subroutine initializes objects that are shared by all subcommands (as for instance the working 
@@ -147,13 +145,14 @@ sub init {
 		}		
 	}
  	# set outfile name
-    if ( my $of = eval { $opt->outfile } ) {
-    	$self->outfile($of);
-    }
+       if ( my $of = eval { $opt->outfile } ) {
+        	$self->outfile($of);
+       }
  
  	# create logger object with user-defined verbosity
 	$self->logger( Bio::Phylo::Util::Logger->new(
 		'-level' => $verbosity,
+		'-style' => $opt->logstyle,
 		'-class' => [ ref( $self ), 'Bio::SUPERSMART::App::smrt::SubCommand', 
 									'Bio::Phylo::PhyLoTA::Service::ParallelService', 
 									'Bio::Phylo::PhyLoTA::Service::TreeService', 
@@ -182,6 +181,7 @@ sub opt_spec {
 		[ "verbose|v+", "increase verbosity level", {} ],
 		[ "workdir|w=s", "directory in which results and intermediate files are stored", { arg => "dir"} ],
 		[ "logfile|l=s", "write run-time information to logfile", { arg => "file" }],	
+		[ "logstyle|y=s", "toggles logging style between 'simple' and 'detailed'", { default => "simple" }],
 		$class->options($app),
 	);	
 }
