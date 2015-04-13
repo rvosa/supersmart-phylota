@@ -1,3 +1,6 @@
+![SUPERSMART](http://www.supersmart-project.org/images/logo200x480.png "SUPERSMART")
+
+
 INFO
 ----
 This is the source code repository of the Self-Updating Platform for the 
