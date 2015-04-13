@@ -458,7 +458,11 @@ sub _do_tnrs_search {
     # sometimes there are UTF-8 encoding errors, which the JSON parser
     # chokes on. the best we can do is try to trap these and give up.
     my $obj;
-    eval { $obj = decode_json($result); };
+    eval { 
+    	my $json_bytes = encode('UTF-8', $result);
+    	$obj = JSON->new->utf8->decode($json_bytes); 
+    
+    };
     if ( $@ ) {
     	$log->warn( "error decoding JSON $result: $@" );
     	return;
