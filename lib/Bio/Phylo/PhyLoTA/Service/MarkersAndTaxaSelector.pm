@@ -86,9 +86,6 @@ sub get_nodes_for_names {
 	    		@nodes = $self->search_node( {  ti => $id } )->all;
 	    	$log->info("found match $id for $name through TNRS");
 	    }
-            else {
-                $log->warn("couldn't find name $name anywhere!");
-            }
         }
         else {
             $log->info("found  exact match(es) for $name in local database");
