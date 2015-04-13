@@ -10,7 +10,7 @@ use Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector;
 
 use Bio::Phylo::PhyLoTA::Service::ParallelService 'pthreads';
 
-use base 'Bio::SUPERSMART::App::smrt::SubCommand';
+use base 'Bio::SUPERSMART::App::SubCommand';
 use Bio::SUPERSMART::App::smrt qw(-command);
 
 # ABSTRACT: writes taxa table for given list of taxon names or root taxa

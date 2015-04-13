@@ -8,7 +8,7 @@ use Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector;
 use Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa;
 use Bio::Phylo::PhyLoTA::Service::TreeService;
 
-use base 'Bio::SUPERSMART::App::smrt::SubCommand';
+use base 'Bio::SUPERSMART::App::SubCommand';
 use Bio::SUPERSMART::App::smrt qw(-command);
 
 # ABSTRACT: writes a classification tree for a given taxa table

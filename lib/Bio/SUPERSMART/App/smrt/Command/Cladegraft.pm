@@ -7,7 +7,7 @@ use Bio::Phylo::PhyLoTA::Service::TreeService;
 
 use Bio::Phylo::IO 'parse';
 
-use base 'Bio::SUPERSMART::App::smrt::SubCommand';
+use base 'Bio::SUPERSMART::App::SubCommand';
 use Bio::SUPERSMART::App::smrt qw(-command);
 
 # ABSTRACT: grafts the inferred clade trees on the backbone chronogram
@@ -117,7 +117,7 @@ sub run{
     $ts->remove_internal_names($grafted);
 
     open my $outfh, '>', $outfile or die $!;        
-    print $outfh $grafted->to_newick('-nodelabels' => 1);
+    print $outfh $grafted->to_newick;
     close $outfh;	
 
 	$logger->info("DONE, results written to $outfile");
@@ -138,7 +138,7 @@ sub _graft_single_tree {
 	$ts->remap_to_name($remapped_consensus);
 	$tree->resolve;
 	open my $fhr, '>', $stem."-remapped.dnd" or die $!;
-	print $fhr $remapped_consensus->to_newick('-nodelabels' => 1);
+	print $fhr $remapped_consensus->to_newick;
 	close $fhr;
                 
 	# finally graft clade tree onto backbone

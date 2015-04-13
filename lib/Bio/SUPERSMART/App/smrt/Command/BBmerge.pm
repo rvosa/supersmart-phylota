@@ -11,7 +11,7 @@ use Bio::Phylo::PhyLoTA::Service::TreeService;
 use List::MoreUtils qw(uniq);
 use List::Util qw(max);
 
-use base 'Bio::SUPERSMART::App::smrt::SubCommand';
+use base 'Bio::SUPERSMART::App::SubCommand';
 use Bio::SUPERSMART::App::smrt qw(-command);
 
 # ABSTRACT: creates supermatrix for genus-level backbone tree

@@ -8,7 +8,7 @@ use Bio::Phylo::PhyLoTA::Service::TreeService;
 use Bio::Phylo::IO 'parse_matrix';
 use Bio::Phylo::Util::CONSTANT ':objecttypes';
 
-use base 'Bio::SUPERSMART::App::smrt::SubCommand';
+use base 'Bio::SUPERSMART::App::SubCommand';
 use Bio::SUPERSMART::App::smrt qw(-command);
 
 # ABSTRACT: merges sets of alignments into input files for clade inference

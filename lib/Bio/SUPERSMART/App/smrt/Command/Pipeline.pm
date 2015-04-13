@@ -3,7 +3,7 @@ package Bio::SUPERSMART::App::smrt::Command::Pipeline;
 use strict;
 use warnings;
 
-use base 'Bio::SUPERSMART::App::smrt::SubCommand';
+use base 'Bio::SUPERSMART::App::SubCommand';
 use Bio::SUPERSMART::App::smrt qw(-command);
 
 # ABSTRACT: Run the entire SUPERSMART pipeline

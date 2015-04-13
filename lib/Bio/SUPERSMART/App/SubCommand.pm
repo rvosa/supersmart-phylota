@@ -1,4 +1,4 @@
-package Bio::SUPERSMART::App::smrt::SubCommand;
+package Bio::SUPERSMART::App::SubCommand;
 
 use Cwd;
 use Bio::Phylo::Util::Logger ':levels';

@@ -10,7 +10,7 @@ use Bio::Phylo::PhyLoTA::Config;
 
 use Bio::Phylo::IO qw(parse_tree);
 
-use base 'Bio::SUPERSMART::App::smrt::SubCommand';
+use base 'Bio::SUPERSMART::App::SubCommand';
 use Bio::SUPERSMART::App::smrt qw(-command);
 
 

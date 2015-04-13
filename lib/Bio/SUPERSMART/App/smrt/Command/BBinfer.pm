@@ -11,7 +11,7 @@ use Bio::Tools::Run::Phylo::Raxml;
 use Bio::Tools::Run::Phylo::ExaML;
 use Bio::Tools::Run::Phylo::ExaBayes;
 	
-use base 'Bio::SUPERSMART::App::smrt::SubCommand';
+use base 'Bio::SUPERSMART::App::SubCommand';
 use Bio::SUPERSMART::App::smrt qw(-command);
 
 # ABSTRACT: inference of a genus-level backbone tree

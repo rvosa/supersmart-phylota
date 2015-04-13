@@ -8,7 +8,7 @@ use Bio::Tools::Run::Phylo::StarBEAST;
 
 use Bio::Phylo::PhyLoTA::Service::ParallelService 'pthreads';
 
-use base 'Bio::SUPERSMART::App::smrt::SubCommand';
+use base 'Bio::SUPERSMART::App::SubCommand';
 use Bio::SUPERSMART::App::smrt qw(-command);
 
 # ABSTRACT: infers a species tree for each individual clade using *BEAST.
