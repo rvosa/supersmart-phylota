@@ -1,24 +1,23 @@
 Requirements 
-==================================
+============
 
--- an installation of 'VirtualBox'
--- an installation of 'Vagrant'
--- a connection to the internet
--- an SSH client
+- an installation of 'VirtualBox'
+- an installation of 'Vagrant'
+- a connection to the internet
+- an SSH client
 
-Quick installation guide 
-(see below for extended version) 
-==================================
+Quick installation guide (see below for extended version) 
+=========================================================
 
--- If not already installed, download and 
+- If not already installed, download and 
    install VirtualBox (https://www.virtualbox.org/wiki/Downloads)
--- If not already installed, download and
+- If not already installed, download and
    install Vagrant (http://www.vagrantup.com/downloads.html).
--- Change to a suitable working directory and issue the following commands:
--- `vagrant init Naturalis/supersmart`
--- `vagrant up`
--- Log in to the virtual guest machine using `vagrant ssh`
--- SUPERSMART is installed in the directory `/home/vagrant/SUPERSMART`, i.e. $SUPERSMART_HOME
+- Change to a suitable working directory and issue the following commands:
+- `vagrant init Naturalis/supersmart`
+- `vagrant up`
+- Log in to the virtual guest machine using `vagrant ssh`
+- SUPERSMART is installed in the directory `/home/vagrant/SUPERSMART`, i.e. $SUPERSMART_HOME
 
 Extended installation instructions
 ==================================
@@ -55,28 +54,28 @@ to do this in a sensible subfolder, such as inside `supersmart-vagrant`
 or something, rather than in your home folder, or desktop, or similar.
 Once you are inside this folder, issue the following commands:
 
-$ vagrant init Naturalis/supersmart
-$ vagrant up
+    $ vagrant init Naturalis/supersmart
+    $ vagrant up
 
 Vagrant will now download the virtual machine and SUPERSMART together 
 with all necessary dependencies. Please not that this may take some time.
 When the installation is finished, you can log into the virtual machine 
 and change to the SUPERSMART working directory.
 
-$ vagrant ssh 
-$ cd $SUPERSMART_HOME
+    $ vagrant ssh 
+    $ cd $SUPERSMART_HOME
 
 At this point it is always advisable to check whether there are updates 
 to the pipeline source code. This is done by issuing the following 
 command, which will download the latest code from the repository:
 
-$ git pull
+    $ git pull
 
 For instructions on how to run the pipeline, please refer to the README 
 file in the 'examples/' directory.
 
 Logging into the guest machine on WINDOWS
-==================================
+=========================================
 
 Please note that an ssh client is not installed by default on Windows 
 systems. In order to log on to the virtual Linux guest machine, you 
