@@ -8,6 +8,7 @@ use Moose;
 use URI::Escape;
 use Data::Dumper;
 use LWP::UserAgent;
+use Encode 'encode';
 use Bio::Phylo::Factory;
 use Bio::Phylo::Util::Logger;
 use Bio::Phylo::Util::Exceptions 'throw';
