@@ -27,3 +27,10 @@ EXAMPLES
 --------
 The examples/* directories contain instructional examples to demonstrate the input
 file formats.
+
+BUILD STATUS
+------------
+Currently, the build status at Travis is:
+
+[![Build Status](https://travis-ci.org/naturalis/supersmart?branch=master)](https://travis-ci.org/naturalis/supersmart)
+
