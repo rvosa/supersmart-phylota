@@ -135,7 +135,8 @@ sub _run {
 
 sub _make_usertree {
     my ($self, $supermatrix, $commontree) = @_;
-    my $ts = Bio::Phylo::PhyLoTA::Service::TreeService->new;
+    my $logger   = $self->logger;
+    my $ts       = Bio::Phylo::PhyLoTA::Service::TreeService->new;
     my @tipnames = $ts->read_tipnames($supermatrix);
     
     # this will be the tree object to write to file         
@@ -186,7 +187,7 @@ sub _make_usertree {
     }
     
     # write to file
-    my $intree = File::Spec->catfile( $workdir, 'user.dnd' );
+    my $intree = File::Spec->catfile( $self->workdir, 'user.dnd' );
     open my $fh, '>', $intree or die $!;
     print $fh $tree->to_newick();
     return $intree; 
