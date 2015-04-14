@@ -5,13 +5,9 @@ use Bio::Phylo::IO qw(parse parse_tree);
 use Bio::Phylo::Factory;
 use Bio::Phylo::PhyLoTA::Config;
 use Bio::Phylo::PhyLoTA::Service::TreeService;
-use Bio::Tools::Run::Phylo::Raxml;
-use Bio::Tools::Run::Phylo::ExaML;
-use Bio::Tools::Run::Phylo::ExaBayes;
 use Bio::Phylo::Util::Exceptions 'throw';
-    
+use Bio::SUPERSMART::App::smrt qw(-command);    
 use base 'Bio::SUPERSMART::App::SubCommand';
-use Bio::SUPERSMART::App::smrt qw(-command);
 
 # ABSTRACT: inference of a genus-level backbone tree
 
@@ -64,6 +60,7 @@ sub validate {
     $self->usage_error("file $sm is empty") unless (-s $sm);
 }
 
+# run the analysis
 sub run {
     my ( $self, $opt, $args ) = @_;     
         
@@ -96,6 +93,7 @@ sub run {
     return 1;
 }
 
+# process the inferred tree, e.g. by mapping identifiers
 sub _process_result {
     my ( $self, $backbone, $remap ) = @_;
     
@@ -137,6 +135,49 @@ sub _run {
     throw 'NotImplemented' => "missing _run method in child class " . ref(shift);
 }
 
+# reconcile the common tree with the taxa in the supermatrix and prepare it
+# for usage (remove unbranched internal nodes, randomly resolve polytomies, deroot)
+sub _process_commontree {
+    my ( $self, $commontree, @tipnames ) = @_;
+    my $logger = $self->logger;
+    my $ts     = Bio::Phylo::PhyLoTA::Service::TreeService->new;
+
+    # read the common tree, map names to IDs, 
+    # only retain tips in supermatrix
+    my $tree = parse_tree(
+        '-format' => 'newick',
+        '-file'   => $commontree,
+    );
+    $ts->remap_to_ti( $tree );
+    $tree->keep_tips( \@tipnames );
+            
+    # it can occur that a taxon that has been chosen as an exemplar is
+    # not in the classification tree. For example, if a species has one subspecies,
+    # but the species and not the subspecies is an exemplar. Then this node
+    # is an unbranched internal and not in the classification tree. We therefore
+    # add these node(s) to the starting tree
+    my @terminals = @{ $tree->get_terminals };
+    if ( @terminals != @tipnames ) {
+        $logger->warn("tips mismatch: ".scalar(@tipnames)."!=".scalar(@terminals));
+
+        # insert unseen nodes into starting tree        
+        my %seen = map { $_->get_name => 1 } @terminals;        
+        my $fac  = Bio::Phylo::Factory->new;
+        my ($p)  = @{ $tree->get_internals };
+        for my $d ( grep { ! $seen{$_} } @tipnames ) {
+            $logger->warn("Adding node $d (" . $ts->find_node($d)->get_name . ") to starting tree");
+            my $node = $fac->create_node( '-name' => $d );
+            $node->set_parent($p);
+            $tree->insert($node);
+        }
+    }
+        
+    # finalize the tree
+    $tree->resolve->remove_unbranched_internals->deroot;
+    return $tree;
+}
+
+# make a starting tree either by simulation or from input tree
 sub _make_usertree {
     my ($self, $supermatrix, $commontree) = @_;
     my $logger   = $self->logger;
@@ -149,44 +190,13 @@ sub _make_usertree {
     # process the common tree to the right set of tips, resolve it,
     # remove unbranched internals (due to taxonomy) and remove the root
     if ( $commontree ) {
-    
-        # read the common tree, map names to IDs, 
-        # only retain tips in supermatrix
-        $tree = parse_tree(
-            '-format' => 'newick',
-            '-file'   => $commontree,
-        );
-        $ts->remap_to_ti( $tree );
-        $tree->keep_tips( \@tipnames );
-            
-        # it can occur that a taxon that has been chosen as an exemplar is
-        # not in the classification tree. For example, if a species has one subspecies,
-        # but the species and not the subspecies is an exemplar. Then this node
-        # is an unbranched internal and not in the classification tree. We therefore
-        # add these node(s) to the starting tree
-        my @terminals = @{ $tree->get_terminals };
-        if ( @terminals != @tipnames ) {
-            $logger->warn("tips mismatch: ".scalar(@tipnames)."!=".scalar(@terminals));
-
-            # insert unseen nodes into starting tree        
-            my %seen = map { $_->get_name => 1 } @terminals;        
-            my $fac  = Bio::Phylo::Factory->new;
-            my ($p)  = @{ $tree->get_internals };
-            for my $d ( grep { ! $seen{$_} } @tipnames ) {
-                $logger->warn("Adding node $d (" . $ts->find_node($d)->get_name . ") to starting tree");
-                my $node = $fac->create_node( '-name' => $d );
-                $node->set_parent($p);
-                $tree->insert($node);
-            }
-        }
-        
-        # finalize the tree
-        $tree->resolve->remove_unbranched_internals->deroot;
+        $logger->info("Going to prepare starttree $commontree for usage");
+        $tree = $self->_process_commontree($commontree,@tipnames);
     }
     
     # simulate a random tree
     else {
-        $logger->info("No starttree given in argument for ExaML inference. Generating random starting tree.");  
+        $logger->info("No starttree given as argument. Generating random starting tree.");  
         $tree = $self->_make_random_starttree(\@tipnames);  
     }
     
@@ -197,6 +207,7 @@ sub _make_usertree {
     return $intree; 
 }
 
+# simulate an equiprobable starting tree
 sub _make_random_starttree {
     my ( $self, $tipnames) = @_;
     my $fac  = Bio::Phylo::Factory->new;
