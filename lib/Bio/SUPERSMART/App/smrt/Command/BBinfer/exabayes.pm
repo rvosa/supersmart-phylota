@@ -3,16 +3,16 @@ use base 'Bio::SUPERSMART::App::smrt::Command::BBinfer';
 use Bio::Tools::Run::Phylo::ExaBayes;
 
 sub _configure {
-	my ( $self, $tool, $config ) = @_;
-	my $logger = $self->logger;
+    my ( $self, $tool, $config ) = @_;
+    my $logger = $self->logger;
 
-	# set mpirun location
-	$logger->info("going to use mpirun executable ".$config->MPIRUN_BIN);
-	$tool->mpirun($config->MPIRUN_BIN);
-	
-	# set number of nodes
-	$logger->info("setting number of MPI nodes ".$config->NODES);
-	$tool->nodes($config->NODES);
+    # set mpirun location
+    $logger->info("going to use mpirun executable ".$config->MPIRUN_BIN);
+    $tool->mpirun($config->MPIRUN_BIN);
+    
+    # set number of nodes
+    $logger->info("setting number of MPI nodes ".$config->NODES);
+    $tool->nodes($config->NODES);
 
     # set exabayes location
     $logger->info("going to use executable ".$config->EXABAYES_BIN);
@@ -47,21 +47,21 @@ sub _configure {
 }
 
 sub _create {
-	my $self = shift;
+    my $self = shift;
 
-	# instantiate helper objects and variables
-	my $tool    = Bio::Tools::Run::Phylo::ExaBayes->new;	
-	my $logger  = $self->logger;
-	my $workdir = $self->workdir;
-	my $outfile = $self->outfile;
-		
-	# set outfile name
-	$logger->info("going to create output file $outfile");
-	$tool->outfile_name($outfile);
-	
-	# set working directory
-	$logger->info("going to use working directory $workdir");
-	$tool->work_dir($workdir);	      
+    # instantiate helper objects and variables
+    my $tool    = Bio::Tools::Run::Phylo::ExaBayes->new;    
+    my $logger  = $self->logger;
+    my $workdir = $self->workdir;
+    my $outfile = $self->outfile;
+        
+    # set outfile name
+    $logger->info("going to create output file $outfile");
+    $tool->outfile_name($outfile);
+    
+    # set working directory
+    $logger->info("going to use working directory $workdir");
+    $tool->work_dir($workdir);        
         
     # set parsimony start
     $logger->info("setting ExaBayes to start from parsimony tree");
@@ -76,13 +76,13 @@ sub _create {
         
     # set mode to zero (faster, but takes more memory)
     $logger->info("setting exabayes 'mode' argument to zero ");
-    $tool->mode(0);         	
-	return $tool;
+    $tool->mode(0);             
+    return $tool;
 }
 
 sub _run {
-	my ( $self, %args ) = @_;
-	return $args{'tool'}->run( '-phylip' => $args{'matrix'} );
+    my ( $self, %args ) = @_;
+    return $args{'tool'}->run( '-phylip' => $args{'matrix'} );
 }
 
 1;
