@@ -93,6 +93,24 @@ sub run {
     return 1;
 }
 
+# instantiates and configures the wrapper object,
+# returns the instantiated wrapper
+sub _create {
+    throw 'NotImplemented' => "missing _create method in child class " . ref(shift);
+}
+
+# provides the $config object to the wrapper so that settings defined in $config
+# object can be applied to the wrapper
+sub _configure {
+    throw 'NotImplemented' => "missing _confgure method in child class " . ref(shift);
+}
+
+# runs the analysis on the provided supermatrix. can potentially be run multiple
+# times (in parallel?) to do bootstrapping. returns a tree file.
+sub _run {
+    throw 'NotImplemented' => "missing _run method in child class " . ref(shift);
+}
+
 # process the inferred tree, e.g. by mapping identifiers
 sub _process_result {
     my ( $self, $backbone, $remap ) = @_;
@@ -115,24 +133,6 @@ sub _process_result {
     print $outfh $bbtree->to_newick( '-nodelabels' => 1 );
     close $outfh;   
     $self->logger->info("DONE, results written to $outfile");
-}
-
-# instantiates and configures the wrapper object,
-# returns the instantiated wrapper
-sub _create {
-    throw 'NotImplemented' => "missing _create method in child class " . ref(shift);
-}
-
-# provides the $config object to the wrapper so that settings defined in $config
-# object can be applied to the wrapper
-sub _configure {
-    throw 'NotImplemented' => "missing _confgure method in child class " . ref(shift);
-}
-
-# runs the analysis on the provided supermatrix. can potentially be run multiple
-# times (in parallel?) to do bootstrapping. returns a tree file.
-sub _run {
-    throw 'NotImplemented' => "missing _run method in child class " . ref(shift);
 }
 
 # reconcile the common tree with the taxa in the supermatrix and prepare it
