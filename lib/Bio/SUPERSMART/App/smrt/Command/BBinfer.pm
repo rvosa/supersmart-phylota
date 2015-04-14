@@ -27,7 +27,7 @@ smrt bbinfer [-h ] [-v ] [-w <dir>] -s <file> -t <file> [-i <tool>] [-o <file>]
 =head1 DESCRIPTION
 
 Given an input supermatrix (in interleaved PHYLIP format), infers either a maximum likelihood tree 
-using ExaML or RaXML or uses ExaBayes to sample a posterior distribution of trees. If ExaBayes is used, a 
+using ExaML or RAxML or uses ExaBayes to sample a posterior distribution of trees. If ExaBayes is used, a 
 'consense' tree is calculated from the posterior. The tree resulting from this script is written to file.
 For tree inference with examl, an NCBI classification tree (in Newick format) has to be supplied 
 as a starting tree. ExaML and ExaBayes produce many intermediate checkpoint files, for which a
@@ -43,8 +43,8 @@ sub options {
 	return (
 		["supermatrix|s=s", "matrix of concatenated multiple sequece alignments as produced by 'smrt bbmerge'", { arg => "file", mandatory => 1}],	
 		["starttree|t=s", "starting tree for ExaML tree inference. If not given, a random starting tree is generated", { arg => "file", mandatory => 1}],
-		["inferencetool|i=s", "software tool for backbone inference (RaXML, ExaML or ExaBayes), defaults to $tool_default", {default => $tool_default, arg => "tool"}],			
-		["bootstrap|b", "do a bootstrap analysis and add the support values to the backbone tree. Currently only supported for inferencetool RaXML", {}],
+		["inferencetool|i=s", "software tool for backbone inference (RAxML, ExaML or ExaBayes), defaults to $tool_default", {default => $tool_default, arg => "tool"}],			
+		["bootstrap|b", "do a bootstrap analysis and add the support values to the backbone tree. Currently only supported for inferencetool RAxML", {}],
 		["ids|n", "Return tree with NCBI identifiers instead of taxon names", {}],		
 		["outfile|o=s", "name of the output tree file (in newick format), defaults to '$outfile_default'", {default => $outfile_default, arg => "file"}],			
 
@@ -117,7 +117,7 @@ sub _infer_raxml {
 	my $ts = Bio::Phylo::PhyLoTA::Service::TreeService->new;
 	my $logger = $self->logger;
 	
-	my $tool = Bio::Tools::Run::Phylo::Raxml->new(-N => $config->RAXML_RUNS, -p => $config->RANDOM_SEED, -T => $config->NODES	);			
+	my $tool = Bio::Tools::Run::Phylo::Raxml->new( -N => $config->RAXML_RUNS, -p => $config->RANDOM_SEED, -T => $config->NODES );			
 	$tool->outfile_name("out");   			
 	$tool->w( $tool->tempdir );
 	$tool->m("GTRGAMMA");	
@@ -134,7 +134,7 @@ sub _infer_raxml {
 	my $bptree = $tool->run($supermatrix);		
 	##$tool->cleanup;
 	
-	$logger->fatal('RaXML inference failed; outfile not present') if not -e $treefile; 
+	$logger->fatal('RAxML inference failed; outfile not present') if not -e $treefile; 
 
 	return $treefile;	
 
