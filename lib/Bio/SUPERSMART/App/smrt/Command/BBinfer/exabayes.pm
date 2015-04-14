@@ -1,6 +1,6 @@
 package Bio::SUPERSMART::App::smrt::Command::BBinfer::exabayes;
-use base 'Bio::SUPERSMART::App::smrt::Command::BBinfer';
 use Bio::Tools::Run::Phylo::ExaBayes;
+use base 'Bio::SUPERSMART::App::smrt::Command::BBinfer';
 
 sub _configure {
     my ( $self, $tool, $config ) = @_;
