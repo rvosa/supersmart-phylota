@@ -112,7 +112,8 @@ method then calls the 'run' subroutine, which must be implemented for all child 
 
 sub execute {
 	my ($class, $opt, $args) = @_;
-	$class->logger->info("This is SUPERSMART release " . $self->config->RELEASE);
+	my $c = Bio::Phylo::PhyLoTA::Config->new;
+	$class->logger->info("This is SUPERSMART release " . $c->RELEASE);
 	
 	my $result = $class->run( $opt, $args );	
 	close $logfh;
