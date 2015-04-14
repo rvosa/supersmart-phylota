@@ -1,7 +1,9 @@
 package Bio::SUPERSMART::App::SubCommand;
 
 use Cwd;
+use Bio::Phylo::PhyLoTA::Config;
 use Bio::Phylo::Util::Logger ':levels';
+use Bio::Phylo::Util::Exceptions 'throw';
 
 =head1 NAME
 
@@ -24,7 +26,7 @@ All methods below are inherited by child classes.
 
 =item logger
 
-Getter/setter for the subcommand's Bio::Phylo::Util::Logger object, 
+Getter/setter for the subcommand's L<Bio::Phylo::Util::Logger> object, 
 verbosity can be de- or increased by  the argument -v for all subcommands. 
 
 =cut
@@ -39,7 +41,7 @@ sub logger {
 
 =item outfile
 
-returns the output file name of the subcommand
+Getter/Setter the output file name of the subcommand. Returns absolute path.
 
 =cut
 
@@ -65,6 +67,20 @@ sub workdir {
 	return $self->{'workdir'};
 }
 
+=item config
+
+Getter/setter for the L<Bio::Phylo::PhyLoTA::Config> object
+
+=cut
+
+sub config {
+	my $self = shift;
+	if ( @_ ) {
+		$self->{'config'} = shift;
+	}
+	return $self->{'config'};
+}
+
 =item absolute_path
 
 creates an absolute path to a file location, if file is not yet
@@ -86,18 +102,6 @@ sub absolute_path {
 	return $filename; 
 }
 
-=item run
-
-This is the method in which the functionality of the subcommand
-class is implemented; all subcommand-specific magig will happen in
-here. 
-
-=cut
-
-sub run {	
-	die "Subroutine 'run' not implemented for subcommand class " . ref ($_); 		
-}
-
 =item execute
 
 Overrides the default classes' 'execute' method such that some global properties 
@@ -108,9 +112,7 @@ method then calls the 'run' subroutine, which must be implemented for all child 
 
 sub execute {
 	my ($class, $opt, $args) = @_;
-	my $config 	= Bio::Phylo::PhyLoTA::Config->new;
-	my $release = $config->RELEASE;
-	$class->logger->info("This is SUPERSMART release " . $config->RELEASE);
+	$class->logger->info("This is SUPERSMART release " . $self->config->RELEASE);
 	
 	my $result = $class->run( $opt, $args );	
 	close $logfh;
@@ -135,7 +137,7 @@ sub init {
 	$self->workdir($wd);
 
 	# loop through options to see which ones are file options; 
-	#  set absolute path for all filenames given
+	# set absolute path for all filenames given
 	my %file_opts = map { (my $optname= $_->[0])=~s/\|.+//g; $_->[2]->{'arg'} eq 'file' ? ($optname=>1) : () } $self->options;
 	$file_opts{'logfile'} = 1;
 	for my $given_opt ( keys %$opt ) {
@@ -144,20 +146,27 @@ sub init {
 			$opt->{$given_opt} = $self->absolute_path($opt->{$given_opt});
 		}		
 	}
+	
  	# set outfile name
-       if ( my $of = eval { $opt->outfile } ) {
-        	$self->outfile($of);
-       }
+	if ( my $of = eval { $opt->outfile } ) {
+		$self->outfile($of);
+	}
  
  	# create logger object with user-defined verbosity
 	$self->logger( Bio::Phylo::Util::Logger->new(
 		'-level' => $verbosity,
 		'-style' => $opt->logstyle,
-		'-class' => [ ref( $self ), 'Bio::SUPERSMART::App::smrt::SubCommand', 
-									'Bio::Phylo::PhyLoTA::Service::ParallelService', 
-									'Bio::Phylo::PhyLoTA::Service::TreeService', 
-									'Bio::Phylo::PhyLoTA::Service::CalibrationService' ],		
+		'-class' => [ 
+			ref( $self ), 
+			'Bio::SUPERSMART::App::smrt::SubCommand', 
+			'Bio::Phylo::PhyLoTA::Service::ParallelService', 
+			'Bio::Phylo::PhyLoTA::Service::TreeService', 
+			'Bio::Phylo::PhyLoTA::Service::CalibrationService' 
+		],		
     ));
+    
+    # create config object
+    $self->config( Bio::Phylo::PhyLoTA::Config->new );
     
     # redirect logger output to file if specified by command call
     if ( my $logfile = $opt->logfile ) {
@@ -233,6 +242,7 @@ sub validate_args {
 	$class->init($opt, $args);
 			
 	if ($opt->help){
+
 		# This is a small hack to make the help screen called with the 
 		#  option (as here, e.g. "$ smrt command -h" ) look the same
 		#  as when we call "$ smrt help command"  				
@@ -240,7 +250,8 @@ sub validate_args {
 		my @name = ($class->command_names);
 		$cmd->execute($opt, \@name);
 		exit;
-	} else {
+	} 
+	else {
 		$class->validate($opt, $args);
 	}
 }
@@ -262,7 +273,7 @@ sub usage_desc {
 	my $usage = "%c $cmd ";
 		
 	# build custom usage string (default was "%c $cmd %o" )
-	foreach my $opt (@opts){
+	for my $opt (@opts){
 		my $s = @{$opt}[0];
 		my %h = %{@{$opt}[2]};
 		my ($short_opt) = ($s =~ /\|([a-z]+)/);
@@ -284,7 +295,7 @@ specify command-line options for a specific subcommand.
 =cut
 
 sub options {
-	die("subroutine 'options' must be implemented by the respective child class");
+	throw 'NotImplemented' => "subroutine 'options' not implemented by " . ref(shift);
 }
 
 =item validate
@@ -295,7 +306,7 @@ validate command-line options for a specific subcommand.
 =cut
 
 sub validate {
-	die("subroutine 'validate' must be implemented by the respective child class");
+	throw 'NotImplemented' => "subroutine 'validate' not implemented by " . ref(shift);
 
 }
 
@@ -306,8 +317,7 @@ run a specific subcommand
 =cut
 
 sub run {
-	die("subroutine 'run' must be implemented by the respective child class");
-
+	throw 'NotImplemented' => "subroutine 'run' not implemented by " . ref(shift);
 }
 
 =back
