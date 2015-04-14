@@ -177,23 +177,17 @@ sub _array_minus {
 
 =item remove_internal_names 
 
-Removes those labels of internal and nodes in a tree, that are not numeric, e.g. "root" of
-"e1" which may have been introduced by rerooting or resolving the tree
+Removes non-numeric labels of internal nodes in a tree, e.g. "root" or
+"e1", which may have been introduced by rerooting or resolving the tree
 
 =cut
 
 sub remove_internal_names {
 	my ($self, $tree) = @_;	
-    
-    for my $n ( @{$tree->get_internals} ) {
-		if ($n->get_name =~ m/[a-zA-Z]/){
-			$n->set_name('');
-		}
-    }
-    my $n = $tree->get_root;
-    if ($n->get_name =~ m/[a-zA-Z]/){
-		$n->set_name('');
-	}
+	$tree->visit(sub{
+		my $n = shift;
+		$n->set_name('') if $n->is_internal and $n->get_name =~ /[a-zA-Z]/;
+	});
 	return $tree;
 }
 
