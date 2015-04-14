@@ -1,8 +1,6 @@
 package Bio::SUPERSMART::App::smrt::Command::BBinfer;
-
 use strict;
 use warnings;
-
 use Bio::Phylo::IO qw(parse parse_tree);
 use Bio::Phylo::Factory;
 use Bio::Phylo::PhyLoTA::Config;
@@ -10,7 +8,8 @@ use Bio::Phylo::PhyLoTA::Service::TreeService;
 use Bio::Tools::Run::Phylo::Raxml;
 use Bio::Tools::Run::Phylo::ExaML;
 use Bio::Tools::Run::Phylo::ExaBayes;
-	
+use Bio::Phylo::Util::Exceptions 'throw';
+    
 use base 'Bio::SUPERSMART::App::SubCommand';
 use Bio::SUPERSMART::App::smrt qw(-command);
 
@@ -26,348 +25,189 @@ smrt bbinfer [-h ] [-v ] [-w <dir>] -s <file> -t <file> [-i <tool>] [-o <file>]
 
 =head1 DESCRIPTION
 
-Given an input supermatrix (in interleaved PHYLIP format), infers either a maximum likelihood tree 
-using ExaML or RAxML or uses ExaBayes to sample a posterior distribution of trees. If ExaBayes is used, a 
-'consense' tree is calculated from the posterior. The tree resulting from this script is written to file.
-For tree inference with examl, an NCBI classification tree (in Newick format) has to be supplied 
-as a starting tree. ExaML and ExaBayes produce many intermediate checkpoint files, for which a
-directory location needs to be specified. 
+Given an input supermatrix (in interleaved PHYLIP format), infers either a maximum 
+likelihood tree using ExaML or RAxML or uses ExaBayes to sample a posterior distribution 
+of trees. If ExaBayes is used, a 'consense' tree is calculated from the posterior. The 
+tree resulting from this script is written to file. For tree inference with examl, an NCBI 
+classification tree (in Newick format) has to be supplied as a starting tree. ExaML and 
+ExaBayes produce many intermediate checkpoint files, for which a directory location needs 
+to be specified. 
 
 =cut
 
-
+# define additional command line arguments
 sub options {
-	my ($self, $opt, $args) = @_;		
-	my $outfile_default = "backbone.dnd";
-	my $tool_default = "examl";
-	return (
-		["supermatrix|s=s", "matrix of concatenated multiple sequece alignments as produced by 'smrt bbmerge'", { arg => "file", mandatory => 1}],	
-		["starttree|t=s", "starting tree for ExaML tree inference. If not given, a random starting tree is generated", { arg => "file", mandatory => 1}],
-		["inferencetool|i=s", "software tool for backbone inference (RAxML, ExaML or ExaBayes), defaults to $tool_default", {default => $tool_default, arg => "tool"}],			
-		["bootstrap|b", "do a bootstrap analysis and add the support values to the backbone tree. Currently only supported for inferencetool RAxML", {}],
-		["ids|n", "Return tree with NCBI identifiers instead of taxon names", {}],		
-		["outfile|o=s", "name of the output tree file (in newick format), defaults to '$outfile_default'", {default => $outfile_default, arg => "file"}],			
+    my ($self, $opt, $args) = @_;       
+    my $outfile_default = "backbone.dnd";
+    my $tool_default = "examl";
+    return (
+        ["supermatrix|s=s", "matrix of concatenated multiple sequece alignments as produced by 'smrt bbmerge'", { arg => "file", mandatory => 1}],  
+        ["starttree|t=s", "starting tree for ExaML tree inference. If not given, a random starting tree is generated", { arg => "file", mandatory => 1}],
+        ["inferencetool|i=s", "software tool for backbone inference (RAxML, ExaML or ExaBayes), defaults to $tool_default", {default => $tool_default, arg => "tool"}],         
+        ["bootstrap|b", "do a bootstrap analysis and add the support values to the backbone tree. Currently only supported for inferencetool RAxML", {}],
+        ["ids|n", "Return tree with NCBI identifiers instead of taxon names", {}],      
+        ["outfile|o=s", "name of the output tree file (in newick format), defaults to '$outfile_default'", {default => $outfile_default, arg => "file"}],           
 
-	);	
+    );  
 }
 
+# validate command line arguments
 sub validate {
-	my ($self, $opt, $args) = @_;
+    my ($self, $opt, $args) = @_;
 
-	my $sm = $opt->supermatrix;
-	my $st = $opt->starttree;
-	my $tool = $opt->inferencetool;
-	
-	$self->usage_error("need supermatrix") if not $sm;
-	$self->usage_error("file $sm does not exist") unless (-e $sm);
-	$self->usage_error("file $sm is empty") unless (-s $sm);
+    my $sm = $opt->supermatrix;
+    my $st = $opt->starttree;
+    my $tool = $opt->inferencetool;
+    
+    $self->usage_error("need supermatrix") if not $sm;
+    $self->usage_error("file $sm does not exist") unless (-e $sm);
+    $self->usage_error("file $sm is empty") unless (-s $sm);
 }
-
 
 sub run {
-	my ($self, $opt, $args) = @_;		
-		
-	# collect command-line arguments
-	my $supermatrix = $opt->supermatrix;
-	my $outfile = $self->outfile;
-	my $starttree = $opt->starttree;
-	my $inferencetool = $opt->inferencetool;
-	
-	# instantiate helper objects
-	my $ts = Bio::Phylo::PhyLoTA::Service::TreeService->new;
-	my $logger = $self->logger;
-	
-	my $backbone;
-	
-	if ( lc $inferencetool eq "examl") {
-		$backbone = $self->_infer_examl ($supermatrix, $starttree);
-	}	
-	elsif ( lc $inferencetool eq "raxml") {
-		$backbone = $self->_infer_raxml ($supermatrix, $opt->bootstrap);
-	}	
-	elsif ( lc $inferencetool eq "exabayes") {
-		$backbone = $self->_infer_exabayes ($supermatrix);
-	}
-	
-	# read generated backbone tree from file
-	my $bbtree = parse_tree(
-		'-format' => 'newick',
-		'-file'   => $backbone,
-	)->resolve;
-
-	$bbtree = $ts->remap_to_name($bbtree) if not $opt->ids;
-	
-	$ts->remove_internal_names($bbtree);
-		
-	open my $outfh, '>', $outfile or die $!;
-	print $outfh $bbtree->to_newick('-nodelabels'=>1);
-	close $outfh;
-	
-	$logger->info("DONE, results written to $outfile");
-	
-	return 1;
+    my ( $self, $opt, $args ) = @_;     
+        
+    # collect command-line arguments
+    my $supermatrix = $opt->supermatrix;
+    my $starttree   = $opt->starttree;
+    my $bootstrap   = $opt->bootstrap;
+    my $toolname    = lc $opt->inferencetool;
+    my $outfile     = $self->outfile;   
+    
+    # check to see if we should bless into a subclass instead
+    if ( ref($self) !~ /$toolname$/ ) {
+        my $subclass = __PACKAGE__ . '::' . $toolname;
+        eval "require $subclass";
+        $@ and throw 'ExtensionError' => "Can't load $toolname wrapper: ".$@;
+        bless $self, $subclass;
+    }
+    
+    # instantiate and configure helper objects
+    my $ts   = Bio::Phylo::PhyLoTA::Service::TreeService->new;
+    my $tool = $self->_create;
+    $self->_configure( $tool, $self->config );
+    
+    # run the analysis  
+    my $backbone = $self->_run(
+        'tool'   => $tool,
+        'matrix' => $supermatrix,
+        'tree'   => $starttree,
+        'boot'   => $bootstrap,
+    );  
+    
+    # read generated backbone tree from file
+    my $bbtree = parse_tree(
+        '-format' => 'newick',
+        '-file'   => $backbone,
+    );
+    
+    # map IDs to names, if requested
+    if ( not $opt->ids ) {
+        $bbtree = $ts->remap_to_name($bbtree);
+    }
+    
+    # write output file
+    open my $outfh, '>', $outfile or die $!;
+    print $outfh $bbtree->to_newick( '-nodelabels' => 1 );
+    close $outfh;   
+    $self->logger->info("DONE, results written to $outfile");
+    
+    return 1;
 }
 
-
-# infers a backbone tree with raxml and returns the tree file
-sub _infer_raxml {
-	my ($self, $supermatrix, $bootstrap) = @_;
-	
-	my $config = Bio::Phylo::PhyLoTA::Config->new;
-	my $ts = Bio::Phylo::PhyLoTA::Service::TreeService->new;
-	my $logger = $self->logger;
-	
-	my $tool = Bio::Tools::Run::Phylo::Raxml->new( -N => $config->RAXML_RUNS, -p => $config->RANDOM_SEED, -T => $config->NODES );			
-	$tool->outfile_name("out");   			
-	$tool->w( $tool->tempdir );
-	$tool->m("GTRGAMMA");	
-	
-	my $treefile = File::Spec->catfile( ($tool->w), 'RAxML_bestTree.' . $tool->outfile_name );
-	if ( $bootstrap ) {
-		# set rapid bootstrap analysis
-		$tool->f('a');		
-		# bootstrap random seed 
-		$tool->x($config->RANDOM_SEED);			
-		$treefile = File::Spec->catfile( ($tool->w), 'RAxML_bipartitions.' . $tool->outfile_name );		
-	}
-		
-	my $bptree = $tool->run($supermatrix);		
-	##$tool->cleanup;
-	
-	$logger->fatal('RAxML inference failed; outfile not present') if not -e $treefile; 
-
-	return $treefile;	
-
+# instantiates and configures the wrapper object,
+# returns the instantiated wrapper
+sub _create {
+    throw 'NotImplemented' => "missing _create method in child class " . ref(shift);
 }
 
-# infers a backbone tree with examl and returns the tree file
-sub _infer_examl {
-	my ($self, $supermatrix, $starttree) = @_;
+# provides the $config object to the wrapper so that settings defined in $config
+# object can be applied to the wrapper
+sub _configure {
+    throw 'NotImplemented' => "missing _confgure method in child class " . ref(shift);
+}
 
-	my $config = Bio::Phylo::PhyLoTA::Config->new;
+# runs the analysis on the provided supermatrix. can potentially be run multiple
+# times (in parallel?) to do bootstrapping. returns a tree file.
+sub _run {
+    throw 'NotImplemented' => "missing _run method in child class " . ref(shift);
+}
 
-	my $workdir = $self->workdir;
-	my $tool = Bio::Tools::Run::Phylo::ExaML->new;
-	
-	my $logger = $self->logger;
-	my $outfile = $self->outfile;
-	
-	my $ts = Bio::Phylo::PhyLoTA::Service::TreeService->new;
-	
-	# set outfile name
-	$logger->info("going to create output file $outfile");
-	$tool->outfile_name($outfile);
-	
-	# set working directory
-	$logger->info("going to use working directory $workdir");
-	$tool->work_dir($workdir);
-	
-	# set mpirun location
-	$logger->info("going to use mpirun executable ".$config->MPIRUN_BIN);
-	$tool->mpirun($config->MPIRUN_BIN);
-	
-	# set number of nodes
-	$logger->info("setting number of MPI nodes ".$config->NODES);
-	$tool->nodes($config->NODES);
-	
-	# set to quiet
-	#$logger->info("setting backbone tool to requested verbosity");
-	#$tool->quiet('-v');
-	
-	$logger->info("going to use executable ".$config->EXAML_BIN);
-    $tool->executable($config->EXAML_BIN);
+sub _make_usertree {
+    my ($self, $supermatrix, $commontree) = @_;
+    my $logger   = $self->logger;
+    my $ts       = Bio::Phylo::PhyLoTA::Service::TreeService->new;
+    my @tipnames = $ts->read_tipnames($supermatrix);
+    
+    # this will be the tree object to write to file         
+    my $tree;
+    
+    # process the common tree to the right set of tips, resolve it,
+    # remove unbranched internals (due to taxonomy) and remove the root
+    if ( $commontree ) {
+    
+        # read the common tree, map names to IDs, 
+        # only retain tips in supermatrix
+        $tree = parse_tree(
+            '-format' => 'newick',
+            '-file'   => $commontree,
+        );
+        $ts->remap_to_ti( $tree );
+        $tree->keep_tips( \@tipnames );
+            
+        # it can occur that a taxon that has been chosen as an exemplar is
+        # not in the classification tree. For example, if a species has one subspecies,
+        # but the species and not the subspecies is an exemplar. Then this node
+        # is an unbranched internal and not in the classification tree. We therefore
+        # add these node(s) to the starting tree
+        my @terminals = @{ $tree->get_terminals };
+        if ( @terminals != @tipnames ) {
+            $logger->warn("tips mismatch: ".scalar(@tipnames)."!=".scalar(@terminals));
 
-    # set parser location
-	$logger->info("going to use parser executable ".$config->EXAML_PARSER_BIN);
-    $tool->parser($config->EXAML_PARSER_BIN);
-
-    # set substitution model
-    $logger->info("setting substitution model ".$config->EXAML_MODEL);
-    $tool->m($config->EXAML_MODEL);
-
-	# set random seed
-	$tool->p($config->RANDOM_SEED); 
-
-    # here we need to read the names from the phylip file and adjust the
-    # common tree accordingly: it must only retain the taxa in the supermatrix,
-    # and it must be fully resolved.
-		
-	my @tipnames = $ts->read_tipnames($supermatrix);
-	
-	my $tree;
-	if ($starttree) {
-
-		$tree = parse(
-	                '-format' => 'newick',
-	                '-file'   => $starttree,
-	        )->first;
-	
-	    $ts->remap_to_ti($tree);
-			           
-	    $tree->keep_tips( \@tipnames )
-	            ->resolve
-	            ->remove_unbranched_internals
-	            ->deroot;		
-	}
-	else {
-		$logger->info("No starttree given in argument for ExaML inference. Generating random starting tree.");	
-		$tree = $self->_make_random_starttree(\@tipnames);	
-	}
-	
-	my @terminals = @{$tree->get_terminals()};
-	
-	# it can occur that a taxon which has been chosen as an exemplar is
-	#  not in the classification tree. For example, if a species has one subspecies,
-	#  but the species and not the subspecies is an exemplar. Then this node
-	#  is an unbranched internal and not in the classification tree. We therefore
-	#  add a node to the starting tree
-
-	if ( not scalar(@terminals) == scalar(@tipnames) ) {
-		$logger->warn("Number of taxa in supermatrix (" . scalar(@tipnames) .  
-			") does not match number of taxa in starting tree ("
-			 . scalar(@terminals) . "). Could one of the exemplars be an internal node?");
-
-		# get taxa that are in the supermatrix but not in the classification tree
-		
-		my @terminal_ids = map{ $_->get_name } @terminals;	
-		my %diff;
-		@diff {@terminal_ids} = ();
-		my @diffs =  grep !exists($diff{$_}), @tipnames;
-		
-		# insert new node into starting tree
-		
-		my $fac = Bio::Phylo::Factory->new;
-		foreach my $d (@diffs){
-			$logger->warn("Adding node $d (" . $ts->find_node($d)->get_name . ") to starting tree");
-			my $node = $fac->create_node('-guid' => $d, '-name' => $d);
-			$node->set_parent(@{$tree->get_internals}[0]);
-			$tree->insert($node);
-			$tree->resolve;
-		}	
-	}
-
-	my $intree = File::Spec->catfile( $workdir, 'user.dnd' );
-    $tree->resolve;
+            # insert unseen nodes into starting tree        
+            my %seen = map { $_->get_name => 1 } @terminals;        
+            my $fac  = Bio::Phylo::Factory->new;
+            my ($p)  = @{ $tree->get_internals };
+            for my $d ( grep { ! $seen{$_} } @tipnames ) {
+                $logger->warn("Adding node $d (" . $ts->find_node($d)->get_name . ") to starting tree");
+                my $node = $fac->create_node( '-name' => $d );
+                $node->set_parent($p);
+                $tree->insert($node);
+            }
+        }
+        
+        # finalize the tree
+        $tree->resolve->remove_unbranched_internals->deroot;
+    }
+    
+    # simulate a random tree
+    else {
+        $logger->info("No starttree given in argument for ExaML inference. Generating random starting tree.");  
+        $tree = $self->_make_random_starttree(\@tipnames);  
+    }
+    
+    # write to file
+    my $intree = File::Spec->catfile( $self->workdir, 'user.dnd' );
     open my $fh, '>', $intree or die $!;
     print $fh $tree->to_newick();
-	close $fh;
-	$logger->info("Writing starting tree for examl inference to $intree");
-	
-	my $backbone = $tool->run(
-	        '-phylip' => $supermatrix,
-	        '-intree' => $intree,
-	 );
-	 $logger->info("examl tree inference was succesful") if $backbone;
-	return $backbone;
-}
-
-# infers a backbone tree with exabayes and returns the tree file
-sub _infer_exabayes {
-	my ($self, $supermatrix) = @_;
-
-	my $config = Bio::Phylo::PhyLoTA::Config->new;
-
-	my $workdir = $self->workdir;
-	my $tool = Bio::Tools::Run::Phylo::ExaBayes->new;
-	
-	my $logger = $self->logger;
-	my $outfile = $self->outfile;
-	
-	# set outfile name
-	$logger->info("going to create output file $outfile");
-	$tool->outfile_name($outfile);
-	
-	# set working directory
-	$logger->info("going to use working directory $workdir");
-	$tool->work_dir($workdir);
-	
-	# set mpirun location
-	$logger->info("going to use mpirun executable ".$config->MPIRUN_BIN);
-	$tool->mpirun($config->MPIRUN_BIN);
-	
-	# set number of nodes
-	$logger->info("setting number of MPI nodes ".$config->NODES);
-	$tool->nodes($config->NODES);
-	
-	# set to quiet
-	#$logger->info("setting backbone tool to requested verbosity");
-	#$tool->quiet('-v');
-
-    # set exabayes location
-    $logger->info("going to use executable ".$config->EXABAYES_BIN);
-    $tool->executable($config->EXABAYES_BIN);
-        
-    # set parser location
-    $logger->info("going to use parser executable ".$config->EXABAYES_PARSER_BIN);
-    $tool->parser($config->EXABAYES_PARSER_BIN);
-        
-    # set numbet of indepedent runs
-    my $numruns = 2;
-    $logger->info("going to perform $numruns independent runs");
-    $tool->numRuns($numruns);
-
-    # set number of coupled chains
-    my $cupchains = 2;
-    $logger->info("setting coupled chains to $cupchains");
-    $tool->numCoupledChains($cupchains);
-        
-    # set number of generations
-    my $numgen = 1_00_000;
-    $logger->info("setting number of generations to $numgen");
-    $tool->numGen($numgen);
-        
-    # set parsimony start
-    $logger->info("setting ExaBayes to start from parsimony tree");
-    $tool->parsimonyStart('true');
-        
-    # set run id to current process id
-    $tool->run_id("infer_backbone_".$$);
-        
-    # set random seed to 1
-    $tool->seed($config->RANDOM_SEED);
-        
-    # set oufile format
-    $logger->info("setting outfile format to 'newick'");
-    $tool->outfile_format("newick");
-        
-    # set binary of consense program
-    $logger->info("setting consense binary");
-    $tool->consense_bin($config->EXABAYES_CONSENSE_BIN);
-        
-    # set burnin fraction
-    $logger->info("setting burnin fraction to ".$config->BURNIN);
-    $tool->burnin_fraction($config->BURNIN);
-
-    # set mode to zero (faster, but takes more memory)
-    $logger->info("setting exabayes 'mode' argument to zero ");
-    $tool->mode(0);
-        
-    # try to save memory with SEV technique
-    #$logger->info("trying to save memory with SEV technique in exabayes run");
-        #$tool->S(1);                	
-
-	my $backbone = $tool->run(
-	        '-phylip' => $supermatrix,
-	    );
-		
-	return $backbone;
+    return $intree; 
 }
 
 sub _make_random_starttree {
-	my ( $self, $tipnames) = @_;
-	my $fac = Bio::Phylo::Factory->new;
-	my $taxa  = $fac->create_taxa;
-	my $tree = $fac->create_tree;
-	my $rootnode = $fac->create_node('-name'=>'root');
-	$tree->insert($rootnode);
-	for my $t (@{$tipnames}) {
-		my $node = $fac->create_node('-name'=>$t, '-branch_length'=>0);
-		$node->set_parent($rootnode);
-		$tree->insert($node);
-	}
-	$tree->resolve;
-	$self->logger->info($tree->to_newick);
-	return $tree;
+    my ( $self, $tipnames) = @_;
+    my $fac  = Bio::Phylo::Factory->new;
+    my $taxa = $fac->create_taxa;
+    my $tree = $fac->create_tree;
+    my $rootnode = $fac->create_node( '-name' => 'root' );
+    $tree->insert($rootnode);
+    for my $t (@{$tipnames}) {
+        my $node = $fac->create_node( '-name' => $t, '-branch_length' => 0 );
+        $node->set_parent($rootnode);
+        $tree->insert($node);
+    }
+    $tree->resolve;
+    $self->logger->info($tree->to_newick);
+    return $tree;
 }
 
 1;
