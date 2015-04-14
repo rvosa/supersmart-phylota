@@ -82,7 +82,8 @@ sub run {
         bless $self, $subclass;
     }
     
-    # instantiate and configure wrapper object
+    # instantiate and configure helper objects
+    my $ts   = Bio::Phylo::PhyLoTA::Service::TreeService->new;
     my $tool = $self->_create;
     $self->_configure( $tool, $self->config );
     
