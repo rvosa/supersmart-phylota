@@ -33,17 +33,19 @@ sub _configure {
 }
 
 sub _create {
-    my $self   = shift;
-    my $logger = $self->logger; 
-    my $tool   = Bio::Tools::Run::Phylo::ExaML->new;
+    my $self    = shift;
+    my $logger  = $self->logger; 
+    my $outfile = $self->outfile;
+    my $workdir = $self->workdir;
+    my $tool    = Bio::Tools::Run::Phylo::ExaML->new;    
 
     # set outfile name
     $logger->info("going to create output file $outfile");
-    $tool->outfile_name($self->outfile);
+    $tool->outfile_name($outfile);
     
     # set working directory
     $logger->info("going to use working directory $workdir");
-    $tool->work_dir($self->workdir);
+    $tool->work_dir($workdir);
 
     return $tool;
 }
