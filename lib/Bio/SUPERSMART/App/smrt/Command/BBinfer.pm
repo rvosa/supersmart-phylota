@@ -72,9 +72,8 @@ sub run {
     my $starttree   = $opt->starttree;
     my $bootstrap   = $opt->bootstrap;
     my $toolname    = lc $opt->inferencetool;
-    my $outfile     = $self->outfile;   
     
-    # check to see if we should bless into a subclass instead
+    # check to see if we should become an instance of a subclass instead
     if ( ref($self) !~ /$toolname$/ ) {
         my $subclass = __PACKAGE__ . '::' . $toolname;
         eval "require $subclass";
@@ -82,18 +81,23 @@ sub run {
         bless $self, $subclass;
     }
     
-    # instantiate and configure helper objects
-    my $ts   = Bio::Phylo::PhyLoTA::Service::TreeService->new;
+    # instantiate and configure wrapper object
     my $tool = $self->_create;
     $self->_configure( $tool, $self->config );
     
-    # run the analysis  
+    # run the analysis, process results
     my $backbone = $self->_run(
         'tool'   => $tool,
         'matrix' => $supermatrix,
         'tree'   => $starttree,
         'boot'   => $bootstrap,
     );  
+    $self->_process_results($backbone, !$opt->ids);
+    return 1;
+}
+
+sub _process_result {
+    my ( $self, $backbone, $remap ) = @_;
     
     # read generated backbone tree from file
     my $bbtree = parse_tree(
@@ -102,17 +106,17 @@ sub run {
     );
     
     # map IDs to names, if requested
-    if ( not $opt->ids ) {
-        $bbtree = $ts->remap_to_name($bbtree);
+    if ( $remap ) {
+        my $ts = Bio::Phylo::PhyLoTA::Service::TreeService->new;
+        $bbtree = $ts->remap_to_name($bbtree); 
     }
     
     # write output file
+    my $outfile = $self->outfile;
     open my $outfh, '>', $outfile or die $!;
     print $outfh $bbtree->to_newick( '-nodelabels' => 1 );
     close $outfh;   
     $self->logger->info("DONE, results written to $outfile");
-    
-    return 1;
 }
 
 # instantiates and configures the wrapper object,
