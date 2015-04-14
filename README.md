@@ -32,5 +32,5 @@ BUILD STATUS
 ------------
 Currently, the build status at Travis is:
 
-[![Build Status](https://travis-ci.org/naturalis/supersmart?branch=master)](https://travis-ci.org/naturalis/supersmart)
+[![Build Status](https://travis-ci.org/naturalis/supersmart.svg?branch=master)](https://travis-ci.org/naturalis/supersmart)
 
