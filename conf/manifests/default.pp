@@ -2,12 +2,12 @@
 # for more information http://www.supersmart-project.org
 
 # set user and default paths for storing data, tools and source code
-$username = "vagrant"
-$supersmart_dir	= "/home/${username}/SUPERSMART"
-$tools_dir		= "${supersmart_dir}/tools"
-$tools_bin_dir	= "${tools_dir}/bin"
-$src_dir		= "${supersmart_dir}/src"
-$data_dir		= "${supersmart_dir}/data"
+$username       = "vagrant"
+$supersmart_dir = "/home/${username}/SUPERSMART"
+$tools_dir      = "${supersmart_dir}/tools"
+$tools_bin_dir  = "${tools_dir}/bin"
+$src_dir        = "${supersmart_dir}/src"
+$data_dir       = "${supersmart_dir}/data"
 
 # update the $PATH environment variable
 Exec {
@@ -149,12 +149,12 @@ exec {
 
    	# add bin directory for all required tools and smrt executables to PATH
   	"make_bindir_sh":
-    		command => "echo 'export PATH=\$PATH:${tools_bin_dir}:${src_dir}/supersmart/app' > supersmart-tools-bin.sh",
+    		command => "echo 'export PATH=\$PATH:${tools_bin_dir}:${src_dir}/supersmart/script' > supersmart-tools-bin.sh",
     		cwd     => "/etc/profile.d",
     		creates => "/etc/profile.d/supersmart-tools-bin.sh",
     		require => File[ $tools_bin_dir ];
   	"make_bindir_csh":
-    		command => "echo 'setenv PATH \$PATH:${tools_bin_dir}:${src_dir}/supersmart/app' > supersmart-tools-bin.csh",
+    		command => "echo 'setenv PATH \$PATH:${tools_bin_dir}:${src_dir}/supersmart/script' > supersmart-tools-bin.csh",
     		cwd     => "/etc/profile.d",
     		creates => "/etc/profile.d/supersmart-tools-bin.csh",
     		require => File[ $tools_bin_dir ];
@@ -281,7 +281,7 @@ exec {
 		creates => "/etc/profile.d/bioperl_run.csh",
 		require => Exec[ 'clone_bioperl_run' ];
 
-  	#install perl package App:Cmd
+  	# install perl package App::Cmd
    	"clone_app_cmd":
    		command => "git clone https://github.com/rjbs/App-Cmd.git",
    		cwd     => $tools_dir,
@@ -298,7 +298,7 @@ exec {
     		creates => "/etc/profile.d/app_cmd.csh",
     		require => Exec[ 'clone_app_cmd' ];
 
-  	#install perl package String::RewritePrefix, needed by App::Cmd
+  	# install perl package String::RewritePrefix, needed by App::Cmd
   	"download_string_rewrite_prefix":
     		command => "wget http://search.cpan.org/CPAN/authors/id/R/RJ/RJBS/String-RewritePrefix-0.006.tar.gz",
     		cwd     => $tools_dir,
@@ -320,7 +320,7 @@ exec {
     		creates => "/etc/profile.d/string_rewrite_prefix.csh",
     		require => Exec[ 'unzip_string_rewrite_prefix' ];
 
-   	#install perl package Math::Random
+   	# install perl package Math::Random
   		"download_math_random":
     		command => "wget http://search.cpan.org/CPAN/authors/id/G/GR/GROMMEL/Math-Random-0.70.tar.gz",
     		cwd     => $tools_dir,
