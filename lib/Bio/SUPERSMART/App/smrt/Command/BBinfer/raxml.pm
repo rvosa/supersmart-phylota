@@ -26,7 +26,8 @@ sub _configure {
 
 sub _run {
     my ( $self, %args ) = @_;
-    my $t = $args{'tool'};
+    my $t      = $args{'tool'};
+    my $logger = $self->logger;
     
     # create output file name
     my $treefile = File::Spec->catfile( $t->w, 'RAxML_bestTree.' . $t->outfile_name );
@@ -38,7 +39,7 @@ sub _run {
         $t->f('a');     
         
         # bootstrap random seed 
-        $t->x($config->RANDOM_SEED);            
+        $t->x($self->config->RANDOM_SEED);            
         $treefile = File::Spec->catfile( $t->w, 'RAxML_bipartitions.' . $t->outfile_name );     
     }   
 
