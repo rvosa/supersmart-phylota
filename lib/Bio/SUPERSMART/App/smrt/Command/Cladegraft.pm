@@ -27,7 +27,7 @@ infered independently. Given a directory as argument 'workdir', traverses it, lo
 and files that match the pattern clade*.nex. These must be NEXUS files. 
 Given a single NEXUS file file as 'cladetree' argument, grafts this tree onto the backbone.
 The resulting tree is exported in the NEWICK format.
-
+    
 =cut
 
 sub options {
@@ -60,7 +60,7 @@ sub validate {
 	if (! $opt->cladetree){
 		my $workdir = $self->workdir;
 		if ( ! -d glob "$workdir/clade*" ){			
-        	$self->usage_error("no cladetree argument given and no clade folders found in working directory $workdir");
+			$self->usage_error("no cladetree argument given and no clade folders found in working directory $workdir");
 		}
 	}
 }
@@ -73,7 +73,7 @@ sub run{
 	my $cladetree = $opt->cladetree || 0;
 	my $outfile = $self->outfile;
 	my $workdir = $self->workdir;
- 
+	
 	# instantiate helper objects
 	my $ts = Bio::Phylo::PhyLoTA::Service::TreeService->new;
 	my $logger = $self->logger;
@@ -83,22 +83,22 @@ sub run{
                 '-file'   => $backbone,
                 '-format' => 'newick',
             )->first;
-		
+	
 	# filenames for nexus trees written by BEAST
-    $ts->remap_to_ti($backbone_tree);
-
+	$ts->remap_to_ti($backbone_tree);
+	
 	my $grafted = $backbone_tree;
-         
-    # graft single clade tree 
-    if ( $cladetree=~ /(clade\d+)/ ) {
+	
+	# graft single clade tree 
+	if ( $cladetree=~ /(clade\d+)/ ) {
     	$logger->info("Grafting tree $cladetree");
     	my $stem = $1;
- 		$grafted = $self->_graft_single_tree( $cladetree, $grafted, $stem, $ts );
+	$grafted = $self->_graft_single_tree( $cladetree, $grafted, $stem, $ts );
     }
-    # graft all clades in working directory
-    else {
-    	$logger->info("Grafting all clades in working directory $workdir");
-		opendir my $dh, $workdir or die $!;
+	# graft all clades in working directory
+	else {
+	    $logger->info("Grafting all clades in working directory $workdir");
+	opendir my $dh, $workdir or die $!;
 		while( my $entry = readdir $dh ) {                        
 	    	if ( $entry =~ /clade\d+/ && -d "${workdir}/${entry}" ) {                                
 	        	# this should be a nexus file			
@@ -117,7 +117,7 @@ sub run{
     $ts->remove_internal_names($grafted);
 
     open my $outfh, '>', $outfile or die $!;        
-    print $outfh $grafted->to_newick;
+    print $outfh $grafted->to_newick( 'nodelabels' => 1 );
     close $outfh;	
 
 	$logger->info("DONE, results written to $outfile");
@@ -138,7 +138,7 @@ sub _graft_single_tree {
 	$ts->remap_to_name($remapped_consensus);
 	$tree->resolve;
 	open my $fhr, '>', $stem."-remapped.dnd" or die $!;
-	print $fhr $remapped_consensus->to_newick;
+	print $fhr $remapped_consensus->to_newick('-nodelabels' =>1);
 	close $fhr;
                 
 	# finally graft clade tree onto backbone
