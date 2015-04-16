@@ -73,31 +73,36 @@ sub run {
 		my @names = split(',', $taxa);    
 		for my $n (@names) {
 			# taxa to prune could be higher level, so search all child taxa until lowest rank
-			my %all_taxa = map {$_=~s/_/|/g; $_=~s/\ /_/g; $_=>1} $mts->expand_taxa([$n], 'Forma');
-			#print "Found " . scalar(keys(%all_taxa)) . " taxa \n";
-			#use Data::Dumper;
-			#print Dumper(\%all_taxa);
+			my %all_taxa = map {$_=~s/_/|/g; $_=~s/\ /_/g; $_=~s/\'|\"//g;  $_=>1} $mts->expand_taxa([$n], 'Forma');
+
 			# select the taxa which are present in the tree
-			my @nodes = grep {exists ($all_taxa{$_->get_name}) } @{$tree->get_terminals};				    
-			#print "Number of nodes : " . scalar(@nodes) . "\n";
-			my @to_prune = map {$_->get_name} @nodes; 				    
-			
+			my @to_prune;
+			for my $node ( @{$tree->get_terminals} ) {
+				my $terminal_name = $node->get_name;
+				$terminal_name =~s/\'|\"//g;
+				if ( $all_taxa{$terminal_name} ) {
+					push @to_prune, $node->get_name;
+				}
+			}
 			# prune
 			$logger->info('Pruning ' . scalar (@to_prune) . " terminals from tree for taxon $n");				    
 			$tree->prune_tips(\@to_prune);
 		}
 	}      
 	if ( $opt->negative_branches ) {
+		my $count = 0;
 		$tree->visit(sub{ 
 			my $node = shift;
 			my $bl = $node->get_branch_length || 0;
 			if ( $bl < 0 ) {
 				my @terminals = map {$_->get_name} @{$node->get_terminals};
+				$count += scalar @terminals;
 				$logger->info("Found negative branch length $bl, following tips will be removed: " . join(', ', @terminals));
 				 $node->get_parent->prune_child( $node );
 			}
 			     });
 		$tree->remove_unbranched_internals;
+		$logger->info("Removed $count terminals while pruning negative branches");
 	}
 
 	my $ntax_pruned = $tree->get_ntax;
