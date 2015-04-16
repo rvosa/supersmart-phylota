@@ -36,11 +36,12 @@ sub options {
     my ($self, $opt, $args) = @_;       
     my $outfile_default = "backbone.dnd";
     my $tool_default = "examl";
+    my $boot_default = 1;
     return (
         ["supermatrix|s=s", "matrix of concatenated multiple sequece alignments as produced by 'smrt bbmerge'", { arg => "file", mandatory => 1}],  
         ["starttree|t=s", "starting tree for ExaML tree inference. If not given, a random starting tree is generated", { arg => "file", mandatory => 1}],
         ["inferencetool|i=s", "software tool for backbone inference (RAxML, ExaML or ExaBayes), defaults to $tool_default", {default => $tool_default, arg => "tool"}],         
-        ["bootstrap|b", "do a bootstrap analysis and add the support values to the backbone tree. Currently only supported for inferencetool RAxML", {}],
+        ["bootstrap|b=i", "number of bootstrap replicates. Will add the support values to the backbone tree. Not applicable to Bayesian methods.", { default => $boot_default }],
         ["ids|n", "Return tree with NCBI identifiers instead of taxon names", {}],      
         ["outfile|o=s", "name of the output tree file (in newick format), defaults to '$outfile_default'", {default => $outfile_default, arg => "file"}],           
 
@@ -83,14 +84,92 @@ sub run {
     $self->_configure( $tool, $self->config );
     
     # run the analysis, process results
-    my $backbone = $self->_run(
-        'tool'   => $tool,
-        'matrix' => $supermatrix,
-        'tree'   => $starttree,
-        'boot'   => $bootstrap,
-    );  
-    $self->_process_results($backbone, !$opt->ids);
+    for my $i ( 1 .. $bootstrap ) {
+    	my $replicate = $self->_bootstrap( $supermatrix, $i );
+		my $backbone = $self->_run(
+			'tool'   => $tool,
+			'matrix' => $replicate,
+			'tree'   => $starttree,
+		);  
+		system( 'cat', $backbone, '>>', $self->outfile );
+    }
+    $self->_process_results($self->outfile, !$opt->ids);
     return 1;
+}
+
+# given an input matrix file and a bootstrap replicate index, creates a 
+# bootstrapped version of the input, with the replicate index as a suffix
+sub _bootstrap {
+	my ( $matrix, $replicate ) = @_;
+	
+	# read interleaved PHYLIP
+	my ( @taxa, %data, $ntax, $nchar, $line );
+	open my $fh, '<', $matrix or die $!;
+	LINE: while(<$fh>) {
+		chomp;
+		if ( not $ntax and not $nchar ) {
+			if ( /(\d+)\s+(\d+)/ ) {
+				( $ntax, $nchar ) = ( $1, $2 );
+				$line = 0;
+				next LINE;
+			}
+		}
+		if ( $line < $ntax ) {
+			if ( /^\s*(\S+)\s(.+)$/ ) {
+				my ( $taxon, $data ) = ( $1, $2 );
+				$data =~ s/\s//g;
+				push @taxa, $taxon;
+				$data{$taxon} = $data;
+				$line++;
+			}
+		}
+		else {
+			s/\s//g;
+			my $i = $line % $ntax;
+			$data{$taxa[$i]} .= $_;
+			$line++;
+		}	
+	}
+	
+	# make a bootstrapped matrix
+	my $i = 0;
+	my %boot = map { $_ => [] } @taxa;
+	while ( $i < $nchar ) {
+		my $char = int rand $nchar;
+		for my $taxon ( @taxa ) {
+			my $state = substr $data{$taxon}, $char, 1;
+			push @{ $boot{$taxon} }, $state;
+		}	
+		$i++;
+	}
+	
+	# write interleaved PHYLIP
+	open my $out, '>', "${matrix}.${replicate}" or die $!;
+	my $written = 0;
+	while ( $written < $nchar ) {
+		if ( not $written ) {
+			print $out " $ntax $nchar\n";
+		}
+		for my $taxon ( @taxa ) {
+			my $seq = substr $data{$taxon}, $written, 60;
+			my $n = 10;    # $n is group size.
+			my @groups = unpack "a$n" x (length($seq)/$n) . "a*", $seq;
+			if ( not $written ) {
+				print $taxon;
+				print ' ' x ( 13 - length($taxon) );
+				print join ' ', @groups;
+				print "\n";				
+			}
+			else {
+				print ' ' x 13;
+				print join ' ', @groups;
+				print "\n";				
+			}
+		}
+		print "\n"; # blank line
+		$written += 60;
+	}
+	return "${matrix}.${replicate}";
 }
 
 # instantiates and configures the wrapper object,
