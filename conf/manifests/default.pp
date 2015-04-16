@@ -129,7 +129,7 @@ file {
    	"raxml_link":
     		path    => "${tools_bin_dir}/raxml",
     		ensure  => link,
-    		target  => "${tools_dir}/standard-RAxML/raxmlHPC-PTHREADS-AVX",
+    		target  => "${tools_dir}/standard-RAxML/raxmlHPC-PTHREADS-SSE3",
     		require => Exec["compile_raxml"];
    	"treepl_link":
 	  	path    => "${tools_bin_dir}/treePL",
@@ -401,9 +401,9 @@ exec {
     		creates => "${tools_dir}/standard-RAxML/",
         	require => Package[ 'git' ];
   	"compile_raxml":
-    		command => "make -f Makefile.AVX.PTHREADS.gcc LD_LIBRARY_PATH=/usr/lib",
+    		command => "make -f Makefile.SSE3.PTHREADS.gcc LD_LIBRARY_PATH=/usr/lib",
     		cwd     => "${tools_dir}/standard-RAxML/",
-    		creates => "${tools_dir}/standard-RAxML/raxmlHPC-PTHREADS-AVX",
+    		creates => "${tools_dir}/standard-RAxML/raxmlHPC-PTHREADS-SSE3",
     		require => Exec["clone_raxml"];
 
     	# install exabayes

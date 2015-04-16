@@ -6,8 +6,8 @@ use Bio::Phylo::Factory;
 use Bio::Phylo::PhyLoTA::Config;
 use Bio::Phylo::PhyLoTA::Service::TreeService;
 use Bio::Phylo::Util::Exceptions 'throw';
-use Bio::SUPERSMART::App::smrt qw(-command);    
 use base 'Bio::SUPERSMART::App::SubCommand';
+use Bio::SUPERSMART::App::smrt qw(-command);
 
 # ABSTRACT: inference of a genus-level backbone tree
 
