@@ -93,7 +93,7 @@ sub run{
 	if ( $cladetree=~ /(clade\d+)/ ) {
 		$logger->info("Grafting tree $cladetree");
 		my $stem = $1;
-		$grafted = $self->_graft_single_tree( $cladetree, $grafted, $stem, $ts );
+		$grafted = $self->_graft_single_tree( $grafted, $stem, $ts );
 	}
 	# graft all clades in working directory
 	else {
@@ -107,15 +107,18 @@ sub run{
 	    }
     }
     # save final tree with taxon names in newick format
-    $ts->remap_to_name($grafted);    
-    $grafted->resolve;
-    $ts->remove_internal_names($grafted);
 
+    $logger->info('Retreiving taxon names for final tree');
+    $ts->remap_to_name($grafted);    
+    #$grafted->resolve;
+    #$ts->remove_internal_names($grafted);
+	
     open my $outfh, '>', $outfile or die $!;        
     print $outfh $grafted->to_newick( 'nodelabels' => 1 );
     close $outfh;	
 
-	$logger->info("DONE, results written to $outfile");
+    $logger->info("DONE, results written to $outfile");	
+    
 }
 
 sub _graft_single_tree {
@@ -181,11 +184,25 @@ sub _graft_single_tree {
 		print $fhr $remapped_pruned->to_newick('-nodelabels' =>1);
 		close $fhr;		
 	}
-                
+
 	# finally graft clade tree onto backbone
 	my $grafted = $ts->graft_tree( $tree, $consensus );                
-	return $grafted;
+		
+        $grafted->visit(sub{
+                my $n = shift;
+                if ( $n->is_terminal ) {
+			my $id = $n->get_name;
+			if ($id=~m/\./){
+				die("Nodename $id is decimal!!!");
+			}
+                        my $dbnode = $ts->find_node($id);
+                        $logger->fatal("Could not find name for taxon id $id in database!") if not $dbnode;
+			
+
+		}
+		     });
 	
+	return $grafted;	
 }
 
 1;

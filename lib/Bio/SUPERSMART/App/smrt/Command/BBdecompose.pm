@@ -172,12 +172,15 @@ sub run{
 		
 			# assess for each set whether we have enough density
 			for my $i ( 0 .. $#set ) {
-				# do not count outgroup species for statistics
+
 				my @species = @{ $set[$i] };
-				
+				my @ingroup = grep { not /\*/ } @species;
+
 				my %seq;
 				my $distinct = 0;
-				for my $s ( @species ) {
+				
+				# do not count outgroup species for distinct species as they will be pruned later
+				for my $s ( @ingroup ) {
 					my @s = grep { /taxon\|$s[^\d]/ } keys %fasta;
 					if ( @s ) {
 						$seq{$s} = \@s;
@@ -186,7 +189,7 @@ sub run{
 				}				
 				# the fraction of distinct, sequenced species is high enough,
 				# and the total number exceeds two (i.e. there is some topology to resolve)
-				if ( ($distinct/scalar(@species)) >= $mdens && $distinct > 2 ) {
+				if ( ($distinct/scalar(@ingroup)) >= $mdens && $distinct > 2 ) {
 					$logger->info("$aln is informative and dense enough for clade $i");
 					
 					# write alignment 
