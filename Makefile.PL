@@ -18,6 +18,9 @@ WriteMakefile(
 		'XML::Twig'             => 0,
 		'HTML::Parser'          => 0,
 		'JSON'                  => 0,
+		'Bio::Phylo'            => 0,
+		'BioPerl'               => 0,
+		'BioPerl-Run'           => 0,
 		# 'Parallel::MPI::Simple' => 0,
 	}
 );
