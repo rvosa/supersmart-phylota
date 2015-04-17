@@ -100,7 +100,7 @@ sub run {
 # given an input matrix file and a bootstrap replicate index, creates a 
 # bootstrapped version of the input, with the replicate index as a suffix
 sub _bootstrap {
-	my ( $matrix, $replicate ) = @_;
+	my ( $self, $matrix, $replicate ) = @_;
 	
 	# read interleaved PHYLIP
 	my ( @taxa, %data, $ntax, $nchar, $line );
