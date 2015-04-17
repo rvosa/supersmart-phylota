@@ -91,25 +91,20 @@ sub run{
 	
 	# graft single clade tree 
 	if ( $cladetree=~ /(clade\d+)/ ) {
-    	$logger->info("Grafting tree $cladetree");
-    	my $stem = $1;
-	$grafted = $self->_graft_single_tree( $cladetree, $grafted, $stem, $ts );
-    }
+		$logger->info("Grafting tree $cladetree");
+		my $stem = $1;
+		$grafted = $self->_graft_single_tree( $cladetree, $grafted, $stem, $ts );
+	}
 	# graft all clades in working directory
 	else {
 	    $logger->info("Grafting all clades in working directory $workdir");
-	opendir my $dh, $workdir or die $!;
-		while( my $entry = readdir $dh ) {                        
-	    	if ( $entry =~ /clade\d+/ && -d "${workdir}/${entry}" ) {                                
-	        	# this should be a nexus file			
-	  			my $stem = "${workdir}/${entry}/${entry}";
-	            my $file = "${stem}.nex";
-	            if ( -e $file ) {
-	            	$logger->info( "Processing clade $entry" );
-					$grafted = $self->_graft_single_tree( $file, $grafted, $stem, $ts );					
-	           	}                                                                   
-	        }       
-		}
+	    opendir my $dh, $workdir or die $!;
+	    while( my $entry = readdir $dh ) {                        
+		    if ( $entry =~ /clade\d+/ && -d "${workdir}/${entry}" ) {                                
+				    $logger->info( "Processing clade $entry" );
+				    $grafted = $self->_graft_single_tree( $grafted, $entry, $ts );					
+		    }       
+	    }
     }
     # save final tree with taxon names in newick format
     $ts->remap_to_name($grafted);    
@@ -124,22 +119,68 @@ sub run{
 }
 
 sub _graft_single_tree {
-	my ( $self, $file, $tree, $stem, $ts ) = @_;
+	my ( $self, $tree, $clade, $ts ) = @_;
+
 	my $logger = $self->logger;
+
+	# make file names
+	my $workdir = $self->workdir;
+	# this should be a nexus file			
+	my $stem = "${workdir}/${clade}/${clade}";
+	my $file = "${stem}.nex";
+	my $ogfile = "${workdir}/${clade}/outgroup.txt";
+
+	if ( ! -e $file ) {
+		$logger->warn("could not find file $file for clade $clade");
+		return;
+	}
+	
+	# make consensus from nexus file
 	my $consensus = $ts->consense_trees( '-infile' => $file ); 
 	
 	# save consensus tree
 	open my $fh, '>', $stem.".dnd" or die $!;
 	print $fh $consensus->to_newick('-nodelabels' => 1);
 	close $fh;
-                
+
 	# also save remapped consensus tree                
 	my $remapped_consensus = parse('-string'=>$consensus->to_newick, '-format'=>'newick')->first;
 	$ts->remap_to_name($remapped_consensus);
-	$tree->resolve;
 	open my $fhr, '>', $stem."-remapped.dnd" or die $!;
 	print $fhr $remapped_consensus->to_newick('-nodelabels' =>1);
 	close $fhr;
+
+	# prune outgroup from consensus tree (if exists)
+	if ( -e $ogfile ) {
+		# read outgroup from file
+		my @outgroup_taxa;
+		$logger->info('pruning outgroup from consensus tree');
+		open my $ogfh, '<', $ogfile or die $!;
+		while (<$ogfh>) {
+			chomp;
+			push @outgroup_taxa, $_;
+		}
+		close $ogfh;
+		my %og = map {$_=>1} @outgroup_taxa;
+
+		# prune outgroups from tree
+		my @tipnames = map {$_->get_name} @{$consensus->get_terminals};
+		@tipnames = grep {! exists($og{$_})} @tipnames;
+		
+		$consensus->keep_tips(\@tipnames) if scalar @tipnames;
+		
+		# save pruned consensus tree
+		open my $fh, '>', $stem."-pruned.dnd" or die $!;
+		print $fh $consensus->to_newick('-nodelabels' => 1);
+		close $fh;
+		
+		# save pruned remapped consensus tree                
+		my $remapped_pruned = parse('-string'=>$consensus->to_newick, '-format'=>'newick')->first;
+		$ts->remap_to_name($remapped_pruned);
+		open my $fhr, '>', $stem."-pruned-remapped.dnd" or die $!;
+		print $fhr $remapped_pruned->to_newick('-nodelabels' =>1);
+		close $fhr;		
+	}
                 
 	# finally graft clade tree onto backbone
 	my $grafted = $ts->graft_tree( $tree, $consensus );                

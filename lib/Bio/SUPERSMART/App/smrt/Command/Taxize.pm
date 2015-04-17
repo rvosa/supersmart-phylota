@@ -39,7 +39,7 @@ sub options {
 		[
 			"infile|i=s",
 			"file with list of taxon names",
-			{ arg => "file", mandatory => 1 }
+			{ arg => "file" }
 		],
 		[
 			"outfile|o=s",

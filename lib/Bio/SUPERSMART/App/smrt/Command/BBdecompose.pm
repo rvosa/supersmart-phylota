@@ -130,8 +130,25 @@ sub run{
 		my $counter = 0;
 		foreach (@set){
 			my @og = $mts->get_outgroup_taxa( $classtree, $_ );
-			push @{$_}, @og;
-			$logger->info("Adding outgroup species " . join (', ', @og) . " to clade #" . ++$counter);
+			
+			# get the two species which occur in the most number of alignments
+			my %aln_for_sp;
+			for my $aln (@alignments) {
+				my %fasta = $mt->parse_fasta_file($aln);
+				for my $ogsp ( @og ) {
+					my @sp = grep { /taxon\|$ogsp[^\d]/ } keys %fasta;
+					@sp = map {$1 if $_=~m/taxon\|([0-9]+)/} @sp;
+					$aln_for_sp{$_}++ for @sp;
+				}
+			}			
+			my @sorted_sp = sort { $aln_for_sp{$a} <=> $aln_for_sp{$b} } keys %aln_for_sp;			
+			my @outgroup = scalar @sorted_sp > 2 ? @sorted_sp[0..1] : @sorted_sp;
+
+			# mark outgroup species with an asterisk * so we can identify them later!
+			@outgroup = map {$_.='*'} @outgroup;
+			push @{$_}, @outgroup;			
+			$logger->info("Adding outgroup species " . join (', ', @outgroup) . " to clade #" . $counter);
+			$counter++;
 		}	
 	}
 
@@ -140,7 +157,7 @@ sub run{
 	my @table = pmap {
 	    my ($aln) = @_;
 		$logger->info("checking whether alignment $aln can be included");
-		my %fasta = $mt->parse_fasta_file($aln);
+	        my %fasta = $mt->parse_fasta_file($aln);
 		open my $fh, '<', $aln or die $!;
 		my $fastastr = join('', <$fh>);
 		close $fh;
@@ -155,7 +172,9 @@ sub run{
 		
 			# assess for each set whether we have enough density
 			for my $i ( 0 .. $#set ) {
+				# do not count outgroup species for statistics
 				my @species = @{ $set[$i] };
+				
 				my %seq;
 				my $distinct = 0;
 				for my $s ( @species ) {
@@ -164,12 +183,13 @@ sub run{
 						$seq{$s} = \@s;
 						$distinct++;
 					}
-				}
-				
+				}				
 				# the fraction of distinct, sequenced species is high enough,
 				# and the total number exceeds two (i.e. there is some topology to resolve)
 				if ( ($distinct/scalar(@species)) >= $mdens && $distinct > 2 ) {
 					$logger->info("$aln is informative and dense enough for clade $i");
+					
+					# write alignment 
 					my ( $fh, $seed ) = _make_handle( $i, $aln, $workdir );
 					for my $s ( @species ) {
 						if ( $seq{$s} ) {
@@ -179,6 +199,11 @@ sub run{
 								$ret{$s} = $seq;	
 							}
 						}
+					}
+					if ( $add_outgroup ) {
+						# write outgroup to file (skipped if already exists)
+						my @og = map {$_=~s/\*//g;$_} grep { /\*/ } @{$set[$i]};
+						_write_outgroup( $i, \@og, $workdir);
 					}
 				}
 				else {
@@ -215,5 +240,19 @@ sub _make_handle {
 	$base =~ s/\.fa$//;
 	return $fh, $base;
 }
+
+# writes outgroup species into a file in the clade folder
+sub _write_outgroup {
+	my ( $i, $og, $workdir ) = @_;
+	my $filename = "$workdir/clade$i/outgroup.txt";
+	if  ( not -e $filename ) {
+		open my $fh, '>', $filename or die $!;
+		foreach my $sp ( @{$og} ) {
+			print $fh  "$sp\n";
+		}
+		close $fh;
+	}
+}
+
 
 1;
