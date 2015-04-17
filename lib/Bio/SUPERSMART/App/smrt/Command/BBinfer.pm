@@ -77,6 +77,7 @@ sub run {
         eval "require $subclass";
         $@ and throw 'ExtensionError' => "Can't load $toolname wrapper: ".$@;
         bless $self, $subclass;
+	$bootstrap = 1 if $self->_is_bayesian;
     }
     
     # instantiate and configure wrapper object
@@ -86,25 +87,40 @@ sub run {
     # run the analysis, process results
     for my $i ( 1 .. $bootstrap ) {
     	my $replicate = $self->_bootstrap( $supermatrix, $i );
-		my $backbone = $self->_run(
-			'tool'   => $tool,
-			'matrix' => $replicate,
-			'tree'   => $starttree,
-		);  
-		system( 'cat', $backbone, '>>', $self->outfile );
+	my $backbone = $self->_run(
+	    'tool'   => $tool,
+	    'matrix' => $replicate,
+	    'tree'   => $starttree,
+	);  
+	$self->_append( $backbone, $self->outfile . '.replicates' );
     }
-    $self->_process_results($self->outfile, !$opt->ids);
+    $self->_process_result( $self->outfile, !$opt->ids, $bootstrap - 1 );
     return 1;
+}
+
+sub _append {
+	my ( $self, $in, $out ) = @_;
+	$self->logger->info("appending contents of $in to $out");
+
+	# read the in file
+	open my $infh, '<', $in or die $!;
+	my $content = do { local $/; <$infh> };
+	close $infh;
+	
+	# write to the out file
+	open my $outfh, '>>', $out or die $!;
+	print $outfh $content;
+	close $outfh;
 }
 
 # given an input matrix file and a bootstrap replicate index, creates a 
 # bootstrapped version of the input, with the replicate index as a suffix
 sub _bootstrap {
-	my ( $matrix, $replicate ) = @_;
+	my ( $self, $matrix, $replicate ) = @_;
 	
 	# read interleaved PHYLIP
 	my ( @taxa, %data, $ntax, $nchar, $line );
-	open my $fh, '<', $matrix or die $!;
+	open my $fh, '<', $matrix or die "Can't open $matrix: $!";
 	LINE: while(<$fh>) {
 		chomp;
 		if ( not $ntax and not $nchar ) {
@@ -124,11 +140,16 @@ sub _bootstrap {
 			}
 		}
 		else {
-			s/\s//g;
-			my $i = $line % $ntax;
-			$data{$taxa[$i]} .= $_;
-			$line++;
+			if ( /\S/ ) {
+				s/\s//g;
+				my $i = $line % $ntax;
+				$data{$taxa[$i]} .= $_;
+				$line++;
+			}
 		}	
+	}
+	if ( $ntax != @taxa ) {
+		$self->logger->error("Incorrect number of taxa read: $ntax != ".scalar(@taxa));
 	}
 	
 	# make a bootstrapped matrix
@@ -142,6 +163,7 @@ sub _bootstrap {
 		}	
 		$i++;
 	}
+	$boot{$_} = join '', @{ $boot{$_} } for keys %boot;
 	
 	# write interleaved PHYLIP
 	open my $out, '>', "${matrix}.${replicate}" or die $!;
@@ -151,22 +173,22 @@ sub _bootstrap {
 			print $out " $ntax $nchar\n";
 		}
 		for my $taxon ( @taxa ) {
-			my $seq = substr $data{$taxon}, $written, 60;
+			my $seq = substr $boot{$taxon}, $written, 60;
 			my $n = 10;    # $n is group size.
 			my @groups = unpack "a$n" x (length($seq)/$n) . "a*", $seq;
 			if ( not $written ) {
-				print $taxon;
-				print ' ' x ( 13 - length($taxon) );
-				print join ' ', @groups;
-				print "\n";				
+				print $out $taxon;
+				print $out ' ' x ( 13 - length($taxon) );
+				print $out join ' ', @groups;
+				print $out "\n";				
 			}
 			else {
-				print ' ' x 13;
-				print join ' ', @groups;
-				print "\n";				
+				print $out ' ' x 13;
+				print $out join ' ', @groups;
+				print $out "\n";				
 			}
 		}
-		print "\n"; # blank line
+		print $out "\n"; # blank line
 		$written += 60;
 	}
 	return "${matrix}.${replicate}";
@@ -190,15 +212,31 @@ sub _run {
     throw 'NotImplemented' => "missing _run method in child class " . ref(shift);
 }
 
+# indicates whether the inference service is bayesian, in which case we will
+# not run a bootstrapping analysis. Note that certain wrappers, e.g. exabayes, 
+# need to override this
+sub _is_bayesian { 0 }
+
 # process the inferred tree, e.g. by mapping identifiers
 sub _process_result {
-    my ( $self, $backbone, $remap ) = @_;
+    my ( $self, $backbone, $remap, $consense ) = @_;
     
-    # read generated backbone tree from file
-    my $bbtree = parse_tree(
-        '-format' => 'newick',
-        '-file'   => $backbone,
-    );
+    # build consensus if bootstrapping, otherwise read
+    # single tree
+    my $bbtree;
+    if ( $consense ) {
+	my $forest = parse(
+	    '-format' => 'newick',
+            '-file'   => $backbone,
+	);
+        $bbtree = $forest->make_consensus( '-branches' => 'average' );
+    }
+    else {
+	$bbtree = parse_tree(
+	    '-format' => 'newick',
+            '-file'   => $backbone,
+        )
+    }
     
     # map IDs to names, if requested
     if ( $remap ) {

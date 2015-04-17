@@ -85,4 +85,6 @@ sub _run {
     return $args{'tool'}->run( '-phylip' => $args{'matrix'} );
 }
 
+sub _is_bayesian { 1 }
+
 1;
