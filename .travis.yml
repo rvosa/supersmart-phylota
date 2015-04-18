@@ -6,6 +6,9 @@ perl:
   - "5.10"
   - "5.8"
 install:
+  - "wget https://apt.puppetlabs.com/puppetlabs-release-trusty.deb"
+  - "sudo dpkg -i puppetlabs-release-trusty.deb"
+  - "sudo apt-get update"
   - "sudo apt-get install puppet"
   - "sudo puppet apply conf/manifests/default.pp"
   - "cpanm --notest DBIx::Class | tail -n 1"
