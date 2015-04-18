@@ -60,7 +60,6 @@ package {
   # why we weren't doing this in the first place. May have to revert this -- RAV
   "libopenmpi-dev":              ensure => installed, require => Exec ["apt_update"];
   "openmpi-bin":                 ensure => installed, require => Exec ["apt_update"];
-  "libhdf5-openmpi-dev":         ensure => installed, require => Exec ["apt_update"];
 }
 
 
@@ -398,12 +397,12 @@ exec {
 		command => "make -f Makefile.SSE3.gcc LD_LIBRARY_PATH=/usr/lib",
 		cwd     => "${tools_dir}/ExaML/examl",
 		creates => "${tools_dir}/ExaML/examl/examl",
-		require => Exec["clone_examl","install_openmpi"];
+		require => [ Exec["clone_examl"], Package["libopenmpi-dev","openmpi-bin"] ];
 	"compile_parser":
 		command => "make -f Makefile.SSE3.gcc",
 		cwd     => "${tools_dir}/ExaML/parser",
 		creates => "${tools_dir}/ExaML/parser/parser",
-		require => Exec["clone_examl","install_openmpi"];
+		require => [ Exec["clone_examl"], Package["libopenmpi-dev","openmpi-bin"] ];
 
 	# install raxml
   	"clone_raxml":
@@ -422,7 +421,7 @@ exec {
     		command => "wget http://sco.h-its.org/exelixis/material/exabayes/1.2.1/exabayes-1.2.1-linux-openmpi-avx.tar.gz",
      		cwd     => $tools_dir,
      		creates => "${tools_dir}/exabayes-1.2.1-linux-openmpi-avx.tar.gz",
-     		require => Exec[ "install_openmpi" ];
+     		require => Package["libopenmpi-dev","openmpi-bin"];
     	"unzip_exabayes":
      		command => "tar -xvzf exabayes-1.2.1-linux-openmpi-avx.tar.gz",
      		cwd     => $tools_dir,
@@ -495,7 +494,7 @@ exec {
 		command => "tar -xvzf adol-c_git_saved.tar.gz",
 		cwd     => "${tools_dir}/treePL/deps",
 		creates => "${tools_dir}/treePL/deps/adol-c",
-		require => Exec["clone_treepl","install_openmpi"];
+		require => [ Exec["clone_treepl"], Package["libopenmpi-dev","openmpi-bin"] ];
 	"autoreconf_adolc":
 		command => "autoreconf -fi",
 		cwd     => "${tools_dir}/treePL/deps/adol-c",
@@ -510,7 +509,7 @@ exec {
 		command => "tar -xzvf nlopt-2.2.4.tar.gz",
 		cwd     => "${tools_dir}/treePL/deps",
 		creates => "${tools_dir}/treePL/deps/nlopt-2.2.4",
-		require => Exec["clone_treepl","install_openmpi"];
+		require => [ Exec["clone_treepl"], Package["libopenmpi-dev","openmpi-bin"] ];
 	"install_nlopt":
 		command => "${tools_dir}/treePL/deps/nlopt-2.2.4/configure && make install",
 		cwd		=> "${tools_dir}/treePL/deps/nlopt-2.2.4",
