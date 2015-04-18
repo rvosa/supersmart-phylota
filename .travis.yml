@@ -5,13 +5,16 @@ perl:
   - "5.12"
   - "5.10"
   - "5.8"
+env:
+  global:
+    - SUPERSMART_HOME=$TRAVIS_BUILD_DIR  
 install:
   - "sudo useradd -d /home/vagrant -m vagrant"
   - "wget https://apt.puppetlabs.com/puppetlabs-release-trusty.deb"
   - "sudo dpkg -i puppetlabs-release-trusty.deb"
   - "sudo apt-get update"
   - "sudo apt-get install puppet"
-  - "sudo puppet apply conf/manifests/default.pp"
+  - "sudo travis_wait puppet apply conf/manifests/default.pp"
   #- "cpanm --notest DBIx::Class | tail -n 1"
   #- "cpanm --notest Template | tail -n 1"
   #- "cpanm --notest Config::Tiny | tail -n 1"
