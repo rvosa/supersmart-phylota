@@ -14,7 +14,7 @@ install:
   - "sudo dpkg -i puppetlabs-release-trusty.deb"
   - "sudo apt-get update"
   - "sudo apt-get install puppet"
-  - "sudo travis_wait puppet apply conf/manifests/default.pp"
+  - travis_wait "sudo puppet apply conf/manifests/default.pp"
   #- "cpanm --notest DBIx::Class | tail -n 1"
   #- "cpanm --notest Template | tail -n 1"
   #- "cpanm --notest Config::Tiny | tail -n 1"
