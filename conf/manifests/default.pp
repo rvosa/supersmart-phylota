@@ -354,7 +354,7 @@ exec {
 		creates => "${tools_dir}/openmpi-1.6.5",
 		require => Exec['download_openmpi'];
 	"install_openmpi":
-		command => "${tools_dir}/openmpi-1.6.5/configure --prefix=/usr --disable-dlopen && make install",
+		command => "${tools_dir}/openmpi-1.6.5/configure --prefix=/usr --disable-dlopen && make -j 4 install",
 		creates => "/usr/bin/mpicc",
 		cwd     => "${tools_dir}/openmpi-1.6.5",
 		timeout => 0,
