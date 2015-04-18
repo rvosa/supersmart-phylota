@@ -54,7 +54,13 @@ package {
   "gzip":                        ensure => installed, require => Exec ["apt_update"];
   "openjdk-6-jdk":               ensure => installed, require => Exec ["apt_update"];
   "subversion":                  ensure => installed, require => Exec ["apt_update"];
-
+  
+  # 2015-04-19 checking to see if we can get OpenMPI from package manager, as 
+  # building from source takes so long that travis times out. Don't remember
+  # why we weren't doing this in the first place. May have to revert this -- RAV
+  "libopenmpi-dev":              ensure => installed, require => Exec ["apt_update"];
+  "openmpi-bin":                 ensure => installed, require => Exec ["apt_update"];
+  "libhdf5-openmpi-dev":         ensure => installed, require => Exec ["apt_update"];
 }
 
 
@@ -342,23 +348,28 @@ exec {
 		creates => "/usr/local/lib64/perl5/Math/Random.pm",
 		require => Exec["make_makefile_math_random"];
 
+
+  # 2015-04-19 checking to see if we can get OpenMPI from package manager, as 
+  # building from source takes so long that travis times out. Don't remember
+  # why we weren't doing this in the first place. May have to revert this -- RAV
+
 	# install openmpi
-	"download_openmpi":
-		command => "wget http://www.open-mpi.org/software/ompi/v1.6/downloads/openmpi-1.6.5.tar.gz",
-		cwd     => $tools_dir,
-		creates => "${tools_dir}/openmpi-1.6.5.tar.gz",
-		require => Package[ 'wget', 'tar' ];
-	"unzip_openmpi":
-		command => "tar -xvzf openmpi-1.6.5.tar.gz",
-		cwd     => $tools_dir,
-		creates => "${tools_dir}/openmpi-1.6.5",
-		require => Exec['download_openmpi'];
-	"install_openmpi":
-		command => "${tools_dir}/openmpi-1.6.5/configure --prefix=/usr --disable-dlopen && make -j 4 install",
-		creates => "/usr/bin/mpicc",
-		cwd     => "${tools_dir}/openmpi-1.6.5",
-		timeout => 0,
-		require => Exec['unzip_openmpi'];
+#	"download_openmpi":
+#		command => "wget http://www.open-mpi.org/software/ompi/v1.6/downloads/openmpi-1.6.5.tar.gz",
+#		cwd     => $tools_dir,
+#		creates => "${tools_dir}/openmpi-1.6.5.tar.gz",
+#		require => Package[ 'wget', 'tar' ];
+#	"unzip_openmpi":
+#		command => "tar -xvzf openmpi-1.6.5.tar.gz",
+#		cwd     => $tools_dir,
+#		creates => "${tools_dir}/openmpi-1.6.5",
+#		require => Exec['download_openmpi'];
+#	"install_openmpi":
+#		command => "${tools_dir}/openmpi-1.6.5/configure --prefix=/usr --disable-dlopen && make -j 4 install",
+#		creates => "/usr/bin/mpicc",
+#		cwd     => "${tools_dir}/openmpi-1.6.5",
+#		timeout => 0,
+#		require => Exec['unzip_openmpi'];
 
 	# install phylip
 	"download_phylip":
