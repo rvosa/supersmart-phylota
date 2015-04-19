@@ -454,55 +454,52 @@ exec {
 		
 	# install CPAN dependencies
 	"cpanm":
-		command => "cpanm --sudo App::cpanminus",
+		command => "cpanm App::cpanminus",
 		require => Package['cpanminus'];
 	"cpanm_DBI":
-		command => "cpanm --sudo --notest DBI",
+		command => "cpanm --notest DBI",
 		require => Exec['cpanm'];
 	"cpanm_DBIx_Class":
-		command => "cpanm --sudo --notest DBIx::Class",
+		command => "cpanm --notest DBIx::Class",
 		require => Exec['cpanm_DBI'];
 	"cpanm_DBD_mysql":
-		command => "cpanm --sudo --notest DBD::mysql",
+		command => "cpanm --notest DBD::mysql",
 		require => [ Package['mysql-server', 'mysql-client'], Exec['cpanm_DBI'] ];
 	"cpanm_Template":
-		command => "cpanm --sudo --notest Template",
+		command => "cpanm --notest Template",
 		require => Exec['cpanm'];
 	"cpanm_Moose":
-		command => "cpanm --sudo --notest Moose",
+		command => "cpanm --notest Moose",
 		require => Exec['cpanm'];
 	"cpanm_XML_Twig":
-		command => "cpanm --sudo --notest XML::Twig",
+		command => "cpanm --notest XML::Twig",
 		require => Exec['cpanm'];
 	"cpanm_HTML_Parser":
-		command => "cpanm --sudo --notest HTML::Parser",
+		command => "cpanm --notest HTML::Parser",
 		require => Exec['cpanm'];
 	"cpanm_JSON":
-		command => "cpanm --sudo --notest JSON",
+		command => "cpanm --notest JSON",
 		require => Exec['cpanm'];
 	"cpanm_Math_Random":
-		command => "cpanm --sudo --notest Math::Random",
+		command => "cpanm --notest Math::Random",
 		require => Exec['cpanm'];
 	"cpanm_App_Cmd":
-		command => "cpanm --sudo --notest App::Cmd",
+		command => "cpanm --notest App::Cmd",
 		require => Exec['cpanm'];
 	"cpanm_String_RewritePrefix":
-		command => "cpanm --sudo --notest String::RewritePrefix",
+		command => "cpanm --notest String::RewritePrefix",
 		require => Exec['cpanm'];
 	"cpanm_IO_String":
-		command => "cpanm --sudo --notest IO::String",
+		command => "cpanm --notest IO::String",
 		require => Exec['cpanm'];
 	"cpanm_Bio_Phylo":
-		command => "cpanm --sudo --notest git://github.com/rvosa/bio-phylo.git",
+		command => "cpanm --notest git://github.com/rvosa/bio-phylo.git",
 		require => Exec['cpanm'];
-#	"cpanm_Bio_Root":
-#		command => "cpanm --sudo --notest git://github.com/bioperl/Bio-Root.git",
-#		require => Exec['cpanm'];
 	"cpanm_bioperl_live":
-		command => "cpanm --sudo --notest git://github.com/bioperl/bioperl-live.git@v1.6.x",
+		command => "cpanm --notest git://github.com/bioperl/bioperl-live.git@v1.6.x",
 		require => Exec['cpanm'];
 	"cpanm_bioperl_run":
-		command => "cpanm --sudo --notest git://github.com/bioperl/bioperl-run.git",
+		command => "cpanm --notest git://github.com/bioperl/bioperl-run.git",
 		require => Exec['cpanm_bioperl_live'];
 
   	# install BEAST
@@ -567,7 +564,7 @@ exec {
 		require => [ Exec["clone_treepl"], Package["libopenmpi-dev","openmpi-bin"] ];
 	"install_nlopt":
 		command => "${tools_dir}/treePL/deps/nlopt-2.2.4/configure && make install",
-		cwd		=> "${tools_dir}/treePL/deps/nlopt-2.2.4",
+		cwd	=> "${tools_dir}/treePL/deps/nlopt-2.2.4",
 		creates => "/usr/local/include/nlopt.h",
 		require => Exec["unzip_nlopt"];
 	"compile_treepl":
