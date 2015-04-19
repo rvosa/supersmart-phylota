@@ -10,7 +10,6 @@ my $config = new_ok('Bio::Phylo::PhyLoTA::Config');
 # verify these files exist
 my @files = qw(
 	GB_RELNUM_FILE
-	INPARANOID_SEQ_FILE
 );
 for my $file ( @files ) {
 	ok( $config->$file, "file $file is defined" );
