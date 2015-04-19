@@ -34,15 +34,15 @@ package {
   "ncbi-blast+":                 ensure => installed, require => Exec ["apt_update"];
   "wget":                        ensure => installed, require => Exec ["apt_update"];
   "tar":                         ensure => installed, require => Exec ["apt_update"];
-  "libdbi-perl":                 ensure => installed, require => Exec ["apt_update"];
-  "libdbd-mysql-perl":           ensure => installed, require => Exec ["apt_update"];
-  "libdbix-class-perl":          ensure => installed, require => Exec ["apt_update"];
-  "libjson-perl":                ensure => installed, require => Exec ["apt_update"];
-  "libmoose-perl":               ensure => installed, require => Exec ["apt_update"];
-  "libxml-twig-perl":            ensure => installed, require => Exec ["apt_update"];
-  "libhtml-html5-parser-perl":   ensure => installed, require => Exec ["apt_update"];
-  "libconfig-tiny-perl":         ensure => installed, require => Exec ["apt_update"];
-  "libio-string-perl":           ensure => installed, require => Exec ["apt_update"];
+#  "libdbi-perl":                 ensure => installed, require => Exec ["apt_update"];
+#  "libdbd-mysql-perl":           ensure => installed, require => Exec ["apt_update"];
+#  "libdbix-class-perl":          ensure => installed, require => Exec ["apt_update"];
+#  "libjson-perl":                ensure => installed, require => Exec ["apt_update"];
+#  "libmoose-perl":               ensure => installed, require => Exec ["apt_update"];
+#  "libxml-twig-perl":            ensure => installed, require => Exec ["apt_update"];
+#  "libhtml-html5-parser-perl":   ensure => installed, require => Exec ["apt_update"];
+#  "libconfig-tiny-perl":         ensure => installed, require => Exec ["apt_update"];
+#  "libio-string-perl":           ensure => installed, require => Exec ["apt_update"];
   "git":                         ensure => installed, require => Exec ["apt_update"];
   "libarchive-dev":              ensure => installed, require => Exec ["apt_update"];
   "zlib1g-dev":                  ensure => installed, require => Exec ["apt_update"];
@@ -236,57 +236,57 @@ exec {
 		require => Exec["download_muscle"];
 
  	# install Bio::Phylo
-	"clone_bio_phylo":
-		command => "git clone https://github.com/rvosa/bio-phylo.git",
-		cwd     => $tools_dir,
-		creates => "${tools_dir}/bio-phylo",
-		timeout => 0,
-		require => Package[ 'git' ];
-	"make_bio_phylo_sh":
-		command => "echo 'export PERL5LIB=\$PERL5LIB:${tools_dir}/bio-phylo/lib' > biophylo.sh",
-		cwd     => "/etc/profile.d",
-		creates => "/etc/profile.d/biophylo.sh",
-		require => Exec[ 'clone_bio_phylo' ];
-	"make_bio_phylo_csh":
-	  	command => "echo 'setenv PERL5LIB \$PERL5LIB:${tools_dir}/bio-phylo/lib' > biophylo.csh",
-		cwd     => "/etc/profile.d",
-		creates => "/etc/profile.d/biophylo.csh",
-		require => Exec[ 'clone_bio_phylo' ];
+#	"clone_bio_phylo":
+#		command => "git clone https://github.com/rvosa/bio-phylo.git",
+#		cwd     => $tools_dir,
+#		creates => "${tools_dir}/bio-phylo",
+#		timeout => 0,
+#		require => Package[ 'git' ];
+#	"make_bio_phylo_sh":
+#		command => "echo 'export PERL5LIB=\$PERL5LIB:${tools_dir}/bio-phylo/lib' > biophylo.sh",
+#		cwd     => "/etc/profile.d",
+#		creates => "/etc/profile.d/biophylo.sh",
+#		require => Exec[ 'clone_bio_phylo' ];
+#	"make_bio_phylo_csh":
+#	  	command => "echo 'setenv PERL5LIB \$PERL5LIB:${tools_dir}/bio-phylo/lib' > biophylo.csh",
+#		cwd     => "/etc/profile.d",
+#		creates => "/etc/profile.d/biophylo.csh",
+#		require => Exec[ 'clone_bio_phylo' ];
 
 	# install bioperl-live
-	"clone_bioperl_live":
-		command => "git clone -b v1.6.x https://github.com/bioperl/bioperl-live.git",
-		cwd     => $tools_dir,
-		creates => "${tools_dir}/bioperl-live",
-		timeout => 0,
-		require => Package[ 'git' ];
-	"make_bioperl_live_sh":
-		command => "echo 'export PERL5LIB=\$PERL5LIB:${tools_dir}/bioperl-live' > bioperl_live.sh",
-		cwd     => "/etc/profile.d",
-		creates => "/etc/profile.d/bioperl_live.sh",
-		require => Exec[ 'clone_bioperl_live' ];
-	"make_bioperl_live_csh":
-		command => "echo 'setenv PERL5LIB \$PERL5LIB:${tools_dir}/bioperl-live' > bioperl_live.csh",
-		cwd     => "/etc/profile.d",
-		creates => "/etc/profile.d/bioperl_live.csh",
-		require => Exec[ 'clone_bioperl_live' ];
+#	"clone_bioperl_live":
+#		command => "git clone -b v1.6.x https://github.com/bioperl/bioperl-live.git",
+#		cwd     => $tools_dir,
+#		creates => "${tools_dir}/bioperl-live",
+#		timeout => 0,
+#		require => Package[ 'git' ];
+#	"make_bioperl_live_sh":
+#		command => "echo 'export PERL5LIB=\$PERL5LIB:${tools_dir}/bioperl-live' > bioperl_live.sh",
+#		cwd     => "/etc/profile.d",
+#		creates => "/etc/profile.d/bioperl_live.sh",
+#		require => Exec[ 'clone_bioperl_live' ];
+#	"make_bioperl_live_csh":
+#		command => "echo 'setenv PERL5LIB \$PERL5LIB:${tools_dir}/bioperl-live' > bioperl_live.csh",
+#		cwd     => "/etc/profile.d",
+#		creates => "/etc/profile.d/bioperl_live.csh",
+#		require => Exec[ 'clone_bioperl_live' ];
 
 	# install bioperl-run
-	"clone_bioperl_run":
-		command => "git clone https://github.com/bioperl/bioperl-run.git",
-		cwd     => $tools_dir,
-		creates => "${tools_dir}/bioperl-run",
-		require => Package[ 'git' ];
-	"make_bioperl_run_sh":
-		command => "echo 'export PERL5LIB=\$PERL5LIB:${tools_dir}/bioperl-run/lib' > bioperl_run.sh",
-		cwd     => "/etc/profile.d",
-		creates => "/etc/profile.d/bioperl_run.sh",
-		require => Exec[ 'clone_bioperl_run' ];
-	"make_bioperl_run_csh":
-		command => "echo 'setenv PERL5LIB \$PERL5LIB:${tools_dir}/bioperl-run/lib' > bioperl_run.csh",
-		cwd     => "/etc/profile.d",
-		creates => "/etc/profile.d/bioperl_run.csh",
-		require => Exec[ 'clone_bioperl_run' ];
+#	"clone_bioperl_run":
+#		command => "git clone https://github.com/bioperl/bioperl-run.git",
+#		cwd     => $tools_dir,
+#		creates => "${tools_dir}/bioperl-run",
+#		require => Package[ 'git' ];
+#	"make_bioperl_run_sh":
+#		command => "echo 'export PERL5LIB=\$PERL5LIB:${tools_dir}/bioperl-run/lib' > bioperl_run.sh",
+#		cwd     => "/etc/profile.d",
+#		creates => "/etc/profile.d/bioperl_run.sh",
+#		require => Exec[ 'clone_bioperl_run' ];
+#	"make_bioperl_run_csh":
+#		command => "echo 'setenv PERL5LIB \$PERL5LIB:${tools_dir}/bioperl-run/lib' > bioperl_run.csh",
+#		cwd     => "/etc/profile.d",
+#		creates => "/etc/profile.d/bioperl_run.csh",
+#		require => Exec[ 'clone_bioperl_run' ];
 
   	# install perl package App::Cmd
 #   	"clone_app_cmd":
@@ -453,11 +453,54 @@ exec {
 		creates => "/etc/profile.d/supersmart.csh";
 		
 	# install CPAN dependencies
-	"cpanm_deps":
-		command => "cpanm --installdeps --notest . > cpanm.log",
-		cwd     => "${src_dir}/supersmart",
-		creates => "${src_dir}/supersmart/cpanm.log",
-		require => [ Exec['clone_supersmart'], Package['cpanminus'] ];
+	"cpanm_DBI":
+		command => "cpanm --notest DBI",
+		require => Package['cpanminus'];
+	"cpanm_DBIx_Class":
+		command => "cpanm --notest DBIx::Class",
+		require => [ Package['cpanminus'], Exec['cpanm_DBI'] ];
+	"cpanm_DBD_mysql":
+		command => "cpanm --notest DBD::mysql",
+		require => [ Package['cpanminus', 'mysql-server', 'mysql-client], Exec['cpanm_DBI'] ];
+	"cpanm_Template":
+		command => "cpanm --notest Template",
+		require => Package['cpanminus'];
+	"cpanm_Moose":
+		command => "cpanm --notest Moose",
+		require => Package['cpanminus'];
+	"cpanm_XML_Twig":
+		command => "cpanm --notest XML::Twig",
+		require => Package['cpanminus'];
+	"cpanm_HTML_Parser":
+		command => "cpanm --notest HTML::Parser",
+		require => Package['cpanminus'];
+	"cpanm_JSON":
+		command => "cpanm --notest JSON",
+		require => Package['cpanminus'];
+	"cpanm_Math_Random":
+		command => "cpanm --notest Math::Random",
+		require => Package['cpanminus'];
+	"cpanm_App_Cmd":
+		command => "cpanm --notest App::Cmd",
+		require => Package['cpanminus'];
+	"cpanm_String_RewritePrefix":
+		command => "cpanm --notest String::RewritePrefix",
+		require => Package['cpanminus'];
+	"cpanm_IO_String":
+		command => "cpanm --notest IO::String",
+		require => Package['cpanminus'];
+	"cpanm_Bio_Phylo":
+		command => "cpanm --notest git://github.com/rvosa/bio-phylo.git",
+		require => Package['cpanminus'];
+	"cpanm_Bio_Root":
+		command => "cpanm --notest git://github.com/bioperl/Bio-Root.git",
+		require => Package['cpanminus'];
+	"cpanm_bioperl_live":
+		command => "cpanm --notest git://github.com/bioperl/bioperl-live.git@v1.6.x",
+		require => [ Package['cpanminus'], Exec['cpanm_Bio_Root'] ];
+	"cpanm_bioperl_run":
+		command => "cpanm --notest git://github.com/bioperl/bioperl-run.git",
+		require => [ Package['cpanminus'], Exec['cpanm_bioperl_live'] ];
 
   	# install BEAST
   	"download_beast":
