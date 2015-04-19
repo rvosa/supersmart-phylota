@@ -500,7 +500,7 @@ exec {
 #		require => Exec['cpanm'];
 	"cpanm_bioperl_live":
 		command => "cpanm --sudo --notest git://github.com/bioperl/bioperl-live.git@v1.6.x",
-		require => Exec['cpanm_Bio_Root'];
+		require => Exec['cpanm'];
 	"cpanm_bioperl_run":
 		command => "cpanm --sudo --notest git://github.com/bioperl/bioperl-run.git",
 		require => Exec['cpanm_bioperl_live'];
