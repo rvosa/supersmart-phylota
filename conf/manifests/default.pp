@@ -54,12 +54,14 @@ package {
   "gzip":                        ensure => installed, require => Exec ["apt_update"];
   "openjdk-6-jdk":               ensure => installed, require => Exec ["apt_update"];
   "subversion":                  ensure => installed, require => Exec ["apt_update"];
+  "cpanminus":                   ensure => installed, require => Exec ["apt_update"];
   
   # 2015-04-19 checking to see if we can get OpenMPI from package manager, as 
   # building from source takes so long that travis times out. Don't remember
   # why we weren't doing this in the first place. May have to revert this -- RAV
   "libopenmpi-dev":              ensure => installed, require => Exec ["apt_update"];
   "openmpi-bin":                 ensure => installed, require => Exec ["apt_update"];
+  
 }
 
 
@@ -449,6 +451,13 @@ exec {
 		command => "echo 'setenv LD_LIBRARY_PATH /usr/lib:/usr/lib64:/usr/local/lib' > supersmart.csh && echo 'setenv SUPERSMART_HOME ${src_dir}/supersmart' >> supersmart.csh && echo 'setenv PERL5LIB \$PERL5LIB:\$SUPERSMART_HOME/lib' >> supersmart.csh",
 		cwd     => "/etc/profile.d",
 		creates => "/etc/profile.d/supersmart.csh";
+		
+	# install CPAN dependencies
+	"cpanm_deps":
+		command => "cpanm --installdeps --notest . > cpanm.log",
+		cwd     => "${src_dir}/supersmart",
+		creates => "${src_dir}/supersmart/cpanm.log",
+		require => [ Exec['clone_supersmart'], Package['cpanminus'] ];
 
   	# install BEAST
   	"download_beast":
