@@ -54,7 +54,7 @@ package {
   "gzip":                        ensure => installed, require => Exec ["apt_update"];
   "openjdk-6-jdk":               ensure => installed, require => Exec ["apt_update"];
   "subversion":                  ensure => installed, require => Exec ["apt_update"];
-  "cpanminus":                   ensure => installed, require => Exec ["apt_update"];
+#  "cpanminus":                   ensure => installed, require => Exec ["apt_update"];
   
   # 2015-04-19 checking to see if we can get OpenMPI from package manager, as 
   # building from source takes so long that travis times out. Don't remember
