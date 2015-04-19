@@ -454,52 +454,68 @@ exec {
 		
 	# install CPAN dependencies
 	"cpanm":
-		command => "cpanm --notest --no-sudo App::cpanminus",
+		command => "cpanm --notest --no-sudo --no-interactive --verbose App::cpanminus",
+		logoutput => true,
 		require => Package['cpanminus'];
 	"cpanm_DBI":
-		command => "cpanm --notest --no-sudo DBI",
+		command => "cpanm --notest --no-sudo --no-interactive --verbose DBI",
+		logoutput => true,
 		require => Exec['cpanm'];
 	"cpanm_DBIx_Class":
-		command => "cpanm --notest --no-sudo DBIx::Class",
+		command => "cpanm --notest --no-sudo --no-interactive --verbose DBIx::Class",
+		logoutput => true,
 		require => Exec['cpanm_DBI'];
 	"cpanm_DBD_mysql":
-		command => "cpanm --notest --no-sudo DBD::mysql",
+		command => "cpanm --notest --no-sudo --no-interactive --verbose DBD::mysql",
+		logoutput => true,
 		require => [ Package['mysql-server', 'mysql-client'], Exec['cpanm_DBI'] ];
 	"cpanm_Template":
-		command => "cpanm --notest --no-sudo Template",
+		command => "cpanm --notest --no-sudo --no-interactive --verbose Template",
+		logoutput => true,
 		require => Exec['cpanm'];
 	"cpanm_Moose":
-		command => "cpanm --notest --no-sudo Moose",
+		command => "cpanm --notest --no-sudo --no-interactive --verbose Moose",
+		logoutput => true,
 		require => Exec['cpanm'];
 	"cpanm_XML_Twig":
-		command => "cpanm --notest --no-sudo XML::Twig",
+		command => "cpanm --notest --no-sudo --no-interactive --verbose XML::Twig",
+		logoutput => true,
 		require => Exec['cpanm'];
 	"cpanm_HTML_Parser":
-		command => "cpanm --notest --no-sudo HTML::Parser",
+		command => "cpanm --notest --no-sudo --no-interactive --verbose HTML::Parser",
+		logoutput => true,
 		require => Exec['cpanm'];
 	"cpanm_JSON":
-		command => "cpanm --notest --no-sudo JSON",
+		command => "cpanm --notest --no-sudo --no-interactive --verbose JSON",
+		logoutput => true,
 		require => Exec['cpanm'];
 	"cpanm_Math_Random":
-		command => "cpanm --notest --no-sudo Math::Random",
+		command => "cpanm --notest --no-sudo --no-interactive --verbose Math::Random",
+		logoutput => true,
 		require => Exec['cpanm'];
 	"cpanm_App_Cmd":
-		command => "cpanm --notest --no-sudo App::Cmd",
+		command => "cpanm --notest --no-sudo --no-interactive --verbose App::Cmd",
+		logoutput => true,
 		require => Exec['cpanm'];
 	"cpanm_String_RewritePrefix":
-		command => "cpanm --notest --no-sudo String::RewritePrefix",
+		command => "cpanm --notest --no-sudo --no-interactive --verbose String::RewritePrefix",
+		logoutput => true,
 		require => Exec['cpanm'];
 	"cpanm_IO_String":
-		command => "cpanm --notest --no-sudo IO::String",
+		command => "cpanm --notest --no-sudo --no-interactive --verbose IO::String",
+		logoutput => true,
 		require => Exec['cpanm'];
 	"cpanm_Bio_Phylo":
-		command => "cpanm --notest --no-sudo git://github.com/rvosa/bio-phylo.git",
+		command => "cpanm --notest --no-sudo --no-interactive --verbose git://github.com/rvosa/bio-phylo.git",
+		logoutput => true,
 		require => Exec['cpanm'];
 	"cpanm_bioperl_live":
-		command => "cpanm --notest --no-sudo git://github.com/bioperl/bioperl-live.git@v1.6.x",
+		command => "cpanm --notest --no-sudo --no-interactive --verbose git://github.com/bioperl/bioperl-live.git@v1.6.x",
+		logoutput => true,
 		require => Exec['cpanm'];
 	"cpanm_bioperl_run":
-		command => "cpanm --notest --no-sudo git://github.com/bioperl/bioperl-run.git",
+		command => "cpanm --notest --no-sudo --no-interactive --verbose git://github.com/bioperl/bioperl-run.git",
+		logoutput => true,
 		require => Exec['cpanm_bioperl_live'];
 
   	# install BEAST
