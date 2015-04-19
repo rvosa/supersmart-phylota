@@ -455,8 +455,8 @@ exec {
 	# install CPAN dependencies
 	"cpanm":
 		command => "cpanm --notest --no-sudo --no-interactive --verbose App::cpanminus",
-		logoutput => true,
-		require => Package['cpanminus'];
+		logoutput => true;
+	#	require => Package['cpanminus'];
 	"cpanm_DBI":
 		command => "cpanm --notest --no-sudo --no-interactive --verbose DBI",
 		logoutput => true,
