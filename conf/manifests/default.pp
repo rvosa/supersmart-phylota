@@ -454,55 +454,55 @@ exec {
 		
 	# install CPAN dependencies
 	"cpanm":
-		command => "cpanm App::cpanminus",
+		command => "cpanm --sudo App::cpanminus",
 		require => Package['cpanminus'];
 	"cpanm_DBI":
-		command => "cpanm --notest DBI",
+		command => "cpanm --sudo --notest DBI",
 		require => Exec['cpanm'];
 	"cpanm_DBIx_Class":
-		command => "cpanm --notest DBIx::Class",
+		command => "cpanm --sudo --notest DBIx::Class",
 		require => Exec['cpanm_DBI'];
 	"cpanm_DBD_mysql":
-		command => "cpanm --notest DBD::mysql",
+		command => "cpanm --sudo --notest DBD::mysql",
 		require => [ Package['mysql-server', 'mysql-client'], Exec['cpanm_DBI'] ];
 	"cpanm_Template":
-		command => "cpanm --notest Template",
+		command => "cpanm --sudo --notest Template",
 		require => Exec['cpanm'];
 	"cpanm_Moose":
-		command => "cpanm --notest Moose",
+		command => "cpanm --sudo --notest Moose",
 		require => Exec['cpanm'];
 	"cpanm_XML_Twig":
-		command => "cpanm --notest XML::Twig",
+		command => "cpanm --sudo --notest XML::Twig",
 		require => Exec['cpanm'];
 	"cpanm_HTML_Parser":
-		command => "cpanm --notest HTML::Parser",
+		command => "cpanm --sudo --notest HTML::Parser",
 		require => Exec['cpanm'];
 	"cpanm_JSON":
-		command => "cpanm --notest JSON",
+		command => "cpanm --sudo --notest JSON",
 		require => Exec['cpanm'];
 	"cpanm_Math_Random":
-		command => "cpanm --notest Math::Random",
+		command => "cpanm --sudo --notest Math::Random",
 		require => Exec['cpanm'];
 	"cpanm_App_Cmd":
-		command => "cpanm --notest App::Cmd",
+		command => "cpanm --sudo --notest App::Cmd",
 		require => Exec['cpanm'];
 	"cpanm_String_RewritePrefix":
-		command => "cpanm --notest String::RewritePrefix",
+		command => "cpanm --sudo --notest String::RewritePrefix",
 		require => Exec['cpanm'];
 	"cpanm_IO_String":
-		command => "cpanm --notest IO::String",
+		command => "cpanm --sudo --notest IO::String",
 		require => Exec['cpanm'];
 	"cpanm_Bio_Phylo":
-		command => "cpanm --notest git://github.com/rvosa/bio-phylo.git",
+		command => "cpanm --sudo --notest git://github.com/rvosa/bio-phylo.git",
 		require => Exec['cpanm'];
-	"cpanm_Bio_Root":
-		command => "cpanm --notest git://github.com/bioperl/Bio-Root.git",
-		require => Exec['cpanm'];
+#	"cpanm_Bio_Root":
+#		command => "cpanm --sudo --notest git://github.com/bioperl/Bio-Root.git",
+#		require => Exec['cpanm'];
 	"cpanm_bioperl_live":
-		command => "cpanm --notest git://github.com/bioperl/bioperl-live.git@v1.6.x",
+		command => "cpanm --sudo --notest git://github.com/bioperl/bioperl-live.git@v1.6.x",
 		require => Exec['cpanm_Bio_Root'];
 	"cpanm_bioperl_run":
-		command => "cpanm --notest git://github.com/bioperl/bioperl-run.git",
+		command => "cpanm --sudo --notest git://github.com/bioperl/bioperl-run.git",
 		require => Exec['cpanm_bioperl_live'];
 
   	# install BEAST
