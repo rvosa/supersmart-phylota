@@ -289,65 +289,65 @@ exec {
 		require => Exec[ 'clone_bioperl_run' ];
 
   	# install perl package App::Cmd
-   	"clone_app_cmd":
-   		command => "git clone https://github.com/rjbs/App-Cmd.git",
-   		cwd     => $tools_dir,
-   		creates => "${tools_dir}/App-Cmd",
-   		require => Package[ 'git' ];
-  	"make_app_cmd_run_sh":
-    		command => "echo 'export PERL5LIB=\$PERL5LIB:${tools_dir}/App-Cmd/lib' > app_cmd.sh",
-    		cwd     => "/etc/profile.d",
-    		creates => "/etc/profile.d/app_cmd.sh",
-    		require => Exec[ 'clone_app_cmd' ];
-  	"make_app_cmd_run_csh":
-    		command => "echo 'setenv PERL5LIB \$PERL5LIB:${tools_dir}/App-Cmd/lib' > app_cmd.csh",
-    		cwd     => "/etc/profile.d",
-    		creates => "/etc/profile.d/app_cmd.csh",
-    		require => Exec[ 'clone_app_cmd' ];
+#   	"clone_app_cmd":
+#   		command => "git clone https://github.com/rjbs/App-Cmd.git",
+#   		cwd     => $tools_dir,
+#   		creates => "${tools_dir}/App-Cmd",
+#   		require => Package[ 'git' ];
+#  	"make_app_cmd_run_sh":
+#    		command => "echo 'export PERL5LIB=\$PERL5LIB:${tools_dir}/App-Cmd/lib' > app_cmd.sh",
+#    		cwd     => "/etc/profile.d",
+#    		creates => "/etc/profile.d/app_cmd.sh",
+#    		require => Exec[ 'clone_app_cmd' ];
+#  	"make_app_cmd_run_csh":
+#    		command => "echo 'setenv PERL5LIB \$PERL5LIB:${tools_dir}/App-Cmd/lib' > app_cmd.csh",
+#    		cwd     => "/etc/profile.d",
+#    		creates => "/etc/profile.d/app_cmd.csh",
+#    		require => Exec[ 'clone_app_cmd' ];
 
   	# install perl package String::RewritePrefix, needed by App::Cmd
-  	"download_string_rewrite_prefix":
-    		command => "wget http://search.cpan.org/CPAN/authors/id/R/RJ/RJBS/String-RewritePrefix-0.006.tar.gz",
-    		cwd     => $tools_dir,
-    		creates => "${tools_dir}/String-RewritePrefix-0.006.tar.gz",
-    		require => Package[ 'wget', 'tar' ];
-   	"unzip_string_rewrite_prefix":
-    		command => "tar -xvzf ${tools_dir}/String-RewritePrefix-0.006.tar.gz",
-    		creates => "${tools_dir}/String-RewritePrefix-0.006/Makefile.PL",
-    		cwd     => $tools_dir,
-    		require => Exec["download_string_rewrite_prefix"];
-  	"make_string_rewrite_prefix_run_sh":
-    		command => "echo 'export PERL5LIB=\$PERL5LIB:${tools_dir}/String-RewritePrefix-0.006/lib' > string_rewrite_prefix.sh",
-    		cwd     => "/etc/profile.d",
-    		creates => "/etc/profile.d/string_rewrite_prefix.sh",
-    		require => Exec[ 'unzip_string_rewrite_prefix' ];
-  	"make_string_rewrite_prefix_run_csh":
-    		command => "echo 'setenv PERL5LIB \$PERL5LIB:${tools_dir}/String-RewritePrefix-0.006/lib' > string_rewrite_prefix.csh",
-    		cwd     => "/etc/profile.d",
-    		creates => "/etc/profile.d/string_rewrite_prefix.csh",
-    		require => Exec[ 'unzip_string_rewrite_prefix' ];
+#  	"download_string_rewrite_prefix":
+#    		command => "wget http://search.cpan.org/CPAN/authors/id/R/RJ/RJBS/String-RewritePrefix-0.006.tar.gz",
+#    		cwd     => $tools_dir,
+#    		creates => "${tools_dir}/String-RewritePrefix-0.006.tar.gz",
+#    		require => Package[ 'wget', 'tar' ];
+#   	"unzip_string_rewrite_prefix":
+#    		command => "tar -xvzf ${tools_dir}/String-RewritePrefix-0.006.tar.gz",
+#    		creates => "${tools_dir}/String-RewritePrefix-0.006/Makefile.PL",
+#    		cwd     => $tools_dir,
+#    		require => Exec["download_string_rewrite_prefix"];
+#  	"make_string_rewrite_prefix_run_sh":
+#    		command => "echo 'export PERL5LIB=\$PERL5LIB:${tools_dir}/String-RewritePrefix-0.006/lib' > string_rewrite_prefix.sh",
+#    		cwd     => "/etc/profile.d",
+#    		creates => "/etc/profile.d/string_rewrite_prefix.sh",
+#    		require => Exec[ 'unzip_string_rewrite_prefix' ];
+#  	"make_string_rewrite_prefix_run_csh":
+#    		command => "echo 'setenv PERL5LIB \$PERL5LIB:${tools_dir}/String-RewritePrefix-0.006/lib' > string_rewrite_prefix.csh",
+#    		cwd     => "/etc/profile.d",
+#    		creates => "/etc/profile.d/string_rewrite_prefix.csh",
+#    		require => Exec[ 'unzip_string_rewrite_prefix' ];
 
    	# install perl package Math::Random
-  		"download_math_random":
-    		command => "wget http://search.cpan.org/CPAN/authors/id/G/GR/GROMMEL/Math-Random-0.70.tar.gz",
-    		cwd     => $tools_dir,
-    		creates => "${tools_dir}/Math-Random-0.70.tar.gz",
-    		require => Package[ 'wget', 'tar' ];
-   	"unzip_math_random":
-    		command => "tar -xvzf ${tools_dir}/Math-Random-0.70.tar.gz",
-    		creates => "${tools_dir}/Math-Random-0.70/Makefile.PL",
-    		cwd     => $tools_dir,
-    		require => Exec["download_math_random"];
-   	"make_makefile_math_random":
-    		command => "perl Makefile.PL",
-		cwd     => "${tools_dir}/Math-Random-0.70",
-		creates => "${tools_dir}/Math-Random-0.70/Makefile",
-		require => Exec["unzip_math_random"];
-   	"make_install_math_random":
-		command => "make install LD_LIBRARY_PATH=/usr/lib",
-		cwd     => "${tools_dir}/Math-Random-0.70",
-		creates => "/usr/local/lib64/perl5/Math/Random.pm",
-		require => Exec["make_makefile_math_random"];
+#  		"download_math_random":
+#    		command => "wget http://search.cpan.org/CPAN/authors/id/G/GR/GROMMEL/Math-Random-0.70.tar.gz",
+#    		cwd     => $tools_dir,
+#    		creates => "${tools_dir}/Math-Random-0.70.tar.gz",
+#    		require => Package[ 'wget', 'tar' ];
+#   	"unzip_math_random":
+#    		command => "tar -xvzf ${tools_dir}/Math-Random-0.70.tar.gz",
+#    		creates => "${tools_dir}/Math-Random-0.70/Makefile.PL",
+#    		cwd     => $tools_dir,
+#    		require => Exec["download_math_random"];
+#   	"make_makefile_math_random":
+#    		command => "perl Makefile.PL",
+#		cwd     => "${tools_dir}/Math-Random-0.70",
+#		creates => "${tools_dir}/Math-Random-0.70/Makefile",
+#		require => Exec["unzip_math_random"];
+#   	"make_install_math_random":
+#		command => "make install LD_LIBRARY_PATH=/usr/lib",
+#		cwd     => "${tools_dir}/Math-Random-0.70",
+#		creates => "/usr/local/lib64/perl5/Math/Random.pm",
+#		require => Exec["make_makefile_math_random"];
 
 
   # 2015-04-19 checking to see if we can get OpenMPI from package manager, as 
