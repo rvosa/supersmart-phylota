@@ -14,7 +14,7 @@ install:
   - "sudo dpkg -i puppetlabs-release-trusty.deb"
   - "sudo apt-get update"
   - "sudo apt-get install puppet"
-  - "sudo puppet apply --test conf/manifests/default.pp"
+  - "sudo puppet apply --debug conf/manifests/default.pp"
   #- "cpanm --notest DBIx::Class | tail -n 1"
   #- "cpanm --notest Template | tail -n 1"
   #- "cpanm --notest Config::Tiny | tail -n 1"
