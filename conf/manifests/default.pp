@@ -461,7 +461,7 @@ exec {
 		require => [ Package['cpanminus'], Exec['cpanm_DBI'] ];
 	"cpanm_DBD_mysql":
 		command => "cpanm --notest DBD::mysql",
-		require => [ Package['cpanminus', 'mysql-server', 'mysql-client], Exec['cpanm_DBI'] ];
+		require => [ Package['cpanminus', 'mysql-server', 'mysql-client'], Exec['cpanm_DBI'] ];
 	"cpanm_Template":
 		command => "cpanm --notest Template",
 		require => Package['cpanminus'];
