@@ -8,7 +8,6 @@ perl:
 env:
   global:
     - SUPERSMART_HOME=$TRAVIS_BUILD_DIR
-    - FACTER_CPANM=/home/travis/perl5/perlbrew/bin/cpanm
 install:
   - "sudo useradd -d /home/vagrant -m vagrant"
   - "wget https://apt.puppetlabs.com/puppetlabs-release-trusty.deb"
@@ -16,6 +15,10 @@ install:
   - "sudo apt-get update"
   - "sudo apt-get install puppet"
   - "sudo puppet apply --debug conf/manifests/default.pp"
+  - "cpanm --notest --installdeps ."
+  - "cpanm --notest git://github.com/rvosa/bio-phylo.git"
+  - "cpanm --notest git://github.com/bioperl/bioperl-live.git@v1.6.x"
+  - "cpanm --notest git://github.com/bioperl/bioperl-run.git"
   #- "cpanm --notest DBIx::Class | tail -n 1"
   #- "cpanm --notest Template | tail -n 1"
   #- "cpanm --notest Config::Tiny | tail -n 1"
