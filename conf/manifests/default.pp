@@ -453,54 +453,57 @@ exec {
 		creates => "/etc/profile.d/supersmart.csh";
 		
 	# install CPAN dependencies
+	"cpanm":
+		command => "cpanm App::cpanminus",
+		require => Package['cpanminus'];
 	"cpanm_DBI":
 		command => "cpanm --notest DBI",
-		require => Package['cpanminus'];
+		require => Exec['cpanm'];
 	"cpanm_DBIx_Class":
 		command => "cpanm --notest DBIx::Class",
-		require => [ Package['cpanminus'], Exec['cpanm_DBI'] ];
+		require => Exec['cpanm_DBI'];
 	"cpanm_DBD_mysql":
 		command => "cpanm --notest DBD::mysql",
-		require => [ Package['cpanminus', 'mysql-server', 'mysql-client'], Exec['cpanm_DBI'] ];
+		require => [ Package['mysql-server', 'mysql-client'], Exec['cpanm_DBI'] ];
 	"cpanm_Template":
 		command => "cpanm --notest Template",
-		require => Package['cpanminus'];
+		require => Exec['cpanm'];
 	"cpanm_Moose":
 		command => "cpanm --notest Moose",
-		require => Package['cpanminus'];
+		require => Exec['cpanm'];
 	"cpanm_XML_Twig":
 		command => "cpanm --notest XML::Twig",
-		require => Package['cpanminus'];
+		require => Exec['cpanm'];
 	"cpanm_HTML_Parser":
 		command => "cpanm --notest HTML::Parser",
-		require => Package['cpanminus'];
+		require => Exec['cpanm'];
 	"cpanm_JSON":
 		command => "cpanm --notest JSON",
-		require => Package['cpanminus'];
+		require => Exec['cpanm'];
 	"cpanm_Math_Random":
 		command => "cpanm --notest Math::Random",
-		require => Package['cpanminus'];
+		require => Exec['cpanm'];
 	"cpanm_App_Cmd":
 		command => "cpanm --notest App::Cmd",
-		require => Package['cpanminus'];
+		require => Exec['cpanm'];
 	"cpanm_String_RewritePrefix":
 		command => "cpanm --notest String::RewritePrefix",
-		require => Package['cpanminus'];
+		require => Exec['cpanm'];
 	"cpanm_IO_String":
 		command => "cpanm --notest IO::String",
-		require => Package['cpanminus'];
+		require => Exec['cpanm'];
 	"cpanm_Bio_Phylo":
 		command => "cpanm --notest git://github.com/rvosa/bio-phylo.git",
-		require => Package['cpanminus'];
+		require => Exec['cpanm'];
 	"cpanm_Bio_Root":
 		command => "cpanm --notest git://github.com/bioperl/Bio-Root.git",
-		require => Package['cpanminus'];
+		require => Exec['cpanm'];
 	"cpanm_bioperl_live":
 		command => "cpanm --notest git://github.com/bioperl/bioperl-live.git@v1.6.x",
-		require => [ Package['cpanminus'], Exec['cpanm_Bio_Root'] ];
+		require => Exec['cpanm_Bio_Root'];
 	"cpanm_bioperl_run":
 		command => "cpanm --notest git://github.com/bioperl/bioperl-run.git",
-		require => [ Package['cpanminus'], Exec['cpanm_bioperl_live'] ];
+		require => Exec['cpanm_bioperl_live'];
 
   	# install BEAST
   	"download_beast":
