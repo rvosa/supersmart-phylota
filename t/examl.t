@@ -7,7 +7,7 @@ use File::Temp 'tempdir';
 use Test::More 'no_plan';
 use Bio::Phylo::PhyLoTA::Config;
 
-my $wd = tempdir( 'CLEANUP' => 1 );
+my $wd = tempdir( 'CLEANUP' => 1, 'DIR' => $ENV{HOME} );
 my $config = Bio::Phylo::PhyLoTA::Config->new;
 
 # test instantiation

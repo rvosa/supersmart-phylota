@@ -9,7 +9,7 @@ use Bio::Phylo::PhyLoTA::Config;
 
 my $config = Bio::Phylo::PhyLoTA::Config->new;
 
-my $wd = tempdir( 'CLEANUP' => 0 );
+my $wd = tempdir( 'CLEANUP' => 0, 'DIR' => $ENV{HOME} );
 
 # test instantiation
 BEGIN { use_ok('Bio::Tools::Run::Phylo::ExaBayes'); }
