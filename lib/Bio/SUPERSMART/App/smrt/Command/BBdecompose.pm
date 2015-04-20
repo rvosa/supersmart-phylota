@@ -53,10 +53,10 @@ sub options {
 	my $outfile_default = "markers-clades.tsv";
 	return (
 		["backbone|b=s", "backbone tree as produced by 'smrt bbinfer'", { arg => "file", mandatory => 1}],
-		["classtree|c=s", "classification tree as produced by 'smrt classify'", { arg => "file", mandatory => 1}],
+		["classtree|c=s", "classification tree as produced by 'smrt classify', only needed with '-g' option", { arg => "file"}],
 		["alnfile|a=s", "list of file locations of merged alignments as produced by 'smrt aln'", { arg => "file", mandatory => 1}],	
 		["taxafile|t=s", "tsv (tab-seperated value) taxa file as produced by 'smrt taxize'", { arg => "file", mandatory => 1}],
-		["add_outgroups|g", "automatically add outgroup for each clade", { default=> 0} ],
+		["add_outgroups|g", "attempt to automatically add outgroup from sister genus for each clade, if sufficient marker overlap between clades", { default=> 0} ],
 		["outfile|o=s", "name of the output file (summary table with included accessions), defaults to $outfile_default", { default=> $outfile_default, arg => "file"}],
 	);	
 }
@@ -65,9 +65,15 @@ sub validate {
 	my ($self, $opt, $args) = @_;		
 
 	#  If alignment or taxa file is absent or empty, abort  
-	my @files = ( $opt->alnfile, $opt->backbone, $opt->taxafile, $opt->classtree );
+	my @files = ( $opt->alnfile, $opt->backbone, $opt->taxafile );
 	foreach my $file ( @files ){
-		$self->usage_error("need alignment and taxa files and classification and backbone tree file") if not $file;
+		$self->usage_error("need alignment and taxa files and backbone tree file") if not $file;
+		$self->usage_error("file $file does not exist") unless (-e $file);
+		$self->usage_error("file $file is empty") unless (-s $file);			
+	}
+	if ( $opt->add_outgroups ) {
+		my $file = $opt->classtree;
+		$self->usage_error("need classification tree if --add_outgroups option is set") if not $file;
 		$self->usage_error("file $file does not exist") unless (-e $file);
 		$self->usage_error("file $file is empty") unless (-s $file);			
 	}
@@ -80,7 +86,6 @@ sub run{
 	my $alnfile = $opt->alnfile;
 	my $taxafile = $opt->taxafile;
 	my $backbone = $opt->backbone;
-	my $common = $opt->classtree;
 	my $add_outgroup = $opt->add_outgroups;
 	my $workdir = $self->workdir;
 	my $outfile= $self->outfile;	
@@ -92,7 +97,7 @@ sub run{
 	my $config = Bio::Phylo::PhyLoTA::Config->new;
 	my $logger = $self->logger;
 			
-	# parse backbone and NCBI common tree
+	# parse backbone tree
 	$logger->info("going to read backbone tree $backbone");
 	my $tree = parse_tree(
 		'-format'     => 'newick',
@@ -100,22 +105,11 @@ sub run{
 		'-as_project' => 1,
 	);
 	$ts->remap_to_ti($tree);
-		
-	my $classtree = parse_tree(
-		'-format'     => 'newick',
-		'-file'       => $common,
-		'-as_project' => 1,
-	);
-			
-	$ts->remap_to_ti($classtree);
-			
+					
 	# parse taxon mapping
 	$logger->info("going to read taxa mapping $taxafile");
 	my @records = $mt->parse_taxa_file($taxafile);
-	
-	# decompose tree into clades and get the sets of species
-	my @set = $ts->extract_clades($tree, @records);
-	
+		
 	# now read the list of alignments
 	my @alignments;
 	$logger->info("going to read list of alignments $alnfile");
@@ -125,11 +119,26 @@ sub run{
 		push @alignments, $_ if /\S/ and -e $_;
 	}
 	
+	# decompose tree into clades and get the sets of species
+	my @set;
+	my @clades = map { my %h=('ingroup'=>$_); \%h; } $ts->extract_clades($tree, @records);;
+	
 	# get one outgroup species for each clade and append to species sets
 	if ( $add_outgroup ){
+		my $common = $opt->classtree;
+		$logger->info("going to read classification tree $common");
+		my $classtree = parse_tree(
+			'-format'     => 'newick',
+			'-file'       => $common,
+			'-as_project' => 1,
+		    );
+		
+		$ts->remap_to_ti($classtree);
+		
 		my $counter = 0;
-		foreach (@set){
-			my @og = $mts->get_outgroup_taxa( $classtree, $_ );
+		foreach my $clade ( @clades ){
+			my $ingroup = $clade->{'ingroup'};
+			my @og = $mts->get_outgroup_taxa( $classtree, $ingroup );
 			
 			# get the two species which occur in the most number of alignments
 			my %aln_for_sp;
@@ -142,14 +151,12 @@ sub run{
 				}
 			}			
 			my @sorted_sp = sort { $aln_for_sp{$a} <=> $aln_for_sp{$b} } keys %aln_for_sp;			
-			my @outgroup = scalar @sorted_sp > 2 ? @sorted_sp[0..1] : @sorted_sp;
+			my @outgroup = scalar @sorted_sp > 4 ? @sorted_sp[0..3] : @sorted_sp;
 
-			# mark outgroup species with an asterisk * so we can identify them later!
-			@outgroup = map {$_.='*'} @outgroup;
-			push @{$_}, @outgroup;			
+			$clade->{'outgroup'} = \@outgroup;
 			$logger->info("Adding outgroup species " . join (', ', @outgroup) . " to clade #" . $counter);
 			$counter++;
-		}	
+		}
 	}
 
 	# write suitable alignments to their respective clade folders
@@ -171,30 +178,30 @@ sub run{
 		if ( $dist <= $config->CLADE_MAX_DISTANCE ) {
 		
 			# assess for each set whether we have enough density
-			for my $i ( 0 .. $#set ) {
-
-				my @species = @{ $set[$i] };
-				my @ingroup = grep { not /\*/ } @species;
-
+			for my $i ( 0 .. $#clades ) {
+				my %h = %{ $clades[$i] };
+				my %ingroup = map {$_=>1} @{$h{'ingroup'}};
+				my %outgroup = map {$_=>1} @{$h{'outgroup'}};
+			
 				my %seq;
 				my $distinct = 0;
 				
-				# do not count outgroup species for distinct species as they will be pruned later
-				for my $s ( @ingroup ) {
+				for my $s ( keys %ingroup, keys %outgroup ) {
 					my @s = grep { /taxon\|$s[^\d]/ } keys %fasta;
 					if ( @s ) {
 						$seq{$s} = \@s;
-						$distinct++;
+						$distinct++ if $ingroup{$s};
 					}
-				}				
+				}
+				
 				# the fraction of distinct, sequenced species is high enough,
 				# and the total number exceeds two (i.e. there is some topology to resolve)
-				if ( ($distinct/scalar(@ingroup)) >= $mdens && $distinct > 2 ) {
+				if ( ($distinct/scalar(keys %ingroup)) >= $mdens && $distinct > 2 ) {
 					$logger->info("$aln is informative and dense enough for clade $i");
 					
 					# write alignment 
 					my ( $fh, $seed ) = _make_handle( $i, $aln, $workdir );
-					for my $s ( @species ) {
+					for my $s ( keys %ingroup, keys %outgroup ) {
 						if ( $seq{$s} ) {
 							for my $j ( 0 .. $#{ $seq{$s} } ) {
 								my $seq = $seq{$s}->[$j];
@@ -205,12 +212,12 @@ sub run{
 					}
 					if ( $add_outgroup ) {
 						# write outgroup to file (skipped if already exists)
-						my @og = map {$_=~s/\*//g;$_} grep { /\*/ } @{$set[$i]};
+						my @og = keys %outgroup;
 						_write_outgroup( $i, \@og, $workdir);
 					}
 				}
 				else {
-					my $dens = sprintf ( "%.2f", $distinct/scalar(@species));
+					my $dens = sprintf ( "%.2f", $distinct/scalar(keys %ingroup));
 					$logger->info("$aln is not informative or dense enough: density " 
 					. $dens . " < $mdens, number of distinct taxa in clade $i: $distinct");
 				}
