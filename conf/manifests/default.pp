@@ -183,7 +183,7 @@ exec {
         logoutput => true,
         require   => Exec[ 'unzip_phylota_dump' ];      
     "chown_phylota_db":
-        command   => "chown -R -h mysql:mysql ${data_dir}/",
+        command   => "chown -R -h mysql:mysql ${data_dir}/ && chmod 660 ${data_dir}/phylota/*",
         logoutput => true,
         require   => Exec[ 'grant_phylota_db' ];
     "mv_phylota_dump":
