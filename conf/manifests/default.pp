@@ -187,7 +187,7 @@ exec {
         logoutput => true,
         require   => Exec[ 'grant_phylota_db' ];
     "mv_phylota_dump":
-        command   => "cp -rp ${data_dir}/phylota/ `mysql -s -N -uroot -p information_schema -e 'SELECT Variable_Value FROM GLOBAL_VARIABLES WHERE Variable_Name = \"datadir\"'`/",
+        command   => "ln -s ${data_dir}/phylota `mysql -s -N -uroot -p information_schema -e 'SELECT Variable_Value FROM GLOBAL_VARIABLES WHERE Variable_Name = \"datadir\"'`",
         logoutput => true,
         require   => Exec[ 'chown_phylota_db' ];                
 
