@@ -189,21 +189,22 @@ exec {
  		cwd     => $data_dir,
     		timeout => 0,
  		require => Exec[ 'dl_phylota_dump'];
+ 	"grant_phylota_db":
+ 		command   => "mysql -u root -e \"create database phylota; grant all on phylota.* to 'mysql'@'localhost';\"",
+ 		logoutput => true,
+ 		require   => Exec[ 'unzip_phylota_dump' ]; 		
  	"mv_phylota_dump":
  	    	command   => "mv ${data_dir}/phylota/ /var/lib/mysql",
  		creates   => "/var/lib/mysql/phylota/seqs.frm",
  		cwd       => "/var/lib/mysql/",
  		logoutput => true,
- 		require   => Exec[ 'unzip_phylota_dump' ];
+ 		require   => Exec[ 'grant_phylota_db' ]; 		
  	"chown_phylota_db":
  		command   => "chown -R -h mysql:mysql mysql/",
  		cwd       => "/var/lib/",
  		logoutput => true,
  		require   => Exec[ 'mv_phylota_dump' ];
- 	"grant_phylota_db":
- 		command   => "mysql -u root -e \"create database phylota; grant all on phylota.* to 'mysql'@'localhost';\"",
- 		logoutput => true,
- 		require   => Exec[ 'chown_phylota_db' ];
+
 
  	# install mafft
  	"dl_mafft":
