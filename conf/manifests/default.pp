@@ -70,7 +70,7 @@ service {
 	"mysql":
 		enable  => true,
 		ensure  => running,
-		require => Package["mysql-server"],
+		require => [ Package["mysql-server"], Exec["chown_phylota_db"] ];
 }
 
 # create links for executables and data directories
@@ -190,7 +190,7 @@ exec {
     		timeout => 0,
  		require => Exec[ 'dl_phylota_dump'];
  	"grant_phylota_db":
- 		command   => "mysql -u root -e \"create database phylota; grant all on phylota.* to 'mysql'@'localhost';\"",
+ 		command   => "mysql -u root -e \"create database phylota; grant all on phylota.* to 'root'@'localhost';\"",
  		logoutput => true,
  		require   => Exec[ 'unzip_phylota_dump' ]; 		
  	"mv_phylota_dump":
