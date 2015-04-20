@@ -20,4 +20,4 @@ install:
   - "cpanm --notest git://github.com/bioperl/bioperl-live.git@v1.6.x"
   - "cpanm --notest git://github.com/bioperl/bioperl-run.git"
   - "source /etc/profile.d/*.sh"
-  - "mysqld --console --datadir=/var/lib/mysql --tmpdir=/tmp"
+  #- "mysqld --console --datadir=/var/lib/mysql --tmpdir=/tmp"
