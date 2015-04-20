@@ -18,8 +18,6 @@ my $exabayes = new_ok('Bio::Tools::Run::Phylo::ExaBayes');
 ok( $exabayes->executable( $config->EXABAYES_BIN ), "exabayes executable" );
 ok( $exabayes->consense_bin( $config->EXABAYES_CONSENSE_BIN ), "consense executable" );
 ok( $exabayes->outfile_name('exabayes_out'), "outfile name" );
-ok( $exabayes->version == qv(1.2.1), "version" );
-# ok( $exabayes->model('DNA'), "model" );
 ok( $exabayes->run_id('testrun'), "ruid" );
 ok( $exabayes->s(1), "seed");
 ok( $exabayes->work_dir( $wd ), "working directory" );
@@ -57,5 +55,3 @@ $exabayes->run_id('testrun2');
 ok( $exabayes->outfile_name('exabayes_out2'));
 # will give warning because consense cannot be called when performing dry run
 ok( $exabayes->run('-phylip'=> $phylip)); 
-
-
