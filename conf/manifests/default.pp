@@ -178,18 +178,18 @@ exec {
         cwd     => $data_dir,
         timeout => 0,
         require => Exec[ 'dl_phylota_dump'];
-    "grant_phylota_db":
-        command   => "mysql -u root -e \"create database phylota; grant all on phylota.* to 'root'@'localhost';\"",
-        logoutput => true,
-        require   => Exec[ 'unzip_phylota_dump' ];      
     "chown_phylota_db":
         command   => "chown -R -h mysql:mysql ${data_dir}/ && chmod 660 ${data_dir}/phylota/*",
         logoutput => true,
-        require   => Exec[ 'grant_phylota_db' ];
+        require   => Exec[ 'unzip_phylota_dump' ];
     "mv_phylota_dump":
         command   => "ln -s ${data_dir}/phylota `mysql -s -N -uroot -p information_schema -e 'SELECT Variable_Value FROM GLOBAL_VARIABLES WHERE Variable_Name = \"datadir\"'`",
         logoutput => true,
         require   => Exec[ 'chown_phylota_db' ];                
+    "grant_phylota_db":
+        command   => "mysql -u root -e \"grant all on phylota.* to 'root'@'localhost';\"",
+        logoutput => true,
+        require   => Exec[ 'mv_phylota_dump' ];      
 
 
     # install mafft
