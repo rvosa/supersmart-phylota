@@ -12,584 +12,383 @@ $data_dir       = "${supersmart_dir}/data"
 # update the $PATH environment variable
 Exec {
   path => [
-	    "/usr/local/sbin",
-	    "/usr/local/bin",
-	    "/usr/sbin",
-	    "/usr/bin",
-	    "/sbin",
-	    "/bin",
-	    ]
+        "/usr/local/sbin",
+        "/usr/local/bin",
+        "/usr/sbin",
+        "/usr/bin",
+        "/sbin",
+        "/bin",
+    ]
 }
 
 # keep package information up to date
 exec {
-  "apt_update":
-   command => "/usr/bin/apt-get update"
+	"apt_update":
+	command => "/usr/bin/apt-get update"
 }
 
 # install packages.
 package {
-  "mysql-server":                ensure => installed, require => Exec ["apt_update"];
-  "mysql-client":                ensure => installed, require => Exec ["apt_update"];
-  "ncbi-blast+":                 ensure => installed, require => Exec ["apt_update"];
-  "wget":                        ensure => installed, require => Exec ["apt_update"];
-  "tar":                         ensure => installed, require => Exec ["apt_update"];
-#  "libdbi-perl":                 ensure => installed, require => Exec ["apt_update"];
-#  "libdbd-mysql-perl":           ensure => installed, require => Exec ["apt_update"];
-#  "libdbix-class-perl":          ensure => installed, require => Exec ["apt_update"];
-#  "libjson-perl":                ensure => installed, require => Exec ["apt_update"];
-#  "libmoose-perl":               ensure => installed, require => Exec ["apt_update"];
-#  "libxml-twig-perl":            ensure => installed, require => Exec ["apt_update"];
-#  "libhtml-html5-parser-perl":   ensure => installed, require => Exec ["apt_update"];
-#  "libconfig-tiny-perl":         ensure => installed, require => Exec ["apt_update"];
-#  "libio-string-perl":           ensure => installed, require => Exec ["apt_update"];
-  "git":                         ensure => installed, require => Exec ["apt_update"];
-  "libarchive-dev":              ensure => installed, require => Exec ["apt_update"];
-  "zlib1g-dev":                  ensure => installed, require => Exec ["apt_update"];
-  "autoconf":                    ensure => installed, require => Exec ["apt_update"];
-  "automake":                    ensure => installed, require => Exec ["apt_update"];
-  "libtool":                     ensure => installed, require => Exec ["apt_update"];
-  "build-essential":             ensure => installed, require => Exec ["apt_update"];
-  "curl":                        ensure => installed, require => Exec ["apt_update"];
-  "gzip":                        ensure => installed, require => Exec ["apt_update"];
-  "openjdk-6-jdk":               ensure => installed, require => Exec ["apt_update"];
-  "subversion":                  ensure => installed, require => Exec ["apt_update"];
-#  "cpanminus":                   ensure => installed, require => Exec ["apt_update"];
-  
-  # 2015-04-19 checking to see if we can get OpenMPI from package manager, as 
-  # building from source takes so long that travis times out. Don't remember
-  # why we weren't doing this in the first place. May have to revert this -- RAV
-  "libopenmpi-dev":              ensure => installed, require => Exec ["apt_update"];
-  "openmpi-bin":                 ensure => installed, require => Exec ["apt_update"];
-  
+	"mysql-server":    ensure => installed, require => Exec ["apt_update"];
+	"mysql-client":    ensure => installed, require => Exec ["apt_update"];
+	"ncbi-blast+":     ensure => installed, require => Exec ["apt_update"];
+	"wget":            ensure => installed, require => Exec ["apt_update"];
+	"tar":             ensure => installed, require => Exec ["apt_update"];
+	"git":             ensure => installed, require => Exec ["apt_update"];
+	"libarchive-dev":  ensure => installed, require => Exec ["apt_update"];
+	"zlib1g-dev":      ensure => installed, require => Exec ["apt_update"];
+	"autoconf":        ensure => installed, require => Exec ["apt_update"];
+	"automake":        ensure => installed, require => Exec ["apt_update"];
+	"libtool":         ensure => installed, require => Exec ["apt_update"];
+	"build-essential": ensure => installed, require => Exec ["apt_update"];
+	"curl":            ensure => installed, require => Exec ["apt_update"];
+	"gzip":            ensure => installed, require => Exec ["apt_update"];
+	"openjdk-6-jdk":   ensure => installed, require => Exec ["apt_update"];
+	"subversion":      ensure => installed, require => Exec ["apt_update"];
+
+	# 2015-04-19 checking to see if we can get OpenMPI from package manager, as 
+	# building from source takes so long that travis times out. Don't remember
+	# why we weren't doing this in the first place. May have to revert this -- RAV
+	"libopenmpi-dev":  ensure => installed, require => Exec ["apt_update"];
+	"openmpi-bin":     ensure => installed, require => Exec ["apt_update"];  
 }
 
 
 # set up the mysql daemon process
 service {
-	"mysql":
-		enable  => true,
-		ensure  => running,
-		require => [ Package["mysql-server"], Exec["chown_phylota_db"] ];
+    "mysql":
+        enable  => true,
+        ensure  => running,
+        require => [ Package["mysql-server"], Exec["chown_phylota_db"] ];
 }
 
 # create links for executables and data directories
 file {
-	$supersmart_dir:
-		ensure  => directory,
-		group   => $username,
-		owner   => $username;
-	$data_dir:
-		ensure  => directory,
-    		group   => $username,
-    		owner   => $username;
-	$src_dir:
-		ensure  => directory,
-    		group   => $username,
-    		owner   => $username,
-    		recurse => true;
-	$tools_dir:
-		ensure  => directory,
-	  	group   => $username,
-    		owner   => $username,
-    		recurse => true;
-  	$tools_bin_dir:
-		ensure  => directory,
-	  	group   => $username,
-    		owner   => $username;
+    $supersmart_dir:
+        ensure  => directory,
+        group   => $username,
+        owner   => $username;
+    $data_dir:
+        ensure  => directory,
+        group   => $username,
+        owner   => $username;
+    $src_dir:
+        ensure  => directory,
+        group   => $username,
+        owner   => $username,
+        recurse => true;
+    $tools_dir:
+        ensure  => directory,
+        group   => $username,
+        owner   => $username,
+        recurse => true;
+    $tools_bin_dir:
+        ensure  => directory,
+        group   => $username,
+        owner   => $username;
 
-  	"muscle_link":
-		path    => "${tools_bin_dir}/muscle",
-		ensure  => link,
-		target  => "${tools_bin_dir}/muscle3.8.31_i86linux64",
-		require => Exec["unzip_muscle"];
-	"phylip-consense_link":
-		path    => "/usr/local/bin/consense-phylip",
-		ensure  => link,
-		target  => "${tools_dir}/phylip-3.696/src/consense",
-		require => Exec["make_phylip"];
-	"examl_link":
-		path    => "${tools_bin_dir}/examl",
-		ensure  => link,
-		target  => "${tools_dir}/ExaML/examl/examl",
-		require => Exec["compile_examl"];
-  	"parse_examl_link":
-    		path    => "${tools_bin_dir}/parse-examl",
-    		ensure  => link,
-    		target  => "${tools_dir}/ExaML/parser/parse-examl",
-    		require => Exec["compile_examl"];
-	"exabayes_link":
-		path    => "${tools_bin_dir}/exabayes",
-		ensure  => link,
-		target  => "${tools_dir}/exabayes-1.4.1/bin/bin/exabayes",
-		require => Exec["download_exabayes"];
-	"parse_exabayes_link":
-    		path  => "${tools_bin_dir}/parse-exabayes",
-    		ensure  => link,
-    		target  => "${tools_dir}/exabayes-1.4.1/bin/bin/parser",
-    		require => Exec["download_exabayes"];
-   	"exabayes_consense_link":
-    		path  => "${tools_bin_dir}/consense-exabayes",
-    		ensure  => link,
-    		target  => "${tools_dir}/exabayes-1.4.1/bin/bin/consense",
-    		require => Exec["download_exabayes"];
-   	"raxml_link":
-    		path    => "${tools_bin_dir}/raxml",
-    		ensure  => link,
-    		target  => "${tools_dir}/standard-RAxML/raxmlHPC-PTHREADS-SSE3",
-    		require => Exec["compile_raxml"];
-   	"treepl_link":
-	  	path    => "${tools_bin_dir}/treePL",
-		ensure  => link,
-		target  => "${tools_dir}/treePL/src/treePL",
-		require => Exec["compile_treepl"];
+    "muscle_link":
+        path    => "${tools_bin_dir}/muscle",
+        ensure  => link,
+        target  => "${tools_bin_dir}/muscle3.8.31_i86linux64",
+        require => Exec["unzip_muscle"];
+    "phylip-consense_link":
+        path    => "/usr/local/bin/consense-phylip",
+        ensure  => link,
+        target  => "${tools_dir}/phylip-3.696/src/consense",
+        require => Exec["make_phylip"];
+    "examl_link":
+        path    => "${tools_bin_dir}/examl",
+        ensure  => link,
+        target  => "${tools_dir}/ExaML/examl/examl",
+        require => Exec["compile_examl"];
+    "parse_examl_link":
+        path    => "${tools_bin_dir}/parse-examl",
+        ensure  => link,
+        target  => "${tools_dir}/ExaML/parser/parse-examl",
+        require => Exec["compile_examl"];
+    "exabayes_link":
+        path    => "${tools_bin_dir}/exabayes",
+        ensure  => link,
+        target  => "${tools_dir}/exabayes-1.4.1/bin/bin/exabayes",
+        require => Exec["download_exabayes"];
+    "parse_exabayes_link":
+        path  => "${tools_bin_dir}/parse-exabayes",
+        ensure  => link,
+        target  => "${tools_dir}/exabayes-1.4.1/bin/bin/parser",
+        require => Exec["download_exabayes"];
+    "exabayes_consense_link":
+        path  => "${tools_bin_dir}/consense-exabayes",
+        ensure  => link,
+        target  => "${tools_dir}/exabayes-1.4.1/bin/bin/consense",
+        require => Exec["download_exabayes"];
+    "raxml_link":
+        path    => "${tools_bin_dir}/raxml",
+        ensure  => link,
+        target  => "${tools_dir}/standard-RAxML/raxmlHPC-PTHREADS-SSE3",
+        require => Exec["compile_raxml"];
+    "treepl_link":
+        path    => "${tools_bin_dir}/treePL",
+        ensure  => link,
+        target  => "${tools_dir}/treePL/src/treePL",
+        require => Exec["compile_treepl"];
 }
 
 # command line tasks
 exec {
 
-    	# set locale to US english to get rid of annoying perl warnings
-    	"set_locale_sh":
-      		command => "echo 'export LC_ALL=en_US.UTF-8' > set_locale.sh",
-      		cwd     => "/etc/profile.d",
-      		creates => "/etc/profile.d/set_locale.sh";
+    # set locale to US english to get rid of annoying perl warnings
+    "set_locale_sh":
+        command => "echo 'export LC_ALL=en_US.UTF-8' > set_locale.sh",
+        cwd     => "/etc/profile.d",
+        creates => "/etc/profile.d/set_locale.sh";
 
-   	# add bin directory for all required tools and smrt executables to PATH
-  	"make_bindir_sh":
-    		command => "echo 'export PATH=\$PATH:${tools_bin_dir}:${src_dir}/supersmart/script' > supersmart-tools-bin.sh",
-    		cwd     => "/etc/profile.d",
-    		creates => "/etc/profile.d/supersmart-tools-bin.sh",
-    		require => File[ $tools_bin_dir ];
-  	"make_bindir_csh":
-    		command => "echo 'setenv PATH \$PATH:${tools_bin_dir}:${src_dir}/supersmart/script' > supersmart-tools-bin.csh",
-    		cwd     => "/etc/profile.d",
-    		creates => "/etc/profile.d/supersmart-tools-bin.csh",
-    		require => File[ $tools_bin_dir ];
+    # add bin directory for all required tools and smrt executables to PATH
+    "make_bindir_sh":
+        command => "echo 'export PATH=\$PATH:${tools_bin_dir}:${src_dir}/supersmart/script' > supersmart-tools-bin.sh",
+        cwd     => "/etc/profile.d",
+        creates => "/etc/profile.d/supersmart-tools-bin.sh",
+        require => File[ $tools_bin_dir ];
+    "make_bindir_csh":
+        command => "echo 'setenv PATH \$PATH:${tools_bin_dir}:${src_dir}/supersmart/script' > supersmart-tools-bin.csh",
+        cwd     => "/etc/profile.d",
+        creates => "/etc/profile.d/supersmart-tools-bin.csh",
+        require => File[ $tools_bin_dir ];
 
-  	# add default EDITOR environment variable
-  	"make_editor_sh":
-    		command => "echo 'export EDITOR=/etc/alternatives/editor' > supersmart-editor.sh",
-    		cwd     => "/etc/profile.d",
-    		creates => "/etc/profile.d/supersmart-editor.sh";
-  	"make_editor_csh":
-    		command => "echo 'setenv EDITOR=/etc/alternatives/editor' > supersmart-editor.csh",
-    		cwd     => "/etc/profile.d",
-    		creates => "/etc/profile.d/supersmart-editor.csh";
+    # add default EDITOR environment variable
+    "make_editor_sh":
+        command => "echo 'export EDITOR=/etc/alternatives/editor' > supersmart-editor.sh",
+        cwd     => "/etc/profile.d",
+        creates => "/etc/profile.d/supersmart-editor.sh";
+    "make_editor_csh":
+        command => "echo 'setenv EDITOR=/etc/alternatives/editor' > supersmart-editor.csh",
+        cwd     => "/etc/profile.d",
+        creates => "/etc/profile.d/supersmart-editor.csh";
 
-	# make phylota database
-	"dl_phylota_dump":
-		command => "wget http://biovel.naturalis.nl/phylota.tar.gz",
-		cwd     => $data_dir,
-		creates => "${data_dir}/phylota.tar.gz",
-		timeout => 0,
-		require => [ File[ $data_dir ], Package[ 'wget' ] ];
-	"unzip_phylota_dump":
- 		command => "tar -xzvf phylota.tar.gz",
- 		creates => "${data_dir}/phylota",
- 		cwd     => $data_dir,
-    		timeout => 0,
- 		require => Exec[ 'dl_phylota_dump'];
- 	"grant_phylota_db":
- 		command   => "mysql -u root -e \"create database phylota; grant all on phylota.* to 'root'@'localhost';\"",
- 		logoutput => true,
- 		require   => Exec[ 'unzip_phylota_dump' ]; 		
- 	"mv_phylota_dump":
- 	    	command   => "mv ${data_dir}/phylota/ /var/lib/mysql",
- 		creates   => "/var/lib/mysql/phylota/seqs.frm",
- 		cwd       => "/var/lib/mysql/",
- 		logoutput => true,
- 		require   => Exec[ 'grant_phylota_db' ]; 		
- 	"chown_phylota_db":
- 		command   => "chown -R -h mysql:mysql mysql/",
- 		cwd       => "/var/lib/",
- 		logoutput => true,
- 		require   => Exec[ 'mv_phylota_dump' ];
+    # make phylota database
+    "dl_phylota_dump":
+        command => "wget http://biovel.naturalis.nl/phylota.tar.gz",
+        cwd     => $data_dir,
+        creates => "${data_dir}/phylota.tar.gz",
+        timeout => 0,
+        require => [ File[ $data_dir ], Package[ 'wget' ] ];
+    "unzip_phylota_dump":
+        command => "tar -xzvf phylota.tar.gz",
+        creates => "${data_dir}/phylota",
+        cwd     => $data_dir,
+        timeout => 0,
+        require => Exec[ 'dl_phylota_dump'];
+    "grant_phylota_db":
+        command   => "mysql -u root -e \"create database phylota; grant all on phylota.* to 'root'@'localhost';\"",
+        logoutput => true,
+        require   => Exec[ 'unzip_phylota_dump' ];      
+    "chown_phylota_db":
+        command   => "chown -R -h mysql:mysql ${data_dir}/",
+        logoutput => true,
+        require   => Exec[ 'grant_phylota_db' ];
+    "mv_phylota_dump":
+        command   => "mv ${data_dir}/phylota/ `mysql -s -N -uroot -p information_schema -e 'SELECT Variable_Value FROM GLOBAL_VARIABLES WHERE Variable_Name = \"datadir\"'`/",
+        logoutput => true,
+        require   => Exec[ 'chown_phylota_db' ];                
 
 
- 	# install mafft
- 	"dl_mafft":
- 		command => "wget http://mafft.cbrc.jp/alignment/software/mafft-7.130-without-extensions-src.tgz",
- 		cwd     => $tools_dir,
- 		creates => "${tools_dir}/mafft-7.130-without-extensions-src.tgz",
-		require => [ File [ $tools_dir ] ];
-	"unzip_mafft":
-		command => "tar -xzvf mafft-7.130-without-extensions-src.tgz",
- 		cwd     => $tools_dir,
- 		creates => "${tools_dir}/mafft-7.130-without-extensions",
- 		require => Exec[ 'dl_mafft' ];
- 	"make_nonroot_makefile_mafft":
- 		command => "sed -i -e 's|PREFIX = /usr/local|PREFIX = ${tools_dir}|g' Makefile",
- 		cwd	=> "${tools_dir}/mafft-7.130-without-extensions/core",
- 		require => Exec[ 'unzip_mafft' ];
- 	"install_mafft":
- 		command => "make && make install",
- 		cwd     => "${tools_dir}/mafft-7.130-without-extensions/core",
- 		creates => "$tools_dir/bin/mafft",
- 		require => Exec[ 'make_nonroot_makefile_mafft' ];
+    # install mafft
+    "dl_mafft":
+        command   => "wget http://mafft.cbrc.jp/alignment/software/mafft-7.130-without-extensions-src.tgz",
+        cwd       => $tools_dir,
+        creates   => "${tools_dir}/mafft-7.130-without-extensions-src.tgz",
+        require   => [ File [ $tools_dir ] ];
+    "unzip_mafft":
+        command   => "tar -xzvf mafft-7.130-without-extensions-src.tgz",
+        cwd       => $tools_dir,
+        creates   => "${tools_dir}/mafft-7.130-without-extensions",
+        require   => Exec[ 'dl_mafft' ];
+    "make_nonroot_makefile_mafft":
+        command   => "sed -i -e 's|PREFIX = /usr/local|PREFIX = ${tools_dir}|g' Makefile",
+        cwd       => "${tools_dir}/mafft-7.130-without-extensions/core",
+        require   => Exec[ 'unzip_mafft' ];
+    "install_mafft":
+        command   => "make && make install",
+        cwd       => "${tools_dir}/mafft-7.130-without-extensions/core",
+        creates   => "$tools_dir/bin/mafft",
+        require   => Exec[ 'make_nonroot_makefile_mafft' ];
 
-	# install muscle multiple sequence alignment
-	"download_muscle":
-		command => "wget http://www.drive5.com/muscle/downloads3.8.31/muscle3.8.31_i86linux64.tar.gz",
-		cwd     => $tools_dir,
-		creates => "${tools_dir}/muscle3.8.31_i86linux64.tar.gz",
-		require => Package[ 'wget', 'tar' ];
-	"unzip_muscle":
-		command => "tar -xzvf muscle3.8.31_i86linux64.tar.gz -C ${tools_bin_dir}",
-		cwd     => $tools_dir,
-		creates => "${tools_bin_dir}/muscle3.8.31_i86linux64",
-		require => Exec["download_muscle"];
+    # install muscle multiple sequence alignment
+    "download_muscle":
+        command   => "wget http://www.drive5.com/muscle/downloads3.8.31/muscle3.8.31_i86linux64.tar.gz",
+        cwd       => $tools_dir,
+        creates   => "${tools_dir}/muscle3.8.31_i86linux64.tar.gz",
+        require   => Package[ 'wget', 'tar' ];
+    "unzip_muscle":
+        command   => "tar -xzvf muscle3.8.31_i86linux64.tar.gz -C ${tools_bin_dir}",
+        cwd       => $tools_dir,
+        creates   => "${tools_bin_dir}/muscle3.8.31_i86linux64",
+        require   => Exec["download_muscle"];
 
- 	# install Bio::Phylo
-#	"clone_bio_phylo":
-#		command => "git clone https://github.com/rvosa/bio-phylo.git",
-#		cwd     => $tools_dir,
-#		creates => "${tools_dir}/bio-phylo",
-#		timeout => 0,
-#		require => Package[ 'git' ];
-#	"make_bio_phylo_sh":
-#		command => "echo 'export PERL5LIB=\$PERL5LIB:${tools_dir}/bio-phylo/lib' > biophylo.sh",
-#		cwd     => "/etc/profile.d",
-#		creates => "/etc/profile.d/biophylo.sh",
-#		require => Exec[ 'clone_bio_phylo' ];
-#	"make_bio_phylo_csh":
-#	  	command => "echo 'setenv PERL5LIB \$PERL5LIB:${tools_dir}/bio-phylo/lib' > biophylo.csh",
-#		cwd     => "/etc/profile.d",
-#		creates => "/etc/profile.d/biophylo.csh",
-#		require => Exec[ 'clone_bio_phylo' ];
+	# 2015-04-19 checking to see if we can get OpenMPI from package manager, as 
+	# building from source takes so long that travis times out. Don't remember
+	# why we weren't doing this in the first place. May have to revert this -- RAV
 
-	# install bioperl-live
-#	"clone_bioperl_live":
-#		command => "git clone -b v1.6.x https://github.com/bioperl/bioperl-live.git",
-#		cwd     => $tools_dir,
-#		creates => "${tools_dir}/bioperl-live",
-#		timeout => 0,
-#		require => Package[ 'git' ];
-#	"make_bioperl_live_sh":
-#		command => "echo 'export PERL5LIB=\$PERL5LIB:${tools_dir}/bioperl-live' > bioperl_live.sh",
-#		cwd     => "/etc/profile.d",
-#		creates => "/etc/profile.d/bioperl_live.sh",
-#		require => Exec[ 'clone_bioperl_live' ];
-#	"make_bioperl_live_csh":
-#		command => "echo 'setenv PERL5LIB \$PERL5LIB:${tools_dir}/bioperl-live' > bioperl_live.csh",
-#		cwd     => "/etc/profile.d",
-#		creates => "/etc/profile.d/bioperl_live.csh",
-#		require => Exec[ 'clone_bioperl_live' ];
+    # install openmpi
+#   "download_openmpi":
+#       command => "wget http://www.open-mpi.org/software/ompi/v1.6/downloads/openmpi-1.6.5.tar.gz",
+#       cwd     => $tools_dir,
+#       creates => "${tools_dir}/openmpi-1.6.5.tar.gz",
+#       require => Package[ 'wget', 'tar' ];
+#   "unzip_openmpi":
+#       command => "tar -xvzf openmpi-1.6.5.tar.gz",
+#       cwd     => $tools_dir,
+#       creates => "${tools_dir}/openmpi-1.6.5",
+#       require => Exec['download_openmpi'];
+#   "install_openmpi":
+#       command => "${tools_dir}/openmpi-1.6.5/configure --prefix=/usr --disable-dlopen && make -j 4 install",
+#       creates => "/usr/bin/mpicc",
+#       cwd     => "${tools_dir}/openmpi-1.6.5",
+#       timeout => 0,
+#       require => Exec['unzip_openmpi'];
 
-	# install bioperl-run
-#	"clone_bioperl_run":
-#		command => "git clone https://github.com/bioperl/bioperl-run.git",
-#		cwd     => $tools_dir,
-#		creates => "${tools_dir}/bioperl-run",
-#		require => Package[ 'git' ];
-#	"make_bioperl_run_sh":
-#		command => "echo 'export PERL5LIB=\$PERL5LIB:${tools_dir}/bioperl-run/lib' > bioperl_run.sh",
-#		cwd     => "/etc/profile.d",
-#		creates => "/etc/profile.d/bioperl_run.sh",
-#		require => Exec[ 'clone_bioperl_run' ];
-#	"make_bioperl_run_csh":
-#		command => "echo 'setenv PERL5LIB \$PERL5LIB:${tools_dir}/bioperl-run/lib' > bioperl_run.csh",
-#		cwd     => "/etc/profile.d",
-#		creates => "/etc/profile.d/bioperl_run.csh",
-#		require => Exec[ 'clone_bioperl_run' ];
+    # install phylip
+    "download_phylip":
+        command => "wget http://evolution.gs.washington.edu/phylip/download/phylip-3.696.tar.gz",
+        cwd     => $tools_dir,
+        creates => "${tools_dir}/phylip-3.696.tar.gz",
+        require => Package[ 'wget', 'tar' ];
+    "unzip_phylip":
+        command => "tar -xzvf ${tools_dir}/phylip-3.696.tar.gz",
+        cwd     => $tools_dir,
+        creates => "${tools_dir}/phylip-3.696/src/Makefile.unx",
+        require => Exec["download_phylip"];
+    "make_phylip":
+        command => "make -f Makefile.unx consense",
+        cwd     => "${tools_dir}/phylip-3.696/src/",
+        creates => "${tools_dir}/phylip-3.696/src/consense",
+        require => Exec["unzip_phylip"];
 
-  	# install perl package App::Cmd
-#   	"clone_app_cmd":
-#   		command => "git clone https://github.com/rjbs/App-Cmd.git",
-#   		cwd     => $tools_dir,
-#   		creates => "${tools_dir}/App-Cmd",
-#   		require => Package[ 'git' ];
-#  	"make_app_cmd_run_sh":
-#    		command => "echo 'export PERL5LIB=\$PERL5LIB:${tools_dir}/App-Cmd/lib' > app_cmd.sh",
-#    		cwd     => "/etc/profile.d",
-#    		creates => "/etc/profile.d/app_cmd.sh",
-#    		require => Exec[ 'clone_app_cmd' ];
-#  	"make_app_cmd_run_csh":
-#    		command => "echo 'setenv PERL5LIB \$PERL5LIB:${tools_dir}/App-Cmd/lib' > app_cmd.csh",
-#    		cwd     => "/etc/profile.d",
-#    		creates => "/etc/profile.d/app_cmd.csh",
-#    		require => Exec[ 'clone_app_cmd' ];
+    # install examl & parser
+    "clone_examl":
+        command => "git clone https://github.com/stamatak/ExaML.git",
+        cwd     => $tools_dir,
+        creates => "${tools_dir}/ExaML/",
+        require => Package[ 'git', 'zlib1g-dev' ];
+    "compile_examl":
+        command => "make -f Makefile.SSE3.gcc LD_LIBRARY_PATH=/usr/lib",
+        cwd     => "${tools_dir}/ExaML/examl",
+        creates => "${tools_dir}/ExaML/examl/examl",
+        require => [ Exec["clone_examl"], Package["libopenmpi-dev","openmpi-bin"] ];
+    "compile_parser":
+        command => "make -f Makefile.SSE3.gcc",
+        cwd     => "${tools_dir}/ExaML/parser",
+        creates => "${tools_dir}/ExaML/parser/parser",
+        require => [ Exec["clone_examl"], Package["libopenmpi-dev","openmpi-bin"] ];
 
-  	# install perl package String::RewritePrefix, needed by App::Cmd
-#  	"download_string_rewrite_prefix":
-#    		command => "wget http://search.cpan.org/CPAN/authors/id/R/RJ/RJBS/String-RewritePrefix-0.006.tar.gz",
-#    		cwd     => $tools_dir,
-#    		creates => "${tools_dir}/String-RewritePrefix-0.006.tar.gz",
-#    		require => Package[ 'wget', 'tar' ];
-#   	"unzip_string_rewrite_prefix":
-#    		command => "tar -xvzf ${tools_dir}/String-RewritePrefix-0.006.tar.gz",
-#    		creates => "${tools_dir}/String-RewritePrefix-0.006/Makefile.PL",
-#    		cwd     => $tools_dir,
-#    		require => Exec["download_string_rewrite_prefix"];
-#  	"make_string_rewrite_prefix_run_sh":
-#    		command => "echo 'export PERL5LIB=\$PERL5LIB:${tools_dir}/String-RewritePrefix-0.006/lib' > string_rewrite_prefix.sh",
-#    		cwd     => "/etc/profile.d",
-#    		creates => "/etc/profile.d/string_rewrite_prefix.sh",
-#    		require => Exec[ 'unzip_string_rewrite_prefix' ];
-#  	"make_string_rewrite_prefix_run_csh":
-#    		command => "echo 'setenv PERL5LIB \$PERL5LIB:${tools_dir}/String-RewritePrefix-0.006/lib' > string_rewrite_prefix.csh",
-#    		cwd     => "/etc/profile.d",
-#    		creates => "/etc/profile.d/string_rewrite_prefix.csh",
-#    		require => Exec[ 'unzip_string_rewrite_prefix' ];
+    # install raxml
+    "clone_raxml":
+        command => "git clone https://github.com/stamatak/standard-RAxML.git",
+        cwd     => $tools_dir,
+        creates => "${tools_dir}/standard-RAxML/",
+        require => Package[ 'git' ];
+    "compile_raxml":
+        command => "make -f Makefile.SSE3.PTHREADS.gcc LD_LIBRARY_PATH=/usr/lib",
+        cwd     => "${tools_dir}/standard-RAxML/",
+        creates => "${tools_dir}/standard-RAxML/raxmlHPC-PTHREADS-SSE3",
+        require => Exec["clone_raxml"];
 
-   	# install perl package Math::Random
-#  		"download_math_random":
-#    		command => "wget http://search.cpan.org/CPAN/authors/id/G/GR/GROMMEL/Math-Random-0.70.tar.gz",
-#    		cwd     => $tools_dir,
-#    		creates => "${tools_dir}/Math-Random-0.70.tar.gz",
-#    		require => Package[ 'wget', 'tar' ];
-#   	"unzip_math_random":
-#    		command => "tar -xvzf ${tools_dir}/Math-Random-0.70.tar.gz",
-#    		creates => "${tools_dir}/Math-Random-0.70/Makefile.PL",
-#    		cwd     => $tools_dir,
-#    		require => Exec["download_math_random"];
-#   	"make_makefile_math_random":
-#    		command => "perl Makefile.PL",
-#		cwd     => "${tools_dir}/Math-Random-0.70",
-#		creates => "${tools_dir}/Math-Random-0.70/Makefile",
-#		require => Exec["unzip_math_random"];
-#   	"make_install_math_random":
-#		command => "make install LD_LIBRARY_PATH=/usr/lib",
-#		cwd     => "${tools_dir}/Math-Random-0.70",
-#		creates => "/usr/local/lib64/perl5/Math/Random.pm",
-#		require => Exec["make_makefile_math_random"];
+    # install exabayes
+    "download_exabayes":
+        command => "wget http://sco.h-its.org/exelixis/material/exabayes/1.4.1/exabayes-1.4.1-linux-openmpi-sse.tar.gz",
+        cwd     => $tools_dir,
+        creates => "${tools_dir}/exabayes-1.4.1-linux-openmpi-sse.tar.gz",
+        require => Package["libopenmpi-dev","openmpi-bin"];
+    "unzip_exabayes":
+        command => "tar -xvzf exabayes-1.4.1-linux-openmpi-sse.tar.gz",
+        cwd     => $tools_dir,
+        creates => "${tools_dir}/exabayes-1.4.1/",
+        require => Exec[ "download_exabayes" ];
 
+    # install supersmart
+    "clone_supersmart":
+        command => "git clone https://github.com/naturalis/supersmart.git",
+        cwd     => $src_dir,
+        creates => "${src_dir}/supersmart",
+        user    => $username,
+        require => Package[ 'git' ];
+    "make_supersmart_sh":
+        command => "echo 'export LD_LIBRARY_PATH=/usr/lib:/usr/lib64:/usr/local/lib' > supersmart.sh && echo 'export SUPERSMART_HOME=${src_dir}/supersmart' >> supersmart.sh && echo 'export PERL5LIB=\$PERL5LIB:\$SUPERSMART_HOME/lib' >> supersmart.sh",
+        cwd     => "/etc/profile.d",
+        creates => "/etc/profile.d/supersmart.sh";
+    "make_supersmart_csh":
+        command => "echo 'setenv LD_LIBRARY_PATH /usr/lib:/usr/lib64:/usr/local/lib' > supersmart.csh && echo 'setenv SUPERSMART_HOME ${src_dir}/supersmart' >> supersmart.csh && echo 'setenv PERL5LIB \$PERL5LIB:\$SUPERSMART_HOME/lib' >> supersmart.csh",
+        cwd     => "/etc/profile.d",
+        creates => "/etc/profile.d/supersmart.csh";
 
-  # 2015-04-19 checking to see if we can get OpenMPI from package manager, as 
-  # building from source takes so long that travis times out. Don't remember
-  # why we weren't doing this in the first place. May have to revert this -- RAV
+    # install BEAST
+    "download_beast":
+        command => "wget https://beast-mcmc.googlecode.com/files/BEASTv1.8.0.tgz",
+        cwd     => $tools_dir,
+        creates => "${tools_dir}/BEASTv1.8.0.tgz",
+        require => Package[ 'wget' ];
+    "unzip_beast":
+        command => "tar -xvzf BEASTv1.8.0.tgz",
+        cwd     => "$tools_dir",
+        creates => "${tools_dir}/BEASTv1.8.0/bin/beast",
+        require => Exec[ 'download_beast' ];
+    "symlink_beast":
+        command => "ln -s ${tools_dir}/BEASTv1.8.0/bin/* .",
+        cwd     => "/usr/local/bin/",
+        creates => "/usr/local/bin/beast",
+        require => Exec[ 'unzip_beast' ];
 
-	# install openmpi
-#	"download_openmpi":
-#		command => "wget http://www.open-mpi.org/software/ompi/v1.6/downloads/openmpi-1.6.5.tar.gz",
-#		cwd     => $tools_dir,
-#		creates => "${tools_dir}/openmpi-1.6.5.tar.gz",
-#		require => Package[ 'wget', 'tar' ];
-#	"unzip_openmpi":
-#		command => "tar -xvzf openmpi-1.6.5.tar.gz",
-#		cwd     => $tools_dir,
-#		creates => "${tools_dir}/openmpi-1.6.5",
-#		require => Exec['download_openmpi'];
-#	"install_openmpi":
-#		command => "${tools_dir}/openmpi-1.6.5/configure --prefix=/usr --disable-dlopen && make -j 4 install",
-#		creates => "/usr/bin/mpicc",
-#		cwd     => "${tools_dir}/openmpi-1.6.5",
-#		timeout => 0,
-#		require => Exec['unzip_openmpi'];
+    # install beagle-lib
+    "checkout_beagle_lib":
+        command => "svn checkout http://beagle-lib.googlecode.com/svn/trunk/ beagle-lib",
+        cwd     => $tools_dir,
+        creates => "${tools_dir}/beagle-lib/autogen.sh",
+        require => Package[ 'subversion', "openjdk-6-jdk" ];
+    "generate_beagle_config":
+        command => "sh autogen.sh",
+        cwd     => "${tools_dir}/beagle-lib/",
+        creates => "${tools_dir}/beagle-lib/configure",
+        require => Exec[ 'checkout_beagle_lib' ];
+    "build_beagle_lib":
+        command => "sh configure && make install",
+        cwd     => "${tools_dir}/beagle-lib/",
+        creates => "/usr/local/lib/libhmsbeagle.so",
+        require => Exec[ 'generate_beagle_config' ];
 
-	# install phylip
-	"download_phylip":
-		command => "wget http://evolution.gs.washington.edu/phylip/download/phylip-3.696.tar.gz",
-		cwd     => $tools_dir,
-		creates => "${tools_dir}/phylip-3.696.tar.gz",
-		require => Package[ 'wget', 'tar' ];
-	"unzip_phylip":
-		command => "tar -xzvf ${tools_dir}/phylip-3.696.tar.gz",
-		cwd     => $tools_dir,
-		creates => "${tools_dir}/phylip-3.696/src/Makefile.unx",
-		require => Exec["download_phylip"];
-	"make_phylip":
-		command => "make -f Makefile.unx consense",
-		cwd     => "${tools_dir}/phylip-3.696/src/",
-		creates => "${tools_dir}/phylip-3.696/src/consense",
-		require => Exec["unzip_phylip"];
-
-	# install examl & parser
-	"clone_examl":
-		command => "git clone https://github.com/stamatak/ExaML.git",
-		cwd     => $tools_dir,
-		creates => "${tools_dir}/ExaML/",
-		require => Package[ 'git', 'zlib1g-dev' ];
-	"compile_examl":
-		command => "make -f Makefile.SSE3.gcc LD_LIBRARY_PATH=/usr/lib",
-		cwd     => "${tools_dir}/ExaML/examl",
-		creates => "${tools_dir}/ExaML/examl/examl",
-		require => [ Exec["clone_examl"], Package["libopenmpi-dev","openmpi-bin"] ];
-	"compile_parser":
-		command => "make -f Makefile.SSE3.gcc",
-		cwd     => "${tools_dir}/ExaML/parser",
-		creates => "${tools_dir}/ExaML/parser/parser",
-		require => [ Exec["clone_examl"], Package["libopenmpi-dev","openmpi-bin"] ];
-
-	# install raxml
-  	"clone_raxml":
-    		command => "git clone https://github.com/stamatak/standard-RAxML.git",
-    		cwd     => $tools_dir,
-    		creates => "${tools_dir}/standard-RAxML/",
-        	require => Package[ 'git' ];
-  	"compile_raxml":
-    		command => "make -f Makefile.SSE3.PTHREADS.gcc LD_LIBRARY_PATH=/usr/lib",
-    		cwd     => "${tools_dir}/standard-RAxML/",
-    		creates => "${tools_dir}/standard-RAxML/raxmlHPC-PTHREADS-SSE3",
-    		require => Exec["clone_raxml"];
-
-    	# install exabayes
-   	"download_exabayes":
-    		command => "wget http://sco.h-its.org/exelixis/material/exabayes/1.4.1/exabayes-1.4.1-linux-openmpi-sse.tar.gz",
-     		cwd     => $tools_dir,
-     		creates => "${tools_dir}/exabayes-1.4.1-linux-openmpi-sse.tar.gz",
-     		require => Package["libopenmpi-dev","openmpi-bin"];
-    	"unzip_exabayes":
-     		command => "tar -xvzf exabayes-1.4.1-linux-openmpi-sse.tar.gz",
-     		cwd     => $tools_dir,
-     		creates => "${tools_dir}/exabayes-1.4.1/",
-     		require => Exec[ "download_exabayes" ];
-#    	"compile_exabayes":
-#      		command => "sh build.sh CC=mpicc CXX=mpicxx",
-#      		cwd     => "${tools_dir}/exabayes-1.2.1/",
-#      		creates => "${tools_dir}/exabayes-1.2.1/bin/exabayes",
-#      		timeout => 0,
-#      		require => Exec[ "unzip_exabayes" ];
-
-	# install supersmart
-	"clone_supersmart":
-		command => "git clone https://github.com/naturalis/supersmart.git",
-		cwd     => $src_dir,
-		creates => "${src_dir}/supersmart",
-		user	=> $username,
-		require => Package[ 'git' ];
-	"make_supersmart_sh":
-		command => "echo 'export LD_LIBRARY_PATH=/usr/lib:/usr/lib64:/usr/local/lib' > supersmart.sh && echo 'export SUPERSMART_HOME=${src_dir}/supersmart' >> supersmart.sh && echo 'export PERL5LIB=\$PERL5LIB:\$SUPERSMART_HOME/lib' >> supersmart.sh",
-		cwd     => "/etc/profile.d",
-		creates => "/etc/profile.d/supersmart.sh";
-	"make_supersmart_csh":
-		command => "echo 'setenv LD_LIBRARY_PATH /usr/lib:/usr/lib64:/usr/local/lib' > supersmart.csh && echo 'setenv SUPERSMART_HOME ${src_dir}/supersmart' >> supersmart.csh && echo 'setenv PERL5LIB \$PERL5LIB:\$SUPERSMART_HOME/lib' >> supersmart.csh",
-		cwd     => "/etc/profile.d",
-		creates => "/etc/profile.d/supersmart.csh";
-		
-	# install CPAN dependencies
-#	"cpanm":
-#		command   => "${::cpanm} --notest --no-sudo --no-interactive --verbose App::cpanminus",
-#		logoutput => true;
-	#	require   => Package['cpanminus'];
-#	"cpanm_DBI":
-#		command   => "${::cpanm} --notest --no-sudo --no-interactive --verbose DBI",
-#		logoutput => true,
-#		require   => Exec['cpanm'];
-#	"cpanm_DBIx_Class":
-#		command   => "${::cpanm} --notest --no-sudo --no-interactive --verbose DBIx::Class",
-#		logoutput => true,
-#		require   => Exec['cpanm_DBI'];
-#	"cpanm_DBD_mysql":
-#		command   => "${::cpanm} --notest --no-sudo --no-interactive --verbose DBD::mysql",
-#		logoutput => true,
-#		require   => [ Package['mysql-server', 'mysql-client'], Exec['cpanm_DBI'] ];
-#	"cpanm_Template":
-#		command   => "${::cpanm} --notest --no-sudo --no-interactive --verbose Template",
-#		logoutput => true,
-#		require   => Exec['cpanm'];
-#	"cpanm_Moose":
-#		command   => "${::cpanm} --notest --no-sudo --no-interactive --verbose Moose",
-#		logoutput => true,
-#		require   => Exec['cpanm'];
-#	"cpanm_XML_Twig":
-#		command   => "${::cpanm} --notest --no-sudo --no-interactive --verbose XML::Twig",
-#		logoutput => true,
-#		require   => Exec['cpanm'];
-#	"cpanm_HTML_Parser":
-#		command   => "${::cpanm} --notest --no-sudo --no-interactive --verbose HTML::Parser",
-#		logoutput => true,
-#		require   => Exec['cpanm'];
-#	"cpanm_JSON":
-#		command   => "${::cpanm} --notest --no-sudo --no-interactive --verbose JSON",
-#		logoutput => true,
-#		require   => Exec['cpanm'];
-#	"cpanm_Math_Random":
-#		command   => "${::cpanm} --notest --no-sudo --no-interactive --verbose Math::Random",
-#		logoutput => true,
-#		require   => Exec['cpanm'];
-#	"cpanm_App_Cmd":
-#		command   => "${::cpanm} --notest --no-sudo --no-interactive --verbose App::Cmd",
-#		logoutput => true,
-#		require   => Exec['cpanm'];
-#	"cpanm_String_RewritePrefix":
-#		command   => "${::cpanm} --notest --no-sudo --no-interactive --verbose String::RewritePrefix",
-#		logoutput => true,
-#		require   => Exec['cpanm'];
-#	"cpanm_IO_String":
-#		command   => "${::cpanm} --notest --no-sudo --no-interactive --verbose IO::String",
-#		logoutput => true,
-#		require   => Exec['cpanm'];
-#	"cpanm_Bio_Phylo":
-#		command   => "${::cpanm} --notest --no-sudo --no-interactive --verbose git://github.com/rvosa/bio-phylo.git",
-#		logoutput => true,
-#		require   => Exec['cpanm'];
-#	"cpanm_bioperl_live":
-#		command   => "${::cpanm} --notest --no-sudo --no-interactive --verbose git://github.com/bioperl/bioperl-live.git@v1.6.x",
-#		logoutput => true,
-#		require   => Exec['cpanm'];
-#	"cpanm_bioperl_run":
-#		command   => "${::cpanm} --notest --no-sudo --no-interactive --verbose git://github.com/bioperl/bioperl-run.git",
-#		logoutput => true,
-#		require   => Exec['cpanm_bioperl_live'];
-
-  	# install BEAST
-  	"download_beast":
-    		command => "wget https://beast-mcmc.googlecode.com/files/BEASTv1.8.0.tgz",
-    		cwd     => $tools_dir,
-    		creates => "${tools_dir}/BEASTv1.8.0.tgz",
-    		require => Package[ 'wget' ];
-  	"unzip_beast":
-    		command => "tar -xvzf BEASTv1.8.0.tgz",
-    		cwd     => "$tools_dir",
-    		creates => "${tools_dir}/BEASTv1.8.0/bin/beast",
-    		require => Exec[ 'download_beast' ];
-  	"symlink_beast":
-    		command => "ln -s ${tools_dir}/BEASTv1.8.0/bin/* .",
-    		cwd     => "/usr/local/bin/",
-    		creates => "/usr/local/bin/beast",
-    		require => Exec[ 'unzip_beast' ];
-
-  	# install beagle-lib
-  	"checkout_beagle_lib":
-    		command => "svn checkout http://beagle-lib.googlecode.com/svn/trunk/ beagle-lib",
-    		cwd     => $tools_dir,
-    		creates => "${tools_dir}/beagle-lib/autogen.sh",
-    		require => Package[ 'subversion', "openjdk-6-jdk" ];
-  	"generate_beagle_config":
-   		command => "sh autogen.sh",
-    		cwd     => "${tools_dir}/beagle-lib/",
-    		creates => "${tools_dir}/beagle-lib/configure",
-    		require => Exec[ 'checkout_beagle_lib' ];
-  	"build_beagle_lib":
-    		command => "sh configure && make install",
-    		cwd     => "${tools_dir}/beagle-lib/",
-    		creates => "/usr/local/lib/libhmsbeagle.so",
-    		require => Exec[ 'generate_beagle_config' ];
-
-	# install treePL
-	"clone_treepl":
-		command => "git clone https://github.com/blackrim/treePL.git",
-		cwd     => $tools_dir,
-		creates => "${tools_dir}/treePL",
-		require => Package[ 'git', 'autoconf', 'automake', 'libtool', 'build-essential', 'tar' ];
-	"unzip_adolc":
-		command => "tar -xvzf adol-c_git_saved.tar.gz",
-		cwd     => "${tools_dir}/treePL/deps",
-		creates => "${tools_dir}/treePL/deps/adol-c",
-		require => [ Exec["clone_treepl"], Package["libopenmpi-dev","openmpi-bin"] ];
-	"autoreconf_adolc":
-		command => "autoreconf -fi",
-		cwd     => "${tools_dir}/treePL/deps/adol-c",
-		creates => "${tools_dir}/treePL/deps/adol-c/configure",
-		require => Exec["unzip_adolc"];
-	"install_adolc":
-		command => "${tools_dir}/treePL/deps/adol-c/configure --prefix=/usr --with-openmp-flag=-fopenmp && make install",
-		cwd     => "${tools_dir}/treePL/deps/adol-c",
-		creates => "/usr/lib64/libadolc.so",
-		require => Exec["autoreconf_adolc"];
-	"unzip_nlopt":
-		command => "tar -xzvf nlopt-2.2.4.tar.gz",
-		cwd     => "${tools_dir}/treePL/deps",
-		creates => "${tools_dir}/treePL/deps/nlopt-2.2.4",
-		require => [ Exec["clone_treepl"], Package["libopenmpi-dev","openmpi-bin"] ];
-	"install_nlopt":
-		command => "${tools_dir}/treePL/deps/nlopt-2.2.4/configure && make install",
-		cwd	=> "${tools_dir}/treePL/deps/nlopt-2.2.4",
-		creates => "/usr/local/include/nlopt.h",
-		require => Exec["unzip_nlopt"];
-	"compile_treepl":
-		command => "${tools_dir}/treePL/src/configure && make",
-		cwd     => "${tools_dir}/treePL/src",
-		creates => "${tools_dir}/treePL/src/treePL",
-		require => Exec["install_adolc","install_nlopt"];
+    # install treePL
+    "clone_treepl":
+        command => "git clone https://github.com/blackrim/treePL.git",
+        cwd     => $tools_dir,
+        creates => "${tools_dir}/treePL",
+        require => Package[ 'git', 'autoconf', 'automake', 'libtool', 'build-essential', 'tar' ];
+    "unzip_adolc":
+        command => "tar -xvzf adol-c_git_saved.tar.gz",
+        cwd     => "${tools_dir}/treePL/deps",
+        creates => "${tools_dir}/treePL/deps/adol-c",
+        require => [ Exec["clone_treepl"], Package["libopenmpi-dev","openmpi-bin"] ];
+    "autoreconf_adolc":
+        command => "autoreconf -fi",
+        cwd     => "${tools_dir}/treePL/deps/adol-c",
+        creates => "${tools_dir}/treePL/deps/adol-c/configure",
+        require => Exec["unzip_adolc"];
+    "install_adolc":
+        command => "${tools_dir}/treePL/deps/adol-c/configure --prefix=/usr --with-openmp-flag=-fopenmp && make install",
+        cwd     => "${tools_dir}/treePL/deps/adol-c",
+        creates => "/usr/lib64/libadolc.so",
+        require => Exec["autoreconf_adolc"];
+    "unzip_nlopt":
+        command => "tar -xzvf nlopt-2.2.4.tar.gz",
+        cwd     => "${tools_dir}/treePL/deps",
+        creates => "${tools_dir}/treePL/deps/nlopt-2.2.4",
+        require => [ Exec["clone_treepl"], Package["libopenmpi-dev","openmpi-bin"] ];
+    "install_nlopt":
+        command => "${tools_dir}/treePL/deps/nlopt-2.2.4/configure && make install",
+        cwd => "${tools_dir}/treePL/deps/nlopt-2.2.4",
+        creates => "/usr/local/include/nlopt.h",
+        require => Exec["unzip_nlopt"];
+    "compile_treepl":
+        command => "${tools_dir}/treePL/src/configure && make",
+        cwd     => "${tools_dir}/treePL/src",
+        creates => "${tools_dir}/treePL/src/treePL",
+        require => Exec["install_adolc","install_nlopt"];
 }
