@@ -11,7 +11,7 @@ use Bio::Phylo::PhyLoTA::Service::TreeService;
 use List::MoreUtils qw(uniq);
 use List::Util qw(max);
 
-use base 'Bio::SUPERSMART::App::smrt::SubCommand';
+use base 'Bio::SUPERSMART::App::SubCommand';
 use Bio::SUPERSMART::App::smrt qw(-command);
 
 # ABSTRACT: creates supermatrix for genus-level backbone tree
@@ -161,24 +161,27 @@ sub run {
 	my @g = $mt->get_distinct_taxa( 'genus' => @records );
 	 	
 	for my $genus ( $mt->get_distinct_taxa( 'genus' => @records ) ) {
-	    # extract the distinct species (and lower) for the focal genus                                                                                                                                                                                                  
+	    # extract the distinct species (and lower) for the focal genus
 	    my @species = $mt->query_taxa_table( $genus, \@ranks, @records );
 	    $species_for_genus{$genus} = \@species;
 	}
     
 	$log->info("read ".scalar(keys(%species_for_genus))." genera");
-	
-        	
+		
 	my @all_species = map {@$_} values(%species_for_genus);	
 
 	# build an adjacency matrix connecting species if they share markers. 
 	my %adjacency_matrix = map {$_=> {map{$_=>0} @all_species}} @all_species;
-
+	my %alns_for_taxa;
+	my %taxa_for_alns;
 	for my $aln ( @alignments ) {
 	    my %fasta = $mt->parse_fasta_file($aln);
-	    my @species = uniq map {$1 if $_=~m/taxon\|([0-9]+)/} keys(%fasta);
-	    for my $s1 (@species) {
-		for my $s2 (@species) {
+	    my @taxa = uniq map {$1 if $_=~m/taxon\|([0-9]+)/} keys(%fasta);
+	    $taxa_for_alns{$aln} = \@taxa;
+	    for my $s1 (@taxa) {
+		$alns_for_taxa{$s1} = [] if not $alns_for_taxa{$s1};	
+		push @{ $alns_for_taxa{$s1} }, $aln;
+		for my $s2 (@taxa) {
 		    $adjacency_matrix{$s1}{$s2}++;
 		}
 	    }	    
@@ -188,209 +191,144 @@ sub run {
 	    delete $adjacency_matrix{$sp}->{$sp};
 	}
 	
-	# now pick the exemplars: rather than just taking the two most distal species
-	#  within a genus, we narrow down the list of possible exemplars by two criteria 
-	#  first: species must share markers with species in other genera, and species
-	#  must share markers with species in it's own genus. After that, we take the most
-	#  distal pair of the remaining species.	
+	# prune adjacency matrix: each taxon which has 
+	#  not sufficient coverage cannot possibly be an exemplar
+	my @low_coverage_taxa = grep { (! $alns_for_taxa{$_}) or (scalar(@{$alns_for_taxa{$_}}) < $config->BACKBONE_MIN_COVERAGE) } keys(%adjacency_matrix);
+	for my $t (@low_coverage_taxa) {
+	    delete ($adjacency_matrix{$t});
+	    for my $k (keys %adjacency_matrix) {
+		delete $adjacency_matrix{$k}->{$t};
+	    }
+	}
+	      
+	# get all independent subsets of species that are connected by at least 
+	# one marker and select the largest subset as candidates for exemplars
+	my $sets = $self->_get_connected_subsets(\%adjacency_matrix);
+	my %candidates = map {$_=>1} @{(sort {scalar (@$b) <=> scalar(@$a)} @$sets)[0]};
+	
+	# now pick the exemplars: 
+	# we first further narrow down the list of possible exemplars by the following criterion 
+	#  * taxon must share at least one marker with a taxon in its own genus. 
+	# If after that, we are still left with more than two candidates in a genus,
+	# we pick the taxa for which the sequences have the highest divergence.
 	my @exemplars;
-	my %distance = map { $_ => {} } keys %species_for_genus;	
 
-     GENUS: for my $genus  ( keys %species_for_genus ) {
-	  my $genus_name = $ts->find_node($genus)->taxon_name;	  
-	  my %species = map {$_=>1} @{$species_for_genus{$genus}};
+	for my $genus ( keys %species_for_genus ) {
+	    $log->info("looking for exemplars in genus $genus");
+	    # select  taxa that are in this genus and are in the candidate exemplars
+	    my %genus_taxa = map {$_=>1} @{$species_for_genus{$genus}};
+	    my %genus_candidates = map {$_=>1} grep { exists($candidates{$_}) } keys %genus_taxa;
 
-	  if ( scalar(keys(%species)) <= 2 ) {
-	      $log->debug( "Genus $genus ($genus_name) has less than three species. Skipping." );
-	      next GENUS; 
-	  }
-
-	  my @candidates;
-	  for my $s (keys(%species)) {
-	      my %adj = %{$adjacency_matrix{$s}};
-	      # species is a candidate to be an exemplar if it is connected to species 
-	      #  inside -and- outside it's own genus
-	      my @connected_genus = grep { exists $species{$_} and $adj{$_} > 0 } keys(%adj);
-	      my @connected_other = grep { ! exists $species{$_} and $adj{$_} > 0 } keys(%adj);
-	      push @candidates, $s if scalar(@connected_genus) and scalar (@connected_other);	      
-	  }
-	  
-	  # now calculate the distance between the candidate species for the genus
-	  my %distance;
-	ALN: for my $aln ( @alignments ) {
-	    $log->debug("checking for species in $aln");
-	    my %fasta = $mt->parse_fasta_file($aln);
-		    
-	    # aggregate sequence objects by species within this genus	      
-	    my %sequences_for_species;
-	    for my $candidate ( @candidates ) {
-		my $name = $ts->find_node($candidate)->taxon_name;
-		if ( my @raw = $mt->get_sequences_for_taxon( $candidate, %fasta ) ) {
-		    $log->debug("$aln contained ".scalar(@raw)." sequences for species $candidate ($name)");
-		    my @seq = map { $dat->new( '-type' => 'dna', '-char' => $_ ) } @raw;
-		      $sequences_for_species{$candidate} = \@seq;
+	    # now only keep the ones that have connection within the genus
+	    for my $can ( keys %genus_candidates ) {
+		my %adj = %{$adjacency_matrix{$can}};
+		my @connected_within = grep { exists $genus_taxa{$_} and $adj{$_} > 0 } keys %adj ;		
+		if ( ( not scalar(@connected_within)) ){
+		    delete $genus_candidates{$can};
 		}
 	    }
-	    
-	    # check if we've seen enough sequenced species	     
-	    if ( scalar(keys(%sequences_for_species)) < 3 ) {
-		$log->debug("not enough sequenced species for genus $genus ($genus_name) in $aln");
-		next ALN;
+	    # at this point, we might have lost exemplars in monotypic genera and exemplars
+	    # that do not share markers with other taxa in the genus; if the latter one 
+	    # is the case, we can only add one single taxon to the exemplars, since
+	    # two taxa without marker overlap would most likely cause a paraphyly in the backbone
+	    if ( scalar keys(%genus_candidates) < 2 ) {
+		if ( my @valid_taxa =  grep { exists($candidates{$_}) } keys %genus_taxa ) {		    
+		    push @exemplars, $valid_taxa[0];
+		    $log->info("added taxon $valid_taxa[0] as (monotypic) exemplar");
+		}
 	    }
-	    # calculate the distances within the genus, take the 
-	    # average if species have multiple sequences
-	    my %dist;
-	    for my $i ( 0 .. ( $#candidates - 1 ) ) {
-		for my $j ( ( $i + 1 ) .. $#candidates ) {
-		    my $sp1 = $candidates[$i];
-		    my $sp2 = $candidates[$j];
-		    if ( $sequences_for_species{$sp1} and $sequences_for_species{$sp2} ) {
-			$log->debug("going to compute average distance between $sp1 and $sp2");
-			my @seqs1 = @{ $sequences_for_species{$sp1} };
-			my @seqs2 = @{ $sequences_for_species{$sp2} };
-			my $dist;
-			for my $seq1 ( @seqs1 ) {
-			    for my $seq2 ( @seqs2 ) {
-				$dist += $seq1->calc_distance($seq2);
-			    }
-			  }
-			$dist /= ( scalar(@seqs1) * scalar(@seqs2) );
-			my $key = join '|', sort { $a <=> $b } ( $sp1, $sp2 );
-			$dist{$key} = $dist;
+	    # if at this point we have two candidates, these are our exemplars
+	    elsif ( scalar keys (%genus_candidates) == 2 ) {		
+		push @exemplars, keys %genus_candidates;
+		$log->info("added taxa " . join(',', keys %genus_candidates) . " as exemplars");
+	    }
+	    # if we still have more than two candidates, calculate take the one which are furthest
+	    # apart within this genus with resprect to the available sequences
+	    elsif ( scalar keys (%genus_candidates) > 2) {
+		$log->info("found more than two exemplar candidates, chosing the most distant ones");
+		my %distance;
+		for my $aln ( sort @alignments ) {		   		    
+		    if ( my $d = $self->_calc_aln_distances($aln, [keys %genus_candidates]) ) {
+			my %dist = %{$d};
+			# pick the most distal pair, weight it by number of pairs minus one
+			my ($farthest) = sort { $dist{$b} <=> $dist{$a} } sort(keys %dist);
+			$distance{$farthest} += scalar(keys(%dist))-1;
 		    }
 		}
-	    }
-	      # pick the most distal pair, weight it by number of pairs minus one
-	    my ($farthest) = sort { $dist{$b} <=> $dist{$a} } keys %dist;
-	    $distance{$farthest} += scalar(keys(%dist))-1;
+		if ( scalar keys (%distance) ) {
+		    my ($sp1,$sp2) = map { split (/\|/, $_) } sort { $distance{$b} <=> $distance{$a} } keys %distance;
+		    push @exemplars, $sp1, $sp2;	
+		    $log->info("added  taxa $sp1,$sp2 as exemplars");
+		} else {
+		    # if most distant pair cannot be found, add them all
+		    # (not shure if this case can ever happen...)
+		    push @exemplars, keys(%genus_candidates);
+		    $log->info("could not retrieve distances, added all taxa " . join(',', keys %genus_candidates) . " as exemplars");
+		}	
+	    }	    
 	}
-	  if ( not scalar keys %distance ) {
-	      push @exemplars, @candidates;
-	      my @names = map {$ts->find_node($_)->taxon_name} @candidates ;
-	      $log->debug('adding species ' . join(', ', @names) . ' to exemplars');		
-	  }
-	  else {
-	      my ($sp1,$sp2) = map { split (/\|/, $_) } sort { $distance{$b} <=> $distance{$a} } keys %distance;
-	      push @exemplars, $sp1, $sp2;
-	      $log->debug('adding species ' . $ts->find_node($sp1)->taxon_name . ', ' . $ts->find_node($sp2)->taxon_name . ' to exemplars');
-	  }	  
-     }
-	use Data::Dumper;
-	print Dumper(\@exemplars);
-	die;
-	
-	  
-	# make the final set of exemplars
-	#my @exemplars;
-	for my $genus ( keys %species_for_genus ) {
-	    
-	    # there were 2 or fewer species in the genus, add all the species
-	    # from the table
-	    if ( not scalar keys %{ $distance{$genus} } ) {
-		push @exemplars, @{ $species_for_genus{$genus} };
-		my @names = map {$ts->find_node($_)->taxon_name} @{ $species_for_genus{$genus} };
-		$log->debug('adding species ' . join(', ', @names) . ' to exemplars');		
-	    }
-	    else {
-		my %p = %{ $distance{$genus} };
-		my ($sp1,$sp2) = map { split (/\|/, $_) } sort { $p{$b} <=> $p{$a} } keys %p;
-		push @exemplars, $sp1, $sp2;
-		$log->debug('adding species ' . $ts->find_node($sp1)->taxon_name . ', ' . $ts->find_node($sp2)->taxon_name . ' to exemplars');
-	    }
-	}
-	
-	# This includes species for which we may end up not having sequences after all
 	$log->info("identified ".scalar(@exemplars)." exemplars");
-	
-	# make the best set of alignments:
-	# 1. map exemplar taxa to alignments and vice versa
-	my ( %taxa_for_aln, %alns_for_taxon, %nchar );
-	for my $aln ( @alignments ) {
-		my %fasta = $mt->parse_fasta_file($aln);
-		$nchar{$aln} = $mt->get_nchar(%fasta);	
+
+	# make the best set of alignments; 
+	#  select only the alignments which include an exemplar 
+	for my $tax ( keys %alns_for_taxa ) {
+	    my %ex = map {$_=>1} @exemplars;
+	    delete $alns_for_taxa{$tax} if not exists $ex{$tax};
+	}
+	for my $aln ( keys %taxa_for_alns ) {
+	    my %ex = map {$_=>1} @exemplars;
+	    my @taxa = grep { exists $ex{$_} } @{$taxa_for_alns{$aln}};
+	    if ( scalar @taxa ) {
+		$taxa_for_alns{$aln} = \@taxa;
+	    } 
+	    else {
+		delete $taxa_for_alns{$aln};
+	    }
+	}
 		
-		# iterate over all exemplars
-		for my $taxon ( @exemplars ) {
-			my ($seq) = $mt->get_sequences_for_taxon($taxon,%fasta);
-			
-			# if taxon participates in this alignment, store the mapping
-			if ( $seq ) {
-				$alns_for_taxon{$taxon} = [] if not $alns_for_taxon{$taxon};	
-				$taxa_for_aln{$aln} = [] if not $taxa_for_aln{$aln};				
-				push @{ $taxa_for_aln{$aln} }, $taxon;
-				push @{ $alns_for_taxon{$taxon} }, $aln;
-			}
-		}
-	}
-	
-	# 2. for each taxon, sort its alignments by decreasing taxon coverage
+	# sort alignments for each exemplar by decreasing taxon coverage
 	for my $taxon ( @exemplars ) {
-		if ( my $alns = $alns_for_taxon{$taxon} ) {
-			my @sorted = sort { scalar(@{$taxa_for_aln{$b}}) <=> scalar(@{$taxa_for_aln{$a}}) } @{ $alns };
-			$alns_for_taxon{$taxon} = \@sorted;
+		if ( my $alns = $alns_for_taxa{$taxon} ) {
+			my @sorted = sort { scalar(@{$taxa_for_alns{$b}}) <=> scalar(@{$taxa_for_alns{$a}}) } @{ $alns };
+			$alns_for_taxa{$taxon} = \@sorted;
 		}
 	}
 	
-	# 3. sort the taxa by increasing occurrence in alignments, so rarely sequenced species
+	# sort the taxa by increasing occurrence in alignments, so rarely sequenced species
 	#    are treated preferentially by including their most speciose alignments first
-	my @sorted_exemplars = sort { scalar(@{$alns_for_taxon{$a}}) <=> scalar(@{$alns_for_taxon{$b}}) } grep { $alns_for_taxon{$_} } @exemplars;
+	my @sorted_exemplars = sort { scalar(@{$alns_for_taxa{$a}}) <=> scalar(@{$alns_for_taxa{$b}}) } grep { $alns_for_taxa{$_} } @exemplars;
 	
-	# starting with the least well-represented taxa...
+	# now collect the alignments (just as many to give all taxa asufficient coverage!)
+	#  starting with the least well-represented taxa
 	my ( %aln, %seen );
-	TAXON: for my $taxon ( @sorted_exemplars ) {
-	    my $taxon_name = $ts->find_node($taxon)->taxon_name;
-		$log->info("Checking alignment coverage for taxon with name $taxon_name");
-		# take all its not-yet-seen alignments...
-		my @alns = grep { ! $aln{$_} } @{ $alns_for_taxon{$taxon} };
-		$seen{$taxon} = 0 if not defined $seen{$taxon};
-		ALN: while( $seen{$taxon} < $config->BACKBONE_MIN_COVERAGE ) {
-			# pick the most speciose alignments first
-			my $aln = shift @alns;
-	                if ( not $aln or not -e $aln ) {
-						$log->warn("no alignment available for exemplar $taxon ($taxon_name)");
-						next TAXON;
-			}
-			$aln{$aln}++;
-			
-			# increment coverage count for all taxa in this alignment
-			$seen{$_}++ for @{ $taxa_for_aln{$aln} };
-			last ALN if not @alns;
-		}
+      TAXON: for my $taxon ( @sorted_exemplars ) {
+	  $log->info("Checking alignment coverage for taxon $taxon");
+	  # take all its not-yet-seen alignments...
+	  my @alns = grep { ! $aln{$_} } @{ $alns_for_taxa{$taxon} };
+	  $seen{$taxon} = 0 if not defined $seen{$taxon};
+	ALN: while( $seen{$taxon} < $config->BACKBONE_MIN_COVERAGE ) {
+	    # pick the most speciose alignments first
+	    my $aln = shift @alns;
+	    if ( not $aln or not -e $aln ) {
+		# this should not happen, since we selected only 
+		# exemplars for which there are sufficient alignments!
+		$log->fatal("no alignment available for exemplar $taxon");
+		next TAXON;
+	    }
+	    $aln{$aln}++;
+	    
+	    # increment coverage count for all taxa in this alignment
+	    $seen{$_}++ for @{ $taxa_for_alns{$aln} };
+	    last ALN if not @alns;
 	}
-	
-	# filter exemplars: only take the ones with sufficient coverage
-	my @filtered_exemplars = grep { $seen{$_} >= $config->BACKBONE_MIN_COVERAGE or exists $user_taxa{$_} } keys %seen;
-	
+      }
 	my @sorted_alignments  = sort keys %aln;
+		
+	$log->info("using ".scalar(@sorted_alignments)." alignments for supermatrix");
+	$log->info("number of exemplars : " . scalar(@sorted_exemplars));
 	
-	# filter the alignments: only include alignments in supermatrix which have
-	#  at least one species from the filtered exemplars ==> no empty rows in supermatrix
-	my @filtered_alignments;
-	for my $aln ( @sorted_alignments ) {
-	        my $count = 0;
-	        # increse counter if an alignment is present for a taxon
-	        for my $taxon ( @filtered_exemplars ) {
-	                my %fasta = $mt->parse_fasta_file($aln);
-	                my ( $seq ) = $mt->get_sequences_for_taxon($taxon,%fasta);
-					if ( $seq ) {
-			                        $count++;
-			                        last;
-					}
-	        }
-	        if ( $count > 0 ) {
-	                $log->info("including $aln in supermatrix");
-	                push @filtered_alignments, $aln; 
-	        } 
-	        else {
-	                $log->info("alignment $aln not included in supermatrix");
-	        }
-	}
-	
-	$log->info("using ".scalar(@filtered_alignments)." alignments for supermatrix");
-	$log->info("number of filtered exemplars : " . scalar(@filtered_exemplars));
-	
-	# filter supermatrix for gap-only columns and write to file
-	$self->_write_supermatrix( \@filtered_alignments, \@filtered_exemplars, \%user_taxa, $outfile, $format, $markersfile );
+	# write alignmnets to supermatrix file
+	$self->_write_supermatrix( \@sorted_alignments, \@sorted_exemplars, \%user_taxa, $outfile, $format, $markersfile );
 	
 	$log->info("DONE, results written to $outfile");
 	
@@ -398,179 +336,183 @@ sub run {
 	
 }
 
+# given a set of alignment files and exemplar taxa, and a file format (default phylip), 
+# writes out a supermstrix to file
 sub _write_supermatrix {
-	my ($self, $alnfiles, $exemplars, $user_taxa, $filename, $format, $markersfile) = @_;
-	
-	my $log = $self->logger;
+    my ($self, $alnfiles, $exemplars, $user_taxa, $filename, $format, $markersfile) = @_;
+    
+    my $log = $self->logger;
     my %user_taxa = %{$user_taxa};
-
-	# make has with concatenated sequences per exemplar
-	my %allseqs = map{ $_ => "" } @{$exemplars}; 
-	
-	# also store which markers have been chosen for each exemplar
-	my @marker_table;
-	
-	my $mt = Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa->new;
-	my $mts = Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector->new;
-	
-	# Retrieve sequences for all exemplar species and populate marker table
-	for my $alnfile ( @$alnfiles ) {
-		my %fasta = $mt->parse_fasta_file($alnfile);
-		my $nchar = length $fasta{(keys(%fasta))[0]};
-		my %row;
-		for my $taxid ( @$exemplars ) {			
-			my @seqs = $mt->get_sequences_for_taxon($taxid, %fasta);
-			$log->warn("Found more than one sequence for taxon $taxid in alignment file $alnfile. Using first sequence.") if scalar(@seqs) > 1; 
-			my $seq;
-			if ( $seq = $seqs[0] ) {			
-				my ($header) = grep {/$taxid/} sort keys(%fasta);
-				$row{$taxid} = $header;
-			}
-			else {	
-	        	$seq = '?' x $nchar;
-			}
-			$allseqs{$taxid} .= $seq;
-		}
-		push @marker_table, \%row;
+    
+    # make has with concatenated sequences per exemplar
+    my %allseqs = map{ $_ => "" } @{$exemplars}; 
+    
+    # also store which markers have been chosen for each exemplar
+    my @marker_table;
+    
+    my $mt = Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa->new;
+    my $mts = Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector->new;
+    
+    # Retrieve sequences for all exemplar species and populate marker table
+    for my $alnfile ( @$alnfiles ) {
+	my %fasta = $mt->parse_fasta_file($alnfile);
+	my $nchar = length $fasta{(keys(%fasta))[0]};
+	my %row;
+	for my $taxid ( @$exemplars ) {			
+	    my @seqs = $mt->get_sequences_for_taxon($taxid, %fasta);
+	    $log->warn("Found more than one sequence for taxon $taxid in alignment file $alnfile. Using first sequence.") if scalar(@seqs) > 1; 
+	    my $seq;
+	    if ( $seq = $seqs[0] ) {			
+		my ($header) = grep {/$taxid/} sort keys(%fasta);
+		$row{$taxid} = $header;
+	    }
+	    else {	
+		$seq = '?' x $nchar;
+	    }
+	    $allseqs{$taxid} .= $seq;
 	}
-
-	$log->info("Filtering exemplars for subsets that do not have marker overlap");
-	my @pruned_exemplars = $self->_prune_exemplars (\@marker_table);
-		
-	
-	my @excluded = grep {my $ex = $_; ! grep($_ == $ex, @pruned_exemplars) } @$exemplars;
-	$log->warn("Found "  . scalar(@excluded) . " exemplars that do not share markers with other exemplars") if scalar (@excluded);
-	
-    # if user specified exemplars were removed, add them back!                        
-    my @excluded_user_taxa = grep {exists $user_taxa{$_}} @excluded;                                                                                        
-
-    push @pruned_exemplars, @excluded_user_taxa;                                                                                   
-
-    foreach my $t (@excluded_user_taxa) {                                       
-           $log->warn("Taxon $t should be excluded due to insufficient marker coverage but is given by in include_taxa argument");                                              
-    }  
-	
-	foreach my $exc (@excluded){
-		my $name = $mts->find_node($exc)->get_name;
-		$log->warn("Excluding exemplar with name $name and id $exc");		
-	}
-		
-	# remove rejected exemplars from marker table
-	my %valid_exemplars = map {$_=>1} @pruned_exemplars;
-	foreach my $m (@marker_table){		
-		foreach my $k ( keys %{$m} ) {			
-			if ( ! exists $valid_exemplars{$k} ){
-				delete $m->{$k};
-			}
-		}		
-	}
-	
-	# write table listing all marker accessions for taxa
-	$mts->write_marker_summary( $markersfile, \@marker_table, \@pruned_exemplars );
-	
-	# only keep the sequences that belong to the pruned exemplars
-	%allseqs = map { $_=> $allseqs{$_} } grep {exists $allseqs{$_} } @pruned_exemplars;
-		
-	# Delete columns that only consist of gaps
-	my $nchar = length $allseqs{(keys(%allseqs))[0]};
-	my $vals = values %allseqs;
-	my %ind;
-	for my $v (values %allseqs) {
-	  # check if column only consists of gap characters
-	  $ind{ pos($v) -1 }++ while $v =~ /[-Nn\?]/g;
-	}
-	my @to_remove = sort {$b <=> $a} grep { $ind{$_} == $vals } keys %ind;
-	
-	# remove columns at specified indices
-	for my $v (values %allseqs) {
-	  substr($v, $_, 1, "") for @to_remove;
-	}
-
-	my $removed = $nchar - length $allseqs{(keys(%allseqs))[0]};
-	$log->info("Removed $removed gap-only columns from supermatrix");
-
-	# Write supermatrix to file
-	my $aln = Bio::SimpleAlign->new();
-	map {$aln->add_seq(Bio::LocatableSeq->new(-id=>$_, seq=>$allseqs{$_}, start=>1)) } keys %allseqs;
-	
-	my $stream = Bio::AlignIO->new(-format	 => $format,
+	push @marker_table, \%row;
+    }
+    
+    # remove rejected exemplars from marker table
+    my %valid_exemplars = map {$_=>1} @{$exemplars};
+    foreach my $m (@marker_table){		
+	foreach my $k ( keys %{$m} ) {			
+	    if ( ! exists $valid_exemplars{$k} ){
+		delete $m->{$k};
+	    }
+	}		
+    }
+    
+    # write table listing all marker accessions for taxa
+    $mts->write_marker_summary( $markersfile, \@marker_table, $exemplars );
+        
+    # Delete columns that only consist of gaps
+    my $nchar = length $allseqs{(keys(%allseqs))[0]};
+    my $vals = values %allseqs;
+    my %ind;
+    for my $v (values %allseqs) {
+	# check if column only consists of gap characters
+	$ind{ pos($v) -1 }++ while $v =~ /[-Nn\?]/g;
+    }
+    my @to_remove = sort {$b <=> $a} grep { $ind{$_} == $vals } keys %ind;
+    
+    # remove columns at specified indices
+    for my $v (values %allseqs) {
+	substr($v, $_, 1, "") for @to_remove;
+    }
+    
+    my $removed = $nchar - length $allseqs{(keys(%allseqs))[0]};
+    $log->info("Removed $removed gap-only columns from supermatrix");
+    
+    # Write supermatrix to file
+    my $aln = Bio::SimpleAlign->new();
+    map {$aln->add_seq(Bio::LocatableSeq->new(-id=>$_, seq=>$allseqs{$_}, start=>1)) } keys %allseqs;
+    
+    my $stream = Bio::AlignIO->new(-format	 => $format,
                                    -file     => ">$filename",
                                    -idlength => 10 );
-	
-	$stream->write_aln($aln);	
+    
+    $stream->write_aln($aln);	
 }
 
-
-# It often happens that there are subsets of exemplars that do not share markers with other sets of exemplars.
-#  When inferring a tree with such a disconnected supermatrix, disconnected sets show very long branch lengths.
-#  This subroutine returns the largest subset of exemplars that have common markers. This is done by doing a 
-#  breadth-first search on the adjaceny matrix of exemplars connected by their respective markers.
-sub _prune_exemplars {
-	my ($self, $tab ) = @_;
-	my @marker_table = @$tab;
-	
-	# create adjacency matrix
-	my %adj;
-	foreach my $column ( @marker_table ) {
-		my @species = sort keys (%$column); 
-		for my $i ( 0..$#species ) {
-			
-			for my $j ( $i+1..$#species ) {				
-				my %specs_i = map { $_ => 1 } @{$adj{$species[$i]}};
-				my %specs_j = map { $_ => 1 } @{$adj{$species[$j]}};
-				
-				if ( ! exists $specs_i{$species[$j]}) {
-					push @{$adj{$species[$i]}}, $species[$j];			
-				}
-				if ( ! exists $specs_j{$species[$i]}) {								
-					push @{$adj{$species[$j]}}, $species[$i];
-				}							
-			}			
-		}						
+# given an alignment file (fasta) and a reference to an array of taxon ids,
+# calculates the distance between the taxa with respect to the sequences 
+# given (if taxa share markers). Returned is a hashref with keys being a combination 
+# of taxa, separated by '|', the values being the molecular distance between these taxa,
+# normalized by sequence length
+sub _calc_aln_distances {
+    my ($self, $aln, $tax) = @_;
+    my @taxa = @$tax;
+    
+    my $ts = Bio::Phylo::PhyLoTA::Service::TreeService->new;	
+    my $mt = Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa->new;
+    my $dat    	= 'Bio::Phylo::Matrices::Datum';
+    my $log = $self->logger;
+    my %fasta = $mt->parse_fasta_file($aln);
+    my %dist;
+    
+    # aggregate sequence objects by species within this genus	      
+    my %sequences_for_species;
+    for my $taxon ( @taxa ) {
+	my $name = $ts->find_node($taxon)->taxon_name;
+	if ( my @raw = $mt->get_sequences_for_taxon( $taxon, %fasta ) ) {
+	    $log->debug("$aln contained ".scalar(@raw)." sequences for species $taxon ($name)");
+	    my @seq = map { $dat->new( '-type' => 'dna', '-char' => $_ ) } @raw;
+	    $sequences_for_species{$taxon} = \@seq;
 	}
-	
-	# do a BFS to get the unconnected subgraphs from the adjacency matrix	
-	my @sets;	
-	my @current_set;
-	
-	my @queue = ( sort keys (%adj))[0];
-		
-	while ( @queue ) {
-		my $current_node = shift (@queue);						
-		push @current_set, $current_node;				
-		if (exists $adj{$current_node}){						
-			my @neighbors = @{$adj{$current_node}};
-			if ( @neighbors ) {
-				foreach my $node ( @neighbors ) {
-					if ($node != $current_node){
-						push @queue, $node;			
-					}		
-				}		
-			}
-			delete $adj{$current_node};
-		}				
-		@current_set = uniq (@current_set);
-		@queue = uniq (@queue);
+    }
+    
+    # check if we've seen enough sequenced species	     
+    if ( scalar(keys(%sequences_for_species)) < 3 ) {
+	$log->debug("less than 3 species in $aln, no distance calculated");
+	return;
+    }
 
-		if (scalar (@queue) == 0){
-			my @cs = @current_set;
-			push @sets, \@cs;			
-			@current_set = ();			
-			if ( keys %adj ){
-				my ($key) = sort keys %adj; 
-				push @queue, $key;
-			}
-		}		
-	}	
-	
-	my $max_exemplars = max( map {scalar (@$_)} @sets);
-	foreach my $s (@sets) {
-		if ( scalar @$s == $max_exemplars ) {
-			return @$s;
+    # calculate the distances between give taxa, take the 
+    # average if species have multiple sequences
+    for my $i ( 0 .. ( $#taxa - 1 ) ) {
+	for my $j ( ( $i + 1 ) .. $#taxa ) {
+	    my $sp1 = $taxa[$i];
+	    my $sp2 = $taxa[$j];
+	    if ( $sequences_for_species{$sp1} and $sequences_for_species{$sp2} ) {
+		$log->debug("going to compute average distance between $sp1 and $sp2");
+		my @seqs1 = @{ $sequences_for_species{$sp1} };
+		my @seqs2 = @{ $sequences_for_species{$sp2} };
+		my $dist;
+		for my $seq1 ( @seqs1 ) {
+		    for my $seq2 ( @seqs2 ) {
+			$dist += $seq1->calc_distance($seq2);
+		    }
 		}
-		
-	}	
+		$dist /= ( scalar(@seqs1) * scalar(@seqs2) );
+		my $key = join '|', sort { $a <=> $b } ( $sp1, $sp2 );
+		$dist{$key} = $dist;
+	    }
+	}
+    }
+    return \%dist;
 }
 
+# given an adjacency matrix, does a BFS in the graph and enumerates all connected subsets of 
+# taxa
+sub _get_connected_subsets {
+    my ($self, $adjmatrix) = @_;
+    my %adj = %{$adjmatrix};
+    # do a BFS to get the unconnected subgraphs from the adjacency matrix	
+    my @sets;	
+    my @current_set;
+
+    my @queue = ( sort keys (%adj))[0];
+    
+    while ( @queue ) {
+	my $current_node = shift (@queue);						
+	push @current_set, $current_node;				
+	if (exists $adj{$current_node}){						
+	    my @neighbors = grep { $adj{$current_node}{$_} }  keys %{$adj{$current_node}};
+	    if ( @neighbors ) {
+		foreach my $node ( @neighbors ) {
+		    if ($node != $current_node){
+			push @queue, $node;			
+		    }		
+		}		
+	    }
+	    delete $adj{$current_node};
+	}				
+	@current_set = uniq (@current_set);
+	@queue = uniq (@queue);
+	
+	if (scalar (@queue) == 0){
+	    my @cs = @current_set;
+	    push @sets, \@cs;			
+	    @current_set = ();			
+	    if ( keys %adj ){
+		my ($key) = sort keys %adj; 
+		push @queue, $key;
+	    }
+	}		
+    }	    
+    return \@sets;
+}
 
 1;

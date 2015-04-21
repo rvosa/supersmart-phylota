@@ -9,7 +9,7 @@ use Bio::Phylo::PhyLoTA::Config;
 
 my $config = Bio::Phylo::PhyLoTA::Config->new;
 
-my $wd = tempdir( 'CLEANUP' => 0, 'DIR' => $ENV{HOME} );
+my $wd = tempdir( 'CLEANUP' => 1, 'DIR' => $ENV{HOME} );
 
 # test instantiation
 BEGIN { use_ok('Bio::Tools::Run::Phylo::ExaBayes'); }
@@ -53,5 +53,6 @@ $phylip = "$Bin/testdata/testmatrix.phy";
 
 $exabayes->run_id('testrun2');
 ok( $exabayes->outfile_name('exabayes_out2'));
+
 # will give warning because consense cannot be called when performing dry run
 ok( $exabayes->run('-phylip'=> $phylip)); 
