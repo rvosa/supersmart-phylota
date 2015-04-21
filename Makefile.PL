@@ -20,6 +20,7 @@ WriteMakefile(
 		'App::Cmd'              => 0,
 		'String::RewritePrefix' => 0,
 		'IO::String'            => 0,
+		'Statistics::R'         => 0,
 		# 'BioPerl'               => 0,
 		# 'BioPerl-Run'           => 0,
 		# 'Parallel::MPI::Simple' => 0, 
