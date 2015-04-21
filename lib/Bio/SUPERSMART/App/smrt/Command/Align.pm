@@ -7,7 +7,7 @@ use Bio::Phylo::Matrices::Matrix;
 use Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa;
 use Bio::Phylo::PhyLoTA::Service::SequenceGetter;
 use Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector;
-use Bio::Phylo::PhyLoTA::Service::ParallelService 'pthreads';
+use Bio::Phylo::PhyLoTA::Service::ParallelService 'pfm';
 
 use Bio::PrimarySeq;
 use Bio::AlignIO;
@@ -150,7 +150,7 @@ sub run {
     
 	# now make the alignments in parallel mode
     my @result = pmap {        		
-	my $clinfo = $_;
+	my ($clinfo) = @_;
         
 	# alignments could be pre-computed so don't align again if fasta file already exists 
 	my $filename = $self->workdir . '/' . $clinfo  . '.fa';	    

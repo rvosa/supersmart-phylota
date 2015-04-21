@@ -11,7 +11,7 @@ use Bio::Phylo::PhyLoTA::Config;
 use Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa;
 use Bio::Phylo::PhyLoTA::Service::SequenceGetter;
 
-use Bio::Phylo::PhyLoTA::Service::ParallelService 'pthreads';
+use Bio::Phylo::PhyLoTA::Service::ParallelService 'pfm';
 
 use base 'Bio::SUPERSMART::App::SubCommand';
 use Bio::SUPERSMART::App::smrt qw(-command);
