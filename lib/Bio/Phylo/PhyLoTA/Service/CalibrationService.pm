@@ -68,10 +68,6 @@ sub new {
     return $self;
 }
 
-sub add_calibration_point {
-	
-}
-
 =item calibrate_tree
 
 Calibrates an additive tree using a CalibrationTable object, returns an ultrametric tree.
