@@ -7,6 +7,7 @@ use Bio::Phylo::Matrices::Datum;
 use Bio::Phylo::PhyLoTA::Config;
 use Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa;
 use Bio::Phylo::PhyLoTA::Service::TreeService;
+use Bio::SUPERSMART::App::smrt::SubCommand;
 
 use List::MoreUtils qw(uniq);
 use List::Util qw(max);
