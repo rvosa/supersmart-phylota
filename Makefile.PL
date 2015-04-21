@@ -22,7 +22,7 @@ WriteMakefile(
 		'IO::String'            => 0,
 		'Statistics::R'         => 0,
 		'Parallel::ForkManager' => 0,
-		'Parallel::MPI::Simple' => 0,
+		# 'Parallel::MPI::Simple' => 0,
 		# 'BioPerl'               => 0,
 		# 'BioPerl-Run'           => 0,
 		# 'Bio::Phylo'            => 0, 
