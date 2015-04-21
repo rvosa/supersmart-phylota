@@ -46,4 +46,4 @@ my $chronogram = $cs->calibrate_tree(
  	'-numsites'          => 15498,
  	'-calibration_table' => $ct,
 );
-ok( print $chronogram->to_newick );
+ok( $chronogram->to_newick );

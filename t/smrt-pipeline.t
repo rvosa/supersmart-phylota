@@ -4,7 +4,7 @@ use warnings;
 use Test::More 'no_plan';
 use App::Cmd::Tester;
 use FindBin '$Bin';
-use File::Temp qw(tempfile tempdir);
+use File::Temp qw(tempdir);
 
 use Bio::Phylo::Util::Logger ':levels';
 use Bio::SUPERSMART::App::smrt;
@@ -29,7 +29,7 @@ my $fossilfile = "$Bin/testdata/marine_calibration.txt";
 
 my $log = Bio::Phylo::Util::Logger->new( '-level' => INFO, '-class' => 'main' );
 
-my $workdir = tempdir( CLEANUP => 0 );
+my $workdir = tempdir( CLEANUP => 0, 'DIR' => $ENV{HOME} );
 my $taxafile = "taxa.tsv";
 my $classfile = "classtree.dnd";
 my $alnfile = "aln.txt";

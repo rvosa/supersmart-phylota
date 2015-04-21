@@ -4,7 +4,7 @@ use warnings;
 use Test::More 'no_plan';
 use App::Cmd::Tester;
 use FindBin '$Bin';
-use File::Temp qw(tempfile tempdir);
+use File::Temp qw(tempfile);
 
 use Bio::SUPERSMART::App::smrt;
 
@@ -23,7 +23,7 @@ sub _output_ok {
 my $matrix = "$Bin/testdata/supermatrix-fishes.phy";
 my $classtree = "$Bin/testdata/classificationtree-fishes.dnd";
 
-my ($fh, $outfile) = tempfile( 'CLEANUP' => 1 );
+my ($fh, $outfile) = tempfile( 'CLEANUP' => 1, 'DIR' => $ENV{HOME} );
 
 my $result = test_app( Bio::SUPERSMART::App::smrt=> [ "bbinfer",  "-s",   $matrix, "-t", $classtree, "-o", $outfile ]);
 _output_ok ( $result, $outfile );

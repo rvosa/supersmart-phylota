@@ -21,13 +21,13 @@ sub _output_ok {
 }
 
 my $infile = "$Bin/testdata/testnames.txt";
-my ($fh, $outfile) = tempfile( 'CLEANUP' => 1 );
+my ($fh, $outfile) = tempfile( 'CLEANUP' => 1, 'DIR' => $ENV{HOME} );
 
 my $result = test_app( Bio::SUPERSMART::App::smrt=> [ "taxize",  "-i",   $infile, "-o", $outfile ]);
 _output_ok ( $result, $outfile );
 
 # test with wordir argument and output file name without path
-my $dir = tempdir ( 'CLEANUP' => 1 );
+my $dir = tempdir ( 'CLEANUP' => 1, 'DIR' => $ENV{HOME} );
 $outfile= $dir . "/out.txt";
 
 $result = test_app( Bio::SUPERSMART::App::smrt=> [ "taxize",  "-i",   $infile, "-o", $outfile, "-w", $dir ]);

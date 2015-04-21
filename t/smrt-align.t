@@ -26,7 +26,7 @@ sub _output_ok {
 	ok ( -s $outfile, "outfile not empty" );
 }
 
-my $workdir = tempdir( CLEANUP => 0 );
+my $workdir = tempdir( CLEANUP => 1, 'DIR' => $ENV{HOME} );
 my $outfile = $workdir . "/aligned.txt";
 my $infile = "$Bin/testdata/species-fishes.tsv";
 

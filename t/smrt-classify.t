@@ -4,7 +4,7 @@ use warnings;
 use Test::More 'no_plan';
 use App::Cmd::Tester;
 use FindBin '$Bin';
-use File::Temp qw(tempfile tempdir);
+use File::Temp qw(tempfile);
 use Bio::Phylo::IO 'parse_tree';
 
 use Bio::SUPERSMART::App::smrt;
@@ -26,7 +26,7 @@ my @infiles = ( "$Bin/testdata/species.tsv", "$Bin/testdata/species-allranks.tsv
 # first test if command runs and has output
 
 foreach my $in ( @infiles ) {
-	my ($fh, $outfile) = tempfile( 'CLEANUP' => 1 );
+	my ($fh, $outfile) = tempfile( 'CLEANUP' => 1 , 'DIR' => $ENV{HOME});
 	my $result = test_app( Bio::SUPERSMART::App::smrt=> [ "classify",  "-i",   $in, "-o", $outfile ]);
 	
 	# check if run was ok		
