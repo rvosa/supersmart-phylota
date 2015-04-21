@@ -23,6 +23,11 @@ WriteMakefile(
 		'Statistics::R'         => 0,
 		'Parallel::ForkManager' => 0,
 		# 'Parallel::MPI::Simple' => 0,
+		
+		# XXX would be good if there was some way to define a dependency on
+		# git repositories such that `cpanm --installdeps .` would be able
+		# to pick it up. Doesn't work here, but maybe in the extended
+		# meta merge stuff?
 		# 'BioPerl'               => 0,
 		# 'BioPerl-Run'           => 0,
 		# 'Bio::Phylo'            => 0, 
