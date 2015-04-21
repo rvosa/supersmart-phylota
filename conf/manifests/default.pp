@@ -8,6 +8,7 @@ $tools_dir      = "${supersmart_dir}/tools"
 $tools_bin_dir  = "${tools_dir}/bin"
 $src_dir        = "${supersmart_dir}/src"
 $data_dir       = "${supersmart_dir}/data"
+$cran_url       = "http://cran.us.r-project.org"
 
 # update the $PATH environment variable
 Exec {
@@ -45,6 +46,8 @@ package {
 	"gzip":            ensure => installed, require => Exec ["apt_update"];
 	"openjdk-6-jdk":   ensure => installed, require => Exec ["apt_update"];
 	"subversion":      ensure => installed, require => Exec ["apt_update"];
+	"r-base":          ensure => installed, require => Exec ["apt_update"];
+	"r-base-dev":      ensure => installed, require => Exec ["apt_update"];
 
 	# 2015-04-19 checking to see if we can get OpenMPI from package manager, as 
 	# building from source takes so long that travis times out. Don't remember
@@ -391,4 +394,19 @@ exec {
         cwd     => "${tools_dir}/treePL/src",
         creates => "${tools_dir}/treePL/src/treePL",
         require => Exec["install_adolc","install_nlopt"];
+        
+    # install R packages
+    "install_r_ape":
+    	command => "echo 'install.packages(\"ape\",repos=\"${cran_url}\")' | R --vanilla",
+    	require => Package['r-base', 'r-base-dev'];
+    "install_r_phangorn":
+    	command => "echo 'install.packages(\"phangorn\",repos=\"${cran_url}\")' | R --vanilla",
+    	require => Exec['install_r_ape'];    	
+    "install_r_phylosim":
+    	command => "echo 'install.packages(\"phylosim\",repos=\"${cran_url}\")' | R --vanilla",
+    	require => Exec['install_r_ape'];    	
+    "install_r_phytools":
+    	command => "echo 'install.packages(\"phytools\",repos=\"${cran_url}\")' | R --vanilla",
+    	require => Exec['install_r_ape'];        	
+
 }
