@@ -2,6 +2,13 @@ package Bio::SUPERSMART::App::smrt::Command::BBinfer::exabayes;
 use Bio::Tools::Run::Phylo::ExaBayes;
 use base 'Bio::SUPERSMART::App::smrt::Command::BBinfer';
 
+=head1 NAME
+
+exabayes.pm - wrapper for ExaBayes. No serviceable parts inside.
+
+=cut
+
+
 sub _configure {
     my ( $self, $tool, $config ) = @_;
     my $logger = $self->logger;

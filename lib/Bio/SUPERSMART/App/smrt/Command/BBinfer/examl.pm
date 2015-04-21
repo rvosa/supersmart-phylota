@@ -4,6 +4,12 @@ use warnings;
 use Bio::Tools::Run::Phylo::ExaML;
 use base 'Bio::SUPERSMART::App::smrt::Command::BBinfer';
 
+=head1 NAME
+
+examl.pm - wrapper for ExaML. No serviceable parts inside.
+
+=cut
+
 sub _configure {
     my ( $self, $tool, $config ) = @_;
     my $logger = $self->logger;

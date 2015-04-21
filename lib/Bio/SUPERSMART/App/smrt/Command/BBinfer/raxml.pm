@@ -5,6 +5,12 @@ use File::Spec;
 use Bio::Tools::Run::Phylo::Raxml;
 use base 'Bio::SUPERSMART::App::smrt::Command::BBinfer';
 
+=head1 NAME
+
+raxml.pm - wrapper for RAxML. No serviceable parts inside.
+
+=cut
+
 sub _create {
     my $self = shift;
     my $config = $self->config;
