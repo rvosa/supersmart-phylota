@@ -6,8 +6,9 @@ use warnings;
 use Bio::Phylo::PhyLoTA::Config;
 use Bio::Tools::Run::Phylo::StarBEAST;
 
-use Bio::Phylo::PhyLoTA::Service::ParallelService 'pfm';
+use Bio::Phylo::PhyLoTA::Service::ParallelService;
 
+use Bio::SUPERSMART::App::SubCommand;
 use base 'Bio::SUPERSMART::App::SubCommand';
 use Bio::SUPERSMART::App::smrt qw(-command);
 

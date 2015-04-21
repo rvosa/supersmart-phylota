@@ -7,11 +7,12 @@ use Bio::Phylo::Matrices::Matrix;
 use Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa;
 use Bio::Phylo::PhyLoTA::Service::SequenceGetter;
 use Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector;
-use Bio::Phylo::PhyLoTA::Service::ParallelService 'pfm';
+use Bio::Phylo::PhyLoTA::Service::ParallelService;
 
 use Bio::PrimarySeq;
 use Bio::AlignIO;
 
+use Bio::SUPERSMART::App::SubCommand;
 use base 'Bio::SUPERSMART::App::SubCommand';
 use Bio::SUPERSMART::App::smrt qw(-command);
 
