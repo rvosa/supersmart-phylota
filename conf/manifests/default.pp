@@ -113,17 +113,17 @@ file {
     "exabayes_link":
         path    => "${tools_bin_dir}/exabayes",
         ensure  => link,
-        target  => "${tools_dir}/exabayes-1.4.1/bin/exabayes",
+        target  => "${tools_dir}/exabayes-1.4.1/bin/bin/exabayes",
         require => Exec["download_exabayes"];
     "parse_exabayes_link":
         path  => "${tools_bin_dir}/parse-exabayes",
         ensure  => link,
-        target  => "${tools_dir}/exabayes-1.4.1/bin/parser",
+        target  => "${tools_dir}/exabayes-1.4.1/bin/bin/parser",
         require => Exec["download_exabayes"];
     "exabayes_consense_link":
         path  => "${tools_bin_dir}/consense-exabayes",
         ensure  => link,
-        target  => "${tools_dir}/exabayes-1.4.1/bin/consense",
+        target  => "${tools_dir}/exabayes-1.4.1/bin/bin/consense",
         require => Exec["download_exabayes"];
     "raxml_link":
         path    => "${tools_bin_dir}/raxml",
