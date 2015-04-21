@@ -55,10 +55,16 @@ sub import {
 	($mode) = @_;
 	$logger = $package->logger;
 	if ( !$mode ) {
-		$mode = 'pthreads';
-		$logger->warn(
-"parallel mode not provided in import of  ParallelService class. Using default mode 'pthreads'"
-		);
+		eval { require threads };
+		if ( $@ ) {
+			$mode = 'pfm';
+			$logger->info("no threading support, using fork manager");
+		}
+		else {
+			$mode = 'pthreads';
+			$logger->info("threading support available");
+		}
+		$logger->warn("parallel mode not provided in import of ParallelService class. Using mode '$mode'");
 	}
 	if ( $mode eq 'mpi' ) {
 		require Parallel::MPI::Simple;
