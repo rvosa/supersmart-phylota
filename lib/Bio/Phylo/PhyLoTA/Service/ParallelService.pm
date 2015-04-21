@@ -62,9 +62,8 @@ sub import {
 		}
 		else {
 			$mode = 'pthreads';
-			$logger->info("threading support available");
+			$logger->info("threading support available, using pthreads");
 		}
-		$logger->warn("parallel mode not provided in import of ParallelService class. Using mode '$mode'");
 	}
 	if ( $mode eq 'mpi' ) {
 		require Parallel::MPI::Simple;
