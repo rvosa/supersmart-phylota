@@ -335,7 +335,7 @@ sub run {
 	my $twig = $self->_make_beast_xml;
 
 	my $filename = $self->beastfile_name();
-	$log->warn("writing beast input file to $filename");
+	$log->info("writing beast input file to $filename");
 	open (my $fh, ">", $filename) or die "Error writing BEAST input file: $!"; 
 	$twig->print($fh);
 	$log->info("beast xml written to $filename");
