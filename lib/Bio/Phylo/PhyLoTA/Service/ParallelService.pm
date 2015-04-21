@@ -174,7 +174,7 @@ sub pmap_mpi (&@) {
 
 		for my $i ( 0 .. $#data ) {
 			my $worker = $idx[ $i - 1 ] + 1;
-			push @chunks[ $idx[$i] ], $data[$i];
+			push @{ $chunks[ $idx[$i] ] }, $data[$i];
 		}
 
 		# send subset of data to worker
