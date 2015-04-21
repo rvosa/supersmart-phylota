@@ -7,7 +7,7 @@ use Bio::Phylo::Util::Exceptions 'throw';
 
 =head1 NAME
 
-Bio::SUPERSMART::App::smrt::SubCommand Superclass for C<smrt> subcommands
+Bio::SUPERSMART::App::SubCommand Superclass for C<smrt> subcommands
 
 =head1 DESCRIPTION
 
@@ -159,7 +159,7 @@ sub init {
 		'-style' => $opt->logstyle,
 		'-class' => [ 
 			ref( $self ), 
-			'Bio::SUPERSMART::App::smrt::SubCommand', 
+			'Bio::SUPERSMART::App::SubCommand', 
 			'Bio::Phylo::PhyLoTA::Service::ParallelService', 
 			'Bio::Phylo::PhyLoTA::Service::TreeService', 
 			'Bio::Phylo::PhyLoTA::Service::CalibrationService' 

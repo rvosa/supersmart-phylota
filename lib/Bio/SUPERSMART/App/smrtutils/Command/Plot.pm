@@ -10,7 +10,7 @@ use Template;
 use base 'Bio::SUPERSMART::App::SubCommand';
 use Bio::SUPERSMART::App::smrtutils qw(-command);
 
-# ABSTRACT: puts a 
+# ABSTRACT: plots a phylogenetic tree
 
 =head1 NAME
 
