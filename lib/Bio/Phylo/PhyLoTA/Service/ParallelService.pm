@@ -4,6 +4,7 @@ use warnings;
 use Carp 'croak';
 use POSIX 'ceil';
 use base 'Bio::Phylo::PhyLoTA::Service';
+use Bio::Phylo::Util::Exceptions 'throw';
 
 my $mode;
 my $num_workers;
@@ -125,21 +126,25 @@ sub pmap_pthreads (&@) {
 		++$thread;
 		my $max = ( $i + $inc - 1 ) >= $size ? $size - 1 : $i + $inc - 1;
 		my @subset = @data[ $i .. $max ];
-		$logger->debug(
-			"Detaching " . scalar(@subset) . " items to thread # " . $thread );
-		push @threads, threads->create(
-			sub {
-				map {
-					$counter++;
-					$logger->debug(
-						"Thread $thread is processing item # $counter / "
-						  . scalar(@subset) );
+		$logger->debug("Detaching " . scalar(@subset) . " items to thread # " . $thread );
+		eval {
+			push @threads, threads->create(
+				sub {
+					map {
+						$counter++;
+						$logger->debug(
+							"Thread $thread is processing item # $counter / "
+							  . scalar(@subset) );
 
-					# execute code block given in $func with argument
-					$func->($_);
-				} @subset;
-			}
-		);
+						# execute code block given in $func with argument
+						$func->($_);
+					} @subset;
+				}
+			);
+		};
+		if ( $@ ) {
+			throw 'API' => $@;
+		}
 	}
 	push @result, $_->join for @threads;
 	return @result;
