@@ -62,8 +62,8 @@ sub run {
 	# we will work with identifiers (in fasta files and trees)
 	$ts->remap_to_ti( $tree );
 
-	my $tree_replicated = $self->_replicate_tree($tree);
-	
+	my $tree_replicated = $self->_replicate_tree($tree)->first;
+
 	if ( my $aln = $opt->alignments ) {
 
 		# read list of alignments
@@ -74,15 +74,16 @@ sub run {
 		close $fh;
 		
 		# get array of replicated alignment objects
-		my @alns = map { $self->_replicate_alignment($_, $tree ) } @alnfiles;
-		
+		my @alns = map { $self->_replicate_alignment($_, $tree_replicated ) } @alnfiles;
+
 		# write alignments to file
 		my $aln_list = 'aligned-simulated.txt';
 		open my $outfh, '>', $aln_list or die $!;
-		my $stem = 'simulated-aln';
-		for my $i ( 1..$#alns ) {
+		my $stem = 'simulated-aln';		
+		for my $i ( 0..$#alns ) {
 			my $filename = $stem . "-$i.fa";
-			unparse ( -phylo => $alns[$i], -file => $filename );
+			$logger->info("Writing alignment to $filename");
+			unparse ( -phylo => $alns[$i], -file => $filename, -format=>'fasta' );
 			print $outfh, "$filename\n";
 		}
 		close $outfh;
@@ -131,10 +132,11 @@ sub _replicate_alignment {
 		if ( $seqname =~ m/taxon\|([0-9]+)/ ) {
 			$seqname = $1;
 			$logger->debug('Changing FASTA definition line from ' . $seq->get_name . " to $seqname");
+			$seq->set_name($seqname);
 		    }		
 		$seq->set_generic('fasta_def_line'=>$seqname);
 	}	
-		
+	
 	# replicate dna data
 	my $rep = $matrix->replicate($tree);				
 	return $rep;
