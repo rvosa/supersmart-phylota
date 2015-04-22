@@ -141,7 +141,7 @@ sub parse_taxa_string {
 			next LINE;
 		}
 		my @fields = split /\t/, $line;
-		my %record;
+		my %record = ( 'keys' => \@header );
 		for my $i ( 0 .. $#header ) {
 			$record{$header[$i]} = $fields[$i];
 		}
