@@ -1,5 +1,6 @@
 package Bio::SUPERSMART::App::smrt::Command::BBinfer::exabayes;
 use Bio::Tools::Run::Phylo::ExaBayes;
+use Bio::SUPERSMART::App::smrt qw(-ignore);
 use base 'Bio::SUPERSMART::App::smrt::Command::BBinfer';
 
 =head1 NAME

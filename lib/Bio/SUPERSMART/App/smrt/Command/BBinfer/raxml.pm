@@ -3,6 +3,7 @@ use strict;
 use warnings;
 use File::Spec;
 use Bio::Tools::Run::Phylo::Raxml;
+use Bio::SUPERSMART::App::smrt qw(-ignore);
 use base 'Bio::SUPERSMART::App::smrt::Command::BBinfer';
 
 =head1 NAME

@@ -2,6 +2,7 @@ package Bio::SUPERSMART::App::smrt::Command::BBinfer::examl;
 use strict;
 use warnings;
 use Bio::Tools::Run::Phylo::ExaML;
+use Bio::SUPERSMART::App::smrt qw(-ignore);
 use base 'Bio::SUPERSMART::App::smrt::Command::BBinfer';
 
 =head1 NAME
