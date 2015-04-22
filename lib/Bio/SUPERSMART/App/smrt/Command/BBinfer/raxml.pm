@@ -19,7 +19,7 @@ sub _create {
     
     # configure raxml runner
     $tool->outfile_name("out");             
-    $tool->w( $tool->tempdir );
+    $tool->w( $self->workdir );
     return $tool;
 }
 
