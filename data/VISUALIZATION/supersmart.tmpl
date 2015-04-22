@@ -1,0 +1,109 @@
+<html>
+	<head>
+	<script type="text/javascript">
+		var tree = [% tree.get_root.to_js %];
+		var svgNS = 'http://www.w3.org/2000/svg';
+		
+		function drawTree(svg,node,parent) {
+		
+			// draw the node if internal
+			if ( node.children.length != 0 ) {
+				drawCircle(
+					svg,
+					node['map:x'],
+					node['map:y'],
+					node['map:radius'] || 8,
+					{
+						'fill': node['map:node_color'],
+						'stroke': node['map:node_outline_color'],
+						'stroke-width': node['map:branch_width'],
+						'cursor': 'pointer'		
+					}
+				);
+			}
+			
+			// if not root, draw the branch to the parent
+			if ( parent != null ) {
+				var branchStyle = {
+					'stroke': node['map:branch_color'] || 'black',
+					'stroke-width': node['map:branch_width'] || 2,
+				};
+				drawLine(svg,parent['map:x'],parent['map:y'],parent['map:x'],node['map:y'],branchStyle);
+				drawLine(svg,parent['map:x'],node['map:y'],node['map:x'],node['map:y'],branchStyle);			
+			}
+			
+			// if node has a label, draw it
+			if ( node.name != null ) {
+				drawText(
+					svg,
+					node['map:x'] + ( node['map:text_horiz_offset'] || 12 ),
+					node['map:y'] + ( node['map:text_vert_offset']  || 3 ),
+					node.name,
+					{
+						'font-family': node['map:font_face'] || 'Verdana',
+						'font-size': node['map:font_size']   || '10px',
+						'font-style': node['map:font_style'] || 'italic',
+						'stroke': node['map:font_color'],
+					}
+				);
+			}
+			
+			// recurse
+			for ( var i = 0; i < node.children.length; i++ ) {
+				drawTree(svg,node.children[i],node);
+			}
+		}
+		
+		function drawLine(svg,x1,y1,x2,y2,style) {
+			var lineElt = document.createElementNS(svgNS,'line');
+			lineElt.setAttributeNS( null, 'x1', new String(x1) + 'px' );
+			lineElt.setAttributeNS( null, 'y1', new String(y1) + 'px' );                
+			lineElt.setAttributeNS( null, 'x2', new String(x2) + 'px' );
+			lineElt.setAttributeNS( null, 'y2', new String(y2) + 'px' );
+			lineElt.setAttributeNS( null, 'style', makeStyle(style) );
+			svg.appendChild(lineElt);
+			return lineElt;
+		}
+		
+		function drawCircle(svg,cx,cy,r,style) {
+			var nodeElt = document.createElementNS(svgNS, 'circle' );
+			nodeElt.setAttributeNS( null, 'cx', new String(cx) + 'px' );
+			nodeElt.setAttributeNS( null, 'cy', new String(cy) + 'px' );
+			nodeElt.setAttributeNS( null, 'r',  new String(r)  + 'px' );
+			nodeElt.setAttributeNS( null, 'style', makeStyle(style) );	
+			svg.appendChild(nodeElt);
+			return nodeElt;				
+		}
+		
+		function drawText(svg,x,y,text,style) {
+            var txtElt = document.createElementNS(svgNS,'text');
+            var txt = document.createTextNode(text);
+            txtElt.appendChild(txt);
+            txtElt.setAttributeNS( null, 'x', new String(x) + 'px' );
+            txtElt.setAttributeNS( null, 'y', new String(y) + 'px' );
+            txtElt.setAttributeNS( null, 'style', makeStyle(style) );
+            svg.appendChild(txtElt);
+            return txtElt;		
+		}
+		
+		function makeStyle(style) {
+			var string = '';
+			for ( var property in style ) {
+				if ( style.hasOwnProperty(property) ) {
+					string += property + ':' + style[property] + ';';
+				}
+			}
+			return string;			
+		}	
+	</script>
+	</head>
+	<body onload="drawTree(document.getElementById('svgTree'),tree,null)">
+		<svg 
+			id="svgTree"
+			version="1.1" 
+			width="[% width %]" 
+			height="[% height %]" 
+			xmlns="http://www.w3.org/2000/svg">     
+	    </svg>	
+	</body>
+</html>
