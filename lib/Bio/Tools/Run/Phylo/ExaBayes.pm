@@ -260,7 +260,7 @@ sub run {
                 
         # run exabayes
         $log->info("going to run '$string'");        
-        system($string) and $self->warn("Couldn't run ExaBayes: $?");
+        system($string) and $self->warn("Couldn't run ExaBayes: $! (errno: $?)");
         
         $ret = $self->_run_consense;
         
