@@ -310,7 +310,7 @@ exec {
     "compile_exabayes":
       	command => "sh configure --enable-mpi && make",
       	cwd     => "${tools_dir}/exabayes-1.4.1",
-      	creates => "${tools_dir}/exabayes",
+      	creates => "${tools_dir}/exabayes-1.4.1/exabayes",
       	timeout => 0,
       	require => Exec[ "unzip_exabayes" ];
 
