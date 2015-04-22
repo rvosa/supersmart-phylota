@@ -23,7 +23,7 @@ ok( $exabayes->s(1), "seed");
 ok( $exabayes->work_dir( $wd ), "working directory" );
 ok( $exabayes->C(1), "number of chains" );
 ok( $exabayes->R(1), "number of runs" );
-ok( $exabayes->parser("parser"), "set parser" );
+ok( $exabayes->parser( $config->EXABAYES_PARSER_BIN ), "set parser" );
 ok( $exabayes->z(1), "quiet mode" );
 ok( $exabayes->nodes(4), "number of nodes for parallel processing" );
 
