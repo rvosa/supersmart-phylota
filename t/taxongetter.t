@@ -17,14 +17,13 @@ use Data::Dumper;
 my $config = Bio::Phylo::PhyLoTA::Config->new;
 
 # instantiate logger
-my $log = Bio::Phylo::Util::Logger->new( '-level' => INFO, '-class' => 'main' );
-$log->warn('BEWARE: this is a lengthy test to run!');
+my $log = Bio::Phylo::Util::Logger->new( '-level' => WARN, '-class' => 'main' );
 
 # the first tests: can we use and instantiate the MarkersAndTaxaSelector
 BEGIN { use_ok('Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector'); }
 my $mts = new_ok('Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector');
 $log->VERBOSE(
-	'-level' => WARN,
+	'-level' => ERROR,
 	'-class' => 'Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector',
 );
 
