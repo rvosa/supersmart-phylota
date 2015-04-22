@@ -6,6 +6,10 @@ use FindBin '$Bin';
 use File::Temp 'tempdir';
 use Test::More 'no_plan';
 use Bio::Phylo::PhyLoTA::Config;
+use Bio::Phylo::Util::Logger ':levels';
+
+# this so that we avoid the dry run warning
+my $log = Bio::Phylo::Util::Logger->new( '-level' => ERROR );
 
 my $config = Bio::Phylo::PhyLoTA::Config->new;
 
