@@ -94,7 +94,7 @@ sub run {
 	);  
 	$self->_append( $backbone, $self->outfile . '.replicates' );
     }
-    $self->_process_result( $self->outfile, !$opt->ids, $bootstrap - 1 );
+    $self->_process_result( $self->outfile . '.replicates', !$opt->ids, $bootstrap - 1 );
     return 1;
 }
 
