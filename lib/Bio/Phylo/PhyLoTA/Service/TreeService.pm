@@ -489,7 +489,7 @@ sub make_phylip_binary {
 	);
 	my $string = join ' ', @command;
 	$log->info("going to run '$string' inside " . $work_dir );
-    system($string) and $log->warn("Couldn't create $binfilename: $! (errno: $?)");        
+    system($string) and $log->warn("Couldn't execute command '$string': $! (errno: $?)");        
 	chdir $curdir;
 	return "${binfilename}.binary";
 }
