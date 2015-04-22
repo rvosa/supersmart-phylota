@@ -2,11 +2,16 @@ package Bio::SUPERSMART::App::smrtutils::Command::Plot;
 use strict;
 use warnings;
 use Template;
+use List::Util 'sum';
+use List::MoreUtils 'uniq';
 use Bio::Phylo::Treedrawer;
 use Bio::Phylo::IO qw(parse_tree);
+use Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa;
+
 use Bio::SUPERSMART::App::SubCommand;
 use base 'Bio::SUPERSMART::App::SubCommand';
 use Bio::SUPERSMART::App::smrtutils qw(-command);
+
 
 # ABSTRACT: plots a phylogenetic tree
 
@@ -62,6 +67,60 @@ sub validate {
 	$self->usage_error('no tree argument given') if not $file;
 	$self->usage_error('file $file does not exist') unless (-e $file);
 	$self->usage_error('file $file is empty') unless (-s $file);			
+}
+
+sub _apply_backbone_style {
+
+}
+
+sub _apply_taxon_colors {
+	my ($self,$file,$tree) = @_;
+	my $mts = Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa->new;
+	my @records = $mts->parse_taxa_file($file);
+	
+	# create lookup table for genus colors, which we 
+	# will then blend in a traversal from tips to root
+	my %genera  = map { $_->{'genus'} => 1 } @records;
+	my @genera  = keys %genera;
+	my $steps   = int( 255 / scalar( @genera ) );
+	for my $i ( 0 .. $#genera ) {
+		my $R = $i * $steps;
+		my $G = 255 - $R;
+		my $B = abs( 127 - $R );
+		$genera{$genera[$i]} = [ $R, $G, $B ];
+	}
+	
+	# apply colors
+	$tree->visit_depth_first(
+	
+		# pre-order
+		'-pre' => sub {
+			my $n = shift;
+			if ( $n->is_terminal ) {
+			
+				# lookup species record and store genus ID and color
+				my $id = $n->get_name;
+				my ($record) = grep { $_->{'species'} == $id } @records;
+				my $RGB = $genera{ $record->{'genus'} };
+				$n->set_generic( 'map:node_color' => $RGB );
+			}
+		},
+		
+		# post-order
+		'-post' => sub {
+			my $n = shift;
+			my @children = @{ $n->get_children };
+			if ( $n->is_internal ) {
+			
+				# average over the RGB values of the children
+				my @rgbs = map { $_->get_generic('map:node_color') } @children;
+				my $R_mean = sum( map { $_->[0] } @rgbs ) / @rgbs;
+				my $G_mean = sum( map { $_->[1] } @rgbs ) / @rgbs;
+				my $B_mean = sum( map { $_->[2] } @rgbs ) / @rgbs;
+				$n->set_generic( 'map:node_color' => [ $R_mean, $G_mean, $B_mean ] );			
+			}
+		}
+	);
 }
 
 # here is my wish list for this:
