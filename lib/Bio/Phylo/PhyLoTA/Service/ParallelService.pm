@@ -14,7 +14,7 @@ my $logger;
 
 =item END
 
-MPI_Finalize need to invoked ecactly once (per mpirun execution) after all parallel 
+MPI_Finalize needs to be invoked exactly once (per mpirun execution) after all parallel 
 jobs have finished, therefore this is done in the END block.
 
 =cut
@@ -36,17 +36,18 @@ are passed into the import statement. For example:
  use ParallelService 'mpi';
 
 Results in the import sub receiving 1. package name, 2. a string determining the mode. 
-The mode can either be 'mpi' or 'pthreads', if none is given, 'pthreads' is the default.
+The mode can either be 'mpi', 'pthreads', or 'pfm'. If none is given, 'pthreads' is the 
+default. If perl doesn't have threading support, 'pfm' becomes the default.
 
-When importing this module, the subroutines 'pmap' and 'sequential' are exported to the caller's namespace, 
-including thir prototypes (&@ or &). 
-Pmap can be used as a drop-in replacement of the built-in perl function map. The method 'sequential' accepts a code
-block which is evaluated only on the master node. Note that 'sequential' does not need to be used when in 'pthread'
-mode, but it is still present for convenience. 
+When importing this module, the subroutines 'pmap' and 'sequential' are exported to the 
+caller's namespace, including thir prototypes (&@ or &). Pmap can be used as a drop-in 
+replacement of the built-in perl function map. The method 'sequential' accepts a code
+block which is evaluated only on the master node. Note that 'sequential' does not need 
+to be used when in 'pthread' mode, but it is still present for convenience. 
  
-The number of processes is determined 
-automatically in this class, if e.g. the script which uses the ParallelService class
-is invoced with 'mpirun -np 5', the number of processes is set to 4 (4 worker nodes and a master node). In 'pthread'
+The number of processes is determined automatically in this class, if e.g. the script 
+that uses the ParallelService class is invoked with 'mpirun -np 5', the number of 
+processes is set to 4 (4 worker nodes and a master node). In 'pthread'
 mode, the number of processes is set to the number of cores present on the machine.
 
 =cut
@@ -55,7 +56,10 @@ sub import {
 	my $package = shift;
 	($mode) = @_;
 	$logger = $package->logger;
+	
+	# no mode specified
 	if ( !$mode ) {
+		$logger->info("no parallelization mode specified");
 		eval { require threads };
 		if ( $@ ) {
 			$mode = 'pfm';
@@ -66,18 +70,25 @@ sub import {
 			$logger->info("threading support available, using pthreads");
 		}
 	}
+	
+	# mode is mpi, initialize
 	if ( $mode eq 'mpi' ) {
+		$logger->info("initializing mpi");
 		require Parallel::MPI::Simple;
 		Parallel::MPI::Simple->import;
 		MPI_Init();
 		$num_workers = MPI_Comm_size( MPI_COMM_WORLD() ) - 1;
 	}
+		
 	elsif ( $mode eq 'pthreads' || $mode eq 'pfm' ) {
 
+		# load threads
 		if ( $mode eq 'pthreads' ) {
 			require threads;
 			require threads::shared;
 		}
+		
+		# load fork manager
 		else {
 			require Parallel::ForkManager;
 		}
@@ -90,8 +101,7 @@ sub import {
 	else {
 		$num_workers = 1;
 	}
-	$logger->debug(
-		"Initializing $mode ParallelService with $num_workers workers");
+	$logger->info("Initializing $mode ParallelService with $num_workers workers");
 
 	my ($caller) = caller();
 	eval "sub ${caller}::pmap(\&\@);";
