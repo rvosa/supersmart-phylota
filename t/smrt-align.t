@@ -5,11 +5,18 @@ use Test::More 'no_plan';
 use App::Cmd::Tester;
 use FindBin '$Bin';
 use File::Temp qw(tempfile tempdir);
-
-use Bio::Phylo::Util::Logger ':levels';
 use Bio::SUPERSMART::App::smrt;
 
-my $log = Bio::Phylo::Util::Logger->new( '-level' => INFO, '-class' => 'main' );
+BEGIN {
+	use Bio::Phylo::Util::Logger ':levels';
+	my $log = Bio::Phylo::Util::Logger->new( 
+		'-level' => INFO, 
+		'-class' => [
+			'main',
+			'Bio::Phylo::PhyLoTA::Service::ParallelService',
+		]
+	);
+}
 
 BEGIN { use_ok('Bio::SUPERSMART::App::smrt::Command::Align') };
 
