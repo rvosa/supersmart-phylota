@@ -1,7 +1,9 @@
 #!/usr/bin/perl
 use warnings;
-
-use Test::More 'no_plan';
+BEGIN {
+	our @plan = $ENV{'TEST_SMRT'} ? 'no_plan' : 'skip_all' => 'env var TEST_SMRT not set';
+}
+use Test::More @plan;
 use App::Cmd::Tester;
 use FindBin '$Bin';
 use File::Temp qw(tempfile tempdir);
