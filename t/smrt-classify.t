@@ -45,7 +45,7 @@ my $result = test_app( Bio::SUPERSMART::App::smrt=> [ "classify",  "-i",   $infi
 ok ( $result->error, "error when infile not present" );
 
 # test if 'Usage' is printed when providing incorrent arguments
-$result = test_app( Bio::SUPERSMART::App::smrt=> [ "classify",  "-q",   "incorrect", "-l", "argument" ]);
+$result = test_app( Bio::SUPERSMART::App::smrt=> [ "classify",  "-q",   "incorrect", "-k", "argument" ]);
 ok ( $result->error, "error when arguments invalid" );
 ok ( $result->error =~ /Usage/, "print usage on error" );
 

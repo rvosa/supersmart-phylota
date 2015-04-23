@@ -42,7 +42,7 @@ $result = test_app( Bio::SUPERSMART::App::smrt=> [ "taxize",  "-i",   $infile, "
 ok ( $result->error, "error when infile not present" );
 
 # test if 'Usage' is printed when providing incorrent arguments
-$result = test_app( Bio::SUPERSMART::App::smrt=> [ "taxize",  "-q",   "incorrect", "-l", "argument" ]);
+$result = test_app( Bio::SUPERSMART::App::smrt=> [ "taxize",  "-q",   "incorrect", "-z", "argument" ]);
 ok ( $result->error, "error when arguments invalid" );
 ok ( $result->error =~ /Usage/, "print usage on error" );
 
