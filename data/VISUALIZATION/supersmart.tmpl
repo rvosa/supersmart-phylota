@@ -4,51 +4,42 @@
 		var tree = [% tree.get_root.to_js %];
 		var svgNS = 'http://www.w3.org/2000/svg';
 		
-		function drawTree(svg,node,parent) {
+		function rgb(triplet) {
+			return 'rgb(' + triplet[0] + ',' + triplet[1] + ',' + triplet[2] + ')';
+		}
 		
-			// draw the node if internal
-			if ( node.children.length != 0 ) {
-				var nodeColor = node.fossil ? 'black' : 'white';
-				drawCircle(
-					svg,
-					node['map:x'],
-					node['map:y'],
-					node['map:radius'] || 8,
-					{
-						'fill'         : nodeColor,
-						'stroke'       : node['map:branch_color'],
-						'stroke-width' : node['map:branch_width'],
-						'cursor'       : 'pointer'		
-					}
-				);
-			}
-			
+		function drawTree(svg,node,parent) {
+			var nx = node['map:x'];
+			var ny = node['map:y'];
+					
 			// if not root, draw the branch to the parent
 			if ( parent != null ) {
+				var px = parent['map:x'];
+				var py = parent['map:y'];			
 				var branchStyle = {
-					'stroke'       : node['map:branch_color'] || 'black',
+					'stroke'       : rgb(node['map:branch_color']) || 'black',
 					'stroke-width' : node['map:branch_width'] || 2,
 				};
-				drawLine(svg,parent['map:x'],parent['map:y'],parent['map:x'],node['map:y'],branchStyle);
-				drawLine(svg,parent['map:x'],node['map:y'],node['map:x'],node['map:y'],branchStyle);
+				drawLine(svg,px,py,px,ny,branchStyle);
+				drawLine(svg,px,ny,nx,ny,branchStyle);
 				
 				// overlay black dotted line if backbone
 				if ( node.backbone ) {
 					branchStyle['stroke'] = 'black';
 					branchStyle['stroke-dasharray'] = '5, 5';
-					drawLine(svg,parent['map:x'],parent['map:y'],parent['map:x'],node['map:y'],branchStyle);
-					drawLine(svg,parent['map:x'],node['map:y'],node['map:x'],node['map:y'],branchStyle);				
+					drawLine(svg,px,py,px,ny,branchStyle);
+					drawLine(svg,px,ny,nx,ny,branchStyle);				
 				}			
 			}
 			
 			// if node has a label, draw it. make bold if exemplar.
-			if ( node.name != null ) {
+			if ( node.binomial != null ) {
 				var fontWeight = node.exemplar ? 'bold' : 'normal';
 				drawText(
 					svg,
-					node['map:x'] + ( node['map:text_horiz_offset'] || 12 ),
-					node['map:y'] + ( node['map:text_vert_offset']  || 3 ),
-					node.name,
+					nx + ( node['map:text_horiz_offset'] || 12 ),
+					ny + ( node['map:text_vert_offset']  || 3 ),
+					node.binomial,
 					{
 						'stroke'      : node['map:font_color'],					
 						'font-family' : node['map:font_face']  || 'Verdana',
@@ -63,6 +54,23 @@
 			for ( var i = 0; i < node.children.length; i++ ) {
 				drawTree(svg,node.children[i],node);
 			}
+			
+			// draw the node if internal
+			if ( node.children.length != 0 ) {
+				var nodeColor = node.fossil ? 'black' : 'white';
+				drawCircle(
+					svg,
+					nx,
+					ny,
+					node['map:radius'] || 8,
+					{
+						'fill'         : nodeColor,
+						'stroke'       : rgb(node['map:branch_color']) || 'black',
+						'stroke-width' : node['map:branch_width'] || 2,
+						'cursor'       : 'pointer'		
+					}
+				);
+			}			
 		}
 		
 		function drawLine(svg,x1,y1,x2,y2,style) {
