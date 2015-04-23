@@ -77,7 +77,7 @@ sub run {
         eval "require $subclass";
         $@ and throw 'ExtensionError' => "Can't load $toolname wrapper: ".$@;
         bless $self, $subclass;
-	$bootstrap = 1 if $self->_is_bayesian;
+    $bootstrap = 1 if $self->_is_bayesian;
     }
     
     # instantiate and configure wrapper object
@@ -86,112 +86,112 @@ sub run {
     
     # run the analysis, process results
     for my $i ( 1 .. $bootstrap ) {
-    	my $replicate = $self->_bootstrap( $supermatrix, $i );
-	my $backbone = $self->_run(
-	    'tool'   => $tool,
-	    'matrix' => $replicate,
-	    'tree'   => $starttree,
-	);  
-	$self->_append( $backbone, $self->outfile . '.replicates' );
+        my $replicate = $self->_bootstrap( $supermatrix, $i );
+    my $backbone = $self->_run(
+        'tool'   => $tool,
+        'matrix' => $replicate,
+        'tree'   => $starttree,
+    );  
+    $self->_append( $backbone, $self->outfile . '.replicates' );
     }
     $self->_process_result( $self->outfile . '.replicates', !$opt->ids, $bootstrap - 1 );
     return 1;
 }
 
 sub _append {
-	my ( $self, $in, $out ) = @_;
-	$self->logger->info("appending contents of $in to $out");
+    my ( $self, $in, $out ) = @_;
+    $self->logger->info("appending contents of $in to $out");
 
-	# read the in file
-	open my $infh, '<', $in or die $!;
-	my $content = do { local $/; <$infh> };
-	close $infh;
-	
-	# write to the out file
-	open my $outfh, '>>', $out or die $!;
-	print $outfh $content;
-	close $outfh;
+    # read the in file
+    open my $infh, '<', $in or die $!;
+    my $content = do { local $/; <$infh> };
+    close $infh;
+    
+    # write to the out file
+    open my $outfh, '>>', $out or die $!;
+    print $outfh $content;
+    close $outfh;
 }
 
 # given an input matrix file and a bootstrap replicate index, creates a 
 # bootstrapped version of the input, with the replicate index as a suffix
 sub _bootstrap {
-	my ( $self, $matrix, $replicate ) = @_;
-	
-	# read interleaved PHYLIP
-	my ( @taxa, %data, $ntax, $nchar, $line );
-	open my $fh, '<', $matrix or die "Can't open $matrix: $!";
-	LINE: while(<$fh>) {
-		chomp;
-		if ( not $ntax and not $nchar ) {
-			if ( /(\d+)\s+(\d+)/ ) {
-				( $ntax, $nchar ) = ( $1, $2 );
-				$line = 0;
-				next LINE;
-			}
-		}
-		if ( $line < $ntax ) {
-			if ( /^\s*(\S+)\s(.+)$/ ) {
-				my ( $taxon, $data ) = ( $1, $2 );
-				$data =~ s/\s//g;
-				push @taxa, $taxon;
-				$data{$taxon} = $data;
-				$line++;
-			}
-		}
-		else {
-			if ( /\S/ ) {
-				s/\s//g;
-				my $i = $line % $ntax;
-				$data{$taxa[$i]} .= $_;
-				$line++;
-			}
-		}	
-	}
-	if ( $ntax != @taxa ) {
-		$self->logger->error("Incorrect number of taxa read: $ntax != ".scalar(@taxa));
-	}
-	
-	# make a bootstrapped matrix
-	my $i = 0;
-	my %boot = map { $_ => [] } @taxa;
-	while ( $i < $nchar ) {
-		my $char = int rand $nchar;
-		for my $taxon ( @taxa ) {
-			my $state = substr $data{$taxon}, $char, 1;
-			push @{ $boot{$taxon} }, $state;
-		}	
-		$i++;
-	}
-	$boot{$_} = join '', @{ $boot{$_} } for keys %boot;
-	
-	# write interleaved PHYLIP
-	open my $out, '>', "${matrix}.${replicate}" or die $!;
-	my $written = 0;
-	while ( $written < $nchar ) {
-		if ( not $written ) {
-			print $out " $ntax $nchar\n";
-		}
-		for my $taxon ( @taxa ) {
-			my $seq = substr $boot{$taxon}, $written, 60;
-			my $n = 10;    # $n is group size.
-			my @groups = unpack "a$n" x (length($seq)/$n) . "a*", $seq;
-			if ( not $written ) {
-				print $out $taxon;
-				print $out ' ' x ( 13 - length($taxon) );
-				print $out join ' ', @groups;
-				print $out "\n";				
-			}
-			else {
-				print $out ' ' x 13;
-				print $out join ' ', @groups;
-				print $out "\n";				
-			}
-		}
-		print $out "\n"; # blank line
-		$written += 60;
-	}
-	return "${matrix}.${replicate}";
+    my ( $self, $matrix, $replicate ) = @_;
+    
+    # read interleaved PHYLIP
+    my ( @taxa, %data, $ntax, $nchar, $line );
+    open my $fh, '<', $matrix or die "Can't open $matrix: $!";
+    LINE: while(<$fh>) {
+        chomp;
+        if ( not $ntax and not $nchar ) {
+            if ( /(\d+)\s+(\d+)/ ) {
+                ( $ntax, $nchar ) = ( $1, $2 );
+                $line = 0;
+                next LINE;
+            }
+        }
+        if ( $line < $ntax ) {
+            if ( /^\s*(\S+)\s(.+)$/ ) {
+                my ( $taxon, $data ) = ( $1, $2 );
+                $data =~ s/\s//g;
+                push @taxa, $taxon;
+                $data{$taxon} = $data;
+                $line++;
+            }
+        }
+        else {
+            if ( /\S/ ) {
+                s/\s//g;
+                my $i = $line % $ntax;
+                $data{$taxa[$i]} .= $_;
+                $line++;
+            }
+        }   
+    }
+    if ( $ntax != @taxa ) {
+        $self->logger->error("Incorrect number of taxa read: $ntax != ".scalar(@taxa));
+    }
+    
+    # make a bootstrapped matrix
+    my $i = 0;
+    my %boot = map { $_ => [] } @taxa;
+    while ( $i < $nchar ) {
+        my $char = int rand $nchar;
+        for my $taxon ( @taxa ) {
+            my $state = substr $data{$taxon}, $char, 1;
+            push @{ $boot{$taxon} }, $state;
+        }   
+        $i++;
+    }
+    $boot{$_} = join '', @{ $boot{$_} } for keys %boot;
+    
+    # write interleaved PHYLIP
+    open my $out, '>', "${matrix}.${replicate}" or die $!;
+    my $written = 0;
+    while ( $written < $nchar ) {
+        if ( not $written ) {
+            print $out " $ntax $nchar\n";
+        }
+        for my $taxon ( @taxa ) {
+            my $seq = substr $boot{$taxon}, $written, 60;
+            my $n = 10;    # $n is group size.
+            my @groups = unpack "a$n" x (length($seq)/$n) . "a*", $seq;
+            if ( not $written ) {
+                print $out $taxon;
+                print $out ' ' x ( 13 - length($taxon) );
+                print $out join ' ', @groups;
+                print $out "\n";                
+            }
+            else {
+                print $out ' ' x 13;
+                print $out join ' ', @groups;
+                print $out "\n";                
+            }
+        }
+        print $out "\n"; # blank line
+        $written += 60;
+    }
+    return "${matrix}.${replicate}";
 }
 
 # instantiates and configures the wrapper object,
@@ -225,15 +225,18 @@ sub _process_result {
     # single tree
     my $bbtree;
     if ( $consense ) {
-	my $forest = parse(
-	    '-format' => 'newick',
+        my $forest = parse(
+            '-format' => 'newick',
             '-file'   => $backbone,
-	);
-        $bbtree = $forest->make_consensus( '-branches' => 'average' );
+        );
+        $bbtree = $forest->make_consensus( 
+        	'-branches'  => 'average',
+        	'-summarize' => 'fraction',
+        );
     }
     else {
-	$bbtree = parse_tree(
-	    '-format' => 'newick',
+        $bbtree = parse_tree(
+            '-format' => 'newick',
             '-file'   => $backbone,
         )
     }
