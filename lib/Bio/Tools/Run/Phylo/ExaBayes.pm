@@ -257,13 +257,20 @@ sub run {
 	}
         
         $string .= $self->executable . $self->_setparams;       
-                
+        
+	my $current_dir = getcwd; 
+        if ( $self->work_dir ) {
+		chdir($self->work_dir);
+	}
+	
         # run exabayes
         $log->info("going to run '$string'");        
         system($string) and $self->warn("Couldn't execute '$string': $! (errno: $?)");
         
         $ret = $self->_run_consense;
         
+	chdir $current_dir;
+
         #return $self->_cleanup;
         # return outfile name or 1 if it was a dry run
         return $ret || $self->dryRun;
