@@ -246,7 +246,7 @@ sub run {
 	    # if we still have more than two candidates, calculate take the one which are furthest
 	    # apart within this genus with resprect to the available sequences
 	    elsif ( scalar keys (%genus_candidates) > 2) {
-		$log->info("found more than two exemplar candidates, chosing the most distant ones");
+		$log->info("found more than two exemplar candidates, choosing the most distant ones");
 		my %distance;
 		for my $aln ( sort @alignments ) {		   		    
 		    if ( my $d = $self->_calc_aln_distances($aln, [keys %genus_candidates]) ) {
