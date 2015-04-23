@@ -8,6 +8,7 @@ use Bio::Phylo::Treedrawer;
 use Bio::Phylo::IO qw(parse_tree);
 use Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa;
 use Bio::Phylo::PhyLoTA::Service::CalibrationService;
+use Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector;
 
 use Bio::SUPERSMART::App::SubCommand;
 use base 'Bio::SUPERSMART::App::SubCommand';
@@ -55,7 +56,7 @@ sub options {
 	my $bbmarkers_default = 'markers-backbone.tsv';
 	my $taxa_default      = 'species.tsv';
 	my $fossil_default    = 'fossils.tsv';
-	my $clade_default     = '.';
+	my $clade_default     = 0;
 	return (
 		['tree|t=s', 'file name of input tree (newick format)', { arg => 'file', mandatory => 1 } ],
 		['outfile|o=s', "name of the output file, defaults to '$outfile_default'", { default => $outfile_default, arg => 'file' } ],	
@@ -66,7 +67,7 @@ sub options {
 		['markers|m=s', "backbone markers table. Default: $bbmarkers_default", { default => $bbmarkers_default } ],
 		['taxa|i=s', "taxa table. Default: $taxa_default", { default => $taxa_default } ],
 		['fossils|p=s', "fossil table. Default: $fossil_default", { default => $fossil_default } ],
-		['clades|c=s', "location of folder containing cladeXXX folders. Default: $clade_default", { default => $clade_default } ],
+		['clades|c=s', "Search cladeXXX folders in workdir. Default: $clade_default", { default => $clade_default } ],
 	);	
 }
 
@@ -86,8 +87,39 @@ sub _apply_fossil_nodes {
 	$self->logger->info("going to apply fossil nodes using $file");
 	
 	# read fossil table and convert to calibration table
+	my $mts = Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector->new;
 	my $cs = Bio::Phylo::PhyLoTA::Service::CalibrationService->new;
 	my @records = $cs->read_fossil_table($file);
+	@records = map { $cs->find_calibration_point($_) } @records;
+	
+	# taxize, if need be
+	my @prune;
+	$tree->visit(sub{
+		my $n = shift;
+		my $name = $n->get_name;
+		
+		# tip doesn't have TI as name
+		if ( $n->is_terminal and $name !~ /^\d+$/ ) {	
+		
+			# already taxized using species.tsv
+			if ( my $ti = $n->get_guid ) {
+				$n->set_generic( 'binomial' => $name );
+				$n->set_name($ti);
+			}
+			else {		
+				$self->logger->info("taxize: $name");
+				if ( my ($node) = $mts->get_nodes_for_names($name) ) {
+					$n->set_name($node->ti);
+					$n->set_guid($node->ti);
+					$n->set_generic( 'binomial' => $name );
+				}
+				else {
+					push @prune, $n;
+				}
+			}
+		}
+	});
+	$tree->prune_tips(\@prune) if @prune;
 	my $table = $cs->create_calibration_table($tree,@records);
 	
 	# apply calibration points
@@ -175,11 +207,11 @@ sub _apply_taxon_colors {
 	# will then blend in a traversal from tips to root
 	my %genera  = map { $_->{'genus'} => 1 } @records;
 	my @genera  = keys %genera;
-	my $steps   = int( 255 / scalar( @genera ) );
+	my $steps   = 255 / $#genera;
 	for my $i ( 0 .. $#genera ) {
-		my $R = $i * $steps;
-		my $G = 255 - $R;
-		my $B = abs( 127 - $R );
+		my $R = int( $i * $steps );
+		my $G = abs( 127 - $R );		
+		my $B = 255 - $R;
 		$genera{$genera[$i]} = [ $R, $G, $B ];
 	}
 	
@@ -195,8 +227,8 @@ sub _apply_taxon_colors {
 				my $name = $n->get_name;
 				my ($record) = grep { $_->{'name'} eq $name } @records;
 				my ( $R, $G, $B ) = @{ $genera{ $record->{'genus'} } };
-				$n->set_generic( 'map:branch_color' => [ $R, $G, $B ] );
-				$n->set_generic( 'taxon' => $record->{'species'} );
+				$n->set_branch_color( [ $R, $G, $B ] );
+				$n->set_guid( $record->{'species'} );
 				$n->set_rank( 'species' );
 			}
 		},
@@ -208,11 +240,11 @@ sub _apply_taxon_colors {
 			if ( $n->is_internal ) {
 			
 				# average over the RGB values of the children
-				my @RGBs = map { $_->get_generic('map:branch_color') } @children;
-				my $R_mean = sum( map { $_->[0] } @RGBs ) / @RGBs;
-				my $G_mean = sum( map { $_->[1] } @RGBs ) / @RGBs;
-				my $B_mean = sum( map { $_->[2] } @RGBs ) / @RGBs;
-				$n->set_generic( 'map:branch_color' => [ $R_mean, $G_mean, $B_mean ] );			
+				my @RGBs = map { $_->get_branch_color } @children;
+				my $R_mean = int( sum( map { $_->[0] } @RGBs ) / @RGBs );
+				my $G_mean = int( sum( map { $_->[1] } @RGBs ) / @RGBs );
+				my $B_mean = int( sum( map { $_->[2] } @RGBs ) / @RGBs );
+				$n->set_branch_color( [ $R_mean, $G_mean, $B_mean ] );			
 			}
 		}
 	);
@@ -291,7 +323,7 @@ sub _apply_clade_markers {
 sub run {
 	my ($self, $opt, $args) = @_;
 	my $outfile = $opt->outfile;
-	my $logger  = $self->logger;
+	my $logger  = $self->logger;	
 	
 	# read tree, clean labels
 	my $tree = parse_tree(
@@ -316,7 +348,7 @@ sub run {
 	
 	# apply metadata for styling
 	$self->_apply_taxon_colors($opt->taxa,$tree) if -s $opt->taxa;
-	$self->_apply_backbone_markers($opt->markers,$tree) if -s $opt->markers;
+	$self->_apply_backbone_markers($opt->markers,$tree) if -s $opt->markers;			
 	$self->_apply_fossil_nodes($opt->fossils,$tree) if -s $opt->fossils;
 	$self->_apply_clade_markers($opt->clades,$tree) if -d $opt->clades;
 	
