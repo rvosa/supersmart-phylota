@@ -11,9 +11,11 @@ use FindBin '$Bin';
 use File::Temp qw(tempfile tempdir);
 use Bio::SUPERSMART::App::smrt;
 
+my $log;
+
 BEGIN {
 	use Bio::Phylo::Util::Logger ':levels';
-	my $log = Bio::Phylo::Util::Logger->new( 
+	$log = Bio::Phylo::Util::Logger->new( 
 		'-level' => INFO, 
 		'-class' => [
 			'main',
@@ -40,8 +42,6 @@ sub _output_ok {
 my $workdir = tempdir( CLEANUP => 1, 'DIR' => $ENV{HOME} );
 my $outfile = $workdir . "/aligned.txt";
 my $infile = "$Bin/testdata/species-fishes.tsv";
-
-$log->info("Workdir : $workdir");
 
 my $result = test_app( Bio::SUPERSMART::App::smrt=> [ "align",  "-w",   $workdir, "-i", $infile, "-o", $outfile ]);
 
