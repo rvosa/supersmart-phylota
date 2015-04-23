@@ -10,7 +10,6 @@ env:
     - SUPERSMART_HOME=$TRAVIS_BUILD_DIR
     - PATH="$PATH:/home/vagrant/SUPERSMART/tools/bin"
     - LD_LIBRARY_PATH=/usr/lib:/usr/lib64:/usr/local/lib
-    - TEST_SMRT=1
 install:
   - "sudo useradd -d /home/vagrant -m vagrant"
   - "wget https://apt.puppetlabs.com/puppetlabs-release-trusty.deb"
