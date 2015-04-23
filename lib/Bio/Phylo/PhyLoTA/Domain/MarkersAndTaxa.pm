@@ -142,15 +142,15 @@ sub parse_taxa_string {
 		chomp $line;
 		
 		# skip comments and blank lines
-		next LINE if /^\s*#/;
-		next LINE if /^\s*$/;
+		next LINE if $line =~ /^\s*#/;
+		next LINE if $line =~ /^\s*$/;
 		
 		# store header
 		if ( not @header ) {
 			@header = split /\t/, $line;
 			next LINE;
 		}
-		my %record = ( 'keys' => \@header );
+		my %record = ( 'keys' => [ @header ] );
 		
 		# store fields
 		my @fields = split /\t/, $line;
