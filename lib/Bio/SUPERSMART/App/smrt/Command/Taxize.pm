@@ -203,7 +203,7 @@ sub run {
 				);
 			}
 			else {
-				print $out "$name \t $ids \n";
+				print $out "$name\t$ids\n";
 				$seen{$ids} = 1;
 			}
 		}
