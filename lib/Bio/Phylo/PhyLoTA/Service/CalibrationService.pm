@@ -102,6 +102,7 @@ smooth = $smooth
 numsites = $numsites
 outfile = $writetree
 nthreads = $nthreads
+seed = $config->RANDOM_SEED;
 HEADER
 
         $ct->remove_orphan_taxa;
