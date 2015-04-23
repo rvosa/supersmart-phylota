@@ -16,7 +16,7 @@ my $log;
 BEGIN {
 	use Bio::Phylo::Util::Logger ':levels';
 	$log = Bio::Phylo::Util::Logger->new( 
-		'-level' => INFO, 
+		'-level' => WARN, 
 		'-class' => [
 			'main',
 			'Bio::Phylo::PhyLoTA::Service::ParallelService',
