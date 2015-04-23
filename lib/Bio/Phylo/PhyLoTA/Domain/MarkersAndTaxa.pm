@@ -114,6 +114,10 @@ sub dedup {
 Reads the provided taxa file, returns a list of records where each consists of a 
 hash where keys are the headers in the taxa table.
 
+B<Note>: this method, and C<parse_taxa_string> are completely agnostic about the
+column headers so the can equally be used to read other tab-separated files, such
+as the backbone markers table, for example.
+
 =cut
 
 sub parse_taxa_file {
@@ -136,15 +140,25 @@ sub parse_taxa_string {
 	my @result;
 	LINE: for my $line ( split /\n/, $string ) {
 		chomp $line;
+		
+		# skip comments and blank lines
+		next LINE if /^\s*#/;
+		next LINE if /^\s*$/;
+		
+		# store header
 		if ( not @header ) {
 			@header = split /\t/, $line;
 			next LINE;
 		}
-		my @fields = split /\t/, $line;
 		my %record = ( 'keys' => \@header );
+		
+		# store fields
+		my @fields = split /\t/, $line;
 		for my $i ( 0 .. $#header ) {
 			$record{$header[$i]} = $fields[$i];
 		}
+		
+		# store record
 		push @result, \%record;
 	}
 	return @result;
@@ -313,6 +327,30 @@ sub get_taxa_from_fasta {
         }
     }
     return @taxa;
+}
+
+=item get_gis_from_fasta
+
+Extracts sequence identifiers from a hash such as is produced by parse_fasta_string.
+Returns a hash ( taxon => [ gi1, gi2 ] )
+
+=cut
+
+sub get_gis_from_fasta {
+    my ( $class, %fasta ) = @_;
+    my %gis;
+    for my $key ( keys %fasta ) {
+        if ( $key =~ /taxon\|(\d+)/ ) {
+            my $taxon = $1;
+            $gis{$taxon} = [] if not $gis{$taxon};
+            if ( $key =~ /(>|\|)gi\|(\d+)/ ) {
+            	my $gi = $1;
+            	push @{ $gis{$taxon} }, $gi;
+            }
+        }
+    }
+    return %gis;
+
 }
 
 =item get_sequences_for_taxon
