@@ -59,8 +59,6 @@ sub _output_ok {
 	}
 }
 
-$log->info( "Workdir : $workdir")	;
-
 my $result = test_app( Bio::SUPERSMART::App::smrt=> [ "taxize",  "-i", $namesfile, "-o", $taxafile, "-e", "Species", "-w", $workdir, "-l", "taxize.log" ]);
 _output_ok ( "taxize", $result, $taxafile );
 
@@ -96,10 +94,6 @@ _output_ok ( "cladeinfer", $result );
 
 $result = test_app( Bio::SUPERSMART::App::smrt=> [ "cladegraft",  "-b",  $chrofile, "-o", $finalfile , "-w", $workdir , "-l", "cladegraft.log" ]);
 _output_ok ( "cladegraft", $result, $finalfile );
-
-open my $fh, '<', $workdir . "/" . $finalfile or die $!;
-read $fh, my $content, -s $fh;
-$log->info($content);
 
 
 

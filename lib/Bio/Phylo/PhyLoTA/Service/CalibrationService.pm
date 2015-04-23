@@ -88,6 +88,7 @@ sub calibrate_tree {
 	my $ct        = $args{'-calibration_table'} || die "Need -calibration_table argument";
 	my $tree      = $args{'-tree'}              || die "Need -tree argument";
 	my $nthreads  = $config->NODES;
+	my $seed = $config->RANDOM_SEED;
 	my ($ifh,$writetree) = tempfile();
 	my ($ofh,$readtree)  = tempfile();
 	my ($tfh,$tplfile)   = 	tempfile();
@@ -102,13 +103,12 @@ smooth = $smooth
 numsites = $numsites
 outfile = $writetree
 nthreads = $nthreads
-seed = $config->RANDOM_SEED;
+seed = $seed
 HEADER
 
         $ct->remove_orphan_taxa;
 	# print MRCA statements
 	print $tfh $ct->to_string, "thorough\n";
-
 	# run treePL
 	close $tfh;
         $self->logger->info("wrote treePL config file to  $tplfile");
