@@ -338,13 +338,18 @@ sub run {
 		$n->set_name($name);
 	});
 	
-	# compute coordinates
+	# compute coordinates and round to nearest integer
 	my $drawer = Bio::Phylo::Treedrawer->new(
 		'-width'  => $opt->width,
 		'-height' => $opt->height,
 		'-tree'   => $tree,
 	);
 	$drawer->compute_coordinates;
+	$tree->visit(sub{
+		my $n = shift;
+		$n->set_x( int( $n->get_x + 0.5 ) );
+		$n->set_y( int( $n->get_y + 0.5 ) );
+	});
 	
 	# apply metadata for styling
 	$self->_apply_taxon_colors($opt->taxa,$tree) if -s $opt->taxa;
