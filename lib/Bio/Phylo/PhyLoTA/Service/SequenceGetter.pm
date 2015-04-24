@@ -642,6 +642,39 @@ sub get_aligned_locus_indices {
 	return @indices;
 }
 
+=item get_markers_for_accession
+
+Given an accession number, returns a comma-separated list of the short marker name(s)
+with which the sequence was annotated.
+
+=cut
+
+sub get_markers_for_accession {
+	my ( $self, $acc ) = @_;
+	my $gb = Bio::DB::GenBank->new();
+	my $seq = $gb->get_Seq_by_acc($acc);
+	use Data::Dumper;
+	my %feat = (
+		'rRNA'          => 'product',
+		'tRNA'          => 'product',
+		'repeat_region' => 'rpt_family',
+		'gene'          => 'gene',
+		'CDS'           => 'product',
+	);
+	my %result;
+	my $count = 0;
+	for my $feature ( $seq->top_SeqFeatures() ) {
+		my $tag = $feature->primary_tag();
+		if ( my $subtag = $feat{$tag} ) {
+			if ( $feature->has_tag($subtag) ) {
+				my ($value) = $feature->each_tag_value($subtag);
+				$result{$value} = $count++;
+			}
+		}
+	}
+	return sort { $result{$a} <=> $result{$b} } keys %result;
+}
+
 =item filter_seq_set
 
 This method filters out duplicate sequences per taxon, and prefers to keep a
