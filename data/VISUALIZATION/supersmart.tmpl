@@ -75,6 +75,7 @@
         }
         
         function drawLine(svg,x1,y1,x2,y2,style) {
+        	style['stroke-linecap'] = "round";
             var lineElt = document.createElementNS(svgNS,'line');
             lineElt.setAttributeNS( null, 'x1', new String(x1) + 'px' );
             lineElt.setAttributeNS( null, 'y1', new String(y1) + 'px' );                
