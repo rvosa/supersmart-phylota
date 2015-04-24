@@ -88,6 +88,7 @@ sub run {
     for my $i ( 1 .. $bootstrap ) {
         my $replicate = $self->_bootstrap( $supermatrix, $i );
 		$self->outfile( "${base}.${i}");
+		$self->_replicate( $i );
 	    $self->_configure( $tool, $self->config );        
 		my $backbone = $self->_run(
 			'tool'    => $tool,
@@ -218,6 +219,15 @@ sub _run {
 # not run a bootstrapping analysis. Note that certain wrappers, e.g. exabayes, 
 # need to override this
 sub _is_bayesian { 0 }
+
+# is used internally to track the current bootstrap replicate
+sub _replicate {
+	my ( $self, $rep ) = @_;
+	if ( defined $rep ) {
+		$self->{'replicate'} = $rep;
+	}
+	return $self->{'replicate'};
+}
 
 # process the inferred tree, e.g. by mapping identifiers
 sub _process_result {
