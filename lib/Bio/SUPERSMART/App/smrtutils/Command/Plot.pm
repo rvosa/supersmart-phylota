@@ -163,6 +163,7 @@ sub _apply_backbone_markers {
 	my ($self,$file,$tree) = @_;
 	$self->logger->info("going to apply backbone markers using $file");
 	my $mts = Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa->new;
+	my $sq = Bio::Phylo::PhyLoTA::Service::SequenceGetter->new;
 	my @records = $mts->parse_taxa_file($file);
 
 	# iterate over record, add generic annotation to all nodes on the path
@@ -198,8 +199,20 @@ sub _apply_backbone_markers {
 				$node->set_generic( 'backbone' => \%markers );				
 			}
 		}
-	}	
-
+	}
+	
+	# get marker names
+	my %markers;
+	open my $fh, '<', $file or die $!;
+	while(<$fh>) {
+		chomp;
+		if ( /# (marker\d+) cluster seed: ([^,]+),/ ) {
+			my ( $marker, $acc ) = ( $1, $2 );
+			my @desc = $sg->get_markers_for_accession( $acc );
+			$markers{$marker} = \@desc;
+		} 
+	}
+	$tree->get_root->set_generic( 'markers' => \%markers );
 }
 
 sub _apply_taxon_colors {
