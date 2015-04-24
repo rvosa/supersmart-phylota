@@ -171,7 +171,12 @@ sub _apply_backbone_markers {
 		if ( my $tip = $tree->get_by_name( $r->{'taxon'} ) ) {
 			$tip->set_generic( 'exemplar' => 1 );
 			my @path = ( $tip, @{ $tip->get_ancestors } );
-			my %markers = map { $_ => [ $r->{$_} ] } @{ $r->{'keys'} };			
+                        my %markers;
+                        for my $m ( @{ $r->{'keys'} } ) {
+                                if ( $r->{$m} and $r->{$m} =~ m/\S/ ) {
+                                        $markers{$m} = [ $r->{$m} ];
+                                }
+                        }
 			for my $node ( @path ) {
 			
 				# may have visited node from another descendent, need
