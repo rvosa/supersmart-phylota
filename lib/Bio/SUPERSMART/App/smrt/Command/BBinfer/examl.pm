@@ -14,6 +14,11 @@ examl.pm - wrapper for ExaML. No serviceable parts inside.
 sub _configure {
     my ( $self, $tool, $config ) = @_;
     my $logger = $self->logger;
+    my $outfile = $self->outfile;    
+    
+    # set outfile name
+    $logger->info("going to create output file $outfile");
+    $tool->outfile_name($outfile);    
 
     # set mpirun location
     $logger->info("going to use mpirun executable ".$config->MPIRUN_BIN);
@@ -42,14 +47,9 @@ sub _configure {
 sub _create {
     my $self    = shift;
     my $logger  = $self->logger; 
-    my $outfile = $self->outfile;
     my $workdir = $self->workdir;
     my $tool    = Bio::Tools::Run::Phylo::ExaML->new;    
 
-    # set outfile name
-    $logger->info("going to create output file $outfile");
-    $tool->outfile_name($outfile);
-    
     # set working directory
     $logger->info("going to use working directory $workdir");
     $tool->work_dir($workdir);
@@ -63,7 +63,7 @@ sub _create {
 # 'tree'   => user starting tree file name
 sub _run {
     my ( $self, %args ) = @_;
-    my $logger   = $self->logger;
+    my $logger = $self->logger;
     my $backbone = $args{'tool'}->run(
             '-phylip' => $args{'matrix'},
             '-intree' => $self->_make_usertree(@args{qw[matrix tree]}),

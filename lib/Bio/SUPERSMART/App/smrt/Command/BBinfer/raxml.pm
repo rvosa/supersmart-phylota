@@ -17,14 +17,14 @@ sub _create {
     my $config = $self->config;
     my $tool = Bio::Tools::Run::Phylo::Raxml->new;
     
-    # configure raxml runner
-    $tool->outfile_name("out");             
+    # configure raxml runner           
     $tool->w( $self->workdir );
     return $tool;
 }
 
 sub _configure {
     my ( $self, $tool, $config ) = @_;
+    $tool->outfile_name($self->outfile);      
     $tool->m($config->RAXML_MODEL);
     $tool->N($config->RAXML_RUNS);
     $tool->p($config->RANDOM_SEED);
@@ -33,7 +33,7 @@ sub _configure {
 
 sub _run {
     my ( $self, %args ) = @_;
-    my $t      = $args{'tool'};
+    my $t = $args{'tool'};
     my $logger = $self->logger;
     
     # create output file name
