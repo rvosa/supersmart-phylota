@@ -73,18 +73,18 @@ sub run {
 		chomp @alnfiles; 
 		close $fh;
 		
-		# get array of replicated alignment objects
+                # get array of replicated alignment objects	      
 		my @alns = map { $self->_replicate_alignment($_, $tree_replicated ) } @alnfiles;
 
 		# write alignments to file
 		my $aln_list = 'aligned-simulated.txt';
-		open my $outfh, '>', $aln_list or die $!;
-		my $stem = 'simulated-aln';		
+		open my $outfh, '>>', $aln_list or die $!;
 		for my $i ( 0..$#alns ) {
-			my $filename = $stem . "-$i.fa";
+			my $cnt = $i+1;
+			my $filename = "simulated-aln-$cnt.fa";
 			$logger->info("Writing alignment to $filename");
 			unparse ( -phylo => $alns[$i], -file => $filename, -format=>'fasta' );
-			print $outfh, "$filename\n";
+			print $outfh "$filename\n";
 		}
 		close $outfh;
 	}
@@ -123,22 +123,36 @@ sub _replicate_alignment {
 	
 	# we haeve to change the definition line from something like
 	# >gi|443268840|seed_gi|339036134|taxon|9534|mrca|314294/1-1140
-	# to only the taxon ID
-	if (  scalar  (@{ $matrix->get_entities })  <= 2) {
-		return 0;
-	} 
+	# to only the taxon ID: 9534
+	my $matching_taxa = 0;
+	my %tree_taxa = map { $_->get_name=>1 } @{ $tree->get_terminals };
 	for my $seq ( @{ $matrix->get_entities } ) {
 		my $seqname = $seq->get_name;
 		if ( $seqname =~ m/taxon\|([0-9]+)/ ) {
 			$seqname = $1;
 			$logger->debug('Changing FASTA definition line from ' . $seq->get_name . " to $seqname");
 			$seq->set_name($seqname);
-		    }		
+		    }	
+		$matching_taxa++ if $tree_taxa{$seqname};
 		$seq->set_generic('fasta_def_line'=>$seqname);
 	}	
-	
+	# modeltest needs a tree with at least 3 species to estimate the substitution model;
+	# the number of taxa in the alignment that are also present in the tree therefore
+	# has to be > 2
+	if ( $matching_taxa < 3 ) {
+		$logger->warn("Cannot replicate alignment $fasta, number of taxa < 3");
+		return 0;
+	}
+
 	# replicate dna data
 	my $rep = $matrix->replicate($tree);				
+	
+	# need to fix definition line to prevent a ">>" in FASTA definition line (issue #21)
+	for my $seq ( @{ $rep->get_entities }) {
+		my $defline = $seq->get_generic('fasta_def_line');
+		$defline =~ s/>//g;
+		$seq->set_generic('fasta_def_line', $defline);		
+	}	
 	return $rep;
 }
 
