@@ -64,6 +64,7 @@ sub _create {
 sub _run {
     my ( $self, %args ) = @_;
     my $logger = $self->logger;
+    $args{'tool'}->run_id( 'examl-run-' . $$ . '-' . $self->_replicate );
     my $backbone = $args{'tool'}->run(
             '-phylip' => $args{'matrix'},
             '-intree' => $self->_make_usertree(@args{qw[matrix tree]}),
