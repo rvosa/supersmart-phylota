@@ -7,6 +7,7 @@ use List::MoreUtils qw(pairwise uniq all);
 use Bio::Phylo::Treedrawer;
 use Bio::Phylo::IO qw(parse_tree);
 use Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa;
+use Bio::Phylo::PhyLoTA::Service::SequenceGetter;
 use Bio::Phylo::PhyLoTA::Service::CalibrationService;
 use Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector;
 
@@ -163,7 +164,7 @@ sub _apply_backbone_markers {
 	my ($self,$file,$tree) = @_;
 	$self->logger->info("going to apply backbone markers using $file");
 	my $mts = Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa->new;
-	my $sq = Bio::Phylo::PhyLoTA::Service::SequenceGetter->new;
+	my $sg = Bio::Phylo::PhyLoTA::Service::SequenceGetter->new;
 	my @records = $mts->parse_taxa_file($file);
 
 	# iterate over record, add generic annotation to all nodes on the path
@@ -171,36 +172,29 @@ sub _apply_backbone_markers {
 	for my $r ( @records ) {
 		if ( my $tip = $tree->get_by_name( $r->{'taxon'} ) ) {
 			$tip->set_generic( 'exemplar' => 1 );
-			my @path = ( $tip, @{ $tip->get_ancestors } );
+			my @path = ( @{ $tip->get_ancestors } );
                         my %markers;
                         for my $m ( @{ $r->{'keys'} } ) {
-                                if ( $r->{$m} and $r->{$m} =~ m/\S/ ) {
-                                        $markers{$m} = [ $r->{$m} ];
-                                }
+				next if $m eq 'taxon';
+                                $markers{$m} = $r->{$m} if $r->{$m} and $r->{$m} =~ m/\S/;
                         }
+			$tip->set_generic( 'backbone' => \%markers );
+			my %counts = map { $_ => 1 } keys %markers;
 			for my $node ( @path ) {
 			
 				# may have visited node from another descendent, need
-				# to merge hashes
+				# to add current counts
 				if ( my $h = $node->get_generic('backbone') ) {
-					for my $m ( keys %$h ) {
-					
-						# merge
-						if ( $markers{$m} ) {
-							$markers{$m} = [ uniq @{$markers{$m}}, @{$h->{$m}} ];
-						}
-						
-						# add
-						else {
-							$markers{$m} = [ @{$h->{$m}} ];
-						}						
-					}
+					$h->{$_} += $counts{$_} for keys %counts;
+					$node->set_generic( 'backbone' => $h );
 				}
-				$node->set_generic( 'backbone' => \%markers );				
+				else {
+					$node->set_generic( 'backbone' => \%counts );
+				}		
 			}
 		}
 	}
-	
+
 	# get marker names
 	my %markers;
 	open my $fh, '<', $file or die $!;
@@ -210,6 +204,7 @@ sub _apply_backbone_markers {
 			my ( $marker, $acc ) = ( $1, $2 );
 			my @desc = $sg->get_markers_for_accession( $acc );
 			$markers{$marker} = \@desc;
+			$self->logger->info("$marker ($acc): @desc");
 		} 
 	}
 	$tree->get_root->set_generic( 'markers' => \%markers );
