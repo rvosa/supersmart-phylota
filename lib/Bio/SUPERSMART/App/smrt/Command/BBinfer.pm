@@ -77,24 +77,26 @@ sub run {
         eval "require $subclass";
         $@ and throw 'ExtensionError' => "Can't load $toolname wrapper: ".$@;
         bless $self, $subclass;
-    $bootstrap = 1 if $self->_is_bayesian;
+   	 	$bootstrap = 1 if $self->_is_bayesian;
     }
     
     # instantiate and configure wrapper object
     my $tool = $self->_create;
-    $self->_configure( $tool, $self->config );
     
     # run the analysis, process results
+    my $base = $self->outfile;
     for my $i ( 1 .. $bootstrap ) {
         my $replicate = $self->_bootstrap( $supermatrix, $i );
-    my $backbone = $self->_run(
-        'tool'   => $tool,
-        'matrix' => $replicate,
-        'tree'   => $starttree,
-    );  
-    $self->_append( $backbone, $self->outfile . '.replicates' );
+		$self->outfile( "${base}.${i}");
+	    $self->_configure( $tool, $self->config );        
+		my $backbone = $self->_run(
+			'tool'    => $tool,
+			'matrix'  => $replicate,
+			'tree'    => $starttree,
+		);  
+		$self->_append( $backbone, $base . '.replicates' );
     }
-    $self->_process_result( $self->outfile . '.replicates', !$opt->ids, $bootstrap - 1 );
+    $self->_process_result( $base . '.replicates', !$opt->ids, $bootstrap - 1 );
     return 1;
 }
 
