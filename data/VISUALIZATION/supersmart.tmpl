@@ -95,14 +95,14 @@
 		}
 		
 		function drawText(svg,x,y,text,style) {
-            var txtElt = document.createElementNS(svgNS,'text');
-            var txt = document.createTextNode(text);
-            txtElt.appendChild(txt);
-            txtElt.setAttributeNS( null, 'x', new String(x) + 'px' );
-            txtElt.setAttributeNS( null, 'y', new String(y) + 'px' );
-            txtElt.setAttributeNS( null, 'style', makeStyle(style) );
-            svg.appendChild(txtElt);
-            return txtElt;		
+            		var txtElt = document.createElementNS(svgNS,'text');
+            		var txt = document.createTextNode(text);
+            		txtElt.appendChild(txt);
+            		txtElt.setAttributeNS( null, 'x', new String(x) + 'px' );
+            		txtElt.setAttributeNS( null, 'y', new String(y) + 'px' );
+            		txtElt.setAttributeNS( null, 'style', makeStyle(style) );
+            		svg.appendChild(txtElt);
+            		return txtElt;		
 		}
 		
 		function makeStyle(style) {
