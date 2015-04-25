@@ -172,24 +172,29 @@ sub _apply_backbone_markers {
 	for my $r ( @records ) {
 		if ( my $tip = $tree->get_by_name( $r->{'taxon'} ) ) {
 			$tip->set_generic( 'exemplar' => 1 );
-			my @path = ( @{ $tip->get_ancestors } );
-                        my %markers;
-                        for my $m ( @{ $r->{'keys'} } ) {
+			
+			# store marker ID and accession number
+            my %markers;
+            for my $m ( @{ $r->{'keys'} } ) {
 				next if $m eq 'taxon';
-                                $markers{$m} = $r->{$m} if $r->{$m} and $r->{$m} =~ m/\S/;
-                        }
+                $markers{$m} = $r->{$m} if $r->{$m} and $r->{$m} =~ m/\S/;
+            }
 			$tip->set_generic( 'backbone' => \%markers );
+			
+			# start the counts at 1
 			my %counts = map { $_ => 1 } keys %markers;
-			for my $node ( @path ) {
+			for my $node ( @{ $tip->get_ancestors } ) {
 			
 				# may have visited node from another descendent, need
 				# to add current counts
 				if ( my $h = $node->get_generic('backbone') ) {
 					$h->{$_} += $counts{$_} for keys %counts;
-					$node->set_generic( 'backbone' => $h );
+					my %copy = %$h;
+					$node->set_generic( 'backbone' => \%copy );
 				}
 				else {
-					$node->set_generic( 'backbone' => \%counts );
+					my %copy = %counts;
+					$node->set_generic( 'backbone' => \%copy );
 				}		
 			}
 		}
