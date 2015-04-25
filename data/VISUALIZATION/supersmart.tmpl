@@ -3,6 +3,11 @@
     <script type="text/javascript">
         var tree = [% tree.get_root.to_js %];
         var svgNS = 'http://www.w3.org/2000/svg';
+        var xlinkNS = 'http://www.w3.org/1999/xlink';
+        var NCBITaxonomy = 'http://ncbi.nlm.nih.gov/taxonomy/';
+        var markers = tree.markers;
+        var maxMarkers = Object.keys(markers).length;
+        var maxWidth = 10;    
         
         function rgb(triplet) {
             return 'rgb(' + triplet.join() + ')';
@@ -16,10 +21,20 @@
             // if not root, draw the branch to the parent
             if ( parent != null ) {
                 var px = parent['map:x'];
-                var py = parent['map:y'];           
+                var py = parent['map:y']; 
+                
+                // calculate branch width (proportional to 
+                var width = 2;
+                if ( node.backbone ) {
+                    var mc = Object.keys(node.backbone).length;
+                    width = maxWidth * ( mc / maxMarkers );
+                }
+                
+                // draw styled lines
                 var branchStyle = {
-                    'stroke'       : rgb(node['map:branch_color']) || 'black',
-                    'stroke-width' : node['map:branch_width'] || 2,
+                    'stroke'         : rgb(node['map:branch_color']) || 'black',
+                    'stroke-width'   : width,
+                    'stroke-linecap' : 'round',
                 };
                 drawLine(svg,px,py,px,ny,branchStyle);
                 drawLine(svg,px,ny,nx,ny,branchStyle);
@@ -27,13 +42,14 @@
                 // overlay black dotted line if backbone
                 if ( node.backbone ) {
                     branchStyle['stroke'] = 'black';
-                    branchStyle['stroke-dasharray'] = '5, 5';
+                    branchStyle['stroke-dasharray'] = '5, ' + ( width + 5 );
+                    branchStyle['stroke-linecap'] = 'square';
                     drawLine(svg,px,py,px,ny,branchStyle);
                     drawLine(svg,px,ny,nx,ny,branchStyle);              
                 }           
             }
             
-            // if node has a label, draw it. make bold if exemplar.
+            // if node has a label, draw it. make bold if exemplar. add link.
             if ( node.binomial != null ) {
                 var fontWeight = node.exemplar ? 'bold' : 'normal';
                 drawText(
@@ -47,7 +63,8 @@
                         'font-size'   : node['map:font_size']  || '10px',
                         'font-style'  : node['map:font_style'] || 'italic',
                         'font-weight' : fontWeight,
-                    }
+                    },
+                    NCBITaxonomy + node.guid
                 );
             }
             
@@ -58,12 +75,12 @@
             
             // draw the node if internal
             if ( childCount != 0 ) {
-                var nodeColor = node.fossil ? 'black' : 'white';
-                drawCircle(
+                var nodeColor = node.fossil ? 'red' : 'white';
+                var circleElt = drawCircle(
                     svg,
                     nx,
                     ny,
-                    node['map:radius'] || 8,
+                    node['map:radius'] || 5,
                     {
                         'fill'         : nodeColor,
                         'stroke'       : rgb(node['map:branch_color']) || 'black',
@@ -71,11 +88,31 @@
                         'cursor'       : 'pointer'      
                     }
                 );
-            }           
+                
+                // make clickable if backbone node
+                if ( node.backbone ) {
+                    circleElt.onclick = function () {
+                        var content = {};
+                        for ( var property in node.backbone ) {
+                            if ( node.backbone.hasOwnProperty(property) ) { 
+                                var concat = markers[property].join(', '); 
+                                if ( concat.length > 13 ) {
+                                    var shortened = concat.substring(0,13);
+                                    shortened += '...';
+                                    concat = shortened;
+                                }
+                                content[concat] = node.backbone[property];
+                            }
+                        }
+                        
+                        // pops up table with n seqs per marker
+                        drawTable(svg,nx,ny,content);
+                    }
+                }
+            }                   
         }
         
         function drawLine(svg,x1,y1,x2,y2,style) {
-        	style['stroke-linecap'] = "round";
             var lineElt = document.createElementNS(svgNS,'line');
             lineElt.setAttributeNS( null, 'x1', new String(x1) + 'px' );
             lineElt.setAttributeNS( null, 'y1', new String(y1) + 'px' );                
@@ -96,19 +133,72 @@
             return nodeElt;             
         }
         
-        function drawText(svg,x,y,text,style) {
+        
+        function drawText(svg,x,y,text,style,url) {
+            if ( url ) {
+                var aElt = document.createElementNS(svgNS,'a');
+                aElt.setAttributeNS( xlinkNS, 'href', url );
+                svg.appendChild(aElt);
+            }
+            
             var txtElt = document.createElementNS(svgNS,'text');
             var txt = document.createTextNode(text);
             txtElt.appendChild(txt);
             txtElt.setAttributeNS( null, 'x', new String(x) + 'px' );
             txtElt.setAttributeNS( null, 'y', new String(y) + 'px' );
             txtElt.setAttributeNS( null, 'style', makeStyle(style) );
-            svg.appendChild(txtElt);
-            return txtElt;      
+            
+            if ( url ) {
+                aElt.appendChild(txtElt);
+                return aElt;                    
+            }
+            else {
+                svg.appendChild(txtElt);
+                return txtElt;
+            }
+            
         }
         
         function drawTable(svg,x,y,content) {
-        
+            var lines = Object.keys(content).length;
+            var height = 15;
+            var ycopy = y;
+            var elements = new Array();
+            var rectElt = document.createElementNS(svgNS,'rect');
+            rectElt.setAttributeNS( null, 'x', new String(x) + 'px' );
+            rectElt.setAttributeNS( null, 'y', new String(y) + 'px' );
+            rectElt.setAttributeNS( null, 'width', '150' );
+            rectElt.setAttributeNS( null, 'height', new String(height*(lines+2)) );            
+            rectElt.setAttributeNS( null, 'style', makeStyle({'fill':'white','stroke':'black'}));
+            elements.push(rectElt);
+            svg.appendChild(rectElt);
+            var style = {
+                'font-family' : 'Verdana',
+                'font-size'   : '10px',
+            };   
+            y += height;                                 
+            for ( var property in content ) {
+                if ( content.hasOwnProperty(property) ) {
+                    y = y + height;
+                    style['font-weight'] = 'bold';
+                    elements.push(drawText(svg,x+7,y,property,style));
+                    style['font-weight'] = 'normal';   
+                    elements.push(drawText(svg,x+120,y,content[property],style));
+                }
+            }
+            var closeButton = drawCircle(svg,x+150-15,ycopy+15,5,{
+                'fill'         : 'white',
+                'stroke'       : 'black',
+                'stroke-width' : 1,
+                'cursor'       : 'pointer'            
+            });
+            elements.push(closeButton);
+            closeButton.onclick = function () {             
+                for ( var i = 0; i < elements.length; i++ ) {
+                    elements[i].parentNode.removeChild(elements[i]);
+                }
+            }
+            return rectElt;
         }
         
         function makeStyle(style) {
