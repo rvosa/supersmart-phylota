@@ -653,7 +653,8 @@ sub get_markers_for_accession {
 	my ( $self, $acc ) = @_;
 	my $gb = Bio::DB::GenBank->new();
 	my $seq = $gb->get_Seq_by_acc($acc);
-	use Data::Dumper;
+
+	# features and subfeatures to query for marker names
 	my %feat = (
 		'rRNA'          => 'product',
 		'tRNA'          => 'product',
@@ -661,18 +662,36 @@ sub get_markers_for_accession {
 		'gene'          => 'gene',
 		'CDS'           => 'product',
 	);
+	
+	# iterate over features
 	my %result;
-	my $count = 0;
 	for my $feature ( $seq->top_SeqFeatures() ) {
 		my $tag = $feature->primary_tag();
+		
+		# feature tag potentially interesting
 		if ( my $subtag = $feat{$tag} ) {
+		
+			# has subtag of interest
 			if ( $feature->has_tag($subtag) ) {
+			
+				# store by location so that overlapping
+				# CDS/product and gene/gene are identified
+				my $loc = $feature->location;
+				my $key = $loc->start . '.' . $loc->end;
+				$result{$key} = [] if not $result{$key};
 				my ($value) = $feature->each_tag_value($subtag);
-				$result{$value} = $count++;
+				push @{ $result{$key} }, $value;
 			}
 		}
 	}
-	return sort { $result{$a} <=> $result{$b} } keys %result;
+	
+	# pick shortest of the overlapping descriptions
+	my @markers;
+	for my $m ( sort { $a <=> $b } keys %result ) {
+		my ($shortest) = sort { length($a) <=> length($b) } @{ $result{$m} };
+		push @markers, $shortest;
+	}
+	return @markers;
 }
 
 =item filter_seq_set
