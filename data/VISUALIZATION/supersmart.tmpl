@@ -1,224 +1,467 @@
 <html>
     <head>
-    <script type="text/javascript">
-        var tree = [% tree.get_root.to_js %];
-        var svgNS = 'http://www.w3.org/2000/svg';
-        var xlinkNS = 'http://www.w3.org/1999/xlink';
-        var NCBITaxonomy = 'http://ncbi.nlm.nih.gov/taxonomy/';
-        var markers = tree.markers;
-        var maxMarkers = Object.keys(markers).length;
-        var maxWidth = 10;    
-        
-        function rgb(triplet) {
-            return 'rgb(' + triplet.join() + ')';
-        }
-        
-        function drawTree(svg,node,parent) {
-            var nx = node['map:x'];
-            var ny = node['map:y'];
-            var childCount = node.children.length;
-                    
-            // if not root, draw the branch to the parent
-            if ( parent != null ) {
-                var px = parent['map:x'];
-                var py = parent['map:y']; 
-                
-                // calculate branch width (proportional to 
-                var width = 2;
-                if ( node.backbone ) {
-                    var mc = Object.keys(node.backbone).length;
-                    width = maxWidth * ( mc / maxMarkers );
+    </head>
+    <body onload="drawTree(document.getElementById('svgTree'),tree)">
+        <svg
+            id="svgTree"
+            version="1.1"
+            width="[% width %]"
+            height="[% height %]"
+            viewBox="0 0 [% width %] [% height %]"
+            xmlns="http://www.w3.org/2000/svg">
+            <style type="text/css">
+                .painted {
+                    stroke: red !important;
                 }
-                
-                // draw styled lines
-                var branchStyle = {
-                    'stroke'         : rgb(node['map:branch_color']) || 'black',
-                    'stroke-width'   : width,
-                    'stroke-linecap' : 'round',
-                };
-                drawLine(svg,px,py,px,ny,branchStyle);
-                drawLine(svg,px,ny,nx,ny,branchStyle);
-                
-                // overlay black dotted line if backbone
-                if ( node.backbone ) {
-                    branchStyle['stroke'] = 'black';
-                    branchStyle['stroke-dasharray'] = '5, ' + ( width + 5 );
-                    branchStyle['stroke-linecap'] = 'square';
-                    drawLine(svg,px,py,px,ny,branchStyle);
-                    drawLine(svg,px,ny,nx,ny,branchStyle);              
-                }           
-            }
-            
-            // if node has a label, draw it. make bold if exemplar. add link.
-            if ( node.binomial != null ) {
-                var fontWeight = node.exemplar ? 'bold' : 'normal';
-                drawText(
-                    svg,
-                    nx + ( node['map:text_horiz_offset'] || 12 ),
-                    ny + ( node['map:text_vert_offset']  || 3 ),
-                    node.binomial,
-                    {
-                        'stroke'      : node['map:font_color'],                 
-                        'font-family' : node['map:font_face']  || 'Verdana',
-                        'font-size'   : node['map:font_size']  || '10px',
-                        'font-style'  : node['map:font_style'] || 'italic',
-                        'font-weight' : fontWeight,
-                    },
-                    NCBITaxonomy + node.guid
-                );
-            }
-            
-            // recurse
-            for ( var i = 0; i < childCount; i++ ) {
-                drawTree(svg,node.children[i],node);
-            }
-            
-            // draw the node if internal
-            if ( childCount != 0 ) {
-                var nodeColor = node.fossil ? 'red' : 'white';
-                var circleElt = drawCircle(
-                    svg,
-                    nx,
-                    ny,
-                    node['map:radius'] || 5,
-                    {
-                        'fill'         : nodeColor,
-                        'stroke'       : rgb(node['map:branch_color']) || 'black',
-                        'stroke-width' : node['map:branch_width'] || 2,
-                        'cursor'       : 'pointer'      
+                .sectionHeader {
+                    font-weight: bold !important;
+                }
+                .link, a {
+                    cursor: pointer !important;
+                    fill: blue !important;
+                }
+                .itemTitle {
+                    font-weight: bold;
+                }
+                text {
+                    font-family: Verdana;
+                    font-size: 10px;
+                }
+                rect {
+                    fill: white;
+                    stroke: black;
+                }
+            </style>
+            <script type="text/javascript">
+                var tree = [% tree.get_root.to_js %];
+                var svgNS   = 'http://www.w3.org/2000/svg';
+                var xlinkNS = 'http://www.w3.org/1999/xlink';
+                var NCBI    = 'http://ncbi.nlm.nih.gov/';
+                var NCBITaxonomy = NCBI + 'taxonomy/';
+                var NCBINuccore  = NCBI + 'nuccore/';
+                var markers      = tree.markers;
+                var maxMarkers   = Object.keys(markers).length;
+                var maxWidth     = 10;
+
+                function drawTree(svg,node,parent) {
+                    if ( node == null ) {
+                        node = tree;
                     }
-                );
-                
-                // make clickable if backbone node
-                if ( node.backbone ) {
+                    var childCount = node.children.length;
+
+                    // if not root, draw the branch to the parent
+                    if ( parent != null ) {
+                        drawBranch(svg, node, parent);
+                    }
+
+                    // if node has a label, draw it. make bold if exemplar. add link.
+                    if ( node.binomial != null ) {
+                        var label = drawNodeLabel(svg, node);
+                        var content = createNodeContent(node);
+                        label.onclick = function () {
+                            drawTable(svg,node['map:x'],node['map:y'],content);
+                        }
+                    }
+
+                    // recurse
+                    for ( var i = 0; i < childCount; i++ ) {
+                        drawTree(svg,node.children[i],node);
+                    }
+
+                    // draw the node if internal
+                    if ( childCount != 0 ) {
+                        drawNode(svg, node);
+                    }
+                }
+                function drawNode(svg, node) {
+                    var nx = node['map:x'];
+                    var ny = node['map:y'];
+                    var nodeColor = node.fossil ? 'red' : 'white';
+                    var circleElt = drawCircle(svg, nx, ny, node['map:radius'] || 5,{
+                        'fill'         : nodeColor,
+                        'stroke'       : rgb(node['map:branch_color'])  || 'black',
+                        'stroke-width' : node['map:branch_width'] || 2,
+                        'cursor'       : 'pointer'
+                    });
+                    var content = createNodeContent(node);
                     circleElt.onclick = function () {
-                        var content = {};
-                        for ( var property in node.backbone ) {
-                            if ( node.backbone.hasOwnProperty(property) ) { 
-                                var concat = markers[property].join(', '); 
-                                if ( concat.length > 13 ) {
-                                    var shortened = concat.substring(0,13);
-                                    shortened += '...';
-                                    concat = shortened;
-                                }
-                                content[concat] = node.backbone[property];
+                        drawTable(svg, nx, ny, content);
+                    }
+                    node['node'] = circleElt;
+                    circleElt.node = node;
+                }
+                function drawBranch(svg, node, parent) {
+                    var nx = node['map:x'];
+                    var ny = node['map:y'];
+                    var px = parent['map:x'];
+                    var py = parent['map:y'];
+                    var lines = [];
+
+                    // calculate branch width (proportional to
+                    // number of markers
+                    var width = 2;
+                    if (node.backbone) {
+                        var mc = Object.keys(node.backbone).length;
+                        width = maxWidth * ( mc / maxMarkers );
+                    }
+
+                    // draw styled lines
+                    var branchStyle = {
+                        'stroke': rgb(node['map:branch_color']) || 'black',
+                        'stroke-width': width,
+                        'stroke-linecap': 'round'
+                    };
+                    drawLine(svg, px, py, px, ny, branchStyle);
+                    drawLine(svg, px, ny, nx, ny, branchStyle);
+
+                    // overlay black dotted line if backbone
+                    if (node.backbone) {
+                        branchStyle['stroke'] = 'black';
+                        branchStyle['stroke-dasharray'] = '5, ' + ( width + 5 );
+                        branchStyle['stroke-linecap'] = 'square';
+                        lines.push(drawLine(svg, px, py, px, ny, branchStyle));
+                        lines.push(drawLine(svg, px, ny, nx, ny, branchStyle));
+                    }
+                    node['branch'] = lines;
+                }
+                function drawNodeLabel(svg, node) {
+                    var nx = node['map:x'];
+                    var ny = node['map:y'];
+                    var fontWeight = node.exemplar ? 'bold' : 'normal';
+                    var label = drawText(
+                            svg,
+                            nx + ( node['map:text_horiz_offset'] || 12 ),
+                            ny + ( node['map:text_vert_offset']  || 3 ),
+                            node.binomial,
+                            {
+                                'stroke': node['map:font_color'],
+                                'font-family': node['map:font_face'] || 'Verdana',
+                                'font-size': node['map:font_size']   || '10px',
+                                'font-style': node['map:font_style'] || 'italic',
+                                'cursor': 'pointer',
+                                'font-weight': fontWeight
+                            }
+                    );
+                    return label;
+                }
+                function drawLine(svg,x1,y1,x2,y2,style) {
+                    var lineElt = createSVGElt('line',{
+                        'x1'    : x1,
+                        'y1'    : y1,
+                        'x2'    : x2,
+                        'y2'    : y2,
+                        'style' : makeStyle(style)
+                    });
+                    svg.appendChild(lineElt);
+                    return lineElt;
+                }
+                function drawCircle(svg,cx,cy,r,style) {
+                    var nodeElt = createSVGElt('circle',{
+                        'cx'    : cx,
+                        'cy'    : cy,
+                        'r'     : r,
+                        'style' : makeStyle(style)
+                    });
+                    svg.appendChild(nodeElt);
+                    return nodeElt;
+                }
+                function drawText(svg,x,y,text,style,url) {
+                    if ( url ) {
+                        var aElt = document.createElementNS(svgNS,'a');
+                        aElt.setAttributeNS( xlinkNS, 'xlink:href', url );
+                        aElt.setAttributeNS( xlinkNS, 'xlink:show', 'new');
+                        svg.appendChild(aElt);
+                    }
+
+                    var txtElt = document.createElementNS(svgNS,'text');
+                    var txt = document.createTextNode(text);
+                    txtElt.appendChild(txt);
+                    txtElt.setAttributeNS( null, 'x', x );
+                    txtElt.setAttributeNS( null, 'y', y );
+
+                    if ( style ) {
+                        txtElt.setAttributeNS( null, 'style', makeStyle(style) );
+                    }
+                    if ( url ) {
+                        aElt.appendChild(txtElt);
+                        return aElt;
+                    }
+                    else {
+                        svg.appendChild(txtElt);
+                        return txtElt;
+                    }
+                }
+                function drawCloseButton(svg, x, y, elements) {
+                    var closeButton = drawCircle(svg, x + 170 - 15, y + 15, 5, {
+                        'fill'         : 'white',
+                        'stroke'       : 'black',
+                        'stroke-width' : 1,
+                        'cursor'       : 'pointer'
+                    });
+                    elements.push(closeButton);
+                    closeButton.onclick = function () {
+                        for (var i = 0; i < elements.length; i++) {
+                            elements[i].parentNode.removeChild(elements[i]);
+                        }
+                    }
+                }
+                function drawTableRow(svg, x, y, row, elements) {
+                    var textElt;
+
+                    // take the URL annotation
+                    var url = row['url'];
+                    delete row['url'];
+
+                    // take the marker annotation
+                    var marker = row['marker'];
+                    delete row['marker'];
+
+                    var events = {};
+                    for (var prop in row) {
+                        if (row.hasOwnProperty(prop)) {
+
+                            // item is an event handler
+                            if (typeof row[prop] === 'function') {
+                                events[prop] = row[prop];
+                            }
+
+                            // item is textual key/value pair
+                            else {
+                                textElt = drawText(svg, x + 7, y, '- ' + prop);
+                                addClass(textElt,'itemTitle');
+                                elements.push(textElt);
+                                elements.push(drawText(svg, x + 107, y, row[prop], null, url));
                             }
                         }
-                        
-                        // pops up table with n seqs per marker
-                        drawTable(svg,nx,ny,content);
+                    }
+
+                    // have event handlers, attach them to the itemTitle
+                    if (Object.keys(events).length > 0) {
+                        for (var eventType in events) {
+                            if (events.hasOwnProperty(eventType)) {
+                                textElt.addEventListener(eventType, events[eventType]);
+                            }
+                        }
+                    }
+
+                    // have a URL or events, style itemTitle as a link
+                    if (Object.keys(events).length > 0) {
+                        addClass(textElt,'link');
+                    }
+
+                    // have a marker ID, attach to element title
+                    if (marker != null) {
+                        textElt.setAttributeNS(null, 'title', marker);
                     }
                 }
-            }                   
-        }
-        
-        function drawLine(svg,x1,y1,x2,y2,style) {
-            var lineElt = document.createElementNS(svgNS,'line');
-            lineElt.setAttributeNS( null, 'x1', new String(x1) + 'px' );
-            lineElt.setAttributeNS( null, 'y1', new String(y1) + 'px' );                
-            lineElt.setAttributeNS( null, 'x2', new String(x2) + 'px' );
-            lineElt.setAttributeNS( null, 'y2', new String(y2) + 'px' );
-            lineElt.setAttributeNS( null, 'style', makeStyle(style) );
-            svg.appendChild(lineElt);
-            return lineElt;
-        }
-        
-        function drawCircle(svg,cx,cy,r,style) {
-            var nodeElt = document.createElementNS(svgNS, 'circle' );
-            nodeElt.setAttributeNS( null, 'cx', new String(cx) + 'px' );
-            nodeElt.setAttributeNS( null, 'cy', new String(cy) + 'px' );
-            nodeElt.setAttributeNS( null, 'r',  new String(r)  + 'px' );
-            nodeElt.setAttributeNS( null, 'style', makeStyle(style) );  
-            svg.appendChild(nodeElt);
-            return nodeElt;             
-        }
-        
-        
-        function drawText(svg,x,y,text,style,url) {
-            if ( url ) {
-                var aElt = document.createElementNS(svgNS,'a');
-                aElt.setAttributeNS( xlinkNS, 'href', url );
-                svg.appendChild(aElt);
-            }
-            
-            var txtElt = document.createElementNS(svgNS,'text');
-            var txt = document.createTextNode(text);
-            txtElt.appendChild(txt);
-            txtElt.setAttributeNS( null, 'x', new String(x) + 'px' );
-            txtElt.setAttributeNS( null, 'y', new String(y) + 'px' );
-            txtElt.setAttributeNS( null, 'style', makeStyle(style) );
-            
-            if ( url ) {
-                aElt.appendChild(txtElt);
-                return aElt;                    
-            }
-            else {
-                svg.appendChild(txtElt);
-                return txtElt;
-            }
-            
-        }
-        
-        function drawTable(svg,x,y,content) {
-            var lines = Object.keys(content).length;
-            var height = 15;
-            var ycopy = y;
-            var elements = new Array();
-            var rectElt = document.createElementNS(svgNS,'rect');
-            rectElt.setAttributeNS( null, 'x', new String(x) + 'px' );
-            rectElt.setAttributeNS( null, 'y', new String(y) + 'px' );
-            rectElt.setAttributeNS( null, 'width', '150' );
-            rectElt.setAttributeNS( null, 'height', new String(height*(lines+2)) );            
-            rectElt.setAttributeNS( null, 'style', makeStyle({'fill':'white','stroke':'black'}));
-            elements.push(rectElt);
-            svg.appendChild(rectElt);
-            var style = {
-                'font-family' : 'Verdana',
-                'font-size'   : '10px',
-            };   
-            y += height;                                 
-            for ( var property in content ) {
-                if ( content.hasOwnProperty(property) ) {
-                    y = y + height;
-                    style['font-weight'] = 'bold';
-                    elements.push(drawText(svg,x+7,y,property,style));
-                    style['font-weight'] = 'normal';   
-                    elements.push(drawText(svg,x+120,y,content[property],style));
+                function drawTableHeader(svg, x, y, row, elements) {
+                    var header = drawText(svg, x + 7, y, row);
+                    addClass(header,'sectionHeader');
+                    elements.push(header);
                 }
-            }
-            var closeButton = drawCircle(svg,x+150-15,ycopy+15,5,{
-                'fill'         : 'white',
-                'stroke'       : 'black',
-                'stroke-width' : 1,
-                'cursor'       : 'pointer'            
-            });
-            elements.push(closeButton);
-            closeButton.onclick = function () {             
-                for ( var i = 0; i < elements.length; i++ ) {
-                    elements[i].parentNode.removeChild(elements[i]);
+                function drawTable(svg,x,y,content) {
+                    var lines    = content.length;
+                    var height   = 15;
+                    var ycopy    = y;
+                    var elements = [];
+                    var sections = countSections(content);
+
+                    // create container
+                    var gElt = createSVGElt('g');
+                    elements.push(gElt);
+                    svg.appendChild(gElt);
+                    var rectElt = createSVGElt('rect',{
+                        'x'      : x,
+                        'y'      : y,
+                        'width'  : 170,
+                        'height' : height * ( lines + 2 ) + sections * height
+                    });
+                    elements.push(rectElt);
+                    gElt.appendChild(rectElt);
+
+                    // create table rows
+                    y += height; // initial offset from top
+                    for ( var i = 0; i < lines; i++ ) {
+                        if ( typeof content[i] === 'string' ) {
+                            y += height; // spacing between sections
+                            drawTableHeader(gElt, x, y, content[i], elements);
+                        }
+                        else if (content[i] != null) {
+                            drawTableRow(gElt, x, y, content[i], elements);
+                        }
+                        y += height; // spacing between items
+                    }
+                    drawCloseButton(gElt, x, ycopy, elements);
+                    return rectElt;
                 }
-            }
-            return rectElt;
-        }
-        
-        function makeStyle(style) {
-            var string = '';
-            for ( var property in style ) {
-                if ( style.hasOwnProperty(property) ) {
-                    string += property + ':' + style[property] + ';';
+                function addClass(elt,className) {
+                    var current = elt.getAttributeNS(null, 'class');
+                    if ( current ) {
+                        className = current + ' ' + className;
+                    }
+                    elt.setAttributeNS(null, 'class', className);
                 }
-            }
-            return string;          
-        }   
-    </script>
-    </head>
-    <body onload="drawTree(document.getElementById('svgTree'),tree,null)">
-        <svg 
-            id="svgTree"
-            version="1.1" 
-            width="[% width %]" 
-            height="[% height %]" 
-            xmlns="http://www.w3.org/2000/svg">     
-        </svg>  
+                function removeClass(elt,className) {
+                    var current = elt.getAttributeNS(null, 'class');
+                    if ( current ) {
+                        var classes = current.split(' ');
+                        var spliced = [];
+                        var numClasses = classes.length;
+                        for ( var i = 0; i < numClasses; i++ ) {
+                            if ( classes[i] != className ) {
+                                spliced.push(classes[i]);
+                            }
+                        }
+                        elt.setAttributeNS(null, 'class', spliced.join(' '));
+                    }
+                }
+                function hasClass(elt,className) {
+                    var current = elt.getAttributeNS(null, 'class');
+                    if ( current ) {
+                        var classes = current.split(' ');
+                        var numClasses = classes.length;
+                        for ( var i = 0; i < numClasses; i++ ) {
+                            if ( classes[i] == className ) {
+                                return true;
+                            }
+                        }
+                    }
+                    return false;
+                }
+                function rgb(triplet) {
+                    return 'rgb(' + triplet.join() + ')';
+                }
+                function makeStyle(style) {
+                    var string = '';
+                    for ( var property in style ) {
+                        if ( style.hasOwnProperty(property) ) {
+                            string += property + ':' + style[property] + ';';
+                        }
+                    }
+                    return string;
+                }
+                function shorten (string) {
+                    if ( string.length > 11 ) {
+                        var shortened = string.substring(0,11);
+                        shortened += '...';
+                        string = shortened;
+                    }
+                    return string;
+                }
+                function countSections(content) {
+                    var count = 0;
+                    var cl = content.length;
+                    for ( var i = 0; i < cl; i++ ) {
+                        if ( typeof content[i] === 'string' ) {
+                            count++;
+                        }
+                    }
+                    return count;
+                }
+                function recursivePaint(node,marker,remove,func) {
+                    if ( node.backbone && node.backbone[marker] ) {
+                        if ( func ) {
+                            func(node);
+                        }
+
+                        // if boolean argument set to true, remove the paint
+                        // from the branches by removing the 'painted' class
+                        if ( remove ) {
+
+                            // tips don't have a node object reference
+                            if ( node.node ) {
+                                removeClass(node.node,'painted');
+                            }
+                            for ( var i = 0; i < node.branch.length; i++ ) {
+                                removeClass(node.branch[i],'painted');
+                            }
+                        }
+                        else {
+                            if ( node.node ) {
+                                addClass(node.node,'painted');
+                            }
+                            for ( var i = 0; i < node.branch.length; i++ ) {
+                                addClass(node.branch[i],'painted');
+                            }
+                        }
+                    }
+                    var childCount = node.children.length;
+                    for ( var i = 0; i < childCount; i++ ) {
+                        recursivePaint(node.children[i],marker,remove,func);
+                    }
+                }
+                function createSVGElt(name,atts) {
+                    var elt = document.createElementNS(svgNS,name);
+                    if ( atts != null ) {
+                        for ( var property in atts ) {
+                            if ( atts.hasOwnProperty(property) && atts[property] != null ) {
+                                elt.setAttributeNS(null, property, atts[property]);
+                            }
+                        }
+                    }
+                    return elt;
+                }
+                function createBackboneContent(node, content) {
+                    content.push('Backbone markers');
+                    for (var property in node.backbone) {
+                        if (node.backbone.hasOwnProperty(property)) {
+                            var row = { 'marker' : property };
+
+                            // create row key: marker name(s)
+                            var concat = shorten(markers[property].join(', '));
+                            row[concat] = node.backbone[property];
+
+                            // value is the number of sequences per marker
+                            if (typeof node.backbone[property] === 'number') {
+                                row['mouseover'] = function () {
+                                    var marker = this.getAttributeNS(null,'title');
+                                    for ( var i = 0; i < node.children.length; i++ ) {
+                                        recursivePaint(node.children[i],marker,false);
+                                    }
+                                };
+                                row['mouseout'] = function () {
+                                    var marker = this.getAttributeNS(null,'title');
+                                    for ( var i = 0; i < node.children.length; i++ ) {
+                                        recursivePaint(node.children[i],marker,true);
+                                    }
+                                };
+                            }
+                            // value is the accession number
+                            else {
+                                row['url'] = NCBINuccore + node.backbone[property];
+                            }
+                            content.push(row);
+                        }
+                    }
+                }
+                function createFossilContent(node, content) {
+                    content.push('Fossil');
+                    content.push({'name':node.fossil.name});
+                    content.push({'minimum age' : node.fossil.min_age});
+                    content.push({'maximum age' : node.fossil.max_age});
+                }
+                function createNodeContent(node) {
+                    // content for the popup table
+                    var content = new Array();
+
+                    // add table section for fossils
+                    if (node.fossil) {
+                        createFossilContent(node, content);
+                    }
+
+                    // add table section for markers
+                    if (node.backbone) {
+                        createBackboneContent(node, content);
+                    }
+
+                    // add table section for NCBI taxon ID
+                    if (node.guid) {
+                        content.push('NCBI taxonomy');
+                        content.push({'taxon id': node.guid, 'url': NCBITaxonomy + node.guid });
+                    }
+                    return content;
+                }
+            </script>
+        </svg>
     </body>
 </html>
