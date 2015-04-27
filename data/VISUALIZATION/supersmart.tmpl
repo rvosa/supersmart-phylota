@@ -10,7 +10,7 @@
             viewBox="0 0 [% width %] [% height %]"
             xmlns="http://www.w3.org/2000/svg">
             <style type="text/css">
-                .painted {
+                line.painted, circle.painted {
                     stroke: red !important;
                 }
                 .sectionHeader {
@@ -26,6 +26,9 @@
                 text {
                     font-family: Verdana;
                     font-size: 10px;
+                }
+                text.painted {
+                    fill: red !important;
                 }
                 rect {
                     fill: white;
@@ -390,6 +393,36 @@
                         recursivePaint(node.children[i],marker,remove,func);
                     }
                 }
+                function branchAnimator (node) {
+                    for ( var i = 0; i < node.branch.length; i++ ) {
+                        var intervalId = node.branch[i].getAttributeNS(null,'intervalId');
+
+                        // animation was activated, kill it
+                        if ( intervalId ) {
+                            clearInterval(parseInt(intervalId));
+                            node.branch[i].removeAttributeNS(null,'intervalId');
+                        }
+
+                        // start a new animation
+                        else {
+                            intervalId = setInterval((function(elt){
+                                return function () {
+                                    var myElt = elt;
+                                    var oldVal = myElt.style.getPropertyValue('stroke-dashoffset');
+                                    if ( oldVal ) {
+                                        oldVal = parseInt(oldVal);
+                                    }
+                                    else {
+                                        oldVal = 0;
+                                    }
+                                    var newVal = ( oldVal - 1 ) % 10;
+                                    myElt.style.setProperty('stroke-dashoffset',newVal,null);
+                                };
+                            }(node.branch[i])),100);
+                            node.branch[i].setAttributeNS(null,'intervalId',intervalId);
+                        }
+                    }
+                }
                 function createSVGElt(name,atts) {
                     var elt = document.createElementNS(svgNS,name);
                     if ( atts != null ) {
@@ -425,6 +458,18 @@
                                         recursivePaint(node.children[i],marker,true);
                                     }
                                 };
+                                row['click'] = function () {
+                                    if ( hasClass(this,'painted') ) {
+                                        removeClass(this,'painted');
+                                    }
+                                    else {
+                                        addClass(this,'painted');
+                                    }
+                                    var marker = this.getAttributeNS(null,'title');
+                                    for ( var i = 0; i < node.children.length; i++ ) {
+                                        recursivePaint(node.children[i],marker,false,branchAnimator);
+                                    }
+                                }
                             }
                             // value is the accession number
                             else {
