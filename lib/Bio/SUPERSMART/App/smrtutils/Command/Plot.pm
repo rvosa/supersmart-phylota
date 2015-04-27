@@ -335,8 +335,8 @@ sub _apply_clade_markers {
 # + show posteriors as probability 
 # + show higher taxa as evolving branch colors
 # + mark fossil nodes (maybe mark ranges?)
-# - show branch coverage as line thickness
-# - make taxa clickable (popup with link to NCBI taxonomy and to used sequences)
+# + show branch coverage as line thickness
+# + make taxa clickable (popup with link to NCBI taxonomy and to used sequences)
 
 sub run {
 	my ($self, $opt, $args) = @_;
