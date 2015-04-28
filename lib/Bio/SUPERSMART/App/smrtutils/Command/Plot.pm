@@ -2,6 +2,7 @@ package Bio::SUPERSMART::App::smrtutils::Command::Plot;
 use strict;
 use warnings;
 use Template;
+use File::Spec;
 use List::Util 'sum';
 use List::MoreUtils qw(pairwise uniq all);
 use Bio::Phylo::Treedrawer;
@@ -136,13 +137,14 @@ sub run {
 	# instantiate template
 	my $tt = Template->new( 'ABSOLUTE' => 1 );
 	my $date = localtime();
+	my ( $vol, $dirs, $script ) = File::Spec->splitpath( $0 );
 	my %args = (
 		'tree'    => $tree,
 		'width'   => $opt->width,
 		'height'  => $opt->height,
 		'style'   => $opt->style,
 		'date'    => $date,
-		'command' => "$0 @ARGV",
+		'command' => "$script @ARGV",
 	);
 	my $oz = $tt->process( $file, \%args, $outfile ) or die $tt->error;
 	$logger->info("DONE. Tree written to $outfile");
