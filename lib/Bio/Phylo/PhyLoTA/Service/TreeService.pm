@@ -25,14 +25,12 @@ Bio::Phylo::PhyLoTA::Service::TreeService - Operations on phylogenetic Trees
 Provides functionality for handling trees, e.g. decomposing, rerooting and grafting
 clade trees onto a backbone tree.
 
-
 =over
-
 
 =item reroot_tree
 
-Reroots a backbone tree. All possible rerootings are evaluated an the tree is returned that
-minimizes the paraphyly with respect to the exemplar species of all genera.
+Reroots a backbone tree. All possible rerootings are evaluated and the tree is returned 
+that minimizes the paraphyly with respect to the exemplar species of all genera.
 
 =cut
 
@@ -44,8 +42,8 @@ sub reroot_tree {
 	# taxonomic ranks to consider for determining paraphyly
 	my @levels = @{$levels};
 	
-	# store the scores (number of paraphyletic species per rerooting) for each level and node index
-	# at which we reroot
+	# store the scores (number of paraphyletic species per rerooting) for each level and 
+	# node index at which we reroot
 	my %scores = ();
 	@scores{ @levels } = ();
 
@@ -249,15 +247,23 @@ sub remap_to_ti {
 Given a file with multiple trees (in newick format), 
 creates a consensus tree using the tool specified by 
 "TREEANOTATOR_BIN" in the configuration file.
-Returns a single newick tree as a string.
+Returns a single newick tree as a string. Arguments:
+
+ -infile (required):  a nexus tree file to be read by treeannotator
+ -burnin (optional):  a number indicating the fraction of trees to discard,
+                      default is provided by the BURNIN parameter in the
+                      configuration file
+ -heights (optional): how to process node heights, an option of 'keep', 
+                      'median', 'mean' or 'ca', default is provided by the
+                      NODE_HEIGHTS parameter in the configuration file 
 
 =cut
 
-# -infile, (optional: -burnin)
 sub consense_trees {
 	my ( $self, %args ) = @_;
-	my $burnin = $args{'-burnin'} || $config->BURNIN;
-	my $infile = $args{'-infile'} || die "Need -infile argument!";
+	my $burnin  = $args{'-burnin'}  || $config->BURNIN;
+	my $infile  = $args{'-infile'}  || die "Need -infile argument!";
+	my $heights = $args{'-heights'} || $config->NODE_HEIGHTS;
 	
 	# we first need to count the absolute number of trees in the file
 	# and multiply that by burnin to get the absolute number of trees to skip
@@ -266,7 +272,6 @@ sub consense_trees {
 	while(<$fh>) {
 		$counter++ if /^\s*tree\s/i; #*
 	}	
-	
 	my $babs = int( $burnin * $counter );
 	
 	# create temporary outfile name
@@ -276,24 +281,93 @@ sub consense_trees {
 	# execute command
 	my $tmpl = '%s -burnin %i %s %s 2> /dev/null';
 	my $command = sprintf $tmpl, $config->TREEANNOTATOR_BIN, $babs, $infile, $outfile;
-        $log->debug("running command $command");
-        system($command) and die "Error building consensus: $?";
-        my $newicktree = $self->parse_newick_from_nexus( $outfile );
-        return $newicktree;
+    $log->debug("running command $command");
+    system($command) and die "Error building consensus: $?";
+    
+    # post-process result: copy treeannotator's [&hot=comments] to generic object hash
+    my $newicktree = $self->parse_newick_from_nexus( $outfile, '-ignore_comments' => 1 );
+    unlink $outfile;
+    return $self->_post_process( $newicktree );
+}
+
+sub _post_process {
+	my ( $self, $newicktree ) = @_;
+	$log->debug("going to post-process tree");
+    $newicktree->visit(sub{
+    	my $n = shift;
+    	my $name = $n->get_name;
+    	$name =~ s/\\//g;
+    	$log->debug("name: $name");
+    	if ( $name =~ /\[/ and $name =~ /^([^\[]+)\[(.+?)\]$/ ) {
+    		my ( $trimmed, $comments ) = ( $1, $2 );
+    		$n->set_name( $trimmed );
+    		$log->debug("trimmed name: $trimmed");
+    		
+    		# "hot comments" start with ampersand. ignore if not.
+    		if ( $comments =~ /^&(.+)/ ) {
+    			$log->debug("hot comments: $comments");
+    			$comments = $1;
+    			my %meta;
+    			
+    			# string needs to be fully eaten up
+    			COMMENT: while( my $old_length = length($comments) ) {
+    			
+    				# grab the next key
+    				if ( $comments =~ /^(.+?)=/ ) {
+    					my $key = $1;
+    					$log->debug("key: $key");
+    					
+    					# remove the key and the =
+    					$comments =~ s/^\Q$key\E=//;
+    					
+    					# value is a comma separated range
+    					if ( $comments =~ /^{([^}]+)}/ ) {
+    						my $value = $1;    						
+    						$meta{$key} = [ split /,/, $value ];
+    						
+    						# remove the range
+    						$value = "{$value}";
+    						$comments =~ s/^\Q$value\E//;
+    					}
+    					
+    					# value is a scalar
+    					elsif ( $comments =~ /^([^,]+)/ ) {
+    						my $value = $1;
+    						$meta{$key} = $value;
+    						$comments =~ s/^\Q$value\E//;
+    						$log->debug("scalar value: $value");
+    					}
+    					
+    					# remove trailing comma, if any
+    					$comments =~ s/^,//;
+    				}
+    				if ( $old_length == length($comments) ) {
+    					$log->warn("couldn't parse newick comment: $comments");
+    					last COMMENT;
+    				}
+    			}
+    			$n->set_generic( 'treeannotator' => \%meta );
+    		}
+    		else {
+    			$log->debug("not hot: $comments");
+    		}
+    	}
+    });
+	return $newicktree;
+
 }
 
 =item parse_newick_from_nexus
 
-Given the file name of a phylogenetic tree in Nexus format, creates a tree in newick representation which is
-returned as a string. If information about the posterior value of a node is given (as present in the Nexus output of *BEAST),
-the posterior value is assigned to the respective inner nodes in the newick tree.
-
-
+Given the file name of a phylogenetic tree in Nexus format, creates a tree in newick 
+representation which is returned as a string. If information about the posterior value 
+of a node is given (as present in the Nexus output of *BEAST), the posterior value is 
+assigned to the respective inner nodes in the newick tree.
 
 =cut 
 
 sub parse_newick_from_nexus {
-        my ($self, $nexusfile) = @_;
+        my ($self, $nexusfile, %args ) = @_;
         my $newick = "";
         open my $fh, '<', $nexusfile or die $!;
         my @lines = <$fh>;
@@ -303,7 +377,7 @@ sub parse_newick_from_nexus {
                 $newick = $rev[1];
         }
         else {
-                $log->warn("nexus file has less than two lines")
+                $log->warn("nexus file has fewer than two lines")
         }
         $newick =~ s/^tree.+\[\&R\]\s+//g;
         
@@ -319,8 +393,8 @@ sub parse_newick_from_nexus {
         # remove trailing commas from idenifiers, if any
         for ( values %id_map ) { s/,$//g };
         
-        # remove comments [things between square brackets] but keep the 'posterior' from comment
-        #  and set the posterior as node name
+        # parse comments [things between square brackets] to 
+        # set the posterior as node name
         my @comments = ( $newick =~ m/(\[.+?\])/g );
   		
   		# iterate through comments and parse out posterior value, if given
@@ -330,17 +404,19 @@ sub parse_newick_from_nexus {
   			my $posterior = $matches[0] || "";
   			my $quoted = quotemeta $c;
   			
-  			# substitute in newick tree string
-  			$newick =~ s/$quoted/$posterior/g;
+  			# substitute in newick tree string. keep comments so that downstream
+  			# parsers may be able to do something with them
+  			$newick =~ s/$quoted/$posterior$quoted/g;
         }
 		
         # substitute nexus taxon ids with real taxon labels
         # note that there is possible trouble if node names for posteriors (e.g. 1) 
-        #   overlap with nexus identifier. However, BEAST seems to write all posteriors
-        #   as proper decimals
-		my $newicktree =  parse(
-                '-string'   => $newick,
-                '-format' => 'newick',
+        # overlap with nexus identifier. However, BEAST seems to write all posteriors
+        # as proper decimals
+		my $newicktree = parse(
+            '-string'          => $newick,
+            '-format'          => 'newick',
+            %args
         )->first;
 
   	    $newicktree->visit( sub{
