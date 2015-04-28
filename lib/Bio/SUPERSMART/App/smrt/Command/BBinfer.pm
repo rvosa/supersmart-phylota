@@ -86,7 +86,13 @@ sub run {
     # run the analysis, process results
     my $base = $self->outfile;
     for my $i ( 1 .. $bootstrap ) {
-        my $replicate = $self->_bootstrap( $supermatrix, $i );
+        my $replicate;
+        if ( $self->_is_bayesian ) {
+        	$replicate = $supermatrix;
+        }
+        else {
+         	$replicate = $self->_bootstrap( $supermatrix, $i );
+        }
 		$self->outfile( "${base}.${i}");
 		$self->_replicate( $i );
 	    $self->_configure( $tool, $self->config );        
