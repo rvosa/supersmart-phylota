@@ -382,12 +382,15 @@ sub run {
 	my $file = $ENV{'SUPERSMART_HOME'} . '/data/VISUALIZATION/' . $tool . '.tmpl';
 		
 	# instantiate template
-	my $tt = Template->new( 'ABSOLUTE' => 1 );	
+	my $tt = Template->new( 'ABSOLUTE' => 1 );
+	my $date = localtime();
 	my %args = (
-		'tree'   => $tree,
-		'width'  => $opt->width,
-		'height' => $opt->height,
-		'style'  => $opt->style,
+		'tree'    => $tree,
+		'width'   => $opt->width,
+		'height'  => $opt->height,
+		'style'   => $opt->style,
+		'date'    => $date,
+		'command' => "smrt plot @ARGV",
 	);
 	my $oz = $tt->process( $file, \%args, $outfile ) or die $tt->error;
 	$logger->info("DONE. Tree written to $outfile");
