@@ -337,6 +337,8 @@ sub _apply_clade_markers {
 # + mark fossil nodes (maybe mark ranges?)
 # + show branch coverage as line thickness
 # + make taxa clickable (popup with link to NCBI taxonomy and to used sequences)
+# - show age ranges from *BEAST
+# - show bootstrapped age ranges
 
 sub run {
 	my ($self, $opt, $args) = @_;
