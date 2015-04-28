@@ -285,13 +285,13 @@ sub consense_trees {
     system($command) and die "Error building consensus: $?";
     
     # post-process result: copy treeannotator's [&hot=comments] to generic object hash
-    my $newicktree = $self->parse_newick_from_nexus( $outfile, '-ignore_comments' => 1 );
+    my ( $newicktree, %map ) = $self->parse_newick_from_nexus( $outfile, '-ignore_comments' => 1, '-id_map' => 1 );
     unlink $outfile;
-    return $self->_post_process( $newicktree );
+    return $self->_post_process( $newicktree, %map );
 }
 
 sub _post_process {
-	my ( $self, $newicktree ) = @_;
+	my ( $self, $newicktree, %map ) = @_;
 	$log->debug("going to post-process tree");
     $newicktree->visit(sub{
     	my $n = shift;
@@ -300,7 +300,7 @@ sub _post_process {
     	$log->debug("name: $name");
     	if ( $name =~ /\[/ and $name =~ /^([^\[]+)\[(.+?)\]$/ ) {
     		my ( $trimmed, $comments ) = ( $1, $2 );
-    		$n->set_name( $trimmed );
+    		$n->set_name( $map{$trimmed} ? $map{$trimmed} : $trimmed );
     		$log->debug("trimmed name: $trimmed");
     		
     		# "hot comments" start with ampersand. ignore if not.
@@ -424,7 +424,7 @@ sub parse_newick_from_nexus {
                 $n->set_name( $id_map{$n->get_name} ) if exists $id_map{$n->get_name};  
         });
         
-        return $newicktree;
+        return $args{'-id_map'} ? ( $newicktree, %id_map ) : $newicktree;
         
 }
 
@@ -441,17 +441,17 @@ sub graft_tree {
     # sometimes single quotes are added in the beast output when dealing with special characters
     #   removing them to match names in the backbone. Just to be sure, remove quotes also from backbone
     $clade->visit(sub{
-                my $node = shift;
-                my $name = $node->get_name;
-                $name =~ s/\'//g;
-                $node->set_name($name);
-                      });
+        my $node = shift;
+        my $name = $node->get_name;
+        $name =~ s/\'//g;
+        $node->set_name($name);
+    });
     $backbone->visit(sub{
-                my $node = shift;
-                my $name = $node->get_name;
-                $name =~ s/\'//g;
-                $node->set_name($name);
-                         });
+        my $node = shift;
+        my $name = $node->get_name;
+        $name =~ s/\'//g;
+        $node->set_name($name);
+    });
         
     my @names = map { $_->get_name } @{ $clade->get_terminals };
 	$log->debug("Clade terminals : @names");

@@ -17,7 +17,7 @@ my $tree = parse_tree(
 	'-file'   => $tf,
 	'-format' => 'newick',
 	'-as_project' => 1,
-    );
+);
 
 my $taxa = $Bin . '/testdata/species.tsv';
 # parse taxon mapping
@@ -29,7 +29,7 @@ $tree = parse_tree(
 	'-file'   => $tf,
 	'-format' => 'newick',
 	'-as_project' => 1,
-    );
+);
 
 # test rerooting a tree
 my $rerooted = $ts->reroot_tree($tree, \@records, ["suborder"]);
