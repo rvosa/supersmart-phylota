@@ -142,7 +142,7 @@ sub run {
 		'height'  => $opt->height,
 		'style'   => $opt->style,
 		'date'    => $date,
-		'command' => "smrt @ARGV",
+		'command' => "$0 @ARGV",
 	);
 	my $oz = $tt->process( $file, \%args, $outfile ) or die $tt->error;
 	$logger->info("DONE. Tree written to $outfile");
