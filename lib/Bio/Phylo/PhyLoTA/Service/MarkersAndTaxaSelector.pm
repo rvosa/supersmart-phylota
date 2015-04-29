@@ -540,12 +540,19 @@ sub write_marker_summary {
 	my ( $self, $file, $tab, $specs ) = @_;
 	my @table = @$tab;
 	my @all_species = @$specs;
-	
+
 	# remove empty columns (for markers that are never included)
 	@table = grep {keys %{$_}} @table;
+
+	my @seed_gis;
 	
-	my @seed_gis = map { (values(%{$_}))[0] =~ /seed_gi\|([0-9]+)\|/ } @table;
-	
+	# parse seed gis from fasta defline
+	for my $col (@table) {
+		# all entries in one row have the same seed GIs
+		my $k = (keys($col))[0];
+		my $defline = $col->{$k}[0];
+		push @seed_gis, $1 if $defline =~ /seed_gi\|([0-9]+)\|/;
+	}
 	open my $outfh, '>', $file or die $!;
 	
 	# print table header
@@ -557,12 +564,16 @@ sub write_marker_summary {
 		print $outfh $name . "\t";
 		foreach my $column ( @table ) {
 			my %h = %{$column};
-			if (  my $seq = $h{$species} ) {
-				# parse the GI from fasta descripion
-				my ($gi) = $seq =~ /gi\|([0-9]+)\|/;
-				my $seqobj = $self->find_seq($gi);
-				print $outfh $seqobj->acc . "\t";
-			}
+			if (  my $seqs = $h{$species} ) {
+                                my @accessions;
+				foreach my $seq ( @$seqs ) {
+					# parse the GI from fasta descripion
+					my ($gi) = $seq =~ /gi\|([0-9]+)\|/;
+					my $seqobj = $self->find_seq($gi);
+					push @accessions,  $seqobj->acc;
+				}
+				print $outfh join (',', @accessions) . "\t";
+			}			
 			else {
 				print $outfh "\t";
 			}

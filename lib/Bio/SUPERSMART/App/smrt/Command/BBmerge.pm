@@ -365,7 +365,8 @@ sub _write_supermatrix {
 	    my $seq;
 	    if ( $seq = $seqs[0] ) {			
 		my ($header) = grep {/$taxid/} sort keys(%fasta);
-		$row{$taxid} = $header;
+		$row{$taxid} = [] if not $row{$taxid};
+		push $row{$taxid}, $header;
 	    }
 	    else {	
 		$seq = '?' x $nchar;

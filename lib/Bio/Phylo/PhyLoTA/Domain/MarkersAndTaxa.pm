@@ -77,10 +77,37 @@ sub parse_fasta_string {
     return %fasta;    
 }
 
+=item get_alignment_subset
+
+given an alignment as a hash (as for instance produced by parse_fasta_file),
+extracts sequences that match a specified keyword in the fasta definition line.
+The keyword is specified by the second argument, e.g. {'taxon'=>[10,20,30]}
+to extract all entries for taxa 10, 20 and 30, respectively.
+
+=cut
+
+sub get_alignment_subset {
+	my ($self, $aln, $arg) = @_;
+	
+	# determine for what type (gi, taxon, ..., given in fasta header) to chose
+	my ($type) = keys $arg;       
+	my @ids = @{$arg->{$type}};
+	
+	my %result;
+	for my $k ( keys $aln ) {
+		foreach my $id ( @ids ) {
+			if ( $k =~ m/$type\|$id/ ) {
+				$result{$k} = $aln->{$k}; 			
+			}
+		}
+	}
+	return %result;	
+}
+
 =item calc_mean_distance
-
+    
 Calculates the average pairwise distance within the alignment.
-
+    
 =cut
 
 sub calc_mean_distance {

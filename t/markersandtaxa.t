@@ -53,4 +53,13 @@ my @ranks = ("species", "genus");
 @ids = $mt->query_taxa_table( 9443, \@ranks, @records);
 ok ( scalar(@ids) > 100, "found more than 100 species and genera for order primates" );
 
+# test extracting subsets from fasta file
+my $file = $Bin . '/testdata/aln.fa';
 
+my %aln = $mt->parse_fasta_file( $file );
+ok ( scalar(keys %aln) > 0, "could parse from fasta file" );
+
+my @taxa = (446108, 290267, 446107);
+my %subset = $mt->get_alignment_subset(\%aln, {'taxon' => \@taxa});
+
+ok ( scalar(keys %subset) == 3, "could get subset of alignment");
