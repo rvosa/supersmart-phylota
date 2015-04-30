@@ -10,24 +10,24 @@ use base 'Bio::SUPERSMART::App::SubCommand';
 use Bio::SUPERSMART::App::smrt qw(-command);
 
 
-# ABSTRACT: reroots backbone tree such that the amount of paraphyletic species is minimized
+# ABSTRACT: reroots backbone tree
 
 =head1 NAME
 
-BBinfer.pm - reroots backbone tree such that the amount of paraphyletic species is minimized
+BBinfer.pm - reroots backbone tree
 
 =head1 SYNOPSIS
 
-smrt bbreroot [-h ] [-v ] [-w <dir>] [-l <filename>] -t <file> -b <file> [-g ] [-o <filename>] 
+smrt bbreroot [-h ] [-v ] [-w <dir>] [-l <filename>] -t <file> -b <file> [-g <names>] [-o <filename>] 
 
 =head1 DESCRIPTION
 
-Given an input backbone tree in newick format and a list of taxa with their NCBI taxonomy identifiers
-for different taxonomic ranks, re-roots the tree such that the amount of paraphyletic species
-(with respect to certain taxonomic ranks) is minimized. Output is the rerooted tree in newick format.
-The taxonomic level, from which the number of monophyletic subtrees is counted, is set to 
-be the highest informative taxonomic level. This is, given the species list, the highest rank which 
-still contains distinct taxa.
+Given input backbone tree(s) in newick format and a list of taxa with their NCBI taxonomy 
+identifiers for different taxonomic ranks, re-roots the tree such that the number of 
+paraphyletic taxa (with respect to certain taxonomic ranks) is minimized. Output is the 
+rerooted tree(s) in newick format. The taxonomic level from which the number of 
+monophyletic subtrees is counted, is set to be the highest informative taxonomic level. 
+This is, given the species list, the highest rank which still contains distinct taxa.
 
 =cut
 
@@ -36,7 +36,7 @@ sub options {
 	my $outfile_default = "backbone-rerooted.dnd";
 	return (
 		["taxafile|t=s", "tsv (tab-seperated value) taxa file as produced by 'smrt taxize'", { arg => "file", mandatory => 1}],
-		["backbone|b=s", "a genus level backbone tree as produced by 'smrt bbinfer'", { arg => "file", mandatory => 1}],	
+		["backbone|b=s", "a backbone tree(s) file as produced by 'smrt bbinfer'", { arg => "file", mandatory => 1}],	
 		["outgroup|g=s", "one or multiple taxa (names or NCBI identifiers, separated by commata) representing the outgroup at which the tree is rerooted. Outgroup must be enclosed in quotes.", {} ],
 		["outfile|o=s", "name of the output tree file (in newick format), defaults to '$outfile_default'", {default => $outfile_default, arg => "file"}],
 	);	
@@ -66,68 +66,66 @@ sub run {
 	my $ts = Bio::Phylo::PhyLoTA::Service::TreeService->new;
 	my $mt = Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa->new;
 	my $logger = $self->logger;
-		
-	my $tree = parse(
-		'-file'   => $backbone,
-		'-format' => 'newick',
-	)->first;
-
-	my @records = $mt->parse_taxa_file($taxafile);	
-
-	# use taxon IDs instead of names
-	$ts->remap_to_ti($tree);
-	$tree->resolve;
-	# Perform rerooting at outgroup, if given		
-	if ($opt->outgroup){
-		my $ogstr = $opt->outgroup;
-		$logger->info("Attempting to reroot tree at outgroup $ogstr");
-		# get nodes in the tree that correspond to outgroup species and
-		#  get their mrca
-		my @names = split(',', $ogstr);
-		
-		# remap outgroup species names to taxon identifiers
-		my @ids = map {
-						(my $name = $_) =~ s/_/ /g;
-						my @nodes = $ts->search_node({taxon_name=>$name})->all;
-						$logger->warn("found more than one database entry for taxon $name, using first entry.") if scalar (@nodes) > 1;						
-						die "could not find database entry for taxon name $name" if scalar (@nodes) == 0;						
-						$nodes[0]->ti;
-		} @names;
-
-		# expand taxa to species and lower if higher outgroup taxa are given
-		my @ranks = ('forma', 'varietas', 'subspecies', 'species');
 	
-		my @all_ids = $mt->query_taxa_table(\@ids, \@ranks, @records);
-
-		my %og = map{ $_=>1 } @all_ids;
-		my @ognodes = grep { exists($og{$_->get_name}) } @{$tree->get_terminals};
-		my $mrca = $tree->get_mrca(\@ognodes);
-		
-		# reroot at mrca of outgroup
-		$mrca->set_root_below;		
-	} 
+	# prepare taxa data
+	my @records = $mt->parse_taxa_file($taxafile);
+	my @ranks = ('forma', 'varietas', 'subspecies', 'species');	
+	my $level = $mt->get_highest_informative_level(@records);	
+	$logger->info("highest informative taxon level : $level");
 	
-	# Try to minimize paraphyly if no outgroup given
-	else {
+	# open output file	
+	open my $out, '>', $outfile or die $!;			
+	
+	# iterate over trees	
+	for my $tree ( @{ parse( '-file' => $backbone, '-format' => 'newick' )->get_entities } ) {
+	
+		# use taxon IDs instead of names
+		$ts->remap_to_ti($tree);
 		
-		my $level = $mt->get_highest_informative_level(@records);	
-		$logger->info("highest informative taxon level : $level");
+		# Perform rerooting at outgroup, if given		
+		if ($opt->outgroup){
 		
-		# reroot the tree
-		$logger->info("rerooting backone tree");	
-		$tree = $ts->reroot_tree($tree, \@records, [$level]);
+			# parse outgroup string
+			my $ogstr = $opt->outgroup;
+			$logger->info("Attempting to reroot tree at outgroup $ogstr");
+			my @names = split(',', $ogstr);
+					
+			# remap outgroup species names to taxon identifiers
+			my @ids = map {
+				(my $name = $_) =~ s/_/ /g;
+				my @nodes = $ts->search_node({ 'taxon_name' => $name })->all;
+				
+				# verify result
+				if ( @nodes != 1 ) {
+					$logger->warn("found more than one database entry for taxon $name, using first entry.") if scalar (@nodes) > 1;						
+					die "could not find database entry for taxon name $name" if scalar(@nodes) == 0;
+				}				
+				$nodes[0]->ti;
+			} @names;	
+			my @all_ids = $mt->query_taxa_table(\@ids, \@ranks, @records);
+
+			# fetch outgroup nodes and mrca
+			my %og = map{ $_=>1 } @all_ids;
+			my @ognodes = grep { exists($og{$_->get_name}) } @{$tree->get_terminals};
+			my $mrca = $tree->get_mrca(\@ognodes);
+		
+			# reroot at mrca of outgroup
+			$mrca->set_root_below;		
+		} 
+	
+		# Try to minimize paraphyly if no outgroup given
+		else {		
+		
+			# reroot the tree
+			$logger->info("rerooting backone tree");	
+			$tree = $ts->reroot_tree($tree, \@records, [$level]);
+		}
+		
+		# clean up labels and write to file
+		$tree = $ts->remap_to_name($tree);
+		$ts->remove_internal_names($tree);
+		print $out $tree->to_newick( 'nodelabels' => 1 );
 	}
-
-	##$ts->remove_internal_names($tree);
-	$tree = $ts->remap_to_name($tree);
-	$tree->resolve;
-	$ts->remove_internal_names($tree);
-	
-	# write rerooted tree to output file
-	open my $out, '>', $outfile or die $!;	
-	print $out $tree->to_newick(nodelabels=>1);
-	close $out;
-	
 	$logger->info("DONE, results written to $outfile");		
 }
 
