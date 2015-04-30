@@ -121,7 +121,6 @@ sub run{
 	}
 	
 	# decompose tree into clades and get the sets of species
-	my @set;
 	my @clades = map { my %h=('ingroup'=>$_); \%h; } $ts->extract_clades($tree, @records);;
 	
 	# get one outgroup species for each clade and append to species sets
@@ -163,77 +162,72 @@ sub run{
 	# write suitable alignments to their respective clade folders
 	#  and return a table with markers for all species
 	my @table = pmap {
-	    my ($aln) = @_;
+		my ($aln) = @_;
+		my %fasta = $mt->parse_fasta_file($aln);		 	 
 		$logger->info("checking whether alignment $aln can be included");
-	        my %fasta = $mt->parse_fasta_file($aln);
-		open my $fh, '<', $aln or die $!;
-		my $fastastr = join('', <$fh>);
-		close $fh;
-		my $dist  = $mt->calc_mean_distance($fastastr);
-		my $nchar = $mt->get_nchar(%fasta);
-		my $mdens = $config->CLADE_MIN_DENSITY;
+
+	        my $mdens = $config->CLADE_MIN_DENSITY;
 		
 		# return value: all included sequences per species
 		my %ret;
 		
-		if ( $dist <= $config->CLADE_MAX_DISTANCE ) {
-		
-			# assess for each set whether we have enough density
-			for my $i ( 0 .. $#clades ) {
-				my %h = %{ $clades[$i] };
-				my %ingroup = map {$_=>1} @{$h{'ingroup'}};
-				my %outgroup = map {$_=>1} @{$h{'outgroup'}};
-			
-				my %seq;
-				my $distinct = 0;
-				
-				for my $s ( keys %ingroup, keys %outgroup ) {
-					my @s = grep { /taxon\|$s[^\d]/ } keys %fasta;
-					if ( @s ) {
-						$seq{$s} = \@s;
-						$distinct++ if $ingroup{$s};
-					}
-				}
-				
-				# the fraction of distinct, sequenced species is high enough,
-				# and the total number exceeds two (i.e. there is some topology to resolve)
-				if ( ($distinct/scalar(keys %ingroup)) >= $mdens && $distinct > 2 ) {
-					$logger->info("$aln is informative and dense enough for clade $i");
-					
-					# write alignment 
-					my ( $fh, $seed ) = _make_handle( $i, $aln, $workdir );
-					for my $s ( keys %ingroup, keys %outgroup ) {
-						if ( $seq{$s} ) {
-							for my $j ( 0 .. $#{ $seq{$s} } ) {
-								my $seq = $seq{$s}->[$j];
-								print $fh '>', $seq, "\n", $fasta{$seq}, "\n";
-								$ret{$s} = $seq;	
-							}
-						}
-					}
-					if ( $add_outgroup ) {
-						# write outgroup to file (skipped if already exists)
-						my @og = keys %outgroup;
-						_write_outgroup( $i, \@og, $workdir);
-					}
-				}
-				else {
-					my $dens = sprintf ( "%.2f", $distinct/scalar(keys %ingroup));
-					$logger->info("$aln is not informative or dense enough: density " 
-					. $dens . " < $mdens, number of distinct taxa in clade $i: $distinct");
-				}
-			}
-		}
-		else {
-			$logger->info("$aln is too divergent: $dist > ".$config->CLADE_MAX_DISTANCE);
-		}
+		# assess for each set whether we have enough density
+	      CLADE: for my $i ( 0 .. $#clades ) {
+
+		      my %h = %{ $clades[$i] };
+		      my %ingroup = map {$_=>1} @{$h{'ingroup'}};
+		      my %outgroup = map {$_=>1} @{$h{'outgroup'}};
+		      
+		      my %seqs_ingroup = $mt->get_alignment_subset(\%fasta, {'taxon'=>[keys %ingroup]});		      
+		      my %seqs_all = $mt->get_alignment_subset(\%fasta, {'taxon'=>[keys %outgroup, keys %ingroup]});		      
+		      my $distinct = scalar ( keys %seqs_ingroup );
+
+
+		      if ( $distinct  < 3 ) {
+			      $logger->info("Not enough sequences in alignment $aln for clade # $i");
+			      next CLADE;
+		      }
+		      # calculate distance of the subset of the alignment which includes only the (ingroup!) species in this clade		      		      
+		      my $fastastr = '';
+		      foreach my $k (keys %seqs_ingroup) {
+			      $fastastr .= "> $k \n " . $seqs_ingroup{$k} . "\n";
+		      }
+		      my $dist  = $mt->calc_mean_distance($fastastr);
+		      if ( $dist > $config->CLADE_MAX_DISTANCE ) {
+			      $logger->info("$aln is too divergent for clade # $i, distance $dist > ".$config->CLADE_MAX_DISTANCE);
+			      next CLADE;
+		      }
+		      		      
+		      # the fraction of distinct, sequenced species is high enough,
+		      # and the total number exceeds two (i.e. there is some topology to resolve)
+		      if ( ($distinct/scalar(keys %ingroup)) >= $mdens ) {
+			      $logger->info("$aln is informative and dense enough for clade $i");
+			      # write alignment 
+			      my ( $fh, $seed ) = _make_handle( $i, $aln, $workdir );
+			      for my $defline ( keys %seqs_all ) {
+				      print $fh '>', $defline, "\n", $fasta{$defline}, "\n";
+				      my $species = $1 if $defline =~ /taxon\|([0-9]+)/;
+				      $ret{$species} = [] if not $ret{$species};
+				      push @{$ret{$species}}, $defline;					      				      
+			      }
+			      if ( $add_outgroup ) {
+				      # write outgroup to file (skipped if already exists)
+				      my @og = keys %outgroup;
+				      _write_outgroup( $i, \@og, $workdir);
+			      }
+		      }
+		      else {
+			      my $dens = sprintf ( "%.2f", $distinct/scalar(keys %ingroup));
+			      $logger->info("$aln is not informative or dense enough: density " 
+					    . $dens . " < $mdens, number of distinct taxa in clade $i: $distinct");
+		      }
+	      }		
 		return \%ret;
 	} @alignments;
 	
-
-	my @all_species = uniq map {@$_} @set;
-
-	$mts->write_marker_summary( $outfile, \@table, \@all_species );
+	# get all species that were present in an alignment and write marker table
+	my @included_species = uniq map {keys($_)} @table;
+	$mts->write_marker_summary( $outfile, \@table, \@included_species );
 
 	$logger->info("DONE, results written into working directory $workdir");
 
