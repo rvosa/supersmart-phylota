@@ -116,7 +116,7 @@ sub run {
             }
 	}
     }
-    $self->_process_result( $base . '.replicates', !$opt->ids, $bootstrap - 1 );
+    $self->_process_result( $base . '.replicates', !$opt->ids, ( $bootstrap - 1 || $is->is_bayesian ) );
     unlink $self->workdir . '/user.dnd' if $opt->cleanup;
     return 1;
 }
