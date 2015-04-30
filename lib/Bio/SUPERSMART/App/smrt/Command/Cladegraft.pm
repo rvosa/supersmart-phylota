@@ -147,7 +147,7 @@ sub _graft_single_tree {
 	close $fh;
 
 	# also save remapped consensus tree                
-	my $remapped_consensus = parse('-string'=>$consensus->to_newick, '-format'=>'newick')->first;
+	my $remapped_consensus = parse('-string'=>$consensus->to_newick( nodelabels => 1 ), '-format'=>'newick')->first;
 	$ts->remap_to_name($remapped_consensus);
 	open my $fhr, '>', $stem."-remapped.dnd" or die $!;
 	print $fhr $remapped_consensus->to_newick('-nodelabels' =>1);
@@ -178,7 +178,7 @@ sub _graft_single_tree {
 		close $fh;
 		
 		# save pruned remapped consensus tree                
-		my $remapped_pruned = parse('-string'=>$consensus->to_newick, '-format'=>'newick')->first;
+		my $remapped_pruned = parse('-string'=>$consensus->to_newick( nodelabels => 1), '-format'=>'newick')->first;
 		$ts->remap_to_name($remapped_pruned);
 		open my $fhr, '>', $stem."-pruned-remapped.dnd" or die $!;
 		print $fhr $remapped_pruned->to_newick('-nodelabels' =>1);
@@ -193,7 +193,7 @@ sub _graft_single_tree {
                 if ( $n->is_terminal ) {
 			my $id = $n->get_name;
 			if ($id=~m/\./){
-				die("Nodename $id is decimal!!!");
+				die("Nodename $id is decimal!");
 			}
                         my $dbnode = $ts->find_node($id);
                         $logger->fatal("Could not find name for taxon id $id in database!") if not $dbnode;
