@@ -76,7 +76,8 @@ sub run {
 	# open output file	
 	open my $out, '>', $outfile or die $!;			
 	
-	# iterate over trees	
+	# iterate over trees
+	my $counter = 1;	
 	for my $tree ( @{ parse( '-file' => $backbone, '-format' => 'newick' )->get_entities } ) {
 	
 		# use taxon IDs instead of names
@@ -87,7 +88,7 @@ sub run {
 		
 			# parse outgroup string
 			my $ogstr = $opt->outgroup;
-			$logger->info("Attempting to reroot tree at outgroup $ogstr");
+			$logger->info("Attempting to reroot tree $counter at outgroup $ogstr");
 			my @names = split(',', $ogstr);
 					
 			# remap outgroup species names to taxon identifiers
@@ -117,7 +118,7 @@ sub run {
 		else {		
 		
 			# reroot the tree
-			$logger->info("rerooting backone tree");	
+			$logger->info("rerooting backone tree $counter");	
 			$tree = $ts->reroot_tree($tree, \@records, [$level]);
 		}
 		
