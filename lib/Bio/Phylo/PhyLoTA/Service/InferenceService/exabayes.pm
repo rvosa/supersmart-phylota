@@ -114,7 +114,89 @@ Runs the analysis on the provided supermatrix. Returns a tree file.
 
 sub run {
     my ( $self, %args ) = @_;
-    return $self->wrapper->run( '-phylip' => $args{'matrix'} );
+    my $consensus = $self->wrapper->run( '-phylip' => $args{'matrix'} );
+    return $self->interdigitate;
+}
+
+=item interdigitate
+
+Combines the set of topology (nexus) files into a single newick file such 
+that the trees from the different chains are interdigitated so that the
+correct burnin is discarded should a consense operation be applied to them.
+
+=cut
+
+sub interdigitate {
+	my $self = shift;
+    my $runid = $self->wrapper->run_id;
+    my $dir = $self->workdir;    
+    
+    # assemble set of topology files
+	my @files;
+	opendir my $dh, $dir or die $!;
+	while( my $entry = readdir $dh ) {
+		if ( $entry =~ /ExaBayes_topologies.${runid}.\d+/ ) {
+			push @files, "${dir}/${entry}";
+		}
+	}
+	
+	# iterate over files
+	my @tree_sets;	
+	for my $file ( @files ) {
+		my %translate;
+		my @trees;
+		my $tflag = 0;		
+		open my $fh, '<', $file or die $!;
+		LINE: while(<$fh>) {
+			chomp;
+			
+			# capture translation table
+			$tflag++ and next LINE if /translate/;
+			if ( $tflag and /^\s+(\d+)\s+(\d+)([,;])/ ) {
+				my ( $id, $name, $token ) = ( $1, $2, $3 );
+				$translate{$id} = $name;
+				$tflag-- if $token eq ';';
+			}
+			
+			# capture trees
+			if ( /tree \S+ = \[&U\] = (.+;)/ ) {
+				my $tree = $1;
+				
+				# capture the starting positions of all IDs in the tree string
+				my %pos;
+				while( $tree =~ /(\d+):/ ) {
+					my $id = $1;
+					$pos{$id} = pos($tree) - ( length($id) + 1 );
+				}
+				
+				# replace IDs with names, working from right to left
+				for my $id ( sort { $pos{$b} <=> $pos{$a} } keys %pos ) {
+					$tree = substr $tree, $pos{$id}, length($id), $translate{$id};
+				}
+				push @trees, $tree;
+			}
+		}
+		push @tree_sets, \@trees;	
+	}
+	
+	# merge
+	my @interdigitated;		
+	my $i = 0;
+	TREE: while(1) {
+		my $have_trees = 0;
+		for my $set ( @tree_sets ) {
+			if ( $set->[$i] ) {
+				$have_trees++;
+				push @interdigitated, $set->[$i];
+			}
+		}
+		last TREE unless $have_trees;
+	}
+	
+	# write to file
+	open my $out, '>', $self->outfile or die $!;
+	print $out join "\n", @interdigitated;
+	return $self->outfile;
 }
 
 =item is_bayesian
