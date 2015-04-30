@@ -1,18 +1,30 @@
-package Bio::SUPERSMART::App::smrt::Command::BBinfer::exabayes;
+package Bio::Phylo::PhyLoTA::Service::InferenceService::exabayes;
 use Bio::Tools::Run::Phylo::ExaBayes;
-use Bio::SUPERSMART::App::smrt qw(-ignore);
-use base 'Bio::SUPERSMART::App::smrt::Command::BBinfer';
+use Bio::Phylo::PhyLoTA::Service::InferenceService;
+use base 'Bio::Phylo::PhyLoTA::Service::InferenceService';
 
 =head1 NAME
 
-exabayes.pm - wrapper for ExaBayes. No serviceable parts inside.
+Bio::Phylo::PhyLoTA::Service::InferenceService::exabayes - Infers phylogenetic trees
+
+=head1 DESCRIPTION
+
+Provides functionality inferring trees and sets of trees by wrapping ExaBayes.
+
+=over
+
+=item configure
+
+Provides the $config object to the wrapper so that settings defined in $config object can 
+be applied to the wrapper.
 
 =cut
 
-
-sub _configure {
-    my ( $self, $tool, $config ) = @_;
-    my $logger = $self->logger;
+sub configure {
+    my ( $self ) = @_;
+    my $tool    = $self->wrapper;
+    my $config  = $self->config;
+    my $logger  = $self->logger;
     my $outfile = $self->outfile;
         
     # set outfile name
@@ -59,13 +71,19 @@ sub _configure {
     $tool->burnin_fraction($config->BURNIN); 
 }
 
-sub _create {
+=item create
+
+Instantiates and configures the wrapper object, returns the instantiated wrapper.
+
+=cut
+
+sub create {
     my $self = shift;
 
     # instantiate helper objects and variables
-    my $tool    = Bio::Tools::Run::Phylo::ExaBayes->new;    
     my $logger  = $self->logger;
     my $workdir = $self->workdir;
+    my $tool    = Bio::Tools::Run::Phylo::ExaBayes->new;
     
     # set working directory
     $logger->info("going to use working directory $workdir");
@@ -88,11 +106,28 @@ sub _create {
     return $tool;
 }
 
-sub _run {
+=item run
+
+Runs the analysis on the provided supermatrix. Returns a tree file.
+
+=cut
+
+sub run {
     my ( $self, %args ) = @_;
-    return $args{'tool'}->run( '-phylip' => $args{'matrix'} );
+    return $self->wrapper->run( '-phylip' => $args{'matrix'} );
 }
 
-sub _is_bayesian { 1 }
+=item is_bayesian
+
+Indicates whether the inference service is bayesian, in which case we will
+not run a bootstrapping analysis. Returns true.
+
+=cut
+
+sub is_bayesian { 1 }
+
+=back 
+
+=cut
 
 1;

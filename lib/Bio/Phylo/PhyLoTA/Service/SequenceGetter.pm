@@ -800,6 +800,94 @@ sub align_sequences{
     return $alignment;
 }
 
+=item bootstrap
+
+Given an input matrix file (interleaved phylip) and (optionally) a bootstrap replicate 
+index (default: 1), creates a bootstrapped version of the input, with the replicate 
+index as a suffix. Returns file name.
+
+=cut
+
+sub bootstrap {
+    my ( $self, $matrix, $replicate ) = @_;
+    $replicate = 1 unless $replicate;
+    
+    # read interleaved PHYLIP
+    my ( @taxa, %data, $ntax, $nchar, $line );
+    open my $fh, '<', $matrix or die "Can't open $matrix: $!";
+    LINE: while(<$fh>) {
+        chomp;
+        if ( not $ntax and not $nchar ) {
+            if ( /(\d+)\s+(\d+)/ ) {
+                ( $ntax, $nchar ) = ( $1, $2 );
+                $line = 0;
+                next LINE;
+            }
+        }
+        if ( $line < $ntax ) {
+            if ( /^\s*(\S+)\s(.+)$/ ) {
+                my ( $taxon, $data ) = ( $1, $2 );
+                $data =~ s/\s//g;
+                push @taxa, $taxon;
+                $data{$taxon} = $data;
+                $line++;
+            }
+        }
+        else {
+            if ( /\S/ ) {
+                s/\s//g;
+                my $i = $line % $ntax;
+                $data{$taxa[$i]} .= $_;
+                $line++;
+            }
+        }   
+    }
+    if ( $ntax != @taxa ) {
+        $self->logger->error("Incorrect number of taxa read: $ntax != ".scalar(@taxa));
+    }
+    
+    # make a bootstrapped matrix
+    my $i = 0;
+    my %boot = map { $_ => [] } @taxa;
+    while ( $i < $nchar ) {
+        my $char = int rand $nchar;
+        for my $taxon ( @taxa ) {
+            my $state = substr $data{$taxon}, $char, 1;
+            push @{ $boot{$taxon} }, $state;
+        }   
+        $i++;
+    }
+    $boot{$_} = join '', @{ $boot{$_} } for keys %boot;
+    
+    # write interleaved PHYLIP
+    open my $out, '>', "${matrix}.${replicate}" or die $!;
+    my $written = 0;
+    while ( $written < $nchar ) {
+        if ( not $written ) {
+            print $out " $ntax $nchar\n";
+        }
+        for my $taxon ( @taxa ) {
+            my $seq = substr $boot{$taxon}, $written, 60;
+            my $n = 10;    # $n is group size.
+            my @groups = unpack "a$n" x (length($seq)/$n) . "a*", $seq;
+            if ( not $written ) {
+                print $out $taxon;
+                print $out ' ' x ( 13 - length($taxon) );
+                print $out join ' ', @groups;
+                print $out "\n";                
+            }
+            else {
+                print $out ' ' x 13;
+                print $out join ' ', @groups;
+                print $out "\n";                
+            }
+        }
+        print $out "\n"; # blank line
+        $written += 60;
+    }
+    return "${matrix}.${replicate}";
+}
+
 sub _muscle {
 	my $muscle = shift;
 	my @in = @Bio::Tools::Run::Alignment::Muscle::MUSCLE_SWITCHES;
