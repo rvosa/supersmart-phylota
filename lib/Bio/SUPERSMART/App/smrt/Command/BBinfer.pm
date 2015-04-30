@@ -1,12 +1,14 @@
 package Bio::SUPERSMART::App::smrt::Command::BBinfer;
 use strict;
 use warnings;
+use File::Temp 'tempfile';
 use Bio::Phylo::IO qw(parse parse_tree);
 use Bio::Phylo::Factory;
 use Bio::Phylo::PhyLoTA::Config;
 use Bio::Phylo::PhyLoTA::Service::TreeService;
 use Bio::Phylo::PhyLoTA::Service::SequenceGetter;
 use Bio::Phylo::PhyLoTA::Service::InferenceService;
+use Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector;
 use Bio::Phylo::Util::Exceptions 'throw';
 use base 'Bio::SUPERSMART::App::SubCommand';
 use Bio::SUPERSMART::App::smrt qw(-command);
@@ -46,7 +48,7 @@ sub options {
         ["bootstrap|b=i", "number of bootstrap replicates. Will add the support values to the backbone tree. Not applicable to Bayesian methods.", { default => $boot_default }],
         ["ids|n", "Return tree with NCBI identifiers instead of taxon names", {}],      
         ["outfile|o=s", "name of the output tree file (in newick format), defaults to '$outfile_default'", {default => $outfile_default, arg => "file"}],
-	["cleanup|x", "If true, cleans up all intermediate files", {}],
+        ["cleanup|x", "If true, cleans up all intermediate files", {}],
     );  
 }
 
@@ -76,47 +78,54 @@ sub run {
     my $ts = Bio::Phylo::PhyLoTA::Service::TreeService->new;     
     my $ss = Bio::Phylo::PhyLoTA::Service::SequenceGetter->new;   
     my $is = Bio::Phylo::PhyLoTA::Service::InferenceService->new(
-    	'tool'     => lc( $opt->inferencetool ),
-    	'workdir'  => $opt->workdir,
-    	'usertree' => $ts->make_usertree(
-    		$supermatrix,
-    		$starttree,
-    		$self->workdir.'/user.dnd'
-    	)
+        'tool'     => lc( $opt->inferencetool ),
+        'workdir'  => $opt->workdir,
+        'usertree' => $ts->make_usertree(
+            $supermatrix,
+            $starttree,
+            $self->workdir.'/user.dnd'
+        )
     );
     
     # run the analysis, process results
     my $base = $self->outfile;
     for my $i ( 1 .. $bootstrap ) {
     
-    	# assign input matrix
+        # assign input matrix
         my $matrix;
         if ( $is->is_bayesian or $bootstrap == 1 ) {
-        	$matrix = $supermatrix;
+            $matrix = $supermatrix;
         }
         else {
-         	$matrix = $ss->bootstrap( $supermatrix, $i );
+            $matrix = $ss->bootstrap( $supermatrix, $i );
         }
         
         # create replicate settings
-	$is->outfile( "${base}.${i}" );
-	$is->replicate( $i );
-	$is->configure;
-	    
-	# run
-	my $backbone = $is->run( 'matrix' => $matrix );  
-	$self->_append( $backbone, $base . '.replicates' );
+		$is->outfile( "${base}.${i}" );
+		$is->replicate( $i );
+		$is->configure;
+        
+		# run
+		my $backbone = $is->run( 'matrix' => $matrix );  
+		$self->_append( $backbone, $base . '.replicates' );
 
-	# cleanup, if requested
-	if ( $opt->cleanup ) {
-	    unlink $backbone;
-	    $is->cleanup;
-            if ( not $is->is_bayesian and $bootstrap != 1 ) {
-                unlink $matrix;
-            }
-	}
+		# cleanup, if requested
+		if ( $opt->cleanup ) {
+			unlink $backbone;
+			$is->cleanup;
+			if ( not $is->is_bayesian and $bootstrap != 1 ) {
+				unlink $matrix;
+			}
+		}
     }
-    $self->_process_result( $base . '.replicates', !$opt->ids, ( $bootstrap - 1 || $is->is_bayesian ) );
+    
+    # finalize
+    $self->_process_result( 
+    	$base . '.replicates',                  # the set of trees (file)
+    	!$opt->ids,                             # whether to remap
+    	( $bootstrap - 1 || $is->is_bayesian ), # whether to consense
+    	$supermatrix,                           # the supermatrix (file)
+    );
     unlink $self->workdir . '/user.dnd' if $opt->cleanup;
     return 1;
 }
@@ -138,7 +147,7 @@ sub _append {
 
 # process the inferred tree, e.g. by mapping identifiers
 sub _process_result {
-    my ( $self, $backbone, $remap, $consense ) = @_;
+    my ( $self, $backbone, $remap, $consense, $matrix ) = @_;
     
     # build consensus if bootstrapping, otherwise read
     # single tree
@@ -150,10 +159,11 @@ sub _process_result {
         );
         
         # here we will use treeannotator. XXX test to see if
-        # TA will accept newick files.
+        # TA will accept newick files. ANSWER: it doesn't, but
+        # at least it doesn't need a translation table.
         $bbtree = $forest->make_consensus( 
-        	'-branches'  => 'average',
-        	'-summarize' => 'fraction',
+            '-branches'  => 'average',
+            '-summarize' => 'fraction',
         );
     }
     else {
