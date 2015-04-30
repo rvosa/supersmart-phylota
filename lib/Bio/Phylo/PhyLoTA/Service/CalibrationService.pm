@@ -92,7 +92,7 @@ sub calibrate_tree {
 	my ($ifh,$writetree) = tempfile();
 	my ($ofh,$readtree)  = tempfile();
 	my ($tfh,$tplfile)   = 	tempfile();
-	print $ofh $tree->to_newick;
+	print $ofh $tree->to_newick( nodelabels => 1);
 	close $ofh;
 	close $ifh;
 	

@@ -105,7 +105,7 @@ sub run {
 	# translate from taxon id's to names and save to file
 	my $labelled_chronogram = $ts->remap_to_name($chronogram);
 	open my $outfh, '>', $outfile or die $!;
-	print $outfh $labelled_chronogram->to_newick;
+	print $outfh $labelled_chronogram->to_newick( nodelabels => 1 );
 	close $outfh;
 	
 	$logger->info("DONE, results written to $outfile");

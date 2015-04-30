@@ -403,7 +403,9 @@ sub parse_newick_from_nexus {
   			$log->warn("Found more than one posterior in comment tag") if scalar(@matches) > 1;
   			my $posterior = $matches[0] || "";
   			my $quoted = quotemeta $c;
-  			
+	                
+	                # round posterior value to two digits after the comma and append maximum value '/1'	                
+	                $posterior = sprintf("%.2f", $posterior) . '/1' if $posterior;  			
   			# substitute in newick tree string. keep comments so that downstream
   			# parsers may be able to do something with them
   			$newick =~ s/$quoted/$posterior$quoted/g;
