@@ -126,6 +126,35 @@ not run a bootstrapping analysis. Returns true.
 
 sub is_bayesian { 1 }
 
+=item cleanup
+
+Cleans up any intermediate files.
+
+=cut
+
+sub cleanup {
+    my $self = shift;
+    my $runid = $self->wrapper->run_id;
+    my $dir = $self->workdir;    
+
+    # remove the input matrices
+    unlink "${dir}/${runid}-dat.binary";
+    unlink "${dir}/${runid}.nex";
+
+    # remove single intermediate files
+    for my $prefix ( qw(diagnostics checkpoint info prevCheckpointBackup ConsensusExtendedMajorityRuleNexus) ) {
+        unlink "${dir}/ExaBayes_${prefix}.${runid}";
+    }
+
+    # remove files from chains
+    opendir my $dh, $dir or die $!;
+    while( my $entry = readdir $dh ) {
+        if ( $entry =~ /ExaBayes_parameters.${runid}.\d+/ ) {
+            unlink "${dir}/${entry}";
+        }
+    }
+}
+
 =back 
 
 =cut

@@ -28,16 +28,28 @@ Object constructor. Returns the appropriate subclass. Arguments:
 
 sub new {
 	my ( $package, %args ) = @_;
-	my $subclass = __PACKAGE__ . '::' . lc($args{'tool'});
-	delete $args{'tool'};
-	if ( looks_like_class $subclass ) {
-		my $self = $subclass->new();
-		for my $key ( keys %args ) {
-			$self->$key($args{$key});
+	my $self;
+
+	# invoked as this class->new, construct subclass name and re-invoke
+	if ( $args{'tool'} ) {
+        	my $subclass = __PACKAGE__ . '::' . lc($args{'tool'});
+        	delete $args{'tool'};
+		if ( looks_like_class $subclass ) {
+			$self = $subclass->new(%args);
 		}
-		$self->wrapper( $self->create );
-		return $self;
 	}
+	
+	# invoked second time, as subclass->new, traverse up
+	else {
+		$self = $package->SUPER::new(%args);
+	}
+
+	# apply other arguments
+	for my $key ( keys %args ) {
+		$self->$key($args{$key});
+	}
+	$self->wrapper( $self->create );
+	return $self;
 }
 
 =item create
@@ -85,6 +97,17 @@ need to override this
 
 sub is_bayesian { 0 }
 
+=item cleanup
+
+Runs a cleanup operation for any intermediate files. This is an abstract method
+that needs to be implemented by the child class.
+
+=cut
+
+sub cleanup {
+    throw 'NotImplemented' => "missing cleanup method in child class ". ref(shift);
+}
+
 =item replicate
 
 Getter/setter, is used internally to track the current bootstrap replicate
@@ -124,7 +147,7 @@ sub workdir {
 	if ( $workdir ) {
 		$self->{'workdir'} = $workdir;
 	}
-	return $self->{'workdir'};
+	return $self->{'workdir'} || '.';
 }
 
 =item wrapper

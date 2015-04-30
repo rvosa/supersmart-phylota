@@ -1,6 +1,7 @@
 package Bio::Phylo::PhyLoTA::Service::InferenceService::raxml;
 use strict;
 use warnings;
+use Cwd 'abs_path';
 use File::Spec;
 use Bio::Tools::Run::Phylo::Raxml;
 use Bio::Phylo::PhyLoTA::Service::InferenceService;
@@ -27,7 +28,7 @@ sub create {
     my $tool = Bio::Tools::Run::Phylo::Raxml->new;
     
     # configure raxml runner           
-    $tool->w( $self->workdir );
+    $tool->w( abs_path($self->workdir) );
     return $tool;
 }
 
@@ -42,7 +43,11 @@ sub configure {
     my ( $self ) = @_;
     my $tool   = $self->wrapper;
     my $config = $self->config;
-    $tool->outfile_name($self->outfile);      
+
+    # create run ID
+    my ($volume,$directories,$id) = File::Spec->splitpath( $self->outfile );
+
+    $tool->outfile_name($id);      
     $tool->m($config->RAXML_MODEL);
     $tool->N($config->RAXML_RUNS);
     $tool->p($config->RANDOM_SEED);
@@ -60,8 +65,11 @@ sub run {
     my $t      = $self->wrapper;
     my $logger = $self->logger;
     
+    # create run ID
+    my ($volume,$directories,$id) = File::Spec->splitpath( $t->outfile_name );
+
     # create output file name
-    my $treefile = File::Spec->catfile( $t->w, 'RAxML_bestTree.' . $t->outfile_name );
+    my $treefile = File::Spec->catfile( $t->w, 'RAxML_bestTree.' . $id );
 
     # configure bootstrap options   
     if ( $args{'boot'} ) {
@@ -71,13 +79,34 @@ sub run {
         
         # bootstrap random seed 
         $t->x($self->config->RANDOM_SEED);            
-        $treefile = File::Spec->catfile( $t->w, 'RAxML_bipartitions.' . $t->outfile_name );     
+        $treefile = File::Spec->catfile( $t->w, 'RAxML_bipartitions.' . $id );     
     }   
 
     # run raxml, returns bioperl tree
     my $bptree = $t->run($args{'matrix'});          
     $logger->fatal('RAxML inference failed; outfile not present') if not -e $treefile; 
     return $treefile;
+}
+
+=item cleanup
+
+Cleans up any intermediate files.
+
+=cut
+
+sub cleanup { 
+    my $self = shift;
+    my $dir = $self->wrapper->w;
+    my $outstem = $self->wrapper->outfile_name;
+    unlink $dir . '/RAxML_info.' . $outstem;
+    opendir my $dh, $dir or die $!;
+    while ( my $entry = readdir $dh ) {
+        for my $prefix ( qw(parsimonyTree log result) ) {
+            if ( $entry =~ /RAxML_${prefix}.${outstem}.RUN.\d+/ ) {
+                unlink $dir . '/' . $entry;
+            }
+        }
+    }
 }
 
 =back 

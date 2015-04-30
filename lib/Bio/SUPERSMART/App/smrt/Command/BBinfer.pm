@@ -46,6 +46,7 @@ sub options {
         ["bootstrap|b=i", "number of bootstrap replicates. Will add the support values to the backbone tree. Not applicable to Bayesian methods.", { default => $boot_default }],
         ["ids|n", "Return tree with NCBI identifiers instead of taxon names", {}],      
         ["outfile|o=s", "name of the output tree file (in newick format), defaults to '$outfile_default'", {default => $outfile_default, arg => "file"}],
+	["cleanup|x", "If true, cleans up all intermediate files", {}],
     );  
 }
 
@@ -98,15 +99,25 @@ sub run {
         }
         
         # create replicate settings
-		$self->outfile( "${base}.${i}" );
-		$is->replicate( $i );
-	    $is->configure;
+	$is->outfile( "${base}.${i}" );
+	$is->replicate( $i );
+	$is->configure;
 	    
-	    # run
-		my $backbone = $is->run( 'matrix' => $matrix );  
-		$self->_append( $backbone, $base . '.replicates' );
+	# run
+	my $backbone = $is->run( 'matrix' => $matrix );  
+	$self->_append( $backbone, $base . '.replicates' );
+
+	# cleanup, if requested
+	if ( $opt->cleanup ) {
+	    unlink $backbone;
+	    $is->cleanup;
+            if ( not $is->is_bayesian and $bootstrap != 1 ) {
+                unlink $matrix;
+            }
+	}
     }
     $self->_process_result( $base . '.replicates', !$opt->ids, $bootstrap - 1 );
+    unlink $self->workdir . '/user.dnd' if $opt->cleanup;
     return 1;
 }
 

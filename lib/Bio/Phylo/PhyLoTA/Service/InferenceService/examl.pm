@@ -23,7 +23,7 @@ be applied to the wrapper.
 =cut
 
 sub configure {
-    my ( $self, $tool, $config ) = @_;
+    my ( $self ) = @_;
     my $logger  = $self->logger;
     my $outfile = $self->outfile;   
     my $tool    = $self->wrapper;
@@ -92,6 +92,22 @@ sub run {
     );
     $logger->info("examl tree inference was succesful") if $backbone;
     return $backbone;
+}
+
+=item cleanup
+
+Cleans up all intermediate files.
+
+=cut
+
+sub cleanup { 
+    my $self = shift;
+    my ( $v, $d, $f ) = File::Spec->splitpath( $self->outfile );
+    my $tempfile = 'ExaML_modelFile.' . $f;
+    if ( -e $tempfile ) {
+        unlink $tempfile;
+        $self->logger->info("removed $tempfile");
+    }
 }
 
 =back 
