@@ -210,8 +210,37 @@ sub remap_to_name {
                         $n->set_name( $name );
                 }
                      });
-        return $tree;
-        
+        return $tree;        
+}
+
+=item remap_newick
+
+Given a newick input tree file, an output file name and a mapping hash, maps all tip names 
+to hash values. This method is intended for larger sets of trees that should not be read 
+in memory. Each tree should be on a single line.
+
+=cut
+
+sub remap_newick {
+	my ( $self, $infile, $outfile, %map ) = @_;
+	open my $outfh, '>', $outfile or die $!;
+	open my $infh, '<', $infile or die $!;
+	while(<$infh>) {
+		chomp;
+		if ( /(\(.+;)/ ) {
+			my $newick = $1;
+			my %pos;
+			while ( $newick =~ /([^(,]+):/g ) {
+				my $key = $1;
+				$pos{$key} = pos($newick) - ( 1 + length($key) );
+				$log->warn("unknown label '$key' at position ".$pos{$key}) if !$map{$key};
+			}
+			for my $key ( sort { $pos{$b} <=> $pos{$a} } keys %pos ) {
+				substr $newick, $pos{$key}, length($key), $map{$key};
+			}
+			print $outfh $newick, "\n";
+		}
+	}
 }
 
 =item remap_to_ti
