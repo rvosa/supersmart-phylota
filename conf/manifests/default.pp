@@ -113,18 +113,18 @@ file {
     "exabayes_link":
         path    => "${tools_bin_dir}/exabayes",
         ensure  => link,
-        target  => "${tools_dir}/exabayes-1.4.1/exabayes",
-        require => Exec["compile_exabayes"];
+        target  => "${tools_dir}/exabayes-1.4.1/bin/bin/exabayes",
+        require => Exec["unzip_exabayes"];
     "parse_exabayes_link":
         path  => "${tools_bin_dir}/parse-exabayes",
         ensure  => link,
-        target  => "${tools_dir}/exabayes-1.4.1/parser",
-        require => Exec["compile_exabayes"];
+        target  => "${tools_dir}/exabayes-1.4.1/bin/bin/parser",
+        require => Exec["unzip_exabayes"];
     "exabayes_consense_link":
         path  => "${tools_bin_dir}/consense-exabayes",
         ensure  => link,
-        target  => "${tools_dir}/exabayes-1.4.1/consense",
-        require => Exec["compile_exabayes"];
+        target  => "${tools_dir}/exabayes-1.4.1/bin/bin/consense",
+        require => Exec["unzip_exabayes"];
     "raxml_link":
         path    => "${tools_bin_dir}/raxml",
         ensure  => link,
@@ -307,12 +307,6 @@ exec {
         cwd     => $tools_dir,
         creates => "${tools_dir}/exabayes-1.4.1/",
         require => Exec[ "download_exabayes" ];
-    "compile_exabayes":
-      	command => "sh configure --enable-mpi && make",
-      	cwd     => "${tools_dir}/exabayes-1.4.1",
-      	creates => "${tools_dir}/exabayes-1.4.1/exabayes",
-      	timeout => 0,
-      	require => Exec[ "unzip_exabayes" ];
 
     # install supersmart
     "clone_supersmart":
