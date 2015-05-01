@@ -350,7 +350,7 @@ sub search_inparanoid {
 	return $result;	
 }
 
-=item 
+=item max_ti
 
 Returns the highest taxon ID from the nodes table.
 
