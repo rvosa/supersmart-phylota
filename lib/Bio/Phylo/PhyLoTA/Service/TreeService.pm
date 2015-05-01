@@ -83,7 +83,7 @@ sub reroot_tree {
 		}
 	}
 
-    # traverse all scores and just keep the node indices for the min scores for each level
+        # traverse all scores and just keep the node indices for the min scores for each level
 	my %best_node_idx = ();
 	foreach my $level (@levels) {
 		$best_node_idx{$level} = ();
@@ -223,6 +223,7 @@ in memory. Each tree should be on a single line.
 
 sub remap_newick {
 	my ( $self, $infile, $outfile, %map ) = @_;
+
 	open my $outfh, '>', $outfile or die $!;
 	open my $infh, '<', $infile or die $!;
 	while(<$infh>) {
@@ -230,11 +231,12 @@ sub remap_newick {
 		if ( /(\(.+;)/ ) {
 			my $newick = $1;
 			my %pos;
-			while ( $newick =~ /([^(,]+):/g ) {
+			while ( $newick =~ /[\(,]([^\(,]+?):/g ) {
 				my $key = $1;
 				$pos{$key} = pos($newick) - ( 1 + length($key) );
 				$log->warn("unknown label '$key' at position ".$pos{$key}) if !$map{$key};
 			}
+			$log->error("didn't parse any identifiers from $infile") if not scalar keys %pos; 
 			for my $key ( sort { $pos{$b} <=> $pos{$a} } keys %pos ) {
 				substr $newick, $pos{$key}, length($key), $map{$key};
 			}
