@@ -8,7 +8,8 @@ use Bio::Phylo::Util::Exceptions 'throw';
 
 my $mode;
 my $num_workers;
-my $logger;
+my $logger = Bio::Phylo::Util::Logger->new;
+
 
 =over
 
@@ -55,7 +56,6 @@ mode, the number of processes is set to the number of cores present on the machi
 sub import {
 	my $package = shift;
 	($mode) = @_;
-	$logger = $package->logger;
 	
 	# no mode specified
 	if ( !$mode ) {
@@ -94,7 +94,7 @@ sub import {
 		}
 
 		# get number of processes from config file
-		require Bio::Phylo::PhyLoTA::Service;
+		require Bio::Phylo::PhyLoTA::Config;
 		my $config  = Bio::Phylo::PhyLoTA::Config->new;
 		$num_workers = $config->NODES -1 || 1; 
 	} 

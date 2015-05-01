@@ -1,20 +1,33 @@
-package Bio::SUPERSMART::App::smrt::Command::BBinfer::examl;
+package Bio::Phylo::PhyLoTA::Service::InferenceService::examl;
 use strict;
 use warnings;
 use Bio::Tools::Run::Phylo::ExaML;
-use Bio::SUPERSMART::App::smrt qw(-ignore);
-use base 'Bio::SUPERSMART::App::smrt::Command::BBinfer';
+use Bio::Phylo::PhyLoTA::Service::InferenceService;
+use base 'Bio::Phylo::PhyLoTA::Service::InferenceService';
 
 =head1 NAME
 
-examl.pm - wrapper for ExaML. No serviceable parts inside.
+Bio::Phylo::PhyLoTA::Service::InferenceService::examl - Infers phylogenetic trees
+
+=head1 DESCRIPTION
+
+Provides functionality inferring trees and sets of trees by wrapping ExaML.
+
+=over
+
+=item configure
+
+Provides the $config object to the wrapper so that settings defined in $config object can 
+be applied to the wrapper.
 
 =cut
 
-sub _configure {
-    my ( $self, $tool, $config ) = @_;
-    my $logger = $self->logger;
-    my $outfile = $self->outfile;    
+sub configure {
+    my ( $self ) = @_;
+    my $logger  = $self->logger;
+    my $outfile = $self->outfile;   
+    my $tool    = $self->wrapper;
+    my $config  = $self->config; 
     
     # set outfile name
     $logger->info("going to create output file $outfile");
@@ -44,7 +57,13 @@ sub _configure {
     $tool->p($config->RANDOM_SEED);
 }
 
-sub _create {
+=item create
+
+Instantiates and configures the wrapper object, returns the instantiated wrapper.
+
+=cut
+
+sub create {
     my $self    = shift;
     my $logger  = $self->logger; 
     my $workdir = $self->workdir;
@@ -57,20 +76,42 @@ sub _create {
     return $tool;
 }
 
-# infers a backbone tree with examl and returns the tree file. args:
-# 'tool'   => wrapper,
-# 'matrix' => alignment file name
-# 'tree'   => user starting tree file name
-sub _run {
+=item run
+
+Runs the analysis on the provided supermatrix. Returns a tree file.
+
+=cut
+
+sub run {
     my ( $self, %args ) = @_;
     my $logger = $self->logger;
-    $args{'tool'}->run_id( 'examl-run-' . $$ . '-' . $self->_replicate );
-    my $backbone = $args{'tool'}->run(
+    $self->wrapper->run_id( 'examl-run-' . $$ . '-' . $self->replicate );
+    my $backbone = $self->wrapper->run(
             '-phylip' => $args{'matrix'},
-            '-intree' => $self->_make_usertree(@args{qw[matrix tree]}),
+            '-intree' => $self->usertree,
     );
     $logger->info("examl tree inference was succesful") if $backbone;
     return $backbone;
 }
+
+=item cleanup
+
+Cleans up all intermediate files.
+
+=cut
+
+sub cleanup { 
+    my $self = shift;
+    my ( $v, $d, $f ) = File::Spec->splitpath( $self->outfile );
+    my $tempfile = 'ExaML_modelFile.' . $f;
+    if ( -e $tempfile ) {
+        unlink $tempfile;
+        $self->logger->info("removed $tempfile");
+    }
+}
+
+=back 
+
+=cut
 
 1;

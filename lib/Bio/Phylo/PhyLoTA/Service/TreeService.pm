@@ -3,7 +3,7 @@ use strict;
 use warnings;
 use Cwd;
 use File::Temp 'tempfile';
-use Bio::Phylo::IO 'parse';
+use Bio::Phylo::IO qw'parse parse_tree';
 use Bio::Phylo::Factory;
 use Bio::Phylo::PhyLoTA::Config;
 use Bio::Phylo::PhyLoTA::Service;
@@ -83,7 +83,7 @@ sub reroot_tree {
 		}
 	}
 
-    # traverse all scores and just keep the node indices for the min scores for each level
+        # traverse all scores and just keep the node indices for the min scores for each level
 	my %best_node_idx = ();
 	foreach my $level (@levels) {
 		$best_node_idx{$level} = ();
@@ -210,8 +210,39 @@ sub remap_to_name {
                         $n->set_name( $name );
                 }
                      });
-        return $tree;
-        
+        return $tree;        
+}
+
+=item remap_newick
+
+Given a newick input tree file, an output file name and a mapping hash, maps all tip names 
+to hash values. This method is intended for larger sets of trees that should not be read 
+in memory. Each tree should be on a single line.
+
+=cut
+
+sub remap_newick {
+	my ( $self, $infile, $outfile, %map ) = @_;
+
+	open my $outfh, '>', $outfile or die $!;
+	open my $infh, '<', $infile or die $!;
+	while(<$infh>) {
+		chomp;
+		if ( /(\(.+;)/ ) {
+			my $newick = $1;
+			my %pos;
+			while ( $newick =~ /[\(,]([^\(,]+?):/g ) {
+				my $key = $1;
+				$pos{$key} = pos($newick) - ( 1 + length($key) );
+				$log->warn("unknown label '$key' at position ".$pos{$key}) if !$map{$key};
+			}
+			$log->error("didn't parse any identifiers from $infile") if not scalar keys %pos; 
+			for my $key ( sort { $pos{$b} <=> $pos{$a} } keys %pos ) {
+				substr $newick, $pos{$key}, length($key), $map{$key};
+			}
+			print $outfh $newick, "\n";
+		}
+	}
 }
 
 =item remap_to_ti
@@ -435,7 +466,9 @@ sub parse_newick_from_nexus {
   			$log->warn("Found more than one posterior in comment tag") if scalar(@matches) > 1;
   			my $posterior = $matches[0] || "";
   			my $quoted = quotemeta $c;
-  			
+	                
+	                # round posterior value to two digits after the comma and append maximum value '/1'	                
+	                $posterior = sprintf("%.2f", $posterior) . '/1' if $posterior;  			
   			# substitute in newick tree string. keep comments so that downstream
   			# parsers may be able to do something with them
   			$newick =~ s/$quoted/$posterior$quoted/g;
@@ -458,6 +491,106 @@ sub parse_newick_from_nexus {
         
         return $args{'-id_map'} ? ( $newicktree, %id_map ) : $newicktree;
         
+}
+
+=item process_commontree
+
+Reconcile the common tree with the taxa in the supermatrix and prepare it
+for usage (remove unbranched internal nodes, randomly resolve polytomies, deroot)
+
+=cut
+
+sub process_commontree {
+    my ( $self, $commontree, @tipnames ) = @_;
+
+    # read the common tree, map names to IDs, 
+    # only retain tips in supermatrix
+    my $tree = parse_tree(
+        '-format' => 'newick',
+        '-file'   => $commontree,
+    );
+    $self->remap_to_ti( $tree );
+    $tree->keep_tips( \@tipnames );
+            
+    # it can occur that a taxon that has been chosen as an exemplar is
+    # not in the classification tree. For example, if a species has one subspecies,
+    # but the species and not the subspecies is an exemplar. Then this node
+    # is an unbranched internal and not in the classification tree. We therefore
+    # add these node(s) to the starting tree
+    my @terminals = @{ $tree->get_terminals };
+    if ( @terminals != @tipnames ) {
+        $log->warn("tips mismatch: ".scalar(@tipnames)."!=".scalar(@terminals));
+
+        # insert unseen nodes into starting tree        
+        my %seen = map { $_->get_name => 1 } @terminals;        
+        my ($p)  = @{ $tree->get_internals };
+        for my $d ( grep { ! $seen{$_} } @tipnames ) {
+            $log->warn("Adding node $d (" . $self->find_node($d)->get_name . ") to starting tree");
+            my $node = $fac->create_node( '-name' => $d );
+            $node->set_parent($p);
+            $tree->insert($node);
+        }
+    }
+        
+    # finalize the tree
+    $tree->resolve->remove_unbranched_internals->deroot;
+    return $tree;
+}
+
+=item make_random_starttree
+
+Given an array reference of tip names, simulates an equiprobable starting tree. Returns
+tree object.
+
+=cut
+
+sub make_random_starttree {
+    my ( $self, $tipnames) = @_;
+    my $taxa = $fac->create_taxa;
+    my $tree = $fac->create_tree;
+    my $rootnode = $fac->create_node( '-name' => 'root' );
+    $tree->insert($rootnode);
+    for my $t (@{$tipnames}) {
+        my $node = $fac->create_node( '-name' => $t, '-branch_length' => 0 );
+        $node->set_parent($rootnode);
+        $tree->insert($node);
+    }
+    $tree->resolve;
+    $log->info($tree->to_newick);
+    return $tree;
+}
+
+=item make_usertree
+
+Given a supermatrix and (optionally) a classification tree, makes a starting tree either 
+by simulation or from input tree. Requires name of output file to write.
+
+=cut
+
+sub make_usertree {
+    my ( $self, $supermatrix, $commontree, $outfile ) = @_;
+    my @tipnames = $self->read_tipnames($supermatrix);
+    
+    # this will be the tree object to write to file         
+    my $tree;
+    
+    # process the common tree to the right set of tips, resolve it,
+    # remove unbranched internals (due to taxonomy) and remove the root
+    if ( $commontree ) {
+        $log->info("Going to prepare starttree $commontree for usage");
+        $tree = $self->process_commontree($commontree,@tipnames);
+    }
+    
+    # simulate a random tree
+    else {
+        $log->info("No starttree given as argument. Generating random starting tree.");  
+        $tree = $self->make_random_starttree(\@tipnames);  
+    }
+    
+    # write to file
+    open my $fh, '>', $outfile or die $!;
+    print $fh $tree->to_newick();
+    return $outfile; 
 }
 
 =item graft_tree
