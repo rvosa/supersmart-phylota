@@ -76,37 +76,50 @@ sub run {
 	my $cs = Bio::Phylo::PhyLoTA::Service::CalibrationService->new;
 	my $ts = Bio::Phylo::PhyLoTA::Service::TreeService->new;
 	my $mt = Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa->new;
+
+        # prepare reusable variables
+        $logger->info( "reading fossils from file $fossiltable" );
+        my @fossils = $cs->read_fossil_table($fossiltable);
+        my @points = map { $cs->find_calibration_point($_) } @fossils;
+        my $numsites = $mt->get_supermatrix_numsites($supermatrix);
+
+	# read and write trees one by one
+	my $counter = 1;
+        open my $infh, '<', $treefile or die $!;
+        open my $outfh, '>', $outfile or die $!;
+        while(<$infh>) {
+		chomp;
+		if ( /(\(.+;)/ ) { 
+			
+    			# read the ML tree from newick
+			my $newick = $1;
+			$logger->info( "reading tree $counter from file $treefile" );
+			my $tree = parse_tree( 
+            			'-format' => 'newick', 
+            			'-string' => $newick, 
+	        	);
+			$tree->resolve;
+			$tree = $ts->remap_to_ti($tree);
 	
-	# read the ML tree from newick (one tree in this file)
-	$logger->info( "reading tree from file $treefile" );
-	my $tree = parse_tree( 
-        '-format'     => 'newick', 
-        '-file'       => $treefile, 
-        '-as_project' => 1 
-    );
-	$tree->resolve;
-	$tree = $ts->remap_to_ti($tree);
+	      		# make calibration table from fossils
+        		$logger->info( "going to make calibration table" );
+        		my $table = $cs->create_calibration_table( $tree, @points );
+
+			# calibrate the tree
+			my $chronogram = $cs->calibrate_tree (
+				'-numsites'          => $numsites, 
+				'-calibration_table' => $table, 
+				'-tree'              => $tree
+			);
 	
-    # read the table with calibration points
-    $logger->info( "reading fossils from file $fossiltable" );
-
-    my @fossils = $cs->read_fossil_table($fossiltable);
-
-    # make calibration table from fossils
-    $logger->info( "going to make calibration table" );
-    my @points = map { $cs->find_calibration_point($_) } @fossils;
-    my $table = $cs->create_calibration_table( $tree, @points );
-
-	my $numsites = $mt->get_supermatrix_numsites($supermatrix);
-
-	# calibrate the tree
-	my $chronogram = $cs->calibrate_tree (('-numsites' => $numsites, '-calibration_table' => $table, '-tree' => $tree));
-	
-	# translate from taxon id's to names and save to file
-	my $labelled_chronogram = $ts->remap_to_name($chronogram);
-	open my $outfh, '>', $outfile or die $!;
-	print $outfh $labelled_chronogram->to_newick( nodelabels => 1 );
+			# translate from taxon id's to names and save to file
+			my $labelled_chronogram = $ts->remap_to_name($chronogram);
+			print $outfh $labelled_chronogram->to_newick( '-nodelabels' => 1 ), "\n";
+			$counter++;
+		}
+        }
 	close $outfh;
+	close $infh;
 	
 	$logger->info("DONE, results written to $outfile");
 	
