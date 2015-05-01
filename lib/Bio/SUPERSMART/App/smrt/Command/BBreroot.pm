@@ -2,6 +2,7 @@ package Bio::SUPERSMART::App::smrt::Command::BBreroot;
 
 use strict;
 use warnings;
+use List::Util 'sum';
 
 use Bio::Phylo::PhyLoTA::Service::TreeService;
 use Bio::Phylo::IO qw(parse parse_tree);
@@ -39,6 +40,7 @@ sub options {
 		["backbone|b=s", "a backbone tree(s) file as produced by 'smrt bbinfer'", { arg => "file", mandatory => 1}],	
 		["outgroup|g=s", "one or multiple taxa (names or NCBI identifiers, separated by commata) representing the outgroup at which the tree is rerooted. Outgroup must be enclosed in quotes.", {} ],
 		["outfile|o=s", "name of the output tree file (in newick format), defaults to '$outfile_default'", {default => $outfile_default, arg => "file"}],
+		["midpoint|m", "use midpoint rooting",{}],
 	);	
 }
 
@@ -77,14 +79,16 @@ sub run {
 	open my $out, '>', $outfile or die $!;			
 	
 	# iterate over trees
-	my $counter = 1;	
-	for my $tree ( @{ parse( '-file' => $backbone, '-format' => 'newick' )->get_entities } ) {
+	my $counter = 1;
+	open my $in, '<', $backbone or die $!;
+	while(<$in>) {
+		my $tree = parse_tree( '-format' => 'newick', '-string' => $_ );	
 	
 		# use taxon IDs instead of names
 		$ts->remap_to_ti($tree);
 		
 		# Perform rerooting at outgroup, if given		
-		if ($opt->outgroup){
+		if ( $opt->outgroup ) {
 		
 			# parse outgroup string
 			my $ogstr = $opt->outgroup;
@@ -113,6 +117,37 @@ sub run {
 			# reroot at mrca of outgroup
 			$mrca->set_root_below;		
 		} 
+		elsif ( $opt->midpoint ) {
+		
+			# apply midpoint root, but still need to ultrametricize paths
+			my $root = $tree->get_midpoint->set_root_below;
+			
+			# function to compute tip to root paths
+			my $calc = sub {
+				my ( $node, $paths, $height ) = @_;
+				my $id = $node->get_id;
+				if ( my $parent = $node->get_parent ) {
+					$height->{$id} = $node->get_branch_length + $height->{$parent->get_id};
+				}
+				else {
+					$height->{$id} = 0;
+				}
+				push @$paths, $height->{$id} if $node->is_terminal;
+			};
+			
+			# compute paths left and right of the root
+			my ( $left, $right ) = @{ $root->get_children };
+			my ( @hl, @hr, %height );
+			$left->visit_depth_first(  '-pre' => sub { $calc->(shift,\@hl,\%height) } );
+			$right->visit_depth_first( '-pre' => sub { $calc->(shift,\@hr,\%height) } );
+			
+			# compute averages
+			my $lm = sum(@hl)/scalar(@hl);
+			my $rm = sum(@hr)/scalar(@hr);
+			$left->set_branch_length(  $left->get_branchlength   + (($rm-$lm)/2) );
+			$right->set_branch_length( $right->get_branch_length - (($rm-$lm)/2) );			
+		
+		}
 	
 		# Try to minimize paraphyly if no outgroup given
 		else {		
