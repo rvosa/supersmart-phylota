@@ -4,6 +4,7 @@ use strict;
 use warnings;
 use List::Util 'sum';
 
+use Bio::Phylo::Factory;
 use Bio::Phylo::PhyLoTA::Service::TreeService;
 use Bio::Phylo::IO qw(parse parse_tree);
 
@@ -40,7 +41,7 @@ sub options {
 		["backbone|b=s", "a backbone tree(s) file as produced by 'smrt bbinfer'", { arg => "file", mandatory => 1}],	
 		["outgroup|g=s", "one or multiple taxa (names or NCBI identifiers, separated by commata) representing the outgroup at which the tree is rerooted. Outgroup must be enclosed in quotes.", {} ],
 		["outfile|o=s", "name of the output tree file (in newick format), defaults to '$outfile_default'", {default => $outfile_default, arg => "file"}],
-		["midpoint|m", "use midpoint rooting",{}],
+		["smooth|s", "smooth tip heights left and right of root (i.e. midpointify)",{}],
 	);	
 }
 
@@ -117,50 +118,44 @@ sub run {
 			# reroot at mrca of outgroup
 			$mrca->set_root_below;		
 		} 
-		elsif ( $opt->midpoint ) {
-		
-			# apply midpoint root, but still need to ultrametricize paths
-			my $root = $tree->get_midpoint->set_root_below;
-			
-			# function to compute tip to root paths
-			my $calc = sub {
-				my ( $node, $paths, $height ) = @_;
-				my $id = $node->get_id;
-				if ( my $parent = $node->get_parent ) {
-					$height->{$id} = $node->get_branch_length + $height->{$parent->get_id};
-				}
-				else {
-					$height->{$id} = 0;
-				}
-				push @$paths, $height->{$id} if $node->is_terminal;
-			};
-			
-			# compute paths left and right of the root
-			my ( $left, $right ) = @{ $root->get_children };
-			my ( @hl, @hr, %height );
-			$left->visit_depth_first(  '-pre' => sub { $calc->(shift,\@hl,\%height) } );
-			$right->visit_depth_first( '-pre' => sub { $calc->(shift,\@hr,\%height) } );
-			
-			# compute averages
-			my $lm = sum(@hl)/scalar(@hl);
-			my $rm = sum(@hr)/scalar(@hr);
-			$left->set_branch_length(  $left->get_branchlength   + (($rm-$lm)/2) );
-			$right->set_branch_length( $right->get_branch_length - (($rm-$lm)/2) );			
-		
-		}
 	
 		# Try to minimize paraphyly if no outgroup given
-		else {		
-		
-			# reroot the tree
-			$logger->info("rerooting backone tree $counter");	
+		else {	
+                        $tree->resolve;	
 			$tree = $ts->reroot_tree($tree, \@records, [$level]);
 		}
+                if ( $opt->smooth ) {
+                        $logger->info("smoothing out diff between left and right tip heights");
+                        my $root = $tree->get_root;
+
+                       # compute paths left and right of the root
+                       my ( $left, $right ) = @{ $root->get_children };
+                       my ( @hl, @hr, %h );
+                       for my $tip ( @{ $left->get_terminals } ) {
+                           push @hl, $tip->calc_path_to_root;
+                       }
+                       for my $tip ( @{ $right->get_terminals } ) {
+                           push @hr, $tip->calc_path_to_root;
+                       }
+
+                       # compute averages
+                       my $lm = sum(@hl)/scalar(@hl);
+                       my $rm = sum(@hr)/scalar(@hr);
+                       if ( $lm < $rm ) {
+                           $left->set_branch_length(  $left->get_branch_length  + (abs($rm-$lm)/2) );
+                           $right->set_branch_length( $right->get_branch_length - (abs($rm-$lm)/2) );
+                       }
+                       else {
+                           $left->set_branch_length(  $left->get_branch_length  - (abs($rm-$lm)/2) );
+                           $right->set_branch_length( $right->get_branch_length + (abs($rm-$lm)/2) );
+                       }
+                }
+                $logger->info("rerooted backbone tree ".$counter++);
 		
 		# clean up labels and write to file
 		$tree = $ts->remap_to_name($tree);
 		$ts->remove_internal_names($tree);
-		print $out $tree->to_newick( 'nodelabels' => 1 );
+		print $out $tree->to_newick( 'nodelabels' => 1 ), "\n";
 	}
 	$logger->info("DONE, results written to $outfile");		
 }
