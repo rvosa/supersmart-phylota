@@ -1,6 +1,7 @@
 package Bio::SUPERSMART::App::smrt::Command::BBinfer;
 use strict;
 use warnings;
+use File::Copy 'move';
 use File::Temp 'tempfile';
 use Bio::Phylo::IO qw(parse parse_tree);
 use Bio::Phylo::Factory;
@@ -156,30 +157,17 @@ sub _process_result {
     
     # map ID to name
     if ( $remap ) {
-		my $ms  = Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector->new;
-		my $mt  = Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa->new;		
-		my %map = map { $_ => $ms->find_node($_)->taxon_name } $mt->get_supermatrix_taxa($matrix);		
-		my ( $fh, $filename ) = tempfile();
-		close $fh;
-		$ts->remap_newick( $backbone => $filename, %map );
-		rename $filename => $backbone;
+	my $ms  = Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector->new;
+	my $mt  = Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa->new;		
+	my %map = map { $_ => $ms->find_node($_)->taxon_name } $mt->get_supermatrix_taxa($matrix);
+        $map{$_} =~ s/ /_/g for keys %map;		
+	my ( $fh, $filename ) = tempfile();
+	close $fh;
+	$ts->remap_newick( $backbone => $filename, %map );
+	move( $filename => $outfile );
+        unlink $backbone;
     }
     
-    # build consensus
-    if ( $consense ) {
-    	my %args = ( '-infile' => $backbone );
-    	$args{'-burnin'} = 0 unless $service->is_bayesian;
-    	my $tree = $ts->consense_trees(%args);
-    	
-		# write output file	    
-	    open my $outfh, '>', $outfile or die $!;
-	    print $outfh $bbtree->to_newick( '-nodelabels' => 1 );
-	    close $outfh;    
-    }
-    else {
-    	rename $backbone => $outfile;
-    }    
-      
     $self->logger->info("DONE, results written to $outfile");
 }
 
