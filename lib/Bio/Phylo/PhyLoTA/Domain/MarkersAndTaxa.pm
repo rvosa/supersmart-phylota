@@ -225,6 +225,31 @@ sub get_supermatrix_numsites {
 	return $numsites
 }
 
+=item get_supermatrix_taxa
+
+Given the file location of a supermatrix, returns the taxa in the matrix
+
+=cut
+
+sub get_supermatrix_taxa {
+	my ( $self, $supermatrix ) = @_;
+	my ( $ntax, @taxa );
+	open my $fh, '<', $supermatrix or die $!;
+	LINE: while(<$fh>) {
+		chomp;
+		if ( not $ntax and /^\s*(\d+)\s+\d+\s*$/ ) {
+			$ntax = $1;
+			next LINE;	
+		}
+		if ( @taxa < $ntax and /^\s*(\S+)/ ) {
+			my $taxon = $1;
+			push @taxa, $taxon;
+		}
+		last LINE if @taxa == $ntax;
+	}
+	return @taxa;
+}
+
 
 =item get_distinct_taxa
 
