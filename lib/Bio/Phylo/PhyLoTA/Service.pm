@@ -350,6 +350,27 @@ sub search_inparanoid {
 	return $result;	
 }
 
+=item 
+
+Returns the highest taxon ID from the nodes table.
+
+=cut
+
+sub max_ti {
+	my $self = $_;
+	my $result;
+	eval { 
+		$result = $schema->resultset('Node')->get_column('ti')->max;
+	};
+	if ( $@ ) {
+		throw 'BadArgs' => $@;
+	}
+	if ( not $result ) {
+		$logger->warn("no result!");
+	}
+	return $result;		
+}
+
 =back
 
 =cut

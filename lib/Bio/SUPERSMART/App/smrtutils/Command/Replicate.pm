@@ -6,6 +6,8 @@ use warnings;
 use Bio::Phylo::IO qw(parse unparse);
 use Bio::Phylo::Util::CONSTANT ':objecttypes';
 
+use Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector;
+use Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa;
 use Bio::Phylo::PhyLoTA::Service::TreeService;
 use base 'Bio::SUPERSMART::App::SubCommand';
 use Bio::SUPERSMART::App::smrtutils qw(-command);
@@ -25,12 +27,16 @@ Simulate -
 
 my %formats = ('onezoom' => 'htm');
 
-sub options {
-    
+sub options {    
 	my ($self, $opt, $args) = @_;
+	my $aln_outfile_default = 'aligned-simulated.txt';
+	my $tree_outfile_default = 'tree-replicated.dnd';
 	return (
 		['tree|t=s', 'file name of input tree (newick format), must be ultrametric', { arg => 'file', mandatory => 1 } ],
-		['alignments|a=s', "list of alignment files to replicate, as produced by 'smrt align'", { arg => 'file' } ]
+		['alignments|a=s', "list of alignment files to replicate, as produced by 'smrt align'", { arg => 'file' } ],
+		["aln_outfile|o=s", "name of output file listing the simulated alignments, defaults to '$aln_outfile_default'", {default => $aln_outfile_default, arg => "file"}],
+		["tree_outfile|f=s", "name the output tree (newick format), defaults to '$tree_outfile_default'", {default => $tree_outfile_default, arg => "file"}],   
+		["ids|i", "return NCBI identifiers in remapped tree instead of taxon names", { default=> 0}],
 	    );	
 }
 
@@ -50,7 +56,8 @@ sub run {
 
 	my $logger = $self->logger;
 	my $treefile = $opt->tree;
-
+	my $aln_outfile = $opt->aln_outfile;
+	my $tree_outfile = $opt->tree_outfile;
 	my $ts = Bio::Phylo::PhyLoTA::Service::TreeService->new;
 
 	# read tree
@@ -59,11 +66,20 @@ sub run {
 		'-format' => 'newick',
 	    )->first;
 
-	# we will work with identifiers (in fasta files and trees)
-	$ts->remap_to_ti( $tree );
-
+	# replicate tree and write to file
 	my $tree_replicated = $self->_replicate_tree($tree)->first;
 
+	open my $fh, '>', $tree_outfile or die $!;	
+	print $fh $tree_replicated->to_newick( nodelabels => 1 );
+	close $fh;
+	$logger->info("wrote replicated tree to $tree_outfile");
+
+	$logger->info('going to write taxa file');
+	$self->_write_taxafile($tree_replicated, 'taxa2.tsv');
+	
+	die;
+	
+	$ts->remap_to_ti( $tree_replicated );
 	if ( my $aln = $opt->alignments ) {
 
 		# read list of alignments
@@ -73,23 +89,96 @@ sub run {
 		chomp @alnfiles; 
 		close $fh;
 		
-                # get array of replicated alignment objects	      
-		my @alns = map { $self->_replicate_alignment($_, $tree_replicated ) } @alnfiles;
-
-		# write alignments to file
-		my $aln_list = 'aligned-simulated.txt';
-		open my $outfh, '>>', $aln_list or die $!;
-		for my $i ( 0..$#alns ) {
-			my $cnt = $i+1;
-			my $filename = "simulated-aln-$cnt.fa";
-			$logger->info("Writing alignment to $filename");
-			unparse ( -phylo => $alns[$i], -file => $filename, -format=>'fasta' );
-			print $outfh "$filename\n";
-		}
+		# replicate all alignments fiven in input align file,
+		# write alignments to file and also create a list with all
+		# newly written alignments
+		open my $outfh, '>>', $aln_outfile or die $!;		
+		pmap {
+			my ($aln) = @_; 
+			my $rep_aln = $self->_replicate_alignment($aln, $tree_replicated );
+			
+			if ( $rep_aln ) {
+				# simulated alignment fill have the same file name plus added '-simulated'
+				my $filename = $aln;
+				$filename =~ s/\.fa$/-simulated\.fa/g;			
+				$logger->info("Writing alignment to $filename");
+				unparse ( -phylo => $rep_aln, -file => $filename, -format=>'fasta' );
+				print $outfh "$filename\n";
+			} 
+			else {
+				$logger->warn("Could not write replicated alignment to file; no alignment given");
+			}
+		
+		} @alnfiles;
+		
 		close $outfh;
 	}
 	
 	return 1;
+}
+
+
+sub _write_taxafile {	
+	my ($self, $tree, $filename) = @_; 
+	
+	my $logger = $self->logger;
+	my $mts    = Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector->new;
+	my $mt  = Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa->new;
+	
+	my @names = map { s/_/ /g; $_;} map {$_->get_name} @{$tree->get_terminals};	
+	
+	# identify terminals with artificial names and 
+	my %artificial = map {$_=>1} grep {! $mts->find_node({taxon_name=>$_})} @names; 	
+	@names = grep {! $artificial{$_}} @names;
+		
+	# write initial taxa table to file
+	$mts->write_taxa_file( $filename, @names );	
+	
+	# for the species with artificial taxon names, do as follows: first: assign an artificial
+	# ti to the species. Then iteratively select the children of the father of the focal node, and
+	# check if any of its children have a classification, until we found a (maybe far away) sister 
+	# node that is classified. Then copy the genus, family etc. and append the entries to the table	
+	my $ti_max = $mts->max_ti;
+
+	my @levels = reverse $mts->get_taxonomic_ranks;
+
+	my @records = $mt->parse_taxa_file($filename);
+
+	for my $an ( keys %artificial ) {				
+		(my $name = $an) =~ s/ /_/g; 
+		$logger->debug("Looking for closest non-artificial relative of atrificial species $name");
+		my $ti = $ti_max++;
+		my ($node)  = grep {$_->get_name eq $name} @{$tree->get_terminals};
+		my $relative;
+		
+		# search for the closest 'real' relative
+		while ( ! $relative and ! $node->is_root ) {
+			my @relatives;
+			$node->visit_depth_first(-in => sub {
+				my $n = shift;
+				(my $current_name = $n->get_name) =~ s/_/ /g;
+				if ( $current_name and (! $artificial{$current_name} )) {
+					push @relatives, $current_name;					
+				}
+				
+						 });
+			$relative = $relatives[0] if scalar(@relatives);
+			# if the whole clade consisted of artificial species, go one up
+			$node = $node->get_parent;
+		}		
+		$logger->debug("Closest non-artificial relative: $relative");						
+		
+		# get all taxon IDs for the closest nonartificial relative
+		my $tid = $mts->find_node({taxon_name=>$relative})->ti;
+		my @tids = $mt->query_taxa_table([$tid], \@levels, @records);
+		use Data::Dumper;
+		print Dumper(\@tids);
+		print Dumper(\@levels);
+	}
+
+	#my $n = $mts->search_node({ti=>'max(ti)'});
+	#print $n . "\n";
+
 }
 
 sub _replicate_tree {
