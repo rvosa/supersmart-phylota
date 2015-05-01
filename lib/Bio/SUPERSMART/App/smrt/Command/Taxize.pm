@@ -3,12 +3,8 @@ package Bio::SUPERSMART::App::smrt::Command::Taxize;
 use strict;
 use warnings;
 
-use List::MoreUtils qw(firstidx uniq);
-
 use Bio::Phylo::PhyLoTA::Config;
 use Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector;
-
-use Bio::Phylo::PhyLoTA::Service::ParallelService;
 
 use Bio::SUPERSMART::App::SubCommand;
 use base 'Bio::SUPERSMART::App::SubCommand';
@@ -80,7 +76,6 @@ sub run {
 	# collect command-line arguments
 	my $infile      = $opt->infile;
 	my $expand_rank = $opt->expand_rank;
-	my $outfile     = $self->outfile;
 	my $root_taxa   = $opt->root_taxa;
 
 	# instantiate helper objects
@@ -89,7 +84,6 @@ sub run {
 	my $mts    = Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector->new;
 
 	my @names;
-	my @levels;
 
 	if ( $infile ) {
 		# read names from file or STDIN, clean line breaks
@@ -105,111 +99,14 @@ sub run {
 		my @taxa = split(',', $root_taxa);
 		push @names, @taxa;
 		$log->info( scalar(@taxa) . " root taxa given in argument" );
-	}
-
-
+	}	
 	# expand root taxa if argument is provided
 	if ( $expand_rank or $root_taxa ) {
 		@names = $mts->expand_taxa( \@names, $expand_rank || "species" );
 	}
+	$mts->write_taxa_file( $opt->outfile, @names );
 
-	# get all possible taxonomic ranks
-	@levels = reverse $mts->get_taxonomic_ranks;
-
-	# this will take some time to do the taxonomic name resolution in the
-	# database and with webservices. The below code runs in parallel
-	my @result = pmap {
-		my ($name) = @_;
-
-		# replace consecutive whitespaces with one
-		$name =~ s/\s+/ /g;
-		my @res   = ();
-		my @nodes = $mts->get_nodes_for_names($name);
-		if (@nodes) {
-			if ( @nodes > 1 ) {
-				$log->warn("found more than one taxon for name $name");
-			}
-			else {
-				$log->info("found exactly one taxon for name $name");
-			}
-
-			# for each node, fetch the IDs of all taxonomic levels of interest
-			for my $node (@nodes) {
-
-				# create hash of taxonomic levels so that when we walk up the
-				# taxonomy tree we can more easily check to see if we are at a
-				# level of interest
-				my %level = map { $_ => "NA" } @levels;
-
-				# traverse up the tree
-				while ($node) {
-					my $tn   = $node->taxon_name;
-					my $ti   = $node->ti;
-					my $rank = $node->rank;
-					if ( exists $level{$rank} ) {
-						$level{$rank} = $node->get_id;
-					}
-					$node = $node->get_parent;
-				}
-				my @entry = ( $name, @level{@levels} );
-				push @res, \@entry;
-			}
-		}
-		else {
-			$log->warn("couldn't resolve name $name");
-		}
-		return \@res;
-
-	}
-	@names;
-
-	# clean the results for duplicates and rows that represent taxa with levels higher
-	# than 'Species', then write the results to the output file
-	$log->info("Data received, writing outfile!");
-
-	open my $out, '>', $outfile or die $!;
-
-	# print table header
-	print $out join( "\t", 'name', @levels ), "\n";
-
-	my %seen = ();
-	foreach my $res (@result) {
-
-		# flatten list of references		
-		if ( my @entry = map { @$_ } @$res ){
-			my $name = shift @entry;
-			
-			# taxon names in NCBI taxonomy can contain the character "_", which can cause problems,
-			# since Bio::Phylo internally translates spaces with "_". We therefore substitute all "_" charachers
-			# by "|".
-			$name =~ s/_/\|/g;
-			
-			my $ids = join "\t", @entry;
-	
-			# omit all taxa with higher taxonomic rank than 'Species'
-			my $highest_rank = "Species";
-			my $idx          = firstidx { lc($_) eq lc($highest_rank) } @levels;
-			my @subset       = @entry[ 0 .. $idx ];
-			if ( uniq(@subset) == 1 ) {
-				$log->debug(
-	"rank of taxon with resolved name $name is higher than $highest_rank, omitting"
-				);
-			}
-	
-			# filter taxa with duplicate species id
-			elsif ( exists $seen{$ids} ) {
-				$log->debug(
-	"taxon with resolved name $name already in species table, omitting"
-				);
-			}
-			else {
-				print $out "$name\t$ids\n";
-				$seen{$ids} = 1;
-			}
-		}
-	}
-	close $out;
-	$log->info("DONE, results written to $outfile");
+	$log->info("DONE, results written to " . $opt->outfile);
 	return 1;
 }
 
