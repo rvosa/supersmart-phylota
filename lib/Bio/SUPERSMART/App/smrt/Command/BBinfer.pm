@@ -5,6 +5,7 @@ use File::Temp 'tempfile';
 use Bio::Phylo::IO qw(parse parse_tree);
 use Bio::Phylo::Factory;
 use Bio::Phylo::PhyLoTA::Config;
+use Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa;
 use Bio::Phylo::PhyLoTA::Service::TreeService;
 use Bio::Phylo::PhyLoTA::Service::SequenceGetter;
 use Bio::Phylo::PhyLoTA::Service::InferenceService;
@@ -46,9 +47,9 @@ sub options {
         ["starttree|t=s", "starting tree for ExaML tree inference. If not given, a random starting tree is generated", { arg => "file", mandatory => 1}],
         ["inferencetool|i=s", "software tool for backbone inference (RAxML, ExaML or ExaBayes), defaults to $tool_default", {default => $tool_default, arg => "tool"}],         
         ["bootstrap|b=i", "number of bootstrap replicates. Will add the support values to the backbone tree. Not applicable to Bayesian methods.", { default => $boot_default }],
-        ["ids|n", "Return tree with NCBI identifiers instead of taxon names", {}],      
+        ["ids|n", "return tree with NCBI identifiers instead of taxon names", {}],      
         ["outfile|o=s", "name of the output tree file (in newick format), defaults to '$outfile_default'", {default => $outfile_default, arg => "file"}],
-        ["cleanup|x", "If true, cleans up all intermediate files", {}],
+        ["cleanup|x", "if set, cleans up all intermediate files", {}],
     );  
 }
 
@@ -107,7 +108,7 @@ sub run {
         
 		# run
 		my $backbone = $is->run( 'matrix' => $matrix );  
-		$self->_append( $backbone, $base . '.replicates' );
+		$self->_append( $backbone, $base . '.trees' );
 
 		# cleanup, if requested
 		if ( $opt->cleanup ) {
@@ -121,15 +122,17 @@ sub run {
     
     # finalize
     $self->_process_result( 
-    	$base . '.replicates',                  # the set of trees (file)
+    	$base . '.trees',                       # the set of trees (file)
     	!$opt->ids,                             # whether to remap
     	( $bootstrap - 1 || $is->is_bayesian ), # whether to consense
     	$supermatrix,                           # the supermatrix (file)
+    	$is,                                    # inference service
     );
     unlink $self->workdir . '/user.dnd' if $opt->cleanup;
     return 1;
 }
 
+# append bootstrap replicate results
 sub _append {
     my ( $self, $in, $out ) = @_;
     $self->logger->info("appending contents of $in to $out");
@@ -147,43 +150,36 @@ sub _append {
 
 # process the inferred tree, e.g. by mapping identifiers
 sub _process_result {
-    my ( $self, $backbone, $remap, $consense, $matrix ) = @_;
+    my ( $self, $backbone, $remap, $consense, $matrix, $service ) = @_;
+    my $ts = Bio::Phylo::PhyLoTA::Service::TreeService->new;
+    my $outfile = $self->outfile;
     
-    # build consensus if bootstrapping, otherwise read
-    # single tree
-    my $bbtree;
+    # map ID to name
+    if ( $remap ) {
+		my $ms  = Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector->new;
+		my $mt  = Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa->new;		
+		my %map = map { $_ => $ms->find_node($_)->taxon_name } $mt->get_supermatrix_taxa($matrix);		
+		my ( $fh, $filename ) = tempfile();
+		close $fh;
+		$ts->remap_newick( $backbone => $filename, %map );
+		rename $filename => $backbone;
+    }
+    
+    # build consensus
     if ( $consense ) {
-        my $forest = parse(
-            '-format' => 'newick',
-            '-file'   => $backbone,
-        );
-        
-        # here we will use treeannotator. XXX test to see if
-        # TA will accept newick files. ANSWER: it doesn't, but
-        # at least it doesn't need a translation table.
-        $bbtree = $forest->make_consensus( 
-            '-branches'  => 'average',
-            '-summarize' => 'fraction',
-        );
+    	my %args = ( '-infile' => $backbone );
+    	$args{'-burnin'} = 0 unless $service->is_bayesian;
+    	my $tree = $ts->consense_trees(%args);
+    	
+		# write output file	    
+	    open my $outfh, '>', $outfile or die $!;
+	    print $outfh $bbtree->to_newick( '-nodelabels' => 1 );
+	    close $outfh;    
     }
     else {
-        $bbtree = parse_tree(
-            '-format' => 'newick',
-            '-file'   => $backbone,
-        )
-    }
-    
-    # map IDs to names, if requested
-    if ( $remap ) {
-        my $ts = Bio::Phylo::PhyLoTA::Service::TreeService->new;
-        $bbtree = $ts->remap_to_name($bbtree); 
-    }
-    
-    # write output file
-    my $outfile = $self->outfile;
-    open my $outfh, '>', $outfile or die $!;
-    print $outfh $bbtree->to_newick( '-nodelabels' => 1 );
-    close $outfh;   
+    	rename $backbone => $outfile;
+    }    
+      
     $self->logger->info("DONE, results written to $outfile");
 }
 
