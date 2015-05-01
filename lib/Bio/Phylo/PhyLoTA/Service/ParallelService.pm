@@ -94,7 +94,7 @@ sub import {
 		}
 
 		# get number of processes from config file
-		require Bio::Phylo::PhyLoTA::Service;
+		require Bio::Phylo::PhyLoTA::Config;
 		my $config  = Bio::Phylo::PhyLoTA::Config->new;
 		$num_workers = $config->NODES -1 || 1; 
 	} 
