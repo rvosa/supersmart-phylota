@@ -531,6 +531,17 @@ sub _process_matches {
     return;
 }
 
+=item write_taxa_file
+
+Input: An output filename and a list of taxon names.
+Searches for each name all possible ranks as listed in the
+NCBI taxonomy and writes a tsv table.
+Each row represents one taxon, columns are taxon name followed
+by all possible taxonomic ranks, ordered from low to high.
+If a taxonomic rank is not given for a certain taxon name,
+'NA' is written into the table cell.
+
+=cut
 
 sub write_taxa_file {
 	my ($self, $outfile, @names) = @_;
