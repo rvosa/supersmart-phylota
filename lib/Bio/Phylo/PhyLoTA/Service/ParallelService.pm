@@ -8,7 +8,8 @@ use Bio::Phylo::Util::Exceptions 'throw';
 
 my $mode;
 my $num_workers;
-my $logger;
+my $logger = Bio::Phylo::Util::Logger->new;
+
 
 =over
 
@@ -55,7 +56,6 @@ mode, the number of processes is set to the number of cores present on the machi
 sub import {
 	my $package = shift;
 	($mode) = @_;
-	$logger = $package->logger;
 	
 	# no mode specified
 	if ( !$mode ) {
