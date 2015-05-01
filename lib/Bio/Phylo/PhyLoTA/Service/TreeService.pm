@@ -242,6 +242,36 @@ sub remap_to_ti {
         return $tree;       
 }
 
+=item newick2nexus
+
+Given an input newick file and an output nexus file name, writes trees
+from input file as a trees block (without translation table) to the output file.
+Returns number of trees so written.
+
+=cut
+
+sub newick2nexus {
+    my ( $self, $infile, $outfile ) = @_;
+    my $date = localtime();
+    open my $in, '<' $infile or die $!;
+    open my $out, '>' $outfile or die $!;
+    print $out <<'HEADER';
+#NEXUS
+[! written on $date by $self from $infile ]
+BEGIN TREES;
+HEADER
+    my $i = 0;
+    while(<$in>) {
+        chomp;
+        if ( /^\s*(\(.+;)/ ) {
+            my $tree = $1;
+            print $out "\t", 'tree tree', ++$i, ' = ', $tree, "\n";
+        }
+    }
+    print $out 'END;';
+    return $i;
+}
+
 =item consense_trees
 
 Given a file with multiple trees (in newick format), 
@@ -255,7 +285,8 @@ Returns a single newick tree as a string. Arguments:
                       configuration file
  -heights (optional): how to process node heights, an option of 'keep', 
                       'median', 'mean' or 'ca', default is provided by the
-                      NODE_HEIGHTS parameter in the configuration file 
+                      NODE_HEIGHTS parameter in the configuration file
+ -limit (optional):   minimum support for a node to be retained
 
 =cut
 
@@ -264,6 +295,7 @@ sub consense_trees {
 	my $burnin  = $args{'-burnin'}  || $config->BURNIN;
 	my $infile  = $args{'-infile'}  || die "Need -infile argument!";
 	my $heights = $args{'-heights'} || $config->NODE_HEIGHTS;
+	my $limit   = $args{'-limit'}   || 0.0;
 	
 	# we first need to count the absolute number of trees in the file
 	# and multiply that by burnin to get the absolute number of trees to skip
@@ -414,8 +446,8 @@ sub parse_newick_from_nexus {
         # overlap with nexus identifier. However, BEAST seems to write all posteriors
         # as proper decimals
 		my $newicktree = parse(
-            '-string'          => $newick,
-            '-format'          => 'newick',
+            '-string' => $newick,
+            '-format' => 'newick',
             %args
         )->first;
 
