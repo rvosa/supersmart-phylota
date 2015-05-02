@@ -284,8 +284,8 @@ Returns number of trees so written.
 sub newick2nexus {
     my ( $self, $infile, $outfile ) = @_;
     my $date = localtime();
-    open my $in, '<' $infile or die $!;
-    open my $out, '>' $outfile or die $!;
+    open my $in, '<', $infile or die $!;
+    open my $out, '>', $outfile or die $!;
     print $out <<'HEADER';
 #NEXUS
 [! written on $date by $self from $infile ]
