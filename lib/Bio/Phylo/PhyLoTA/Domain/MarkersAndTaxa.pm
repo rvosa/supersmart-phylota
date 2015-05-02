@@ -90,11 +90,11 @@ sub get_alignment_subset {
 	my ($self, $aln, $arg) = @_;
 	
 	# determine for what type (gi, taxon, ..., given in fasta header) to chose
-	my ($type) = keys $arg;       
+	my ($type) = keys %$arg;       
 	my @ids = @{$arg->{$type}};
 	
 	my %result;
-	for my $k ( keys $aln ) {
+	for my $k ( keys %$aln ) {
 		foreach my $id ( @ids ) {
 			if ( $k =~ m/$type\|$id/ ) {
 				$result{$k} = $aln->{$k}; 			

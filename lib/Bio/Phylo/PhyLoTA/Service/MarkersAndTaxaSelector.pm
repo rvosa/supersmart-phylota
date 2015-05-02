@@ -662,7 +662,7 @@ sub write_marker_summary {
 	# parse seed gis from fasta defline
 	for my $col (@table) {
 		# all entries in one row have the same seed GIs
-		my $k = (keys($col))[0];
+		my $k = (keys(%$col))[0];
 		my $defline = $col->{$k}[0];
 		push @seed_gis, $1 if $defline =~ /seed_gi\|([0-9]+)\|/;
 	}
