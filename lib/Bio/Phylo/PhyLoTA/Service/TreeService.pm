@@ -318,6 +318,8 @@ Returns a single newick tree as a string. Arguments:
                       'median', 'mean' or 'ca', default is provided by the
                       NODE_HEIGHTS parameter in the configuration file
  -limit (optional):   minimum support for a node to be retained
+ -format (optional):  input file format. Default is nexus; if newick, performs
+                      conversion via newick2nexus
 
 =cut
 
@@ -327,6 +329,15 @@ sub consense_trees {
 	my $infile  = $args{'-infile'}  || die "Need -infile argument!";
 	my $heights = $args{'-heights'} || $config->NODE_HEIGHTS;
 	my $limit   = $args{'-limit'}   || 0.0;
+	my $format  = $args{'-format'}  || 'nexus';
+	
+	# do conversion if needed
+	if ( lc($format) eq 'newick' ) {
+		my ( $fh, $filename ) = tempfile();
+		close $fh;
+		$self->newick2nexus( $infile => $filename );
+		$infile = $filename;
+	}
 	
 	# we first need to count the absolute number of trees in the file
 	# and multiply that by burnin to get the absolute number of trees to skip
