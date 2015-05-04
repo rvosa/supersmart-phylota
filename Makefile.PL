@@ -57,7 +57,6 @@ sub postamble {
 	# run unit tests and package the box
 	require Bio::SUPERSMART;
 	$result .= <<"PACKAGE";
-	\$(VAGRANT) \$(INJECT) \$(WD) sudo perl Makefile.PL && sudo make test \$(DONE)
 	\$(VAGRANT) box repackage naturalis/supersmart virtualbox $Bio::SUPERSMART::VERSION
 PACKAGE
 		
