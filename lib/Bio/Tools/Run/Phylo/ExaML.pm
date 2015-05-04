@@ -253,8 +253,8 @@ sub run {
 		$phylip  = $args{'-phylip'} || die "Need -phylip arg";
 		$intree  = $args{'-intree'} || die "Need -intree arg";
 	}
-        my $binary = $self->run_id . '-dat';
-	my $binary = $treeservice ->make_phylip_binary( $phylip, $binary, $self->parser, $self->work_dir);
+#        my $binary = $self->run_id . '-dat';
+	my $binary = $treeservice ->make_phylip_binary( $phylip, $self->run_id . '-dat', $self->parser, $self->work_dir);
 	
 	# compose argument string: add MPI commands, if any
 	my $string;

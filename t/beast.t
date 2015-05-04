@@ -18,7 +18,8 @@ ok( $beast->sample_freq(100) == 100, "sample_freq" );
 ok( $beast->overwrite(1), "overwrite");
 ok( $beast->collapse_species(1), "collapse species");
 
-my (undef, $file) = tempfile(OPEN=>0);
+my ($handle, $file) = tempfile( 'OPEN' => 1 );
+close $handle;
 
 ok( $beast->outfile_name( $file ), "outfile");
 ok( $beast->run( "$Bin/testdata/testdata.xml" ), "run BEAST");
