@@ -31,8 +31,9 @@ Given an input set of trees in newick format, creates an annotated consensus tre
 sub options {
 	my ($self, $opt, $args) = @_;
 	my $outfile_default = "consensus.nex";
+	my $intree_default = "chronogram.dnd";
 	return (
-		["infile|i=s", "newick input tree(s) file", { arg => "file", mandatory => 1}],
+		["infile|i=s", "newick input tree(s) file", { arg => "file", default => $intree_default}],
 		["outfile|o=s", "name of the output file, defaults to '$outfile_default'", {default => $outfile_default, arg => "file"}],
 		["format|f=s", "format of consensus tree file, (nexus, newick) defaults to 'nexus'", {default => 'nexus'}],
         ["burnin|b=f", "fraction of burnin to omit", {default => $ts->config->BURNIN}],
