@@ -19,3 +19,4 @@ data/FOSSILS/*
 conf/.vagrant
 examples/primates/*
 .idea/
+Makefile.old
