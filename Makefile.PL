@@ -55,9 +55,8 @@ sub postamble {
 	           grep { $_ !~ /vagrant/ } @commands;
 	
 	# run unit tests and package the box
-	require Bio::SUPERSMART;
 	$result .= <<"PACKAGE";
-	\$(VAGRANT) box repackage naturalis/supersmart virtualbox $Bio::SUPERSMART::VERSION
+	\$(VAGRANT) package --base supersmart/ubuntu
 PACKAGE
 		
 	# finally, remove the Vagrantfile and destroy the box again
