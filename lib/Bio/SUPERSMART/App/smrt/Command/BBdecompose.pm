@@ -52,10 +52,10 @@ groups them with the other relevant alignments for that clade.
 sub options {
 	my ($self, $opt, $args) = @_;		
 	my $outfile_default = "markers-clades.tsv";
-	my $tree_default    = "chronogram.dnd";
+	my $tree_default    = "chronogram.nex";
 	my $taxa_default    = "species.tsv";
 	my $aln_default     = "aligned.txt";
-	my $format_default  = "newick";
+	my $format_default  = "nexus";
 	return (
 		["backbone|b=s", "backbone tree as produced by 'smrt bbinfer'", { arg => "file", default => $tree_default}],
 		["format|f=s", "file format of the backbone tree as produced by 'smrt consense'", { default => $format_default }],
