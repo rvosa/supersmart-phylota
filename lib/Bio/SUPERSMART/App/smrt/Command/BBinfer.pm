@@ -41,11 +41,13 @@ many intermediate checkpoint files, for which a directory location needs to be s
 sub options {
     my ($self, $opt, $args) = @_;       
     my $outfile_default = "backbone.dnd";
-    my $tool_default = "examl";
-    my $boot_default = 1;
+    my $tool_default    = "examl";
+    my $matrix_default  = "supermatrix.phy";
+    my $tree_default    = "classification-tree.dnd";
+    my $boot_default    = 1;
     return (
-        ["supermatrix|s=s", "matrix of concatenated multiple sequece alignments as produced by 'smrt bbmerge'", { arg => "file", mandatory => 1}],  
-        ["starttree|t=s", "starting tree for ExaML tree inference. If not given, a random starting tree is generated", { arg => "file", mandatory => 1}],
+        ["supermatrix|s=s", "matrix of concatenated multiple sequece alignments as produced by 'smrt bbmerge'", { arg => "file", default => $matrix_default }],  
+        ["starttree|t=s", "starting tree for ExaML tree inference. If not given, a random starting tree is generated", { arg => "file", default => $tree_default}],
         ["inferencetool|i=s", "software tool for backbone inference (RAxML, ExaML or ExaBayes), defaults to $tool_default", {default => $tool_default, arg => "tool"}],         
         ["bootstrap|b=i", "number of bootstrap replicates. Will add the support values to the backbone tree. Not applicable to Bayesian methods.", { default => $boot_default }],
         ["ids|n", "return tree with NCBI identifiers instead of taxon names", {}],      
