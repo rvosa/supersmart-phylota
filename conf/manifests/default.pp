@@ -301,6 +301,7 @@ exec {
         command => "wget http://sco.h-its.org/exelixis/material/exabayes/1.4.1/exabayes-1.4.1-linux-openmpi-sse.tar.gz",
         cwd     => $tools_dir,
         creates => "${tools_dir}/exabayes-1.4.1-linux-openmpi-sse.tar.gz",
+        timeout => 0,
         require => Package["libopenmpi-dev","openmpi-bin"];
     "unzip_exabayes":
         command => "tar -xvzf exabayes-1.4.1-linux-openmpi-sse.tar.gz",
