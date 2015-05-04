@@ -40,9 +40,11 @@ file specified by the 'outfile' argument.
 sub options {
 	my ($self, $opt, $args) = @_;		
 	my $outfile_default = "chronogram.dnd";
+	my $tree_default    = "backbone-rerooted.dnd";
+	my $matrix_default  = "supermatrix.phy";
 	return (
-		["tree|t=s", "backbone tree to calibrate as produced by 'smrt bbinfer' or 'smrt bbreroot'", { arg => "file", mandatory => 1}],
-		["supermatrix|s=s", "matrix of concatenated multiple sequece alignments which was used to generate the tree", { arg => "file", mandatory => 1}],	
+		["tree|t=s", "backbone tree to calibrate as produced by 'smrt bbreroot'", { arg => "file", default => $tree_default}],
+		["supermatrix|s=s", "matrix of concatenated multiple sequece alignments which was used to generate the tree", { arg => "file", default => $matrix_default}],	
 		["fossiltable|f=s", "tsv (tab-separated value) file containing fossil table with at least 5 columns (id, name, crown/stem, taxon, age)", { arg => "file", mandatory => 1}],	
 		["outfile|o=s", "name of the output tree file (in newick format), defaults to '$outfile_default'", {default => $outfile_default, arg => "file"}],			
 
