@@ -3,11 +3,13 @@ package Bio::Phylo::PhyLoTA::Config;
 use strict;
 use warnings;
 use Config::Tiny;
+use Bio::SUPERSMART;
 use Exporter;
 
 our @ISA = qw(Exporter);
 our @EXPORT_OK = qw(printval);
 our $AUTOLOAD;
+our $VERSION = $Bio::SUPERSMART::VERSION;
 my $SINGLETON;
 
 =head1 NAME
@@ -140,6 +142,14 @@ sub currentGBReleaseDate {
     }
     return $self->GB_RELNUM_DATE;
 }
+
+=item RELEASE
+
+Returns the release number.
+
+=cut
+
+sub RELEASE { $VERSION }
 
 sub AUTOLOAD {
     my $self = shift;
