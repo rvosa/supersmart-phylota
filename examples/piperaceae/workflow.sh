@@ -86,3 +86,30 @@ smrt bbcalibrate -f $FOSSILS
 # trees are bootstrap trees we don't throw out a burnin fraction. This would be different 
 # had we used exabayes in step 6.
 smrt consense --burnin=0
+
+# Step 10: decompose the backbone into clades. This step traverses the consensus tree from
+# step 9 and breaks it up into monophyletic clades (in principle, genera, unless these are
+# not monophyletic, in which case the decomposition happens at the nearest ancestor that
+# subtends a monophyletic group of genera). For each clade, alignments (produced in step 
+# 2) are selected that meet the following criteria:
+# - CLADE_MAX_DISTANCE: maximum average pairwise distance to accept the alignment
+# - CLADE_MIN_DENSITY:  minimum number of clade members that must be present
+smrt bbdecompose
+
+# Step 11: for each clade, merge the separate clade alignments from step 10 into a single
+# input file for *BEAST.
+smrt clademerge
+
+# Step 12: for each clade, run *BEAST. By default this uses a very small number of 
+# generations (100,000), which is strictly intended for testing. It is not possible to 
+# make any general recommendations for what the right number is because this depends on a
+# lot of different variables (number of taxa, signal in the data, mixing of the chains)
+# so for publishable results convergence should be checked, for example using 'tracer'.
+# For this specific example, 30,000,000 generations for each clade appears to work.
+smrt cladeinfer -n 30_000_000
+
+# Step 13: graft the clade trees onto the backbone.
+smrt cladegraft
+
+# Step 14: plot the final result
+smrt-utils plot
