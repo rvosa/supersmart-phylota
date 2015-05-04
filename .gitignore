@@ -20,3 +20,5 @@ conf/.vagrant
 examples/primates/*
 .idea/
 Makefile.old
+.vagrant
+Vagrantfile
