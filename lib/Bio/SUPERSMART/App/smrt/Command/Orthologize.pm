@@ -37,8 +37,9 @@ re-aligned superclusters.
 sub options {
 	my ($self, $opt, $args) = @_;		
 	my $outfile_default = "merged.txt";
+	my $infile_default = "aligned.txt";
 	return (
-		["infile|i=s", "list of file locations of multiple sequence alignments  as produced by 'smrt align'", { arg => "file", mandatory => 1}],
+		["infile|i=s", "list of file locations of multiple sequence alignments  as produced by 'smrt align'", { arg => "file", default => $infile_default}],
 		["outfile|o=s", "name of the output file, defaults to '$outfile_default'", {default => $outfile_default, arg => "file"}],	
 	);	
 }
