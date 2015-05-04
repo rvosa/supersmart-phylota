@@ -330,6 +330,7 @@ exec {
         command => "wget https://beast-mcmc.googlecode.com/files/BEASTv1.8.0.tgz",
         cwd     => $tools_dir,
         creates => "${tools_dir}/BEASTv1.8.0.tgz",
+        timeout => 0,
         require => Package[ 'wget' ];
     "unzip_beast":
         command => "tar -xvzf BEASTv1.8.0.tgz",
