@@ -36,9 +36,11 @@ This is, given the species list, the highest rank which still contains distinct 
 sub options {
 	my ($self, $opt, $args) = @_;		
 	my $outfile_default = "backbone-rerooted.dnd";
+	my $taxa_default = "species.tsv";
+	my $tree_default = "backbone.dnd";
 	return (
-		["taxafile|t=s", "tsv (tab-seperated value) taxa file as produced by 'smrt taxize'", { arg => "file", mandatory => 1}],
-		["backbone|b=s", "a backbone tree(s) file as produced by 'smrt bbinfer'", { arg => "file", mandatory => 1}],	
+		["taxafile|t=s", "tsv (tab-seperated value) taxa file as produced by 'smrt taxize'", { arg => "file", default => $taxa_default}],
+		["backbone|b=s", "a backbone tree(s) file as produced by 'smrt bbinfer'", { arg => "file", default => $tree_default}],	
 		["outgroup|g=s", "one or multiple taxa (names or NCBI identifiers, separated by commata) representing the outgroup at which the tree is rerooted. Outgroup must be enclosed in quotes.", {} ],
 		["outfile|o=s", "name of the output tree file (in newick format), defaults to '$outfile_default'", {default => $outfile_default, arg => "file"}],
 		["smooth|s", "smooth tip heights left and right of root (i.e. midpointify)",{}],
