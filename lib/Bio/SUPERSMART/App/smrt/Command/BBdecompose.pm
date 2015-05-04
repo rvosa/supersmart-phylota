@@ -52,7 +52,7 @@ groups them with the other relevant alignments for that clade.
 sub options {
 	my ($self, $opt, $args) = @_;		
 	my $outfile_default = "markers-clades.tsv";
-	my $tree_default    = "chronogram.nex";
+	my $tree_default    = "consensus.nex";
 	my $taxa_default    = "species.tsv";
 	my $aln_default     = "aligned.txt";
 	my $format_default  = "nexus";
