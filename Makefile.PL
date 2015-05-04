@@ -57,7 +57,6 @@ sub postamble {
 	# run unit tests and package the box
 	require Bio::SUPERSMART;
 	$result .= <<"PACKAGE";
-	\$(VAGRANT) \$(INJECT) \$(WD) sudo perl Makefile.PL && sudo make test \$(DONE)
 	\$(VAGRANT) box repackage naturalis/supersmart virtualbox $Bio::SUPERSMART::VERSION
 PACKAGE
 		
@@ -81,11 +80,19 @@ VAGRANT=vagrant
 INJECT=ssh -c '
 DONE='
 WD=cd supersmart &&
+GREP=grep
 
 vagrant:
 	$(RM_RF) Vagrantfile .vagrant
 	$(VAGRANT) init ubuntu/trusty64
-	$(VAGRANT) up
+	$(NOECHO) $(GREP) -v '^end' Vagrantfile > Vagrantfile.patched
+	$(NOECHO) $(ECHO) '  config.vm.provider "virtualbox" do |v|' >> Vagrantfile.patched
+	$(NOECHO) $(ECHO) '    v.customize ["modifyvm", :id, "--natdnshostresolver1", "on"]' >> Vagrantfile.patched
+	$(NOECHO) $(ECHO) '    v.customize ["modifyvm", :id, "--natdnsproxy1", "on"]' >> Vagrantfile.patched
+	$(NOECHO) $(ECHO) '  end' >> Vagrantfile.patched
+	$(NOECHO) $(ECHO) 'end' >> Vagrantfile.patched
+	$(NOECHO) $(MV) Vagrantfile.patched Vagrantfile
+	$(VAGRANT) up	
 	$(VAGRANT) $(INJECT) wget -O - https://cpanmin.us | sudo perl - App::cpanminus $(DONE)
 	$(VAGRANT) $(INJECT) sudo apt-get install -y git $(DONE)
 	$(VAGRANT) $(INJECT) git clone https://github.com/naturalis/supersmart.git $(DONE)

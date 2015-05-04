@@ -5,7 +5,7 @@ use warnings;
 
 use Bio::Phylo::PhyLoTA::Service::TreeService;
 
-use Bio::Phylo::IO 'parse';
+use Bio::Phylo::IO qw'parse parse_tree';
 
 use base 'Bio::SUPERSMART::App::SubCommand';
 use Bio::SUPERSMART::App::smrt qw(-command);
@@ -33,10 +33,13 @@ The resulting tree is exported in the NEWICK format.
 sub options {
 	my ($self, $opt, $args) = @_;
 	my $outfile_default = "final.dnd";
+	my $tree_default = "consensus.nex";
+	my $format_default = 'nexus';
 	return (                               	
-  		["backbone|b=s", "backbone tree as produced by 'smrt bbinfer'", { arg => "file", mandatory => 1}],
+  		["backbone|b=s", "backbone tree as produced by 'smrt bbinfer'", { arg => "file", default => $tree_default }],
 		["outfile|o=s", "name of the output tree file (newick format) defaults to $outfile_default", { default=> $outfile_default, arg => "file"}],    	    
-		["cladetree|c=s", "name of tree file for single clade (newick format) if only a single cladetree should be grafted", { arg => "file"}],    	    		
+		["cladetree|c=s", "name of tree file for single clade (newick format) if only a single cladetree should be grafted", { arg => "file"}],
+		["format|c=s", "file format of the backbone tree (newick or nexus), defaults to $format_default", { default => $format_default }],    	    		
     );
 }
 
@@ -63,6 +66,10 @@ sub validate {
 			$self->usage_error("no cladetree argument given and no clade folders found in working directory $workdir");
 		}
 	}
+	
+	if ( $opt->format !~ /^(?:newick|nexus)/i ) {
+		$self->usage_error("format for the backbone can only be newick or nexus");
+	}
 }
 
 sub run{
@@ -79,10 +86,10 @@ sub run{
 	my $logger = $self->logger;
 	
 	# parse backbone tree
-	my $backbone_tree = parse(
-                '-file'   => $backbone,
-                '-format' => 'newick',
-            )->first;
+	my $backbone_tree = parse_tree(
+		'-file'   => $backbone,
+		'-format' => $opt->format,
+    );
 	
 	# filenames for nexus trees written by BEAST
 	$ts->remap_to_ti($backbone_tree);
