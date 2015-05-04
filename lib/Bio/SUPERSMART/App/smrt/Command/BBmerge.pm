@@ -83,16 +83,18 @@ sub options {
     my $outfile_default      = "supermatrix.phy";
     my $outformat_default    = "phylip";
     my $markerstable_default = "markers-backbone.tsv";
+    my $taxa_default         = "species.tsv";
+    my $merged_default       = "merged.txt";
     return (
         [
             "alnfile|a=s",
 "list of file locations of merged alignments  as produced by 'smrt orthologize'",
-            { arg => "file", mandatory => 1 }
+            { arg => "file", default => $merged_default }
         ],
         [
             "taxafile|t=s",
             "tsv (tab-seperated value) taxa file as produced by 'smrt taxize'",
-            { arg => "file", mandatory => 1 }
+            { arg => "file", default => $taxa_default }
         ],
         [
             "outfile|o=s",
