@@ -52,11 +52,16 @@ groups them with the other relevant alignments for that clade.
 sub options {
 	my ($self, $opt, $args) = @_;		
 	my $outfile_default = "markers-clades.tsv";
+	my $tree_default    = "chronogram.nex";
+	my $taxa_default    = "species.tsv";
+	my $aln_default     = "aligned.txt";
+	my $format_default  = "nexus";
 	return (
-		["backbone|b=s", "backbone tree as produced by 'smrt bbinfer'", { arg => "file", mandatory => 1}],
+		["backbone|b=s", "backbone tree as produced by 'smrt bbinfer'", { arg => "file", default => $tree_default}],
+		["format|f=s", "file format of the backbone tree as produced by 'smrt consense'", { default => $format_default }],
 		["classtree|c=s", "classification tree as produced by 'smrt classify', only needed with '-g' option", { arg => "file"}],
-		["alnfile|a=s", "list of file locations of merged alignments as produced by 'smrt aln'", { arg => "file", mandatory => 1}],	
-		["taxafile|t=s", "tsv (tab-seperated value) taxa file as produced by 'smrt taxize'", { arg => "file", mandatory => 1}],
+		["alnfile|a=s", "list of file locations of merged alignments as produced by 'smrt aln'", { arg => "file", default => $aln_default}],	
+		["taxafile|t=s", "tsv (tab-seperated value) taxa file as produced by 'smrt taxize'", { arg => "file", default => $taxa_default}],
 		["add_outgroups|g", "attempt to automatically add outgroup from sister genus for each clade, if sufficient marker overlap between clades", { default=> 0} ],
 		["outfile|o=s", "name of the output file (summary table with included accessions), defaults to $outfile_default", { default=> $outfile_default, arg => "file"}],
 	);	
@@ -78,6 +83,9 @@ sub validate {
 		$self->usage_error("file $file does not exist") unless (-e $file);
 		$self->usage_error("file $file is empty") unless (-s $file);			
 	}
+	if ( $opt->format !~ /^(?:newick|nexus)$/i ) {
+		$self->usage_error("only newick and nexus format are supported");
+	}	
 }
 
 sub run{
@@ -92,18 +100,17 @@ sub run{
 	my $outfile= $self->outfile;	
 
 	# instantiate helper objects
-	my $mt = 'Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa';
-	my $mts = 'Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector';
-	my $ts = 'Bio::Phylo::PhyLoTA::Service::TreeService';
+	my $mt     = Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa->new;
+	my $mts    = Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector->new;
+	my $ts     = Bio::Phylo::PhyLoTA::Service::TreeService->new;
 	my $config = Bio::Phylo::PhyLoTA::Config->new;
 	my $logger = $self->logger;
 			
 	# parse backbone tree
 	$logger->info("going to read backbone tree $backbone");
 	my $tree = parse_tree(
-		'-format'     => 'newick',
-		'-file'       => $backbone,
-		'-as_project' => 1,
+		'-format' => $opt->format,
+		'-file'   => $backbone,
 	);
 	$ts->remap_to_ti($tree);
 					
