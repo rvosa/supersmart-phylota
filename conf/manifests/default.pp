@@ -308,12 +308,18 @@ exec {
         cwd     => $tools_dir,
         creates => "${tools_dir}/exabayes-1.4.1/",
         require => Exec[ "download_exabayes" ];
+    "configure_exabayes":		
+      	command => "sh configure --enable-mpi",		
+      	cwd     => "${tools_dir}/exabayes-1.4.1",		
+      	creates => "${tools_dir}/exabayes-1.4.1/exabayes/Makefile",		
+      	timeout => 0,		
+	require => Exec[ "unzip_exabayes" ];
     "compile_exabayes":		
-      	command => "sh configure --enable-mpi && make",		
+      	command => "make",		
       	cwd     => "${tools_dir}/exabayes-1.4.1",		
       	creates => "${tools_dir}/exabayes-1.4.1/exabayes",		
       	timeout => 0,		
-	require => Exec[ "unzip_exabayes" ];
+	require => Exec[ "configure_exabayes" ];
 
     # install supersmart
     "clone_supersmart":
