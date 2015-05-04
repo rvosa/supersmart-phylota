@@ -144,17 +144,20 @@ exec {
     "set_locale_sh":
         command => "echo 'export LC_ALL=en_US.UTF-8' > set_locale.sh",
         cwd     => "/etc/profile.d",
+        timeout => 0,        
         creates => "/etc/profile.d/set_locale.sh";
 
     # add bin directory for all required tools and smrt executables to PATH
     "make_bindir_sh":
         command => "echo 'export PATH=\$PATH:${tools_bin_dir}:${src_dir}/supersmart/script' > supersmart-tools-bin.sh",
         cwd     => "/etc/profile.d",
+        timeout => 0,        
         creates => "/etc/profile.d/supersmart-tools-bin.sh",
         require => File[ $tools_bin_dir ];
     "make_bindir_csh":
         command => "echo 'setenv PATH \$PATH:${tools_bin_dir}:${src_dir}/supersmart/script' > supersmart-tools-bin.csh",
         cwd     => "/etc/profile.d",
+        timeout => 0,        
         creates => "/etc/profile.d/supersmart-tools-bin.csh",
         require => File[ $tools_bin_dir ];
 
@@ -162,10 +165,12 @@ exec {
     "make_editor_sh":
         command => "echo 'export EDITOR=/etc/alternatives/editor' > supersmart-editor.sh",
         cwd     => "/etc/profile.d",
+        timeout => 0,        
         creates => "/etc/profile.d/supersmart-editor.sh";
     "make_editor_csh":
         command => "echo 'setenv EDITOR=/etc/alternatives/editor' > supersmart-editor.csh",
         cwd     => "/etc/profile.d",
+        timeout => 0,        
         creates => "/etc/profile.d/supersmart-editor.csh";
 
     # make phylota database
@@ -184,14 +189,17 @@ exec {
     "chown_phylota_db":
         command   => "chown -R -h mysql:mysql ${data_dir}/ && chmod 660 ${data_dir}/phylota/*",
         logoutput => true,
+        timeout => 0,        
         require   => Exec[ 'unzip_phylota_dump' ];
     "mv_phylota_dump":
         command   => "ln -s ${data_dir}/phylota `mysql -s -N -uroot -p information_schema -e 'SELECT Variable_Value FROM GLOBAL_VARIABLES WHERE Variable_Name = \"datadir\"'`",
         logoutput => true,
+        timeout => 0,        
         require   => Exec[ 'chown_phylota_db' ];                
     "grant_phylota_db":
         command   => "mysql -u root -e \"grant all on phylota.* to 'root'@'localhost';\"",
         logoutput => true,
+        timeout => 0,        
         require   => Exec[ 'mv_phylota_dump' ];      
 
 
@@ -200,20 +208,24 @@ exec {
         command   => "wget http://mafft.cbrc.jp/alignment/software/mafft-7.130-without-extensions-src.tgz",
         cwd       => $tools_dir,
         creates   => "${tools_dir}/mafft-7.130-without-extensions-src.tgz",
+        timeout => 0,        
         require   => [ File [ $tools_dir ] ];
     "unzip_mafft":
         command   => "tar -xzvf mafft-7.130-without-extensions-src.tgz",
         cwd       => $tools_dir,
         creates   => "${tools_dir}/mafft-7.130-without-extensions",
+        timeout => 0,        
         require   => Exec[ 'dl_mafft' ];
     "make_nonroot_makefile_mafft":
         command   => "sed -i -e 's|PREFIX = /usr/local|PREFIX = ${tools_dir}|g' Makefile",
         cwd       => "${tools_dir}/mafft-7.130-without-extensions/core",
+        timeout => 0,        
         require   => Exec[ 'unzip_mafft' ];
     "install_mafft":
         command   => "make && make install",
         cwd       => "${tools_dir}/mafft-7.130-without-extensions/core",
         creates   => "$tools_dir/bin/mafft",
+        timeout => 0,        
         require   => Exec[ 'make_nonroot_makefile_mafft' ];
 
     # install muscle multiple sequence alignment
@@ -221,11 +233,13 @@ exec {
         command   => "wget http://www.drive5.com/muscle/downloads3.8.31/muscle3.8.31_i86linux64.tar.gz",
         cwd       => $tools_dir,
         creates   => "${tools_dir}/muscle3.8.31_i86linux64.tar.gz",
+        timeout => 0,        
         require   => Package[ 'wget', 'tar' ];
     "unzip_muscle":
         command   => "tar -xzvf muscle3.8.31_i86linux64.tar.gz -C ${tools_bin_dir}",
         cwd       => $tools_dir,
         creates   => "${tools_bin_dir}/muscle3.8.31_i86linux64",
+        timeout => 0,        
         require   => Exec["download_muscle"];
 
 	# 2015-04-19 checking to see if we can get OpenMPI from package manager, as 
@@ -255,16 +269,19 @@ exec {
         command => "wget http://evolution.gs.washington.edu/phylip/download/phylip-3.696.tar.gz",
         cwd     => $tools_dir,
         creates => "${tools_dir}/phylip-3.696.tar.gz",
+        timeout => 0,        
         require => Package[ 'wget', 'tar' ];
     "unzip_phylip":
         command => "tar -xzvf ${tools_dir}/phylip-3.696.tar.gz",
         cwd     => $tools_dir,
         creates => "${tools_dir}/phylip-3.696/src/Makefile.unx",
+        timeout => 0,        
         require => Exec["download_phylip"];
     "make_phylip":
         command => "make -f Makefile.unx consense",
         cwd     => "${tools_dir}/phylip-3.696/src/",
         creates => "${tools_dir}/phylip-3.696/src/consense",
+        timeout => 0,        
         require => Exec["unzip_phylip"];
 
     # install examl & parser
@@ -272,16 +289,19 @@ exec {
         command => "git clone https://github.com/stamatak/ExaML.git",
         cwd     => $tools_dir,
         creates => "${tools_dir}/ExaML/",
+        timeout => 0,        
         require => Package[ 'git', 'zlib1g-dev' ];
     "compile_examl":
         command => "make -f Makefile.SSE3.gcc LD_LIBRARY_PATH=/usr/lib",
         cwd     => "${tools_dir}/ExaML/examl",
         creates => "${tools_dir}/ExaML/examl/examl",
+        timeout => 0,        
         require => [ Exec["clone_examl"], Package["libopenmpi-dev","openmpi-bin"] ];
     "compile_parser":
         command => "make -f Makefile.SSE3.gcc",
         cwd     => "${tools_dir}/ExaML/parser",
         creates => "${tools_dir}/ExaML/parser/parser",
+        timeout => 0,        
         require => [ Exec["clone_examl"], Package["libopenmpi-dev","openmpi-bin"] ];
 
     # install raxml
@@ -289,11 +309,13 @@ exec {
         command => "git clone https://github.com/stamatak/standard-RAxML.git",
         cwd     => $tools_dir,
         creates => "${tools_dir}/standard-RAxML/",
+        timeout => 0,        
         require => Package[ 'git' ];
     "compile_raxml":
         command => "make -f Makefile.SSE3.PTHREADS.gcc LD_LIBRARY_PATH=/usr/lib",
         cwd     => "${tools_dir}/standard-RAxML/",
         creates => "${tools_dir}/standard-RAxML/raxmlHPC-PTHREADS-SSE3",
+        timeout => 0,        
         require => Exec["clone_raxml"];
 
     # install exabayes
@@ -307,6 +329,7 @@ exec {
         command => "tar -xvzf exabayes-1.4.1-linux-openmpi-sse.tar.gz",
         cwd     => $tools_dir,
         creates => "${tools_dir}/exabayes-1.4.1/",
+        timeout => 0,        
         require => Exec[ "download_exabayes" ];
     "configure_exabayes":		
       	command => "sh configure --enable-mpi",		
@@ -327,14 +350,17 @@ exec {
         cwd     => $src_dir,
         creates => "${src_dir}/supersmart",
         user    => $username,
+        timeout => 0,        
         require => Package[ 'git' ];
     "make_supersmart_sh":
         command => "echo 'export LD_LIBRARY_PATH=/usr/lib:/usr/lib64:/usr/local/lib' > supersmart.sh && echo 'export SUPERSMART_HOME=${src_dir}/supersmart' >> supersmart.sh && echo 'export PERL5LIB=\$PERL5LIB:\$SUPERSMART_HOME/lib' >> supersmart.sh",
         cwd     => "/etc/profile.d",
+        timeout => 0,        
         creates => "/etc/profile.d/supersmart.sh";
     "make_supersmart_csh":
         command => "echo 'setenv LD_LIBRARY_PATH /usr/lib:/usr/lib64:/usr/local/lib' > supersmart.csh && echo 'setenv SUPERSMART_HOME ${src_dir}/supersmart' >> supersmart.csh && echo 'setenv PERL5LIB \$PERL5LIB:\$SUPERSMART_HOME/lib' >> supersmart.csh",
         cwd     => "/etc/profile.d",
+        timeout => 0,        
         creates => "/etc/profile.d/supersmart.csh";
 
     # install BEAST
@@ -346,11 +372,13 @@ exec {
         require => Package[ 'wget' ];
     "unzip_beast":
         command => "tar -xvzf BEASTv1.8.0.tgz",
+        timeout => 0,        
         cwd     => "$tools_dir",
         creates => "${tools_dir}/BEASTv1.8.0/bin/beast",
         require => Exec[ 'download_beast' ];
     "symlink_beast":
         command => "ln -s ${tools_dir}/BEASTv1.8.0/bin/* .",
+        timeout => 0,        
         cwd     => "/usr/local/bin/",
         creates => "/usr/local/bin/beast",
         require => Exec[ 'unzip_beast' ];
@@ -358,16 +386,19 @@ exec {
     # install beagle-lib
     "checkout_beagle_lib":
         command => "svn checkout http://beagle-lib.googlecode.com/svn/trunk/ beagle-lib",
+        timeout => 0,        
         cwd     => $tools_dir,
         creates => "${tools_dir}/beagle-lib/autogen.sh",
         require => Package[ 'subversion', "openjdk-6-jdk" ];
     "generate_beagle_config":
         command => "sh autogen.sh",
+        timeout => 0,        
         cwd     => "${tools_dir}/beagle-lib/",
         creates => "${tools_dir}/beagle-lib/configure",
         require => Exec[ 'checkout_beagle_lib' ];
     "build_beagle_lib":
         command => "sh configure && make install",
+        timeout => 0,        
         cwd     => "${tools_dir}/beagle-lib/",
         creates => "/usr/local/lib/libhmsbeagle.so",
         require => Exec[ 'generate_beagle_config' ];
@@ -375,36 +406,43 @@ exec {
     # install treePL
     "clone_treepl":
         command => "git clone https://github.com/blackrim/treePL.git",
+        timeout => 0,        
         cwd     => $tools_dir,
         creates => "${tools_dir}/treePL",
         require => Package[ 'git', 'autoconf', 'automake', 'libtool', 'build-essential', 'tar' ];
     "unzip_adolc":
         command => "tar -xvzf adol-c_git_saved.tar.gz",
+        timeout => 0,        
         cwd     => "${tools_dir}/treePL/deps",
         creates => "${tools_dir}/treePL/deps/adol-c",
         require => [ Exec["clone_treepl"], Package["libopenmpi-dev","openmpi-bin"] ];
     "autoreconf_adolc":
         command => "autoreconf -fi",
+        timeout => 0,        
         cwd     => "${tools_dir}/treePL/deps/adol-c",
         creates => "${tools_dir}/treePL/deps/adol-c/configure",
         require => Exec["unzip_adolc"];
     "install_adolc":
         command => "${tools_dir}/treePL/deps/adol-c/configure --prefix=/usr --with-openmp-flag=-fopenmp && make install",
+        timeout => 0,        
         cwd     => "${tools_dir}/treePL/deps/adol-c",
         creates => "/usr/lib64/libadolc.so",
         require => Exec["autoreconf_adolc"];
     "unzip_nlopt":
         command => "tar -xzvf nlopt-2.2.4.tar.gz",
+        timeout => 0,        
         cwd     => "${tools_dir}/treePL/deps",
         creates => "${tools_dir}/treePL/deps/nlopt-2.2.4",
         require => [ Exec["clone_treepl"], Package["libopenmpi-dev","openmpi-bin"] ];
     "install_nlopt":
         command => "${tools_dir}/treePL/deps/nlopt-2.2.4/configure && make install",
-        cwd => "${tools_dir}/treePL/deps/nlopt-2.2.4",
+        timeout => 0,        
+        cwd     => "${tools_dir}/treePL/deps/nlopt-2.2.4",
         creates => "/usr/local/include/nlopt.h",
         require => Exec["unzip_nlopt"];
     "compile_treepl":
         command => "${tools_dir}/treePL/src/configure && make",
+        timeout => 0,        
         cwd     => "${tools_dir}/treePL/src",
         creates => "${tools_dir}/treePL/src/treePL",
         require => Exec["install_adolc","install_nlopt"];
@@ -412,15 +450,19 @@ exec {
     # install R packages
     "install_r_ape":
     	command => "echo 'install.packages(\"ape\",repos=\"${cran_url}\")' | R --vanilla",
+        timeout => 0,    	
     	require => Package['r-base', 'r-base-dev'];
     "install_r_phangorn":
     	command => "echo 'install.packages(\"phangorn\",repos=\"${cran_url}\")' | R --vanilla",
+        timeout => 0,    	
     	require => Exec['install_r_ape'];    	
     "install_r_phylosim":
     	command => "echo 'install.packages(\"phylosim\",repos=\"${cran_url}\")' | R --vanilla",
+        timeout => 0,    	
     	require => Exec['install_r_ape'];    	
     "install_r_phytools":
     	command => "echo 'install.packages(\"phytools\",repos=\"${cran_url}\")' | R --vanilla",
+        timeout => 0,    	
     	require => Exec['install_r_ape'];        	
 
 }
