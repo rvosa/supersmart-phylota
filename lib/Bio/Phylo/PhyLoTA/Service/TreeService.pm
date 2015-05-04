@@ -249,27 +249,51 @@ sub remap_newick {
 
 Given an object of class L<Bio::Phylo::Forest::Tree>, 
 changes the names of all terminal nodes from taxon names to their respective identifiers 
-as given in the NCBI taxonomy database. 
+as given in the NCBI taxonomy database. The records argument is optional.
 
 =cut
 
 sub remap_to_ti { 
-        my ($self, $tree) = @_;
+        my ($self, $tree, @records) = @_;
 
-        $tree->visit(sub{
-                my $n = shift;
-                if ( $n->is_terminal and my $name = $n->get_name ) {      
-                        $name =~ s/_/ /g;                        
-                        $name =~ s/\|/_/g;
-                        $name =~ s/^'(.*)'$/$1/g;
-                        $name =~ s/^"(.*)"$/$1/g;                        
-						my $dbnode = $self->find_node({taxon_name=>$name});                     
-						die "could not find database entry for taxon name $name " if not $dbnode;						
-         				my $ti = $dbnode->ti;
-                        $n->set_name( $ti );						
-                        $log->debug("Remapped name $name to $ti ");
-                }
-                     });
+	# no taxa table given, we will query the database
+	$tree->visit(sub{
+		my $n = shift;
+		if ( $n->is_terminal and my $name = $n->get_name ) {      
+			my $ti;
+			$name =~ s/_/ /g;                        
+			$name =~ s/\|/_/g;
+			$name =~ s/^'(.*)'$/$1/g;
+			$name =~ s/^"(.*)"$/$1/g;                        
+			
+			# if taxa table is given, get ids from there
+			if (@records) {
+				# valid ranks for tip labels
+				my @ranks =  ('forma', 'varietas', 'subspecies', 'species');
+				RECORD: for my $rec (@records) {
+					my $curr_name = $rec->{"name"};
+					if ( $curr_name eq $name ) {
+						for my $rank (@ranks) {
+							if ( ! ($rec->{$rank} eq 'NA') ) {
+								$ti =  $rec->{$rank};
+								last RECORD;
+							}		
+						}				
+					}
+				}
+			}
+			# no taxa table given or taxon not found in table:  search in database
+			if ( ! $ti ) {				
+				my $dbnode = $self->find_node({taxon_name=>$name});                     			
+				die "could not find database entry for taxon name $name " if not $dbnode;						
+				$ti = $dbnode->ti;
+			}
+			# set taxon name
+			$n->set_name( $ti );	
+			$log->debug("Remapped name $name to $ti ");
+		}
+		     });
+	
         return $tree;       
 }
 
