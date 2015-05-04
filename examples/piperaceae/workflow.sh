@@ -13,8 +13,8 @@
 # help messages of each command to learn how to do this. With the settings defined here
 # (i.e. local names inside a folder) the subsequent commands need to be executed within
 # this same folder.
-NAMES=names.txt
-FOSSILS=fossils.tsv
+export NAMES=names.txt
+export FOSSILS=fossils.tsv
 
 # Step 1: match the names to the NCBI taxonomy. This is needed because ultimately all 
 # sequences that the pipeline uses are annotated with NCBI taxonomy identifiers.
