@@ -11,6 +11,7 @@ env:
     - PATH="$PATH:/home/vagrant/SUPERSMART/tools/bin"
     - LD_LIBRARY_PATH=/usr/lib:/usr/lib64:/usr/local/lib
     - FACTER_ci=travis
+    - secure: "Tm7RhsSRDR8MZjiLXksPwbWLp+uMR2cgW/Eoj2oV16D474SzsZmq9yRo9WvXLjXhx/jnbN1/HA1WPU321Puq2hpMG2Oz3hBVh7l9+tql34+LvWXnf5xkeitfA/wlG6NVEvCukb1a46aMpvt/Q4YXLq2LZnbwkOUpY7g6oSnHyCs"
 install:
   - "sudo useradd -d /home/vagrant -m vagrant"
   - "wget https://apt.puppetlabs.com/puppetlabs-release-trusty.deb"
@@ -23,3 +24,8 @@ install:
   - "cpanm --notest git://github.com/bioperl/bioperl-live.git@v1.6.x"
   - "cpanm --notest git://github.com/bioperl/bioperl-run.git"
   - "source /etc/profile.d/*.sh"
+after_success:
+  - "sudo apt-get -y install unzip"
+  - "wget https://dl.bintray.com/mitchellh/packer/packer_0.7.5_linux_amd64.zip"
+  - "unzip packer_0.7.5_linux_amd64.zip"
+  - "PATH=$PATH:`pwd`/packer_0.7.5_linux_amd64 packer push conf/template.json"
