@@ -7,14 +7,19 @@
         "atlas_name": "{{env `ATLAS_NAME`}}"
     },
     "provisioners": [
+    	{
+    		"type": "shell",
+    		"inline": [
+    			"sleep 30",
+    			"wget https://apt.puppetlabs.com/puppetlabs-release-trusty.deb",
+    			"sudo dpkg -i puppetlabs-release-trusty.deb",
+    			"sudo apt-get update",
+    			"sudo apt-get -y install puppet"
+    		]
+    	},
         {
         	"type": "puppet-masterless",
-        	"manifest_file": "manifests/default.pp",
-			"override": {
-				"virtualbox-iso": {
-					"execute_command": "echo 'vagrant' | {{.FacterVars}}{{if .Sudo}} sudo -S -E {{end}}puppet apply  --verbose --modulepath='{{.ModulePath}}' {{if ne .HieraConfigPath \"\"}}--hiera_config='{{.HieraConfigPath}}' {{end}} {{if ne .ManifestDir \"\"}}--manifestdir='{{.ManifestDir}}' {{end}} --detailed-exitcodes {{.ManifestFile}}"
-				}
-			}         
+        	"manifest_file": "manifests/default.pp"         
         }
     ],
     "builders": [
