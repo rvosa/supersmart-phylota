@@ -1,20 +1,20 @@
 {
-	"push": {
-	  "name": "rvosa/supersmart"
-	},
+    "push": {
+      "name": "rvosa/supersmart"
+    },
     "variables": {
         "atlas_username": "{{env `ATLAS_USERNAME`}}",
         "atlas_name": "{{env `ATLAS_NAME`}}"
     },
     "provisioners": [
         {
-		  "type": "puppet-masterless",
-		  "manifest_file": "manifests/default.pp",
-            "override": {
-                "virtualbox-iso": {
-                    "execute_command": "echo 'vagrant'|sudo -S bash '{{.Path}}'"
-                }
-            }
+        	"type": "puppet-masterless",
+        	"manifest_file": "manifests/default.pp",
+			"override": {
+				"virtualbox-iso": {
+					"execute_command": "echo 'vagrant' | {{.FacterVars}}{{if .Sudo}} sudo -S -E {{end}}puppet apply  --verbose --modulepath='{{.ModulePath}}' {{if ne .HieraConfigPath \"\"}}--hiera_config='{{.HieraConfigPath}}' {{end}} {{if ne .ManifestDir \"\"}}--manifestdir='{{.ManifestDir}}' {{end}} --detailed-exitcodes {{.ManifestFile}}"
+				}
+			}         
         }
     ],
     "builders": [
@@ -22,7 +22,7 @@
             "type": "virtualbox-iso",
             "boot_command": [
                 "<esc><esc><enter><wait>",
-                "/install/vmlinuz noapic preseed/url=https://raw.githubusercontent.com/naturalis/supersmart/master/conf/preseed.cfg ",
+                "/install/vmlinuz noapic preseed/url=http://www.supersmart-project.org/conf/preseed.cfg ",
                 "debian-installer=en_US auto locale=en_US kbd-chooser/method=us ",
                 "hostname={{ .Name }} ",
                 "fb=false debconf/frontend=noninteractive ",
@@ -42,7 +42,7 @@
             "ssh_port": 22,
             "ssh_wait_timeout": "10000s",
             "shutdown_command": "echo '/sbin/halt -h -p' > shutdown.sh; echo 'vagrant'|sudo -S bash 'shutdown.sh'",
-			"guest_additions_path": "VBoxGuestAdditions_{{.Version}}.iso",
+            "guest_additions_path": "VBoxGuestAdditions_{{.Version}}.iso",
             "guest_additions_url": "http://dlc-cdn.sun.com/virtualbox/{{.Version}}/VBoxGuestAdditions_{{.Version}}.iso"
         }
     ],
