@@ -498,7 +498,7 @@ class install {
 				command => "cpanm --notest --installdeps .",
 				cwd     => "${src_dir}/supersmart",
 				timeout => 0,
-				require => Exec['install_cpanm'];
+				require => Exec['install_cpanm','clone_supersmart'];
 			"install_bio_phylo":
 				command => "cpanm --notest git://github.com/rvosa/bio-phylo.git",
 				timeout => 0,
