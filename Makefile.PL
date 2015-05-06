@@ -54,13 +54,17 @@ sub postamble {
 	            map { /cpanm/ ? "sudo $_" : $_ }
 	           grep { $_ !~ /vagrant/ } @commands;
 	
-	# run unit tests and package the box
-	$result .= <<"PACKAGE";
-	\$(VAGRANT) package --base supersmart/ubuntu
+	# clean up and package the box
+	$result .= <<'PACKAGE';
+	$(VAGRANT) $(INJECT) sudo apt-get clean $(DONE)
+	$(VAGRANT) $(INJECT) sudo rm -rf ~/supersmart $(DONE)
+	$(VAGRANT) $(INJECT) sudo rm -f /EMPTY $(DONE)
+	$(VAGRANT) $(INJECT) cat /dev/null > ~/.bash_history && history -c && exit $(DONE)
+	$(VAGRANT) package --output supersmart.box
+	$(VAGRANT) destroy
+	$(RM_RF) Vagrantfile .vagrant
 PACKAGE
 		
-	# finally, remove the Vagrantfile and destroy the box again
-	$result .= "\t\$(RM_RF) Vagrantfile .vagrant\n";
 	return $result;
 }
 
