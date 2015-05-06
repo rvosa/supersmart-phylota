@@ -22,3 +22,5 @@ examples/primates/*
 Makefile.old
 .vagrant
 Vagrantfile
+conf/output-virtualbox-iso/
+conf/packer_cache/
