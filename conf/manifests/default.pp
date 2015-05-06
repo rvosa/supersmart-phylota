@@ -466,8 +466,7 @@ exec {
     "install_r_phytools":
     	command => "echo 'install.packages(\"phytools\",repos=\"${cran_url}\")' | R --vanilla",
         timeout => 0,    	
-    	require => Exec['install_r_ape'];        	
-
+    	require => Exec['install_r_ape'];
 }
 
 # the Travis continuous integration system has special templates for testing different
@@ -479,7 +478,7 @@ exec {
 # install these here when the $TRAVIS environment variable is empty, which probably means
 # we are building a vagrant image, or we're installing the pipeline system-wide on some
 # cluster architecture.
-if ENV['TRAVIS'].empty? {
+if ENV['TRAVIS'] == nil {
 	exec {
 	
 		# install perl dependency libraries
