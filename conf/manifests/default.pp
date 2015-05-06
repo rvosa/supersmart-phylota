@@ -5,30 +5,30 @@
 # and shrink it as much as possible; iii) to install the pipeline natively on HPC 
 # infrastructure such as an MPI compute cluster.
 
+# set user and default paths for storing data, tools and source code
+$username       = "vagrant"
+$supersmart_dir = "/home/${username}/SUPERSMART"
+$tools_dir      = "${supersmart_dir}/tools"
+$tools_bin_dir  = "${tools_dir}/bin"
+$src_dir        = "${supersmart_dir}/src"
+$data_dir       = "${supersmart_dir}/data"
+$cran_url       = "http://cran.us.r-project.org"
+
+# update the $PATH environment variable
+Exec {
+  path => [
+		"/usr/local/sbin",
+		"/usr/local/bin",
+		"/usr/sbin",
+		"/usr/bin",
+		"/sbin",
+		"/bin",
+	]
+}
+
 # This class contains the instructions for configuring and installing all dependencies,
 # data, and the pipeline itself.
 class install {
-
-	# set user and default paths for storing data, tools and source code
-	$username       = "vagrant"
-	$supersmart_dir = "/home/${username}/SUPERSMART"
-	$tools_dir      = "${supersmart_dir}/tools"
-	$tools_bin_dir  = "${tools_dir}/bin"
-	$src_dir        = "${supersmart_dir}/src"
-	$data_dir       = "${supersmart_dir}/data"
-	$cran_url       = "http://cran.us.r-project.org"
-
-	# update the $PATH environment variable
-	Exec {
-	  path => [
-			"/usr/local/sbin",
-			"/usr/local/bin",
-			"/usr/sbin",
-			"/usr/bin",
-			"/sbin",
-			"/bin",
-		]
-	}
 
 	# keep package information up to date
 	exec {
@@ -486,7 +486,7 @@ class install {
 	# cannot find them. Hence, we only install these here when FACTER variable $ci has 
 	# not been set to 'travis'. To make sure that this variable IS set to 'travis', an
 	# easy approach is to add the environment variable FACTER_ci=travis to the .travis.yml
-	if ! $ci == 'travis' {
+	if $ci != "travis" {
 		exec {
 	
 			# install perl dependency libraries
@@ -523,7 +523,7 @@ class cleanup {
 
 			# clean up the VM
 			"clean_apt_get":
-				command => "sudo apt-get clean",
+				command => "apt-get clean",
 				timeout => 0;
 			"clean_history":
 				command => "cat /dev/null > ~/.bash_history && history -c",
