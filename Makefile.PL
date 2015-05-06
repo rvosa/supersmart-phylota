@@ -123,6 +123,7 @@ sub _install_commands {
 			my $command = $1;
 			push @commands, $command;
 		}
+		last LINE if $install_seen and $_ !~ /^\s+-\s+/;
 	}
 	return @commands;
 }
