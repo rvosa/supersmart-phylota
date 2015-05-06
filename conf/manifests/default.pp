@@ -245,6 +245,9 @@ exec {
 	# 2015-04-19 checking to see if we can get OpenMPI from package manager, as 
 	# building from source takes so long that travis times out. Don't remember
 	# why we weren't doing this in the first place. May have to revert this -- RAV
+	
+	# 2015-05-06 So far this has not created any problems. We may NOT have to revert
+	# this -- RAV
 
     # install openmpi
 #   "download_openmpi":
@@ -465,4 +468,41 @@ exec {
         timeout => 0,    	
     	require => Exec['install_r_ape'];        	
 
+}
+
+# the Travis continuous integration system has special templates for testing different
+# perl versions in parallel. These templates use perlbrew and local::lib to hot swap 
+# different perl versions. For each version, cpanm can be used to install dependencies, 
+# and we do so using the commands in .travis.yml. For Travis we SHOULD NOT try to do that 
+# within this puppet manifest because then we end up installing dependencies system-wide, 
+# which means that the perlbrew that runs the unit tests cannot find them. Hence, we only
+# install these here when the $TRAVIS environment variable is empty, which probably means
+# we are building a vagrant image, or we're installing the pipeline system-wide on some
+# cluster architecture.
+if ENV['TRAVIS'].empty? {
+	exec {
+	
+		# install perl dependency libraries
+		"install_cpanm":
+			command => "wget -O - https://cpanmin.us | sudo perl - App::cpanminus",
+			timeout => 0,
+			require => Package['wget'];
+		"install_cpan_deps":
+			command => "cpanm --notest --installdeps .",
+			cwd     => "${src_dir}/supersmart",
+			timeout => 0,
+			require => Exec['install_cpanm'];
+		"install_bio_phylo":
+			command => "cpanm --notest git://github.com/rvosa/bio-phylo.git",
+			timeout => 0,
+			require => Exec['install_cpanm'];
+		"install_bioperl_live":
+			command => "cpanm --notest git://github.com/bioperl/bioperl-live.git@v1.6.x",
+			timeout => 0,
+			require => Exec['install_cpanm'];
+		"install_bioperl_run":
+			command => "cpanm --notest git://github.com/bioperl/bioperl-run.git",
+			timeout => 0,
+			require => Exec['install_cpanm'];
+	}
 }
