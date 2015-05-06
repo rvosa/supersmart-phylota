@@ -17,7 +17,7 @@ install:
   - "sudo dpkg -i puppetlabs-release-trusty.deb"
   - "sudo apt-get update"
   - "sudo apt-get -y install puppet"
-  - "sudo puppet apply conf/manifests/default.pp"
+  - "sudo -E puppet apply conf/manifests/default.pp"
   - "cpanm --notest --installdeps ."
   - "cpanm --notest git://github.com/rvosa/bio-phylo.git"
   - "cpanm --notest git://github.com/bioperl/bioperl-live.git@v1.6.x"
