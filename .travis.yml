@@ -27,13 +27,14 @@ install:
   - source /etc/profile.d/*.sh
 after_success:
   - cd conf && sh update_version.sh && cd -
+  - echo "https://${GH_TOKEN}:@github.com" > .git/credentials  
   - git config credential.helper "store --file=.git/credentials"
-  - echo "https://${GH_TOKEN}:@github.com" > .git/credentials
   - git config --global user.email "rutgeraldo@gmail.com"
   - git config --global user.name "Rutger Vos"
   - git config --global push.default simple
+  - git checkout master
   - git commit -m "incrementing version number [skip ci]" --all
-  - git push
+  - git push origin master
   - sudo apt-get -y install unzip
   - wget https://dl.bintray.com/mitchellh/packer/packer_0.7.5_linux_amd64.zip
   - unzip packer_0.7.5_linux_amd64.zip
