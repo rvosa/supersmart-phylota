@@ -1,6 +1,6 @@
 {
     "push": {
-      "name": "rvosa/supersmart"
+      "name": "Naturalis/supersmart"
     },
     "variables": {
         "atlas_username": "{{env `ATLAS_USERNAME`}}",
