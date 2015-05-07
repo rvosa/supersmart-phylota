@@ -19,6 +19,8 @@ if [ "$TAGVERSION" -ne "$APIVERSION" ]; then
 	mv ../lib/Bio/SUPERSMART.pm.bak ../lib/Bio/SUPERSMART.pm
 	
 	# replace in packer template
+	APIVERSION=`echo $APIVERSION | sed -e 's/v//'`
+	TAGVERSION=`echo $TAGVERSION | sed -e 's/v//'`
 	sed -e "s/$APIVERSION/$TAGVERSION/" ../conf/template.json > ../conf/template.json.bak
 	mv ../conf/template.json.bak ../conf/template.json
 else
