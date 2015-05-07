@@ -7,9 +7,9 @@
 TAGVERSION=`git describe --tags | cut -f1 -d '-' | head -1`
 
 # version in framework code
-APIVERSION=`perl -I../lib -MBio::SUPERSMART -e "print $Bio::SUPERSMART::VERSION"`
+APIVERSION=`perl -I../lib -MBio::SUPERSMART -e 'print $Bio::SUPERSMART::VERSION'`
 
-if [ "$TAGVERSION" -ne "$APIVERSION" ]; then
+if [ "$TAGVERSION" != "$APIVERSION" ]; then
 
 	# this so that we see what's happening in the travis logs
 	echo "changing from version $APIVERSION to $TAGVERSION"
