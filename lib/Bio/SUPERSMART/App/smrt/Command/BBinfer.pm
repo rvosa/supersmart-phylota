@@ -41,7 +41,7 @@ many intermediate checkpoint files, for which a directory location needs to be s
 sub options {
     my ($self, $opt, $args) = @_;       
     my $outfile_default = "backbone.dnd";
-    my $tool_default    = "examl";
+    my $tool_default    = "ExaML";
     my $matrix_default  = "supermatrix.phy";
     my $tree_default    = "classification-tree.dnd";
     my $boot_default    = 1;
