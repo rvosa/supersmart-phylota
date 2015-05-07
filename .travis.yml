@@ -8,7 +8,7 @@ perl:
 env:
   global:
     - SUPERSMART_HOME=$TRAVIS_BUILD_DIR
-    - PATH="$PATH:/home/vagrant/SUPERSMART/tools/bin"
+    - PATH="$PATH:/home/vagrant/SUPERSMART/tools/bin:$TRAVIS_BUILD_DIR/packer_0.7.5_linux_amd64"
     - LD_LIBRARY_PATH=/usr/lib:/usr/lib64:/usr/local/lib
     - FACTER_ci=travis
     - secure: "Tm7RhsSRDR8MZjiLXksPwbWLp+uMR2cgW/Eoj2oV16D474SzsZmq9yRo9WvXLjXhx/jnbN1/HA1WPU321Puq2hpMG2Oz3hBVh7l9+tql34+LvWXnf5xkeitfA/wlG6NVEvCukb1a46aMpvt/Q4YXLq2LZnbwkOUpY7g6oSnHyCs"
@@ -28,4 +28,4 @@ after_success:
   - "sudo apt-get -y install unzip"
   - "wget https://dl.bintray.com/mitchellh/packer/packer_0.7.5_linux_amd64.zip"
   - "unzip packer_0.7.5_linux_amd64.zip"
-  - "PATH=$PATH:`pwd`/packer_0.7.5_linux_amd64 packer push conf/template.json"
+  - "packer push conf/template.json"
