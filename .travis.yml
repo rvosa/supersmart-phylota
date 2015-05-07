@@ -29,6 +29,9 @@ after_success:
   - cd conf && sh update_version.sh && cd -
   - git config credential.helper "store --file=.git/credentials"
   - echo "https://${GH_TOKEN}:@github.com" > .git/credentials
+  - git config --global user.email "rutgeraldo@gmail.com"
+  - git config --global user.name "Rutger Vos"
+  - git config --global push.default simple
   - git commit -m "incrementing version number [skip ci]" --all
   - git push
   - sudo apt-get -y install unzip
