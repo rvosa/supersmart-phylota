@@ -4,9 +4,10 @@
 # issue #41 before kicking off a packer run
 
 H=$SUPERSMART_HOME
+cd $H
 
 # most recent tag version on git
-TAGVERSION=`cd $H && git describe --tags | cut -f1 -d '-' | head -1 && cd -`
+TAGVERSION=`git describe --tags | cut -f1 -d '-' | head -1`
 
 # version in framework code
 APIVERSION=`perl -I$H/lib -MBio::SUPERSMART -e 'print $Bio::SUPERSMART::VERSION'`
@@ -26,3 +27,4 @@ if [ "$TAGVERSION" != "$APIVERSION" ]; then
 else
 	echo "version unchanged: (tag) $TAGVERSION == (api) $APIVERSION"
 fi
+cd -
