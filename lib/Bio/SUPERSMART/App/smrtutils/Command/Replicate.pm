@@ -17,7 +17,7 @@ use Bio::SUPERSMART::App::smrtutils qw(-command);
 
 =head1 NAME
 
-Simulate - 
+Replicate - make simulated replicates of trees and alignments
 
 =head1 SYNOPSYS
 
@@ -25,8 +25,6 @@ Simulate -
 =head1 DESCRIPTION
 
 =cut
-
-my %formats = ('onezoom' => 'htm');
 
 sub options {    
 	my ($self, $opt, $args) = @_;
@@ -104,7 +102,7 @@ sub run {
 			my $rep_aln = $self->_replicate_alignment($aln, $tree_replicated );
 			
 			if ( $rep_aln ) {
-				# simulated alignment fill have the same file name plus added '-simulated'
+				# simulated alignment will have the same file name plus added '-simulated'
 				my $filename = $aln;
 				$filename =~ s/\.fa$/-replicated\.fa/g;			
 				$logger->info("Writing alignment to $filename");
@@ -144,10 +142,8 @@ sub _write_taxafile {
 	# ti to the species. Then iteratively select the children of the father of the focal node, and
 	# check if any of its children have a classification, until we found a (maybe far away) sister 
 	# node that is classified. Then copy the genus, family etc. and append the entries to the table	
-	my $ti_max = $mts->max_ti;
-	# high taxon id for artificial entries
-	my $ti = 1000_000_0;
-	$ti *=10 while $ti <= $ti_max;
+	my $new_ti = $mts->max_ti;
+	
 	my @levels = reverse $mts->get_taxonomic_ranks;
 
 	my @records = $mt->parse_taxa_file($filename);
@@ -182,14 +178,13 @@ sub _write_taxafile {
 		my ($all_ids) = grep { my %h = %{$_}; grep{ $tid } values%h } @records;
 
 		# assign taxon ID to artificial species and take all other taxon ids from closest real relative
-		$all_ids->{'species'} = $ti;
+		$all_ids->{'species'} = $new_ti++;
 		my @ids = @$all_ids{@levels};
-		$logger->debug("Assinging taxon id $ti to artificial species $name");
+		$logger->debug("Assinging taxon id $new_ti to artificial species $name");
 
 		# append information to taxon table
 		$name =~ s/_/ /g;
 		print $fh $name . "\t" . join("\t", @ids) . "\n";
-		$ti++;
 	}
 	close $fh;
 	$logger->info("Added " . scalar(keys %artificial) . " artificial species to taxa file $filename") if keys %artificial;
@@ -224,7 +219,9 @@ sub _replicate_alignment {
 	    );
 	my ($matrix) = @{ $project->get_items(_MATRIX_) };
 	
-	# we haeve to change the definition line from something like
+	$logger->info('Number of sequences in alignment : ' . scalar(@{$matrix->get_entities}));
+
+	# we have to change the definition line from something like
 	# >gi|443268840|seed_gi|339036134|taxon|9534|mrca|314294/1-1140
 	# to only the taxon ID: 9534
 	my $matching_taxa = 0;
@@ -249,13 +246,41 @@ sub _replicate_alignment {
 
 	# replicate dna data
 	my $rep = $matrix->replicate($tree);				
+
+	# The alignment now contains as many sequences as the tree has tips.
+	# We will therefore prune set of sequences. This is done by simulating a binary matrix (character is the 
+	# presence/absensce of marker) using a birth-death process
 	
-	# need to fix definition line to prevent a ">>" in FASTA definition line (issue #21)
+	# make binary matrix from current alignment
+	my $binary = [];
+	my %aln_taxa = map{ $_->get_name=>1 } @{ $matrix->get_entities };
+	for my $tax ( keys %tree_taxa ) {
+		my $present = $aln_taxa{$tax} ? '1':'0';
+		push $binary, [$tax=>$present];			
+	}	
+	my $fac = Bio::Phylo::Factory->new;
+	my $binary_matrix = $fac->create_matrix( '-matrix' => $binary);
+
+	# make binary replicate
+	my $binary_rep = $binary_matrix->replicate($tree);	
+	
+	# get taxa from replicate that have a simulated marker presence 
+	my %rep_taxa =  map {$_->[0]=>1} grep {$_->[1] == 1} @{$binary_rep->get_raw};
+
+	# throw out sequences that are not for these taxa
 	for my $seq ( @{ $rep->get_entities }) {
+		if ( ! $rep_taxa{$seq->get_name} ){
+			$rep->delete($seq);
+			next;
+		}
+		# need to fix definition line to prevent a ">>" in FASTA definition line (issue #21 in Bio::Phylo)
 		my $defline = $seq->get_generic('fasta_def_line');
 		$defline =~ s/>//g;
 		$seq->set_generic('fasta_def_line', $defline);		
 	}	
+
+       	$logger->info('Number of sequences in replicated alignment : ' . scalar(@{$rep->get_entities}));
+	
 	return $rep;
 }
 
