@@ -524,15 +524,7 @@ class cleanup {
 			# clean up the VM
 			"clean_apt_get":
 				command => "apt-get clean",
-				timeout => 0;
-			"clean_history":
-				command => "cat /dev/null > ~/.bash_history && history -c",
-				timeout => 0,
-				require => Exec['clean_apt_get'];
-			"pad_zero":
-				command => "dd if=/dev/zero of=/EMPTY bs=1M && rm -f /EMPTY && sync",
-				timeout => 0,
-				require => Exec['clean_history'];			
+				timeout => 0;		
 		}
 	}
 }
