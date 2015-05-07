@@ -101,6 +101,13 @@ sub run {
     }   
     
     # collect and filter sequences for all clusters
+    # NOTE: We do the below in sequencial mode, which may take some time. This
+    # is for the following reason: One sequence (GI) can easily be part of multiple
+    # clusters. Since includingh ons sequence into multiple alignments (which would then
+    # most likely merged later anyway ) uses space and resources, we do not include a GI 
+    # which occured once. To make sure that we skip the GI always in the same alignment,
+    # we avoid the race conditions in parallel processing. Also see issue #56
+
     my %ti =  map { $_->ti => 1 } @nodes;
     my ( %seqs, %seen );
     $log->info("Going to collect sequences for " . scalar(@clusters) . " clusters");
