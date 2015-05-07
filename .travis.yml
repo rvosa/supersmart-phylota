@@ -11,7 +11,7 @@ env:
     - PATH="$PATH:/home/vagrant/SUPERSMART/tools/bin:$TRAVIS_BUILD_DIR"
     - LD_LIBRARY_PATH=/usr/lib:/usr/lib64:/usr/local/lib
     - FACTER_ci=travis
-    - secure: "Tm7RhsSRDR8MZjiLXksPwbWLp+uMR2cgW/Eoj2oV16D474SzsZmq9yRo9WvXLjXhx/jnbN1/HA1WPU321Puq2hpMG2Oz3hBVh7l9+tql34+LvWXnf5xkeitfA/wlG6NVEvCukb1a46aMpvt/Q4YXLq2LZnbwkOUpY7g6oSnHyCs"
+    - secure: "oK5pYQ1iSLj0iZRtwLqHpYZBkY6/oIhdCsur+DXTWkdYlFC5KnQTIXZNdJ7dbv23+quvKoFT5w1p/0YE/lBFwiex7oby6l04pTC89Eo0WIYsfuZYAHD/mECSWc8VkoWhvatKTJGqq5fhDmwL90o6gf4b9H7uSQSng7WA5TLYGiY="
 install:
   - "sudo useradd -d /home/vagrant -m vagrant"
   - "wget https://apt.puppetlabs.com/puppetlabs-release-trusty.deb"
