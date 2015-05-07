@@ -233,7 +233,7 @@ sub run{
 	} @alignments;
 	
 	# get all species that were present in an alignment and write marker table
-	my @included_species = uniq map {keys($_)} @table;
+	my @included_species = uniq map {keys(%$_)} @table;
 	$mts->write_marker_summary( $outfile, \@table, \@included_species );
 
 	$logger->info("DONE, results written into working directory $workdir");
