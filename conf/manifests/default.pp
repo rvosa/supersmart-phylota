@@ -199,16 +199,36 @@ class install {
 			logoutput => true,
 			timeout => 0,        
 			require   => Exec[ 'unzip_phylota_dump' ];
-		"mv_phylota_dump":
-			command   => "ln -s ${data_dir}/phylota `mysql -s -N -uroot -p information_schema -e 'SELECT Variable_Value FROM GLOBAL_VARIABLES WHERE Variable_Name = \"datadir\"'`",
-			logoutput => true,
-			timeout => 0,        
-			require   => Exec[ 'chown_phylota_db' ];                
-		"grant_phylota_db":
-			command   => "mysql -u root -e \"grant all on phylota.* to 'root'@'localhost';\"",
-			logoutput => true,
-			timeout => 0,        
-			require   => Exec[ 'mv_phylota_dump' ];      
+
+		# travis requires symlinking
+		if $ci == "travis" {
+			exec {
+				"mv_phylota_dump":
+					command   => "ln -s ${data_dir}/phylota `mysql -s -N -uroot -p information_schema -e 'SELECT Variable_Value FROM GLOBAL_VARIABLES WHERE Variable_Name = \"datadir\"'`",
+					logoutput => true,
+					timeout => 0,        
+					require   => Exec[ 'chown_phylota_db' ];                
+				"grant_phylota_db":
+					command   => "mysql -u root -e \"grant all on phylota.* to 'root'@'localhost';\"",
+					logoutput => true,
+					timeout => 0,        
+					require   => Exec[ 'mv_phylota_dump' ];
+			}
+		}
+		else {
+			exec {
+				"mv_phylota_dump":
+					command   => "mv ${data_dir}/phylota `mysql -s -N -uroot -p information_schema -e 'SELECT Variable_Value FROM GLOBAL_VARIABLES WHERE Variable_Name = \"datadir\"'`",
+					logoutput => true,
+					timeout => 0,        
+					require   => Exec[ 'chown_phylota_db' ];                
+				"grant_phylota_db":
+					command   => "mysql -u root -e \"grant all on phylota.* to 'root'@'localhost';\"",
+					logoutput => true,
+					timeout => 0,        
+					require   => Exec[ 'mv_phylota_dump' ];	
+			}	
+		}   
 
 
 		# install mafft
@@ -347,13 +367,13 @@ class install {
 			cwd     => "${tools_dir}/exabayes-1.4.1",		
 			creates => "${tools_dir}/exabayes-1.4.1/exabayes/Makefile",		
 			timeout => 0,		
-		require => Exec[ "unzip_exabayes" ];
+			require => Exec[ "unzip_exabayes" ];
 		"compile_exabayes":		
 			command => "make",		
 			cwd     => "${tools_dir}/exabayes-1.4.1",		
 			creates => "${tools_dir}/exabayes-1.4.1/exabayes",		
 			timeout => 0,		
-		require => Exec[ "configure_exabayes" ];
+			require => Exec[ "configure_exabayes" ];
 
 		# install supersmart
 		"clone_supersmart":
