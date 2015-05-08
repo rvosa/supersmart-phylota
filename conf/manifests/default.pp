@@ -88,61 +88,6 @@ class install {
 			group   => $username,
 			owner   => $username,
 			recurse => true;
-		$tools_dir:
-			ensure  => directory,
-			group   => $username,
-			owner   => $username,
-			recurse => true;
-		$tools_bin_dir:
-			ensure  => directory,
-			group   => $username,
-			owner   => $username;
-
-		"muscle_link":
-			path    => "${tools_bin_dir}/muscle",
-			ensure  => link,
-			target  => "${tools_bin_dir}/muscle3.8.31_i86linux64",
-			require => Exec["unzip_muscle"];
-		"phylip-consense_link":
-			path    => "/usr/local/bin/consense-phylip",
-			ensure  => link,
-			target  => "${tools_dir}/phylip-3.696/src/consense",
-			require => Exec["make_phylip"];
-		"examl_link":
-			path    => "${tools_bin_dir}/examl",
-			ensure  => link,
-			target  => "${tools_dir}/ExaML/examl/examl",
-			require => Exec["compile_examl"];
-		"parse_examl_link":
-			path    => "${tools_bin_dir}/parse-examl",
-			ensure  => link,
-			target  => "${tools_dir}/ExaML/parser/parse-examl",
-			require => Exec["compile_examl"];
-		"exabayes_link":
-			path    => "${tools_bin_dir}/exabayes",
-			ensure  => link,
-			target  => "${tools_dir}/exabayes-1.4.1/exabayes",
-			require => Exec["compile_exabayes"];
-		"parse_exabayes_link":
-			path  => "${tools_bin_dir}/parse-exabayes",
-			ensure  => link,
-			target  => "${tools_dir}/exabayes-1.4.1/parser",
-			require => Exec["compile_exabayes"];
-		"exabayes_consense_link":
-			path  => "${tools_bin_dir}/consense-exabayes",
-			ensure  => link,
-			target  => "${tools_dir}/exabayes-1.4.1/consense",
-			require => Exec["compile_exabayes"];
-		"raxml_link":
-			path    => "${tools_bin_dir}/raxml",
-			ensure  => link,
-			target  => "${tools_dir}/standard-RAxML/raxmlHPC-PTHREADS-SSE3",
-			require => Exec["compile_raxml"];
-		"treepl_link":
-			path    => "${tools_bin_dir}/treePL",
-			ensure  => link,
-			target  => "${tools_dir}/treePL/src/treePL",
-			require => Exec["compile_treepl"];
 	}
 
 	# command line tasks
@@ -157,13 +102,13 @@ class install {
 
 		# add bin directory for all required tools and smrt executables to PATH
 		"make_bindir_sh":
-			command => "echo 'export PATH=\$PATH:${tools_bin_dir}:${src_dir}/supersmart/script' > supersmart-tools-bin.sh",
+			command => "echo 'export PATH=\$PATH:${tools_bin_dir}:${tools_dir}/BEASTv1.8.0/bin:${src_dir}/supersmart/script' > supersmart-tools-bin.sh",
 			cwd     => "/etc/profile.d",
 			timeout => 0,        
 			creates => "/etc/profile.d/supersmart-tools-bin.sh",
 			require => File[ $tools_bin_dir ];
 		"make_bindir_csh":
-			command => "echo 'setenv PATH \$PATH:${tools_bin_dir}:${src_dir}/supersmart/script' > supersmart-tools-bin.csh",
+			command => "echo 'setenv PATH \$PATH:${tools_bin_dir}:${tools_dir}/BEASTv1.8.0/bin:${src_dir}/supersmart/script' > supersmart-tools-bin.csh",
 			cwd     => "/etc/profile.d",
 			timeout => 0,        
 			creates => "/etc/profile.d/supersmart-tools-bin.csh",
@@ -200,149 +145,20 @@ class install {
 			timeout => 0,        
 			require   => Exec[ 'unzip_phylota_dump' ];
 
-		# install mafft
-		"dl_mafft":
-			command   => "wget http://mafft.cbrc.jp/alignment/software/mafft-7.130-without-extensions-src.tgz",
-			cwd       => $tools_dir,
-			creates   => "${tools_dir}/mafft-7.130-without-extensions-src.tgz",
-			timeout => 0,        
-			require   => [ File [ $tools_dir ] ];
-		"unzip_mafft":
-			command   => "tar -xzvf mafft-7.130-without-extensions-src.tgz",
-			cwd       => $tools_dir,
-			creates   => "${tools_dir}/mafft-7.130-without-extensions",
-			timeout => 0,        
-			require   => Exec[ 'dl_mafft' ];
-		"make_nonroot_makefile_mafft":
-			command   => "sed -i -e 's|PREFIX = /usr/local|PREFIX = ${tools_dir}|g' Makefile",
-			cwd       => "${tools_dir}/mafft-7.130-without-extensions/core",
-			timeout => 0,        
-			require   => Exec[ 'unzip_mafft' ];
-		"install_mafft":
-			command   => "make && make install",
-			cwd       => "${tools_dir}/mafft-7.130-without-extensions/core",
-			creates   => "$tools_dir/bin/mafft",
-			timeout => 0,        
-			require   => Exec[ 'make_nonroot_makefile_mafft' ];
-
-		# install muscle multiple sequence alignment
-		"download_muscle":
-			command   => "wget http://www.drive5.com/muscle/downloads3.8.31/muscle3.8.31_i86linux64.tar.gz",
-			cwd       => $tools_dir,
-			creates   => "${tools_dir}/muscle3.8.31_i86linux64.tar.gz",
-			timeout => 0,        
-			require   => Package[ 'wget', 'tar' ];
-		"unzip_muscle":
-			command   => "tar -xzvf muscle3.8.31_i86linux64.tar.gz -C ${tools_bin_dir}",
-			cwd       => $tools_dir,
-			creates   => "${tools_bin_dir}/muscle3.8.31_i86linux64",
-			timeout => 0,        
-			require   => Exec["download_muscle"];
-
-		# 2015-04-19 checking to see if we can get OpenMPI from package manager, as 
-		# building from source takes so long that travis times out. Don't remember
-		# why we weren't doing this in the first place. May have to revert this -- RAV
-	
-		# 2015-05-06 So far this has not created any problems. We may NOT have to revert
-		# this -- RAV
-
-		# install openmpi
-	#   "download_openmpi":
-	#       command => "wget http://www.open-mpi.org/software/ompi/v1.6/downloads/openmpi-1.6.5.tar.gz",
-	#       cwd     => $tools_dir,
-	#       creates => "${tools_dir}/openmpi-1.6.5.tar.gz",
-	#       require => Package[ 'wget', 'tar' ];
-	#   "unzip_openmpi":
-	#       command => "tar -xvzf openmpi-1.6.5.tar.gz",
-	#       cwd     => $tools_dir,
-	#       creates => "${tools_dir}/openmpi-1.6.5",
-	#       require => Exec['download_openmpi'];
-	#   "install_openmpi":
-	#       command => "${tools_dir}/openmpi-1.6.5/configure --prefix=/usr --disable-dlopen && make -j 4 install",
-	#       creates => "/usr/bin/mpicc",
-	#       cwd     => "${tools_dir}/openmpi-1.6.5",
-	#       timeout => 0,
-	#       require => Exec['unzip_openmpi'];
-
-		# install phylip
-		"download_phylip":
-			command => "wget http://evolution.gs.washington.edu/phylip/download/phylip-3.696.tar.gz",
-			cwd     => $tools_dir,
-			creates => "${tools_dir}/phylip-3.696.tar.gz",
-			timeout => 0,        
-			require => Package[ 'wget', 'tar' ];
-		"unzip_phylip":
-			command => "tar -xzvf ${tools_dir}/phylip-3.696.tar.gz",
-			cwd     => $tools_dir,
-			creates => "${tools_dir}/phylip-3.696/src/Makefile.unx",
-			timeout => 0,        
-			require => Exec["download_phylip"];
-		"make_phylip":
-			command => "make -f Makefile.unx consense",
-			cwd     => "${tools_dir}/phylip-3.696/src/",
-			creates => "${tools_dir}/phylip-3.696/src/consense",
-			timeout => 0,        
-			require => Exec["unzip_phylip"];
-
-		# install examl & parser
-		"clone_examl":
-			command => "git clone https://github.com/stamatak/ExaML.git",
-			cwd     => $tools_dir,
-			creates => "${tools_dir}/ExaML/",
-			timeout => 0,        
-			require => Package[ 'git', 'zlib1g-dev' ];
-		"compile_examl":
-			command => "make -f Makefile.SSE3.gcc LD_LIBRARY_PATH=/usr/lib",
-			cwd     => "${tools_dir}/ExaML/examl",
-			creates => "${tools_dir}/ExaML/examl/examl",
-			timeout => 0,        
-			require => [ Exec["clone_examl"], Package["libopenmpi-dev","openmpi-bin"] ];
-		"compile_parser":
-			command => "make -f Makefile.SSE3.gcc",
-			cwd     => "${tools_dir}/ExaML/parser",
-			creates => "${tools_dir}/ExaML/parser/parser",
-			timeout => 0,        
-			require => [ Exec["clone_examl"], Package["libopenmpi-dev","openmpi-bin"] ];
-
-		# install raxml
-		"clone_raxml":
-			command => "git clone https://github.com/stamatak/standard-RAxML.git",
-			cwd     => $tools_dir,
-			creates => "${tools_dir}/standard-RAxML/",
-			timeout => 0,        
-			require => Package[ 'git' ];
-		"compile_raxml":
-			command => "make -f Makefile.SSE3.PTHREADS.gcc LD_LIBRARY_PATH=/usr/lib",
-			cwd     => "${tools_dir}/standard-RAxML/",
-			creates => "${tools_dir}/standard-RAxML/raxmlHPC-PTHREADS-SSE3",
-			timeout => 0,        
-			require => Exec["clone_raxml"];
-
-		# install exabayes
-		"download_exabayes":
-			command => "wget http://sco.h-its.org/exelixis/material/exabayes/1.4.1/exabayes-1.4.1-linux-openmpi-sse.tar.gz",
-			cwd     => $tools_dir,
-			creates => "${tools_dir}/exabayes-1.4.1-linux-openmpi-sse.tar.gz",
+		# make tools folder
+		"dl_tools":
+			command => "wget http://www.supersmart-project.org/downloads/tools.tar.gz",
+			cwd     => $supersmart_dir,
+			creates => "${supersmart_dir}/tools.tar.gz",
 			timeout => 0,
-			require => Package["libopenmpi-dev","openmpi-bin"];
-		"unzip_exabayes":
-			command => "tar -xvzf exabayes-1.4.1-linux-openmpi-sse.tar.gz",
-			cwd     => $tools_dir,
-			creates => "${tools_dir}/exabayes-1.4.1/",
-			timeout => 0,        
-			require => Exec[ "download_exabayes" ];
-		"configure_exabayes":		
-			command => "sh configure --enable-mpi",		
-			cwd     => "${tools_dir}/exabayes-1.4.1",		
-			creates => "${tools_dir}/exabayes-1.4.1/exabayes/Makefile",		
-			timeout => 0,		
-		require => Exec[ "unzip_exabayes" ];
-		"compile_exabayes":		
-			command => "make",		
-			cwd     => "${tools_dir}/exabayes-1.4.1",		
-			creates => "${tools_dir}/exabayes-1.4.1/exabayes",		
-			timeout => 0,		
-		require => Exec[ "configure_exabayes" ];
+			require => [ File[ $supersmart_dir ], Package[ 'wget' ] ];			
+		"make_tools":
+			command => "tar -xzvf tools.tar.gz",
+			creates => "${supersmart_dir}/tools",
+			cwd     => $supersmart_dir,
+			timeout => 0,
+			require => Exec['dl_tools'];			
+			
 
 		# install supersmart
 		"clone_supersmart":
@@ -363,85 +179,30 @@ class install {
 			timeout => 0,        
 			creates => "/etc/profile.d/supersmart.csh";
 
-		# install BEAST
-		"download_beast":
-			command => "wget https://beast-mcmc.googlecode.com/files/BEASTv1.8.0.tgz",
-			cwd     => $tools_dir,
-			creates => "${tools_dir}/BEASTv1.8.0.tgz",
-			timeout => 0,
-			require => Package[ 'wget' ];
-		"unzip_beast":
-			command => "tar -xvzf BEASTv1.8.0.tgz",
-			timeout => 0,        
-			cwd     => "$tools_dir",
-			creates => "${tools_dir}/BEASTv1.8.0/bin/beast",
-			require => Exec[ 'download_beast' ];
-		"symlink_beast":
-			command => "ln -s ${tools_dir}/BEASTv1.8.0/bin/* .",
-			timeout => 0,        
-			cwd     => "/usr/local/bin/",
-			creates => "/usr/local/bin/beast",
-			require => Exec[ 'unzip_beast' ];
-
 		# install beagle-lib
-		"checkout_beagle_lib":
-			command => "svn checkout http://beagle-lib.googlecode.com/svn/trunk/ beagle-lib",
-			timeout => 0,        
-			cwd     => $tools_dir,
-			creates => "${tools_dir}/beagle-lib/autogen.sh",
-			require => Package[ 'subversion', "openjdk-6-jdk" ];
-		"generate_beagle_config":
-			command => "sh autogen.sh",
-			timeout => 0,        
-			cwd     => "${tools_dir}/beagle-lib/",
-			creates => "${tools_dir}/beagle-lib/configure",
-			require => Exec[ 'checkout_beagle_lib' ];
 		"build_beagle_lib":
-			command => "sh configure && make install",
+			command => "make install",
 			timeout => 0,        
 			cwd     => "${tools_dir}/beagle-lib/",
 			creates => "/usr/local/lib/libhmsbeagle.so",
-			require => Exec[ 'generate_beagle_config' ];
+			require => Exec[ 'make_tools' ];
+
 
 		# install treePL
-		"clone_treepl":
-			command => "git clone https://github.com/blackrim/treePL.git",
-			timeout => 0,        
-			cwd     => $tools_dir,
-			creates => "${tools_dir}/treePL",
-			require => Package[ 'git', 'autoconf', 'automake', 'libtool', 'build-essential', 'tar' ];
-		"unzip_adolc":
-			command => "tar -xvzf adol-c_git_saved.tar.gz",
-			timeout => 0,        
-			cwd     => "${tools_dir}/treePL/deps",
-			creates => "${tools_dir}/treePL/deps/adol-c",
-			require => [ Exec["clone_treepl"], Package["libopenmpi-dev","openmpi-bin"] ];
-		"autoreconf_adolc":
-			command => "autoreconf -fi",
-			timeout => 0,        
-			cwd     => "${tools_dir}/treePL/deps/adol-c",
-			creates => "${tools_dir}/treePL/deps/adol-c/configure",
-			require => Exec["unzip_adolc"];
 		"install_adolc":
-			command => "${tools_dir}/treePL/deps/adol-c/configure --prefix=/usr --with-openmp-flag=-fopenmp && make install",
+			command => "make install",
 			timeout => 0,        
 			cwd     => "${tools_dir}/treePL/deps/adol-c",
 			creates => "/usr/lib64/libadolc.so",
-			require => Exec["autoreconf_adolc"];
-		"unzip_nlopt":
-			command => "tar -xzvf nlopt-2.2.4.tar.gz",
-			timeout => 0,        
-			cwd     => "${tools_dir}/treePL/deps",
-			creates => "${tools_dir}/treePL/deps/nlopt-2.2.4",
-			require => [ Exec["clone_treepl"], Package["libopenmpi-dev","openmpi-bin"] ];
+			require => Exec["make_tools"];
 		"install_nlopt":
-			command => "${tools_dir}/treePL/deps/nlopt-2.2.4/configure && make install",
+			command => "make install",
 			timeout => 0,        
 			cwd     => "${tools_dir}/treePL/deps/nlopt-2.2.4",
 			creates => "/usr/local/include/nlopt.h",
-			require => Exec["unzip_nlopt"];
+			require => Exec["make_tools"];
 		"compile_treepl":
-			command => "${tools_dir}/treePL/src/configure && make",
+			command => "make",
 			timeout => 0,        
 			cwd     => "${tools_dir}/treePL/src",
 			creates => "${tools_dir}/treePL/src/treePL",
