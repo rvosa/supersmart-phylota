@@ -14,7 +14,11 @@
     			"wget https://apt.puppetlabs.com/puppetlabs-release-trusty.deb",
     			"sudo dpkg -i puppetlabs-release-trusty.deb",
     			"sudo apt-get update",
-    			"sudo apt-get -y install puppet"
+    			"sudo apt-get -y install puppet wget",
+    			"mkdir /home/vagrant/.ssh",
+    			"wget --no-check-certificate 'https://raw.githubusercontent.com/mitchellh/vagrant/master/keys/vagrant.pub' -O /home/vagrant/.ssh/authorized_keys",
+    			"chown -R vagrant /home/vagrant/.ssh",
+    			"chmod -R go-rwsx /home/vagrant/.ssh"
     		]
     	},
         {
