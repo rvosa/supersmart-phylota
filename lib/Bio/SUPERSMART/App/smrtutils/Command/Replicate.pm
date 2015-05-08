@@ -8,6 +8,7 @@ use Bio::Phylo::Util::CONSTANT ':objecttypes';
 
 use Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector;
 use Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa;
+use Bio::Phylo::PhyLoTA::Config;
 use Bio::Phylo::PhyLoTA::Service::TreeService;
 use Bio::Phylo::PhyLoTA::Service::ParallelService;
 use base 'Bio::SUPERSMART::App::SubCommand';
@@ -206,8 +207,9 @@ sub _replicate_tree {
 
 sub _replicate_alignment {
 	my ($self, $fasta, $tree) = @_; 
-
+	
 	my $logger = $self->logger;
+	my $config = Bio::Phylo::PhyLoTA::Config->new;
 	
 	$logger->info("Going to replicate alignment $fasta");
 	
@@ -219,7 +221,7 @@ sub _replicate_alignment {
 	    );
 	my ($matrix) = @{ $project->get_items(_MATRIX_) };
 	
-	$logger->info('Number of sequences in alignment : ' . scalar(@{$matrix->get_entities}));
+	$logger->info('Number of sequences in alignment $fasta : ' . scalar(@{$matrix->get_entities}));
 
 	# we have to change the definition line from something like
 	# >gi|443268840|seed_gi|339036134|taxon|9534|mrca|314294/1-1140
@@ -244,8 +246,6 @@ sub _replicate_alignment {
 		return 0;
 	}
 
-	# replicate dna data
-	my $rep = $matrix->replicate($tree);				
 
 	# The alignment now contains as many sequences as the tree has tips.
 	# We will therefore prune set of sequences. This is done by simulating a binary matrix (character is the 
@@ -262,12 +262,28 @@ sub _replicate_alignment {
 	my $binary_matrix = $fac->create_matrix( '-matrix' => $binary);
 
 	# make binary replicate
-	my $binary_rep = $binary_matrix->replicate($tree);	
+	my $binary_rep = $binary_matrix->replicate($tree, $config->RANDOM_SEED);	
 	
 	# get taxa from replicate that have a simulated marker presence 
 	my %rep_taxa =  map {$_->[0]=>1} grep {$_->[1] == 1} @{$binary_rep->get_raw};
-
-	# throw out sequences that are not for these taxa
+	
+	# it can happen that no taxon is predicted to have the alignment,
+	# in this case, take the original taxa from the alignment
+	if ( ! keys(%rep_taxa) ) {
+		$logger->warn("setting taxa for replicating $fasta to original alignment taxa, no other taxa were predicted in binary simulation");
+		%rep_taxa = %aln_taxa;
+	}
+	
+	# Lets not simulate all tips, that would take too long. Instead, 
+	# prune the tree to: 
+	# 1. The taxa we have data for and 
+	# 2. The taxa we want in our output alignment	
+	my $pruned = parse('-format'=>'newick', '-string'=>$tree->to_newick)->first;
+	$pruned->keep_tips( [keys %aln_taxa, keys %rep_taxa] );
+	
+	# replicate dna data
+	my $rep = $matrix->replicate($pruned, $config->RANDOM_SEED);					
+	# throw out sequences that are not for our desired taxa
 	for my $seq ( @{ $rep->get_entities }) {
 		if ( ! $rep_taxa{$seq->get_name} ){
 			$rep->delete($seq);
@@ -278,7 +294,6 @@ sub _replicate_alignment {
 		$defline =~ s/>//g;
 		$seq->set_generic('fasta_def_line', $defline);		
 	}	
-
        	$logger->info('Number of sequences in replicated alignment : ' . scalar(@{$rep->get_entities}));
 	
 	return $rep;
