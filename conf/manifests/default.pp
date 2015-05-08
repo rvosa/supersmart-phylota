@@ -105,14 +105,12 @@ class install {
 			command => "echo 'export PATH=\$PATH:${tools_bin_dir}:${tools_dir}/BEASTv1.8.0/bin:${src_dir}/supersmart/script' > supersmart-tools-bin.sh",
 			cwd     => "/etc/profile.d",
 			timeout => 0,        
-			creates => "/etc/profile.d/supersmart-tools-bin.sh",
-			require => File[ $tools_bin_dir ];
+			creates => "/etc/profile.d/supersmart-tools-bin.sh";
 		"make_bindir_csh":
 			command => "echo 'setenv PATH \$PATH:${tools_bin_dir}:${tools_dir}/BEASTv1.8.0/bin:${src_dir}/supersmart/script' > supersmart-tools-bin.csh",
 			cwd     => "/etc/profile.d",
 			timeout => 0,        
-			creates => "/etc/profile.d/supersmart-tools-bin.csh",
-			require => File[ $tools_bin_dir ];
+			creates => "/etc/profile.d/supersmart-tools-bin.csh";
 
 		# add default EDITOR environment variable
 		"make_editor_sh":
@@ -167,7 +165,7 @@ class install {
 			creates => "${src_dir}/supersmart",
 			user    => $username,
 			timeout => 0,        
-			require => Package[ 'git' ];
+			require => [ File[ $src_dir ], Package[ 'git' ] ];
 		"make_supersmart_sh":
 			command => "echo 'export LD_LIBRARY_PATH=/usr/lib:/usr/lib64:/usr/local/lib' > supersmart.sh && echo 'export SUPERSMART_HOME=${src_dir}/supersmart' >> supersmart.sh && echo 'export PERL5LIB=\$PERL5LIB:\$SUPERSMART_HOME/lib' >> supersmart.sh",
 			cwd     => "/etc/profile.d",
