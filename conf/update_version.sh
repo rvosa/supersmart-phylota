@@ -18,9 +18,11 @@ if [ "$TAGVERSION" != "$APIVERSION" ]; then
 	echo "changing from version $APIVERSION to $TAGVERSION"
 
 	# replace in the base module file
+	echo "editing $H/lib/Bio/SUPERSMART.pm in place"
 	sed -i '' -e "s/$APIVERSION/$TAGVERSION/" $H/lib/Bio/SUPERSMART.pm
 	
 	# replace in packer template
+	echo "editing $H/conf/template.json in place"
 	APIVERSION=`echo $APIVERSION | sed -e 's/v//'`
 	TAGVERSION=`echo $TAGVERSION | sed -e 's/v//'`
 	sed -i '' -e "s/$APIVERSION/$TAGVERSION/" $H/conf/template.json
