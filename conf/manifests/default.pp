@@ -498,7 +498,16 @@ class install {
 				command => "cpanm --notest git://github.com/bioperl/bioperl-run.git",
 				timeout => 0,
 				require => Exec['install_cpanm'];
-				
+		}
+	}
+	
+	# On travis there is not enough space to physically move our data from where we 
+	# downloaded it to the mysql data directory, so instead we create symbolic links
+	# to it. On the other hand, in virtualbox this symlinking does not work and we
+	# DO have to do an actual move of the data, else we get errno: 13 when trying
+	# to run queries.
+	if $virtual == 'virtualbox' {
+		exec {			
 			# phylota database files need to be moved
 			"mv_phylota_dump":
 				command   => "mv ${data_dir}/phylota `mysql -s -N -uroot -p information_schema -e 'SELECT Variable_Value FROM GLOBAL_VARIABLES WHERE Variable_Name = \"datadir\"'`",
