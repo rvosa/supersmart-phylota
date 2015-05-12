@@ -146,8 +146,7 @@ class install {
 	}
 
 	# command line tasks
-	exec {
-
+	exec {	     
 		# set locale to US english to get rid of annoying perl warnings
 		"set_locale_sh":
 			command => "echo 'export LC_ALL=en_US.UTF-8' > set_locale.sh",
@@ -458,17 +457,22 @@ class install {
 			command => "echo 'install.packages(\"phytools\",repos=\"${cran_url}\")' | R --vanilla",
 			timeout => 0,    	
 			require => Exec['install_r_ape'];
-		"clone_r_phangorn":
-			command => "git clone https://github.com/KlausVigo/phangorn.git",
-			timeout => 0,
-			cwd     => ${tools_dir},
-			creates => "${tools_dir}/phangorn",				
-			require => Package['git'];
-		"install_r_phangorn":
-			command => "R CMD INSTALL phangorn",
-			timeout => 0,
-			cwd     => ${tools_dir},
-			require => [ Package['r-base'], Exec['clone_r_phangorn'] ];
+		"install_r_phangorn":		
+			command => "echo 'install.packages(\"phangorn\",repos=\"${cran_url}\")' | R --vanilla",		
+			timeout => 0,    			
+			require => Exec['install_r_ape'];    
+
+#		"clone_r_phangorn":
+#			command => "git clone https://github.com/KlausVigo/phangorn.git",
+#			timeout => 0,
+#			cwd     => "${tools_dir}",
+#			creates => "${tools_dir}/phangorn",				
+#			require => [ Package['git'], File [ $tools_dir ] ];
+#		"install_r_phangorn":
+#			command => "R CMD INSTALL phangorn",
+#			timeout => 0,
+#			cwd     => "${tools_dir}",
+#			require => [ Package['r-base'], Exec['clone_r_phangorn'] ];
 			
 	}
 

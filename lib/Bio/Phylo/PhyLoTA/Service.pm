@@ -371,6 +371,46 @@ sub max_ti {
 	return $result;		
 }
 
+=item max_gi
+
+Returns the highest GI from the seqs table.
+
+=cut
+
+sub max_gi {
+	my $self = $_;
+	my $result;
+	eval { 
+		$result = $schema->resultset('Seq')->get_column('gi')->max;
+	};
+	if ( $@ ) {
+		throw 'BadArgs' => $@;
+	}
+	if ( not $result ) {
+		$logger->warn("no result!");
+	}
+	return $result;		
+}
+
+
+sub insert_seq {
+	my ( $self, $clause ) = @_;
+	my $result;
+	my @cols = keys($clause);
+	use Data::Dumper;
+	print Dumper(\@cols);
+	eval { 
+		$result = $schema->populate('Seq', [ \@cols, [@{$clause}{@cols}] ] );
+	};
+	if ( $@ ) {
+		throw 'BadArgs' => $@;
+	}
+	if ( not $result ) {
+		$logger->warn("no result!");
+	}
+	return $result;			
+}
+
 =back
 
 =cut
