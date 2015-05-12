@@ -65,7 +65,7 @@
         {
             "type": "atlas",
             "only": ["virtualbox-iso"],
-            "artifact": "{{user `atlas_username`}}/{{user `atlas_name`}}",
+            "artifact": "Naturalis/supersmart",
             "artifact_type": "vagrant.box",
             "metadata": {
                 "provider": "virtualbox",
