@@ -461,13 +461,13 @@ class install {
 		"clone_r_phangorn":
 			command => "git clone https://github.com/KlausVigo/phangorn.git",
 			timeout => 0,
-			cwd     => ${tools_dir},
+			cwd     => "${tools_dir}",
 			creates => "${tools_dir}/phangorn",				
-			require => Package['git'];
+			require => [ Package['git'], File [ $tools_dir ] ];
 		"install_r_phangorn":
 			command => "R CMD INSTALL phangorn",
 			timeout => 0,
-			cwd     => ${tools_dir},
+			cwd     => "${tools_dir}",
 			require => [ Package['r-base'], Exec['clone_r_phangorn'] ];
 			
 	}
