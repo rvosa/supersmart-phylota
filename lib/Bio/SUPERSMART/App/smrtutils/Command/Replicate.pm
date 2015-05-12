@@ -287,6 +287,10 @@ sub _replicate_alignment {
 	my $model = 'Bio::Phylo::Models::Substitution::Dna'->modeltest($matrix, $tree);
 	my $rep = $matrix->replicate('-tree'=>$pruned, '-seed'=>$config->RANDOM_SEED, '-model'=>$model);
 
+	# generate accessions
+	
+
+
 	# throw out sequences that are not for our desired taxa
 	for my $seq ( @{ $rep->get_entities }) {
 		if ( ! $rep_taxa{$seq->get_name} ){
