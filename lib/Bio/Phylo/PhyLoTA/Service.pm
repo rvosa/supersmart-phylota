@@ -401,7 +401,7 @@ Inserts a sequence in the database.
 sub insert_seq {
 	my ( $self, $clause ) = @_;
 	my $result;
-	my @cols = keys($clause);
+	my @cols = keys(%$clause);
 	use Data::Dumper;
 	print Dumper(\@cols);
 	eval { 
