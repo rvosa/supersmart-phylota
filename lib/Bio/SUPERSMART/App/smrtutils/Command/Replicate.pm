@@ -5,6 +5,7 @@ use warnings;
 
 use Bio::Phylo::IO qw(parse unparse);
 use Bio::Phylo::Util::CONSTANT ':objecttypes';
+use Bio::Phylo::Models::Substitution::Dna;
 
 use Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector;
 use Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa;
@@ -72,7 +73,6 @@ sub run {
 
 	# replicate tree and write to file
 	my $tree_replicated = $self->_replicate_tree($tree)->first;
-
 	open my $fh, '>', $tree_outfile or die $!;	
 	print $fh $tree_replicated->to_newick( nodelabels => 1 );
 	close $fh;
@@ -83,6 +83,7 @@ sub run {
 	
 	my @records = $mt->parse_taxa_file( $taxa_outfile );
 	
+	$ts->remap_to_ti( $tree, @records );
 	$ts->remap_to_ti( $tree_replicated, @records );
 	
 	if ( my $aln = $opt->alignments ) {
@@ -100,7 +101,7 @@ sub run {
 		open my $outfh, '>>', $aln_outfile or die $!;		
 		pmap {
 			my ($aln) = @_; 
-			my $rep_aln = $self->_replicate_alignment($aln, $tree_replicated );
+			my $rep_aln = $self->_replicate_alignment($aln, $tree, $tree_replicated );
 			
 			if ( $rep_aln ) {
 				# simulated alignment will have the same file name plus added '-simulated'
@@ -206,7 +207,7 @@ sub _replicate_tree {
 }
 
 sub _replicate_alignment {
-	my ($self, $fasta, $tree) = @_; 
+	my ($self, $fasta, $tree, $tree_replicated) = @_; 
 	
 	my $logger = $self->logger;
 	my $config = Bio::Phylo::PhyLoTA::Config->new;
@@ -221,13 +222,13 @@ sub _replicate_alignment {
 	    );
 	my ($matrix) = @{ $project->get_items(_MATRIX_) };
 	
-	$logger->info('Number of sequences in alignment $fasta : ' . scalar(@{$matrix->get_entities}));
+	$logger->info("Number of sequences in alignment $fasta : " . scalar(@{$matrix->get_entities}));
 
 	# we have to change the definition line from something like
 	# >gi|443268840|seed_gi|339036134|taxon|9534|mrca|314294/1-1140
 	# to only the taxon ID: 9534
 	my $matching_taxa = 0;
-	my %tree_taxa = map { $_->get_name=>1 } @{ $tree->get_terminals };
+	my %tree_taxa = map { $_->get_name=>1 } @{ $tree_replicated->get_terminals };
 	for my $seq ( @{ $matrix->get_entities } ) {
 		my $seqname = $seq->get_name;
 		if ( $seqname =~ m/taxon\|([0-9]+)/ ) {
@@ -261,8 +262,9 @@ sub _replicate_alignment {
 	my $fac = Bio::Phylo::Factory->new;
 	my $binary_matrix = $fac->create_matrix( '-matrix' => $binary);
 
-	# make binary replicate
-	my $binary_rep = $binary_matrix->replicate($tree, $config->RANDOM_SEED);	
+	# make binary replicate. Here we take the relicated tree, so it is possible to have a 
+	# marker for artificial species
+	my $binary_rep = $binary_matrix->replicate('-tree'=>$tree_replicated, '-seed'=>$config->RANDOM_SEED);	
 	
 	# get taxa from replicate that have a simulated marker presence 
 	my %rep_taxa =  map {$_->[0]=>1} grep {$_->[1] == 1} @{$binary_rep->get_raw};
@@ -275,14 +277,16 @@ sub _replicate_alignment {
 	}
 	
 	# Lets not simulate all tips, that would take too long. Instead, 
-	# prune the tree to: 
+	# prune the replicated tree to: 
 	# 1. The taxa we have data for and 
 	# 2. The taxa we want in our output alignment	
-	my $pruned = parse('-format'=>'newick', '-string'=>$tree->to_newick)->first;
+	my $pruned = parse('-format'=>'newick', '-string'=>$tree_replicated->to_newick)->first;
 	$pruned->keep_tips( [keys %aln_taxa, keys %rep_taxa] );
 	
-	# replicate dna data
-	my $rep = $matrix->replicate($pruned, $config->RANDOM_SEED);					
+	# replicate dna data: estimate model with the original tree and replicate sequences along the replicated tree
+	my $model = 'Bio::Phylo::Models::Substitution::Dna'->modeltest($matrix, $tree);
+	my $rep = $matrix->replicate('-tree'=>$pruned, '-seed'=>$config->RANDOM_SEED, '-model'=>$model);
+
 	# throw out sequences that are not for our desired taxa
 	for my $seq ( @{ $rep->get_entities }) {
 		if ( ! $rep_taxa{$seq->get_name} ){
