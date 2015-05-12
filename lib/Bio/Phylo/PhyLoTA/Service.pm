@@ -392,6 +392,11 @@ sub max_gi {
 	return $result;		
 }
 
+=item insert_seq
+
+Inserts a sequence in the database.
+
+=cut
 
 sub insert_seq {
 	my ( $self, $clause ) = @_;
