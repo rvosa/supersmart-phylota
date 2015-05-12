@@ -10,9 +10,9 @@ Quick installation guide (see below for extended version)
 =========================================================
 
 - If not already installed, download and 
-   install VirtualBox (https://www.virtualbox.org/wiki/Downloads)
+   install [VirtualBox](https://www.virtualbox.org/wiki/Downloads)
 - If not already installed, download and
-   install Vagrant (http://www.vagrantup.com/downloads.html).
+   install [Vagrant](http://www.vagrantup.com/downloads.html).
 - Change to a suitable working directory and issue the following commands:
 - `vagrant init Naturalis/supersmart`
 - `vagrant up`
