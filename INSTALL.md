@@ -22,8 +22,8 @@ Quick installation guide (see below for extended version)
 Extended installation instructions
 ==================================
 
-For installation instructions, please also refer to the project 
-website at http://www.supersmart-project.org/.
+For installation instructions, please also refer to the 
+[project website](http://www.supersmart-project.org/).
 The SUPERSMART pipeline is designed to run on a virtual 
 guest operating system within the 'VirtualBox' software, 
 using the 'Vagrant' tool to insert the virtual guest operating
