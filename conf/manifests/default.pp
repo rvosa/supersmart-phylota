@@ -450,10 +450,6 @@ class install {
 			command => "echo 'install.packages(\"ape\",repos=\"${cran_url}\")' | R --vanilla",
 			timeout => 0,    	
 			require => Package['r-base', 'r-base-dev'];
-		"install_r_phangorn":
-			command => "echo 'install.packages(\"phangorn\",repos=\"${cran_url}\")' | R --vanilla",
-			timeout => 0,    	
-			require => Exec['install_r_ape'];    	
 		"install_r_phylosim":
 			command => "echo 'install.packages(\"phylosim\",repos=\"${cran_url}\")' | R --vanilla",
 			timeout => 0,    	
@@ -462,6 +458,18 @@ class install {
 			command => "echo 'install.packages(\"phytools\",repos=\"${cran_url}\")' | R --vanilla",
 			timeout => 0,    	
 			require => Exec['install_r_ape'];
+		"clone_r_phangorn":
+			command => "git clone https://github.com/KlausVigo/phangorn.git",
+			timeout => 0,
+			cwd     => ${tools_dir},
+			creates => "${tools_dir}/phangorn",				
+			require => Package['git'];
+		"install_r_phangorn":
+			command => "R CMD INSTALL phangorn",
+			timeout => 0,
+			cwd     => ${tools_dir},
+			require => [ Package['r-base'], Exec['clone_r_phangorn'] ];
+			
 	}
 
 	# the Travis continuous integration system has special templates for testing different
