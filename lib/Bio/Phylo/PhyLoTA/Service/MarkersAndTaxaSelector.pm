@@ -649,6 +649,7 @@ Writes a table containing all species as rows and all chosen markers  as columns
 reports the genbank accession of a specific marker for a species.
 
 =cut
+
 sub write_marker_summary {
 	my ( $self, $file, $tab, $specs ) = @_;
 	my @table = @$tab;
@@ -703,6 +704,25 @@ sub write_marker_summary {
 	close $outfh;
 }
 
+=item generate_seqids
+
+Returns artificial GI and accession validated to not be in the database already.
+These identifiers can be used to insert custom or simulated sequences into the
+database. The GI returned is the increment of the highest GI in the database.
+The accession is composed of a prefix, an uderscore '_',  and
+a random string of length six, consisting of numbers and upper case characters.
+Default for prefix is 'SMRT'.
+
+=cut
+
+sub generate_seqids {
+	my ($self, $prefix) = @_;	
+	my $gi = $self->max_gi + 1;	
+	my $acc = $prefix || 'SMRT';	
+	my @set= ('0' ..'9', 'A' .. 'Z');
+	$acc .= '_' . join ('',map {$set[rand @set]} 1 .. 6);	       
+	return (acc=>$acc, gi=>$gi);
+}
 
 
 =begin comment

@@ -100,6 +100,7 @@ sub run {
 		# newly written alignments
 		open my $outfh, '>>', $aln_outfile or die $!;		
 		pmap {
+			
 			my ($aln) = @_; 
 			my $rep_aln = $self->_replicate_alignment($aln, $tree, $tree_replicated );
 			
@@ -208,7 +209,7 @@ sub _replicate_tree {
 
 sub _replicate_alignment {
 	my ($self, $fasta, $tree, $tree_replicated) = @_; 
-	
+
 	my $logger = $self->logger;
 	my $config = Bio::Phylo::PhyLoTA::Config->new;
 	
@@ -247,7 +248,6 @@ sub _replicate_alignment {
 		return 0;
 	}
 
-
 	# The alignment now contains as many sequences as the tree has tips.
 	# We will therefore prune set of sequences. This is done by simulating a binary matrix (character is the 
 	# presence/absensce of marker) using a birth-death process
@@ -267,7 +267,7 @@ sub _replicate_alignment {
 	my $binary_rep = $binary_matrix->replicate('-tree'=>$tree_replicated, '-seed'=>$config->RANDOM_SEED);	
 	
 	# get taxa from replicate that have a simulated marker presence 
-	my %rep_taxa =  map {$_->[0]=>1} grep {$_->[1] == 1} @{$binary_rep->get_raw};
+	my %rep_taxa;# =  map {$_->[0]=>1} grep {$_->[1] == 1} @{$binary_rep->get_raw};
 	
 	# it can happen that no taxon is predicted to have the alignment,
 	# in this case, take the original taxa from the alignment
@@ -286,10 +286,6 @@ sub _replicate_alignment {
 	# replicate dna data: estimate model with the original tree and replicate sequences along the replicated tree
 	my $model = 'Bio::Phylo::Models::Substitution::Dna'->modeltest($matrix, $tree);
 	my $rep = $matrix->replicate('-tree'=>$pruned, '-seed'=>$config->RANDOM_SEED, '-model'=>$model);
-
-	# generate accessions
-	
-
 
 	# throw out sequences that are not for our desired taxa
 	for my $seq ( @{ $rep->get_entities }) {
