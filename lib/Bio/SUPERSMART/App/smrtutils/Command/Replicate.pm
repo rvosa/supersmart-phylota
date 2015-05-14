@@ -257,7 +257,7 @@ sub _replicate_alignment {
 	my %aln_taxa = map{ $_->get_name=>1 } @{ $matrix->get_entities };
 	for my $tax ( keys %tree_taxa ) {
 		my $present = $aln_taxa{$tax} ? '1':'0';
-		push $binary, [$tax=>$present];			
+		push @$binary, [$tax=>$present];			
 	}	
 	my $fac = Bio::Phylo::Factory->new;
 	my $binary_matrix = $fac->create_matrix( '-matrix' => $binary);
