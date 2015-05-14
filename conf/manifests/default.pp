@@ -560,7 +560,11 @@ class cleanup {
 			# clean up the VM
 			"clean_apt_get":
 				command => "apt-get clean",
-				timeout => 0;		
+				timeout => 0;
+			"clean_meta":
+				command => "rm MYMETA.*",	
+				cwd     => "${src_dir}/supersmart",
+				timeout => 0;				
 		}
 	}
 }
