@@ -24,3 +24,6 @@ Makefile.old
 Vagrantfile
 conf/output-virtualbox-iso/
 conf/packer_cache/
+blib
+pm_to_blib
+out
