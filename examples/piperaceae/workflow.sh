@@ -99,7 +99,7 @@ smrt consense --burnin=0
 smrt bbdecompose
 
 # Step 11: for each clade, merge the separate clade alignments from step 10 into a single
-# input file for *BEAST.
+# input NeXML file for *BEAST.
 smrt clademerge
 
 # Step 12: for each clade, run *BEAST. By default this uses a very small number of 
