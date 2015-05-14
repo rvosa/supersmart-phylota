@@ -6,8 +6,7 @@ apt-get -y update
 
 apt-get -y install curl
 
-dpkg -i puppetlabs-release-trusty.deb
-sudo apt-get -y install puppet
+apt-get -y install puppet
 
 
 # You can install anything you need here.
