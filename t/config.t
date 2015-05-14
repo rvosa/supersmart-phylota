@@ -20,13 +20,14 @@ for my $file ( @files ) {
 my @bins = qw(
 	EXAML_BIN
 	EXABAYES_PARSER_BIN
-        EXAML_PARSER_BIN
+	EXAML_PARSER_BIN
 	BLASTP_BIN
 	MAKEBLASTDB_BIN
 	MUSCLE_BIN
 	PHYLIP_CONSENSE_BIN
 	EXABAYES_CONSENSE_BIN
-        TREEPL_BIN
+	TREEPL_BIN
+	BEAST_BIN
 );
 BIN: for my $var ( @bins ) {
 	my $bin = $config->$var;
