@@ -394,16 +394,18 @@ sub max_gi {
 
 =item insert_seq
 
-Inserts a sequence in the database.
+Insert a sequence into the sequence table. Argument must be a hasref with
+keys being the column names of the seqs table (the members of a  
+Bio::Phylo::PhyLoTA::DAO::Result::Seq object).
 
 =cut
 
 sub insert_seq {
 	my ( $self, $clause ) = @_;
 	my $result;
+
 	my @cols = keys(%$clause);
-	use Data::Dumper;
-	print Dumper(\@cols);
+
 	eval { 
 		$result = $schema->populate('Seq', [ \@cols, [@{$clause}{@cols}] ] );
 	};
