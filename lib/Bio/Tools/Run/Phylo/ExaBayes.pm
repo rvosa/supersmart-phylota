@@ -288,7 +288,7 @@ sub _run_consense {
         }
         else {
                 # build command string for running 'consense'
-                my $string = $self->consense_bin . $self->_set_consense_params;
+                my $string = $self->consense_bin . ( $self->_set_consense_params || '' );
                 $string .= " -f " . $exabayesout . " -n " . $self->run_id;
                 
                 # run consense
