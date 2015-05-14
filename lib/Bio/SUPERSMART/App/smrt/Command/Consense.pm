@@ -89,7 +89,7 @@ sub run {
                 }
                 else {
                     my $count = int( $anno->{'posterior'} * $ntrees + 0.5 );
-                    $node->set_name( "'$count/$ntrees'");
+                    $node->set_name( "$count/$ntrees");
                 }
             }
 
@@ -101,7 +101,7 @@ sub run {
                 $tokens[-1] .= ( ref $val ? '{' . join(',',@$val) . '}' : $val );
             }
             $node->set_name( $node->get_name . '[&' . join(',',@tokens) . ']' );
-        }
+	}
     });
 
     # generate output
@@ -118,11 +118,12 @@ sub run {
         $project->insert($taxa);
         $project->insert($forest);
         $string = $project->to_nexus(%args);
+	$string =~ s/\'//g; 
     }
     else {
         $string = $consensus->to_newick(%args);
     }
-
+    
     # write to file
     open my $out, '>', $self->outfile or die $!;
     print $out $string;
