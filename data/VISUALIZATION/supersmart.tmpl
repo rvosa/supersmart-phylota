@@ -44,6 +44,8 @@
             </style>
             <script type="text/javascript">
                 var tree = [% tree.get_root.to_js %];
+                var pptu = [% pix_per_time_unit %];
+                var nowx = [% present_x_coord %];
                 var svgNS   = 'http://www.w3.org/2000/svg';
                 var xlinkNS = 'http://www.w3.org/1999/xlink';
                 var NCBI    = 'http://ncbi.nlm.nih.gov/';
@@ -58,6 +60,11 @@
                         node = tree;
                     }
                     var childCount = node.children.length;
+                    
+                    // draw the age range for interior nodes
+                    if ( childCount != 0 ) {
+                    	drawAgeRange(svg,node);
+                    }
 
                     // if not root, draw the branch to the parent
                     if ( parent != null ) {
@@ -82,6 +89,13 @@
                     if ( childCount != 0 ) {
                         drawNode(svg, node);
                     }
+                }
+                function drawAgeRange(svg, node) {
+                    var nx = node['map:x'];
+                    var ny = node['map:y'];  
+                    var range = node.treeannotator.height_range;
+                    var min_x = nowx - ( range[0] * pptu );
+                    var max_x = nowx - ( range[1] * pptu );              
                 }
                 function drawNode(svg, node) {
                     var nx = node['map:x'];
