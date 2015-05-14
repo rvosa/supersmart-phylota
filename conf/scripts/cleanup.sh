@@ -6,8 +6,10 @@ rm /var/lib/dhcp/*
 
 # Make sure Udev doesn't block our network
 echo "cleaning up udev rules"
-rm /etc/udev/rules.d/70-persistent-net.rules
-mkdir /etc/udev/rules.d/70-persistent-net.rules
+if [ -d "/etc/udev/rules.d/70-persistent-net.rules" ]; then
+	rm /etc/udev/rules.d/70-persistent-net.rules
+	mkdir /etc/udev/rules.d/70-persistent-net.rules
+fi
 rm -rf /dev/.udev/
 rm /lib/udev/rules.d/75-persistent-net-generator.rules
 
@@ -25,7 +27,9 @@ apt-get autoclean -y
 find /var/lib/apt -type f | xargs rm -f
 
 # Remove documentation files
-find /var/lib/doc -type f | xargs rm -f
+if [ -d "/var/lib/doc" ]; then
+	find /var/lib/doc -type f | xargs rm -f
+fi
 
 # Remove Virtualbox specific files
 rm -rf /usr/src/vboxguest* /usr/src/virtualbox-ose-guest*
@@ -34,7 +38,10 @@ rm -rf /usr/src/vboxguest* /usr/src/virtualbox-ose-guest*
 rm -rf /usr/src/linux-headers*
 
 # Remove Unused locales (edit for your needs, this keeps only en* and pt_BR)
-find /usr/share/locale/{af,am,ar,as,ast,az,bal,be,bg,bn,bn_IN,br,bs,byn,ca,cr,cs,csb,cy,da,de,de_AT,dz,el,en_AU,en_CA,eo,es,et,et_EE,eu,fa,fi,fo,fr,fur,ga,gez,gl,gu,haw,he,hi,hr,hu,hy,id,is,it,ja,ka,kk,km,kn,ko,kok,ku,ky,lg,lt,lv,mg,mi,mk,ml,mn,mr,ms,mt,nb,ne,nl,nn,no,nso,oc,or,pa,pl,ps,qu,ro,ru,rw,si,sk,sl,so,sq,sr,sr*latin,sv,sw,ta,te,th,ti,tig,tk,tl,tr,tt,ur,urd,ve,vi,wa,wal,wo,xh,zh,zh_HK,zh_CN,zh_TW,zu} -type d -delete
+locales=`find /usr/share/locale/{af,am,ar,as,ast,az,bal,be,bg,bn,bn_IN,br,bs,byn,ca,cr,cs,csb,cy,da,de,de_AT,dz,el,en_AU,en_CA,eo,es,et,et_EE,eu,fa,fi,fo,fr,fur,ga,gez,gl,gu,haw,he,hi,hr,hu,hy,id,is,it,ja,ka,kk,km,kn,ko,kok,ku,ky,lg,lt,lv,mg,mi,mk,ml,mn,mr,ms,mt,nb,ne,nl,nn,no,nso,oc,or,pa,pl,ps,qu,ro,ru,rw,si,sk,sl,so,sq,sr,sr*latin,sv,sw,ta,te,th,ti,tig,tk,tl,tr,tt,ur,urd,ve,vi,wa,wal,wo,xh,zh,zh_HK,zh_CN,zh_TW,zu} -type d`
+for loc in $locales; do
+	rm -rf $loc
+done
 
 # Remove bash history
 unset HISTFILE
