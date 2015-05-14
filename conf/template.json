@@ -13,7 +13,7 @@
                 "scripts/base.sh",
                 "scripts/virtualbox.sh",
                 "scripts/vagrant.sh",
-                "scripts/dep.sh",
+                "scripts/dep.sh"
             ],
             "override": {
                 "virtualbox-iso": {
