@@ -32,6 +32,7 @@ after_success:
   - git config --global user.email "rutgeraldo@gmail.com"
   - git config --global user.name "rvosa"
   - git config --global push.default simple
+  - git fetch
   - git checkout master
   - git commit -m "incrementing version number [skip ci]" --all
   - git remote set-url origin https://github.com/naturalis/supersmart.git
