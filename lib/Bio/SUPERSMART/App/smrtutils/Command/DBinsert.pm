@@ -34,6 +34,7 @@ sub options {
 		['prefix|p=s', "prefix for generated accessions, defaults to $prefix_default", {default => $prefix_default}],
 		['desc|d=s', "description for sequence(s)", {}],
 		['format|f=s', "format of input alignemnt files, default: $format_default", { default => $format_default }]
+#		['generate_fasta|g', "generate FASTA files compatible with smrt commands "]
 	    );	
 }
 
@@ -79,7 +80,6 @@ sub run {
 		for my $seq ( @{$matrix->get_entities} ) {
 			my $id;
 			my $name = $seq->get_name;
-			$logger->info("seq name : $name");
 			if ( $name=~/^[0-9]+?/ ) {
 				$id = $name;
 			} 
@@ -87,7 +87,11 @@ sub run {
 				$logger->info("Descriptor of sequence $name does not look like taxon ID, trying to map id");
 				$name =~ s/_/ /g;
 				$logger->info("Trying to find $name");
-				my $node = $mts->find_node({taxon_name=>$name});
+				my ($node) = $mts->get_nodes_for_names($name);
+				if ( ! $node ) {
+					$logger->warn("Could not map taxon name $name, ignoring");
+					next;
+				}				
 				$id = $node->ti;
 				$logger->info("Remapped $name to $id");
 			}
