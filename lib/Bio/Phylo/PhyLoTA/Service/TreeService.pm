@@ -362,7 +362,6 @@ sub consense_trees {
 		$self->newick2nexus( $infile => $filename );
 		$infile = $filename;
 	}
-	
 	# we first need to count the absolute number of trees in the file
 	# and multiply that by burnin to get the absolute number of trees to skip
 	my $counter = 0;
@@ -381,9 +380,10 @@ sub consense_trees {
 	my $command = sprintf $tmpl, $config->TREEANNOTATOR_BIN, $babs, $infile, $outfile;
     $log->debug("running command $command");
     system($command) and die "Error building consensus: $?";
-    
+	
     # post-process result: copy treeannotator's [&hot=comments] to generic object hash
     my ( $newicktree, %map ) = $self->parse_newick_from_nexus( $outfile, '-ignore_comments' => 1, '-id_map' => 1 );
+
     unlink $outfile;
     return $self->_post_process( $newicktree, %map );
 }
@@ -466,18 +466,20 @@ assigned to the respective inner nodes in the newick tree.
 
 sub parse_newick_from_nexus {
         my ($self, $nexusfile, %args ) = @_;
-        my $newick = "";
+        my $newick;
         open my $fh, '<', $nexusfile or die $!;
         my @lines = <$fh>;
         close $fh;
         my @rev = reverse @lines;
-        if (scalar (@rev) > 1) { 
-                $newick = $rev[1];
-        }
-        else {
-                $log->warn("nexus file has fewer than two lines")
-        }
-        $newick =~ s/^tree.+\[\&R\]\s+//g;
+	
+        foreach ( @lines ) {
+		if ( /^\s*tree/i ) {
+			$newick = $_;
+			last;
+		}
+	}
+	die("no tree block found in nexus file $nexusfile") if not $newick;
+	$newick =~ s/^\s*tree.+\[\&R\]\s+//gi;
         
         # get ids for taxon labels from 'Translate' section in nexus file
         my @sub;
@@ -495,7 +497,7 @@ sub parse_newick_from_nexus {
         # set the posterior as node name
         my @comments = ( $newick =~ m/(\[.+?\])/g );
   		
-  		# iterate through comments and parse out posterior value, if given
+	# iterate through comments and parse out posterior value, if given
         foreach my $c (@comments){
        	my @matches = ( $c =~ m/posterior=([0-9.]+)/g);
   			$log->warn("Found more than one posterior in comment tag") if scalar(@matches) > 1;
@@ -513,7 +515,7 @@ sub parse_newick_from_nexus {
         # note that there is possible trouble if node names for posteriors (e.g. 1) 
         # overlap with nexus identifier. However, BEAST seems to write all posteriors
         # as proper decimals
-		my $newicktree = parse(
+	my $newicktree = parse(
             '-string' => $newick,
             '-format' => 'newick',
             %args
@@ -522,7 +524,7 @@ sub parse_newick_from_nexus {
   	    $newicktree->visit( sub{
                 my $n = shift;
                 $n->set_name( $id_map{$n->get_name} ) if exists $id_map{$n->get_name};  
-        });
+	});
         
         return $args{'-id_map'} ? ( $newicktree, %id_map ) : $newicktree;
         
