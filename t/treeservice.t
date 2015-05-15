@@ -33,7 +33,7 @@ $tree = parse_tree(
 
 # test rerooting a tree
 my $rerooted = $ts->reroot_tree($tree, \@records, ["suborder"]);
-isa_ok ($rerooted, 'Bio::Tree::TreeI');
+isa_ok ($rerooted, 'Bio::Phylo::Forest::Tree');
 
 # rerooted tree should be different
 ok(! ($tree->to_newick eq $rerooted->to_newick), "rerooted tree differs from initial one");
@@ -50,7 +50,7 @@ is($names_large[0], "Orthogeomys_heterodus", "read_tipnames from phylip file");
 # build a consensus tree
 my $treefile  = "$Bin/testdata/testclade.nex";
 my $consensus = $ts->consense_trees( '-infile' => $treefile );
-isa_ok($consensus,'Bio::Tree::TreeI');
+isa_ok($consensus,'Bio::Phylo::Forest::Tree');
 
 # parse the backbone tree
 my $bbfile = "$Bin/testdata/testtree-labelled.dnd";
@@ -63,7 +63,7 @@ my $bbtree = parse_tree(
 # graft clade onto backbone tree
 my $bbstr = $bbtree->to_newick;
 my $grafted = $ts->graft_tree( $bbtree, $consensus );
-isa_ok($grafted,'Bio::Tree::TreeI');
+isa_ok($grafted,'Bio::Phylo::Forest::Tree');
 ok (length $grafted->to_newick > length $bbstr, "tree is larger after grafting");
 
 # test remapping a tree back to taxon identifiers 
@@ -74,4 +74,4 @@ $tree = parse_tree(
 	'-as_project' => 1,
     );
 my $remapped = $ts->remap_to_ti($tree);
-isa_ok ($remapped, 'Bio::Tree::TreeI');
+isa_ok ($remapped, 'Bio::Phylo::Forest::Tree');
