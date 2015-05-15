@@ -86,7 +86,6 @@ smrt bbcalibrate -f $FOSSILS
 # nodes can be viewed by opening the resulting file ('consensus.nex') in figtree. As the 
 # trees are bootstrap trees we don't throw out a burnin fraction. This would be different 
 # had we used exabayes in step 6.
-# XXX THIS GIVES MESSED UP NEXUS!!!
 smrt consense --burnin=0
 
 # Step 10: decompose the backbone into clades. This step traverses the consensus tree from
@@ -111,6 +110,7 @@ smrt clademerge
 smrt cladeinfer -n 30_000_000
 
 # Step 13: graft the clade trees onto the backbone.
+# XXX ANNOTATIONS LOST WHEN READING IN CONSENSE TREE!
 smrt cladegraft
 
 # Step 14: plot the final result

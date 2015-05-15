@@ -32,7 +32,7 @@ The resulting tree is exported in the NEWICK format.
 
 sub options {
 	my ($self, $opt, $args) = @_;
-	my $outfile_default = "final.dnd";
+	my $outfile_default = "final.nex";
 	my $tree_default = "consensus.nex";
 	my $format_default = 'nexus';
 	return (                               	
@@ -89,11 +89,10 @@ sub run{
 	my $backbone_tree = parse_tree(
 		'-file'   => $backbone,
 		'-format' => $opt->format,
-    );
-	
+	);
+
 	# filenames for nexus trees written by BEAST
 	$ts->remap_to_ti($backbone_tree);
-	
 	my $grafted = $backbone_tree;
 	
 	# graft single clade tree 
@@ -117,11 +116,16 @@ sub run{
 
     $logger->info('Retreiving taxon names for final tree');
     $ts->remap_to_name($grafted);    
-    #$grafted->resolve;
-    #$ts->remove_internal_names($grafted);
-	
+    
+    my $string;
+    if ( $opt->format =~ /nexus/i ) {
+	    $string = $grafted->to_nexus( 'nodelabels' => 1 );
+    }
+    else {
+	    $string = $grafted->to_newick( 'nodelabels' => 1 );
+    }
     open my $outfh, '>', $outfile or die $!;        
-    print $outfh $grafted->to_newick( 'nodelabels' => 1 );
+    print $outfh $string; 
     close $outfh;	
 
     $logger->info("DONE, results written to $outfile");	
