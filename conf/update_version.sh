@@ -12,6 +12,10 @@ TAGVERSION=`git describe --tags | cut -f1 -d '-' | head -1`
 # version in framework code
 APIVERSION=`perl -I$H/lib -MBio::SUPERSMART -e 'print $Bio::SUPERSMART::VERSION'`
 
+# operating system. need to know this because OSX wants an empty string
+# for `sed -i`, whereas linux does not
+OS=`perl -e 'print $^O'`
+
 if [ "$TAGVERSION" != "$APIVERSION" ]; then
 
 	# this so that we see what's happening in the travis logs
@@ -19,13 +23,21 @@ if [ "$TAGVERSION" != "$APIVERSION" ]; then
 
 	# replace in the base module file
 	echo "editing $H/lib/Bio/SUPERSMART.pm in place"
-	sed -i '' -e "s/$APIVERSION/$TAGVERSION/" $H/lib/Bio/SUPERSMART.pm
+	if [ "$OS" == "darwin" ]; then
+		sed -i '' -e "s/$APIVERSION/$TAGVERSION/" $H/lib/Bio/SUPERSMART.pm
+	else
+		sed -i -e "s/$APIVERSION/$TAGVERSION/" $H/lib/Bio/SUPERSMART.pm	
+	fi
 	
 	# replace in packer template
 	echo "editing $H/conf/template.json in place"
 	APIVERSION=`echo $APIVERSION | sed -e 's/v//'`
 	TAGVERSION=`echo $TAGVERSION | sed -e 's/v//'`
-	sed -i '' -e "s/$APIVERSION/$TAGVERSION/" $H/conf/template.json
+	if [ "$OS" == "darwin" ]; then
+		sed -i '' -e "s/$APIVERSION/$TAGVERSION/" $H/conf/template.json
+	else
+		sed -i -e "s/$APIVERSION/$TAGVERSION/" $H/conf/template.json
+	fi
 else
 	echo "version unchanged: (tag) $TAGVERSION == (api) $APIVERSION"
 fi
