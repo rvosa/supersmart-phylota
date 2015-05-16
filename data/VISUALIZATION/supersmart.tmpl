@@ -92,10 +92,12 @@
                 }
                 function drawAgeRange(svg, node) {
                     var nx = node['map:x'];
-                    var ny = node['map:y'];  
-                    var range = node.treeannotator.height_range;
-                    var min_x = nowx - ( range[0] * pptu );
-                    var max_x = nowx - ( range[1] * pptu );              
+                    var ny = node['map:y']; 
+                    if ( node.treeannotator && node.treeannotator.height_range ) { 
+						var range = node.treeannotator.height_range;
+						var min_x = nowx - ( range[0] * pptu );
+						var max_x = nowx - ( range[1] * pptu );
+                    }
                 }
                 function drawNode(svg, node) {
                     var nx = node['map:x'];

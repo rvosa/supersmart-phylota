@@ -117,9 +117,16 @@ sub run {
 		'-tree'   => $tree,
 	);
 	$drawer->compute_coordinates;
+	my ( @present, @pptu );
 	$tree->visit(sub{
 		my $n = shift;
-		$n->set_x( int( $n->get_x + 0.5 ) );
+		my $x = $n->get_x;
+		push @present, $x if $n->is_terminal;
+		my $l = $n->get_branch_length;
+		if ( $l > 0 and $n->get_parent ) {
+			push @pptu, ( $x - $n->get_parent->get_x ) / $l;
+		}
+		$n->set_x( int( $x + 0.5 ) );
 		$n->set_y( int( $n->get_y + 0.5 ) );
 	});
 	
@@ -145,6 +152,8 @@ sub run {
 		'style'   => $opt->style,
 		'date'    => $date,
 		'command' => "$script @ARGV",
+		'present_x_coord'   => ( sum(@present)/scalar(@present) ),
+		'pix_per_time_unit' => ( sum(@pptu)/scalar(@pptu) ),
 	);
 	my $oz = $tt->process( $file, \%args, $outfile ) or die $tt->error;
 	$logger->info("DONE. Tree written to $outfile");
