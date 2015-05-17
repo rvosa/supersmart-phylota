@@ -33,8 +33,8 @@ sub options {
 		['list|l=s', "list of alignment files to insert into database", { arg => 'file' } ],		
 		['prefix|p=s', "prefix for generated accessions, defaults to $prefix_default", {default => $prefix_default}],
 		['desc|d=s', "description for sequence(s)", {}],
-		['format|f=s', "format of input alignemnt files, default: $format_default", { default => $format_default }]
-#		['generate_fasta|g', "generate FASTA files compatible with smrt commands "]
+		['format|f=s', "format of input alignemnt files, default: $format_default", { default => $format_default }],
+		['generate_fasta|g', "generate FASTA files compatible with smrt commands. FASTA file names will have the suffix '-smrt-inserted'. This option is enabled by default", {default => 1} ]
 	    );	
 }
 
@@ -90,6 +90,8 @@ sub run {
 				my ($node) = $mts->get_nodes_for_names($name);
 				if ( ! $node ) {
 					$logger->warn("Could not map taxon name $name, ignoring");
+					# delete sequence from matrix object, so it won't appear in output fasta 
+					$matrix->delete($seq);
 					next;
 				}				
 				$id = $node->ti;
@@ -117,14 +119,27 @@ sub run {
 			my $acc_date = join("-", $year + 1900, $mon, $mday);
 
 			$mts->insert_seq({gi=>$gi, ti=>$ti, acc=>$acc, acc_vers=>$acc_vers, length=>length($unaligned), division=>$division, acc_date=>$acc_date, gbrel=>$gbrel, def=>$def, seq=>$unaligned});
+
+			# write FASTA file with definition line compatible with other smrt commands
+			# since the newly inserted seqs have no cluster,  we set the seed gi to the gi of the sequence
+			# and the mrca to the taxon id of the sequence
+			my $defline = "gi|$gi|seed_gi|$gi|taxon|$ti|mrca/1-" . length($seq->get_char);
+			$seq->set_generic('fasta_def_line', $defline);
+			
+
 			$seq_cnt++;
 			
 		}
-		$logger->info("DONE. Inserted $seq_cnt sequences into database");
+		if ( $opt->generate_fasta ) {
+			# write sequence with new defline to file if generate_fasta flag is given
+			(my $newfile = $file) =~ s/\-[^\.]*$//;
+			# file extension removed, add .fa
+			$newfile .= '-smrt-inserted.fa';
+			$logger->info("Writing alignment to $newfile");
+			unparse ( -phylo => $matrix, -file => $newfile, -format=>'fasta' );
+		}	
 	}
-	
-	
-
+	$logger->info("DONE. Inserted $seq_cnt sequences into database");   	
 }
 
 1;
