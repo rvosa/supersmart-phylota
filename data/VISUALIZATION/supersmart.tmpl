@@ -97,6 +97,10 @@
 						var range = node.treeannotator.height_range;
 						var min_x = nowx - ( range[0] * pptu );
 						var max_x = nowx - ( range[1] * pptu );
+						
+						// should be a rectangle at least maxWidth + 2 (or more) wide
+						drawLine(svg,nx,ny,min_x,ny,{});
+						drawLine(svg,nx,ny,max_x,ny,{});
                     }
                 }
                 function drawNode(svg, node) {
@@ -530,6 +534,7 @@
                     return content;
                 }
             </script>
+            
         </svg>
     </body>
 </html>
