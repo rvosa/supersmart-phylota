@@ -65,7 +65,9 @@ sub run {
 	# collect command-line arguments
 	my $backbone = $opt->backbone;
 	my $taxafile = $opt->taxafile;
-	my $outfile = $self->outfile;
+	my $outgroup = $opt->outgroup;
+	my $smooth   = $opt->smooth;
+	my $outfile  = $self->outfile;
 	
 	# instantiate helper objects
 	my $ts = Bio::Phylo::PhyLoTA::Service::TreeService->new;
@@ -91,73 +93,32 @@ sub run {
 		$ts->remap_to_ti($tree);
 		
 		# Perform rerooting at outgroup, if given		
-		if ( $opt->outgroup ) {
-		
-			# parse outgroup string
-			my $ogstr = $opt->outgroup;
-			$logger->info("Attempting to reroot tree $counter at outgroup $ogstr");
-			my @names = split(',', $ogstr);
-					
-			# remap outgroup species names to taxon identifiers
-			my @ids = map {
-				(my $name = $_) =~ s/_/ /g;
-				my @nodes = $ts->search_node({ 'taxon_name' => $name })->all;
-				
-				# verify result
-				if ( @nodes != 1 ) {
-					$logger->warn("found more than one database entry for taxon $name, using first entry.") if scalar (@nodes) > 1;						
-					die "could not find database entry for taxon name $name" if scalar(@nodes) == 0;
-				}				
-				$nodes[0]->ti;
-			} @names;	
-			my @all_ids = $mt->query_taxa_table(\@ids, \@ranks, @records);
-
-			# fetch outgroup nodes and mrca
-			my %og = map{ $_=>1 } @all_ids;
-			my @ognodes = grep { exists($og{$_->get_name}) } @{$tree->get_terminals};
-			my $mrca = $tree->get_mrca(\@ognodes);
-		
-			# reroot at mrca of outgroup
-			$mrca->set_root_below;		
+		if ( $outgroup ) {			
+			$ts->outgroup_root(
+				'-tree'     => $tree,
+				'-outgroup' => [ split /,/, $outgroup ],
+				'-ranks'    => \@ranks,
+				'-records'  => \@records,
+			);		
 		} 
 	
 		# Try to minimize paraphyly if no outgroup given
 		else {	
-                        $tree->resolve;	
+            $tree->resolve;	
 			$tree = $ts->reroot_tree($tree, \@records, [$level]);
 		}
-                if ( $opt->smooth ) {
-                        $logger->info("smoothing out diff between left and right tip heights");
-                        my $root = $tree->get_root;
-
-                       # compute paths left and right of the root
-                       my ( $left, $right ) = @{ $root->get_children };
-                       my ( @hl, @hr, %h );
-                       for my $tip ( @{ $left->get_terminals } ) {
-                           push @hl, $tip->calc_path_to_root;
-                       }
-                       for my $tip ( @{ $right->get_terminals } ) {
-                           push @hr, $tip->calc_path_to_root;
-                       }
-
-                       # compute averages
-                       my $lm = sum(@hl)/scalar(@hl);
-                       my $rm = sum(@hr)/scalar(@hr);
-                       if ( $lm < $rm ) {
-                           $left->set_branch_length(  $left->get_branch_length  + (abs($rm-$lm)/2) );
-                           $right->set_branch_length( $right->get_branch_length - (abs($rm-$lm)/2) );
-                       }
-                       else {
-                           $left->set_branch_length(  $left->get_branch_length  - (abs($rm-$lm)/2) );
-                           $right->set_branch_length( $right->get_branch_length + (abs($rm-$lm)/2) );
-                       }
-                }
-                $logger->info("rerooted backbone tree ".$counter++);
+		
+		# smooth the basal branch, if requested
+        if ( $smooth ) {
+            $logger->info("smoothing out diff between left and right tip heights");
+			$ts->smooth_basal_split($tree);
+        }
 		
 		# clean up labels and write to file
 		$tree = $ts->remap_to_name($tree);
 		$ts->remove_internal_names($tree);
 		print $out $tree->to_newick( 'nodelabels' => 1 ), "\n";
+        $logger->info("rerooted backbone tree ".$counter++);		
 	}
 	$logger->info("DONE, results written to $outfile");		
 }

@@ -10,7 +10,7 @@ use Bio::Phylo::PhyLoTA::Service;
 use base 'Bio::Phylo::PhyLoTA::Service';
 use Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa;
 use List::MoreUtils 'uniq';
-use List::Util 'min';
+use List::Util qw'min sum';
 
 my $config = Bio::Phylo::PhyLoTA::Config->new;
 my $log = Bio::Phylo::PhyLoTA::Service->logger->new;	
@@ -172,6 +172,106 @@ sub _array_minus {
 	return grep ( ! defined $b{$_}, @a );
 }
 
+
+=item smooth_basal_split
+
+After rerooting, one side of the root may have received all of the length of
+the branch on which the root was placed. This method smooths that out as much
+as possible.
+
+=cut
+
+sub smooth_basal_split {
+	my ( $self, $tree ) = @_;
+	my $root = $tree->get_root;
+
+	# compute paths left and right of the root
+	my ( $left, $right ) = @{ $root->get_children };
+	my ( @hl, @hr, %h );
+	for my $tip ( @{ $left->get_terminals } ) {
+		push @hl, $tip->calc_path_to_root;
+	}
+	for my $tip ( @{ $right->get_terminals } ) {
+		push @hr, $tip->calc_path_to_root;
+	}
+
+	# compute averages
+	my $lm = sum(@hl)/scalar(@hl);
+	$log->debug("mean height left: $lm");
+	my $rm = sum(@hr)/scalar(@hr);
+	$log->debug("mean height right: $rm");
+	my $diff = abs($rm-$lm) / 2;
+	my $r_length = $right->get_branch_length;
+	my $l_length = $left->get_branch_length;	
+	
+	if ( $lm < $rm ) {
+		
+		# don't want negative branches
+		if ( $r_length < $diff ) {
+			$diff = $r_length;
+		}		
+
+		# adjust branch lengths
+		$left->set_branch_length( $l_length + $diff );
+		$right->set_branch_length($r_length - $diff );
+		$log->info("stretched left, shrunk right, by $diff");
+	}
+	else {
+		
+		# don't want negative branches
+		if ( $l_length < $diff ) {
+			$diff = $l_length;
+		}
+
+		# adjust branch lengths
+		$left->set_branch_length( $l_length - $diff );
+		$right->set_branch_length($r_length + $diff );
+		$log->info("stretched right, shrunk left, by $diff");		
+	}
+	$root->set_branch_length(0.00);
+}
+
+=item outgroup_root
+
+Roots a tree on a list of outgroup taxon names. Arguments:
+
+ -tree     => input tree object
+ -outgroup => [ list of names ]
+ -ranks    => [ list of taxonomic ranks of interest ]
+ -records  => [ list of taxa table records ]
+
+=cut
+
+sub outgroup_root {
+	my ( $self, %args ) = @_;
+	my $tree    = $args{'-tree'};
+	my @names   = @{ $args{'-outgroup'} };
+	my @ranks   = @{ $args{'-ranks'} };
+	my @records = @{ $args{'-records'} };
+	my $mt = Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa->new;
+			
+	# remap outgroup species names to taxon identifiers
+	my @ids = map {
+		(my $name = $_) =~ s/_/ /g;
+		my @nodes = $self->search_node({ 'taxon_name' => $name })->all;
+		
+		# verify result
+		if ( @nodes != 1 ) {
+			$log->warn("found more than one database entry for taxon $name, using first entry.") if scalar (@nodes) > 1;						
+			die "could not find database entry for taxon name $name" if scalar(@nodes) == 0;
+		}				
+		$nodes[0]->ti;
+	} @names;	
+	my @all_ids = $mt->query_taxa_table(\@ids, \@ranks, @records);
+
+	# fetch outgroup nodes and mrca
+	my %og = map{ $_=>1 } @all_ids;
+	my @ognodes = grep { exists($og{$_->get_name}) } @{$tree->get_terminals};
+	my $mrca = $tree->get_mrca(\@ognodes);
+
+	# reroot at mrca of outgroup
+	$mrca->set_root_below;	
+}
 
 =item remove_internal_names 
 
