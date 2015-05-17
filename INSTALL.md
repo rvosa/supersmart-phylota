@@ -18,6 +18,7 @@ Quick installation guide (see below for extended version)
 - `vagrant up`
 - Log in to the virtual guest machine using `vagrant ssh`
 - SUPERSMART is installed in the directory `/home/vagrant/SUPERSMART`, i.e. $SUPERSMART_HOME
+- The working directory where you typed `vagrant up` on the host is `/vagrant` inside the VM
 
 Extended installation instructions
 ==================================
