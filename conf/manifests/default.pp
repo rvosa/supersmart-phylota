@@ -304,6 +304,12 @@ class install {
 			command => "echo 'setenv LD_LIBRARY_PATH /usr/lib:/usr/lib64:/usr/local/lib' > supersmart.csh && echo 'setenv SUPERSMART_HOME ${src_dir}/supersmart' >> supersmart.csh && echo 'setenv PERL5LIB \$PERL5LIB:\$SUPERSMART_HOME/lib' >> supersmart.csh",
 			cwd     => "/etc/profile.d",
 			creates => "/etc/profile.d/supersmart.csh";
+		"copy_supersmart_login":
+			command => "cp .bash_login /home/vagrant/.bash_login",
+			cwd     => "${src_dir}/supersmart/conf",
+			creates => "/home/vagrant/.bash_login",
+			user    => $username,
+			require => Exec[ 'clone_supersmart' ];
 
 		# install BEAST
 		"download_beast":
