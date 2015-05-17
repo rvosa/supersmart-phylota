@@ -1,6 +1,13 @@
 *.gz
 *.dmp
-*.tsv
+examples/*/*.tsv
+examples/*/*.fa
+examples/*/*.dnd
+examples/*/*.phy
+examples/*/*.nex
+examples/*/seeds.fa.*
+examples/*/aligned.txt
+examples/*/merged.txt
 Makefile
 *.komodoproject
 data/GBIF/taxonomy-search-*
