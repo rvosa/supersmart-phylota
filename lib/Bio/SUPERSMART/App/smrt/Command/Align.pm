@@ -11,6 +11,7 @@ use Bio::Phylo::PhyLoTA::Service::ParallelService;
 
 use Bio::PrimarySeq;
 use Bio::AlignIO;
+use File::Spec;
 
 use Bio::SUPERSMART::App::SubCommand;
 use base 'Bio::SUPERSMART::App::SubCommand';
@@ -44,6 +45,7 @@ sub options {
     return (
     ["infile|i=s", "taxa file (tab-seperated value format) as produced by 'smrt taxize'", { arg => "file", default => $taxa_default }],
     ["outfile|o=s", "name of the output file, defaults to '$outfile_default'", {default => $outfile_default, arg => "file"}],   
+    ["dirname|d=s", "write alignments to specified directory name, if not given, alignments are written to working directory", {}]
     );  
 }
 
@@ -155,14 +157,34 @@ sub run {
         }       
     }
     
+    # create directory for alignments if specified in argument
+    my $dir;
+    if ( my $alndir = $opt->dirname ) {
+	    if ( $alndir =~ /^\// ) {
+		    $dir= $alndir . '/';
+	    }
+	    else {
+		    $dir = $self->workdir . '/' . $alndir . '/'; 
+	    }
+	    $log->info("creating directory $dir");
+	    mkdir  $dir or die $! if not -e $dir;  
+    }
+    else {
+	    $dir = $self->workdir . '/'; 
+    }
+    $log->debug("directory to save alignments in : $dir");
+
     # now make the alignments in parallel mode
     my @result = pmap {             
         my ($clinfo) = @_;
         
-        # alignments could be pre-computed so don't 
-        # align again if fasta file already exists 
-        my $filename = $self->workdir . '/' . $clinfo  . '.fa';     
-        if ( not ( -e  $filename ) ) {  
+	# create filename
+	my $filename = File::Spec->catfile( $dir, $clinfo.'.fa' );
+	$log->debug("alignment file name : $filename");
+
+	# alignments could be pre-computed so don't 
+	# align again if fasta file already exists  
+       if ( not ( -e  $filename ) ) {  
         
             my $s = $seqs{$clinfo};
             my $aligner = $sg->_make_aligner;
