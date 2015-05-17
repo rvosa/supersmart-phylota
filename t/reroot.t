@@ -10,7 +10,7 @@ use Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa;
 my $backbone = "${Bin}/testdata/piperaceae-backbone.dnd";
 my $taxafile = "${Bin}/testdata/piperaceae-species.tsv";
 my $log = Bio::Phylo::Util::Logger->new(
-	'-level' => INFO,
+	'-level' => ERROR,
 	'-style' => 'simple',
 	'-class' => [
 		'main',
