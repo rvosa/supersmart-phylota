@@ -29,9 +29,9 @@ sub options {
 	my $format_default = 'fasta';
 	my $prefix_default = 'SMRT';
 	return (
-		['alignment|a=s', "alignment file(s) to insert into database, multiple files should be separatet by commata", { arg => 'file' } ],		
+		['alignment|a=s', "alignment file(s) to insert into database, multiple files should be separatet by commata", { arg => 'file' }],		
 		['list|l=s', "list of alignment files to insert into database", { arg => 'file' } ],		
-		["taxafile|t=s", "taxa file as produced by 'smrt-utils replicate'; if given, possible artificial taxa are inserted", { arg => "file", default => $taxa_default }],
+		["taxafile|t=s", "taxa file as produced by 'smrt-utils replicate'; if given, possible artificial taxa are inserted", {}],
 		['prefix|p=s', "prefix for generated accessions, defaults to $prefix_default", {default => $prefix_default}],
 		['desc|d=s', "description for sequence(s)", {}],
 		['format|f=s', "format of input alignemnt files, default: $format_default", { default => $format_default }],
@@ -151,6 +151,8 @@ sub run {
 
 sub _insert_taxa {
 	my ($self, $taxafile) = @_;
+	
+	
 }
 
 1;
