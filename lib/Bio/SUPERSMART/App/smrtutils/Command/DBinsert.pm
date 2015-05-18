@@ -31,6 +31,7 @@ sub options {
 	return (
 		['alignment|a=s', "alignment file(s) to insert into database, multiple files should be separatet by commata", { arg => 'file' } ],		
 		['list|l=s', "list of alignment files to insert into database", { arg => 'file' } ],		
+		["taxafile|t=s", "taxa file as produced by 'smrt-utils replicate'; if given, possible artificial taxa are inserted", { arg => "file", default => $taxa_default }],
 		['prefix|p=s', "prefix for generated accessions, defaults to $prefix_default", {default => $prefix_default}],
 		['desc|d=s', "description for sequence(s)", {}],
 		['format|f=s', "format of input alignemnt files, default: $format_default", { default => $format_default }],
@@ -125,8 +126,7 @@ sub run {
 			# and the mrca to the taxon id of the sequence
 			my $defline = "gi|$gi|seed_gi|$gi|taxon|$ti|mrca/1-" . length($seq->get_char);
 			$seq->set_generic('fasta_def_line', $defline);
-			
-
+		       
 			$seq_cnt++;
 			
 		}
@@ -139,7 +139,18 @@ sub run {
 			unparse ( -phylo => $matrix, -file => $newfile, -format=>'fasta' );
 		}	
 	}
+	
+	# insert potential artificial taxa, if given in taxa file
+	if ( $opt->taxafile ) {
+		$self->_insert_taxa($self->taxafile);
+	}
+
+	
 	$logger->info("DONE. Inserted $seq_cnt sequences into database");   	
+}
+
+sub _insert_taxa {
+	my ($self, $taxafile) = @_;
 }
 
 1;
