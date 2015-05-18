@@ -40,7 +40,8 @@ sub options {
   		["backbone|b=s", "backbone tree as produced by 'smrt bbinfer'", { arg => "file", default => $tree_default }],
 		["outfile|o=s", "name of the output tree file (newick format) defaults to $outfile_default", { default=> $outfile_default, arg => "file"}],    	    
 		["cladetree|c=s", "name of tree file for single clade (newick format) if only a single cladetree should be grafted", { arg => "file"}],
-		["informat|i=s", "file format of the backbone tree (newick or nexus), defaults to $informat_default", { default => $informat_default }],    	    			 ["outformat|f=s", "file format of the final (newick or nexus), defaults to $outformat_default", { default => $outformat_default }],    	    		
+		["informat|i=s", "file format of the backbone tree (newick or nexus), defaults to $informat_default", { default => $informat_default }],
+		["outformat|f=s", "file format of the final (newick or nexus), defaults to $outformat_default", { default => $outformat_default }],    	    		
     );
 }
 
