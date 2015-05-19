@@ -89,7 +89,7 @@ sub run {
 			
 			# iterate over sequences and insert into database
 			for my $seq ( @{$matrix->get_entities} ) {
-				$self->_insert_seq($seq, $matrix);				
+				$self->_insert_seq($seq, $matrix, $opt->prefix, $opt->desc );				
 				$seq_cnt++;				
 			}
 			
