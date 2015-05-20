@@ -762,7 +762,10 @@ sub graft_tree {
 	# exemplars, and locate their MRCA on the backbone
 	my @exemplars;
 	for my $id ( @ids ) {
-		my $name = $self->find_node($id)->taxon_name;
+		my $name = $id;
+		if ( $id =~ /[0-9]+/) {
+			$name = $self->find_node($id)->taxon_name;
+		} 
 		if ( my $e = $backbone->get_by_name($id) ) {
 			$log->info("found exemplar $name ($id) in backbone");
                         push @exemplars, $e;
@@ -792,7 +795,7 @@ sub graft_tree {
     my @ccopy = @clade_exemplars;
 	my $cmrca = $clade->get_mrca(\@ccopy);
 	$log->info("found equivalent ".scalar(@clade_exemplars)." exemplars in clade");
-    # calculate the respective depths, scale the clade by the ratios of depths
+	# calculate the respective depths, scale the clade by the ratios of depths
 	my $cmrca_depth = $cmrca->calc_max_path_to_tips;
 	my $bmrca_depth = $bmrca->calc_max_path_to_tips;
     $log->debug("Backbone tree before grafting: \n " . $backbone->to_newick);
