@@ -78,10 +78,10 @@ sub new {
 		$args{'database'} = $config->DATABASE;
 		$args{'host'}     = $config->HOST;
 		$args{'user'}     = $config->USER;
+        $args{'pass'}     = undef;		
 		$args{'limit_dialect'}  = 'LimitXY';
-                $args{'pass'} = undef;
 
-                # create "dsn string" template, insert values
+        # create "dsn string" template, insert values
 		my $dsn_tmpl  = 'DBI:%s:database=%s;host=%s';		
 		$args{'dsn'} = sprintf($dsn_tmpl, @args{qw[rdbms database host]});
 				

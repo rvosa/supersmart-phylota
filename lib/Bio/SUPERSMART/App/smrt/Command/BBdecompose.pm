@@ -57,8 +57,8 @@ sub options {
 	my $aln_default     = "aligned.txt";
 	my $format_default  = "nexus";
 	return (
-		["backbone|b=s", "backbone tree as produced by 'smrt bbinfer'", { arg => "file", default => $tree_default}],
-		["format|f=s", "file format of the backbone tree as produced by 'smrt consense'", { default => $format_default }],
+		["backbone|b=s", "backbone tree as produced by e.g. 'smart bbinfer' and 'smrt consense', defaults to $tree_default", { arg => "file", default => $tree_default}],
+		["format|f=s", "file format of the backbone tree as produced by 'smrt consense', defaults to $format_default", { default => $format_default }],
 		["classtree|c=s", "classification tree as produced by 'smrt classify', only needed with '-g' option", { arg => "file"}],
 		["alnfile|a=s", "list of file locations of merged alignments as produced by 'smrt aln'", { arg => "file", default => $aln_default}],	
 		["taxafile|t=s", "tsv (tab-seperated value) taxa file as produced by 'smrt taxize'", { arg => "file", default => $taxa_default}],

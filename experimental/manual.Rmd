@@ -1,0 +1,58 @@
+This tutorial provides a detailed step-by-step guide of how to install and run the SUPERSMART pipeline. It is aimed to users that have little computer experience. Less detailed instructions (e.g. for users that are already familiar with running software via command-line interfaces) are also referred to the instructions on our web-site [www.supersmart-project.org](www.supersmart-project.org). 
+
+
+# **Installation**
+
+
+## **The SUPERSMART virtual research environment**
+
+The SUPERSMART pipeline requires many different software and analysis tools, of which some of them are not trivial to install. Therefore, SUPERSMART and all its dependencies can be installed automatically as a virtual research environment, downloadable as a *virtual machine*. One can think of a virtual machine as a *guest* computer with its own operating system, which is running on and is accessible from your *host* computer. This ensures that SUPERSMART always runs under similar conditions, regardless of the operating system (e.g. Windows, Linux, MacOS) you are running the guest on.
+
+To run SUPERSMART on its virtual machine, two prerequisites are necessary:
+* **VirtualBox**, freely available at [www.virtualbox.com](www.virtualbox.com)
+* **vagrant**, freely available at [www.vagrantup.com](www.vagrantup.com)
+
+Once you have installed the newest versions of VirtualBox and Vagrant, you can proceed to install the ready-made virtual machine.
+
+
+## **Installing and running the SUPERSMART virtual machine**
+
+First of all, you will have to open a command-line window. This program to open is called *Command Prompt* or *PowerShell* on Windows and *Terminal* on Mac OS X. Linux users should be familiar with the command-line. We will now create a directory (folder) in which the virtual machine will be installed by typing the command:
+
+
+```{r smdir, engine='bash'}
+mkdir my-supersmart
+```
+
+which creates a directory named `my-supersmart`. The name of the directory does not matter, you can give it any name you want (Note that special characters and spaces in directory names can cause trouble, however). We will then change into the newly created directory:
+
+```{r cd, engine='bash'}
+cd my-supersmart
+```
+
+and subsequently issue the command
+
+opts_knit$set(root.dir = './my-supersmart')
+
+```{r init, engine='bash', root.dir='my-supersmart'}
+vagrant init Naturalis/supersmart
+```
+
+which will place a file named `Vagrantfile`, into the directory. The `Vagrantfile` holds miscellaneous information about the virtual machine to be downloaded. We can check if the file is present by looking at the contents of our directory:
+
+```{r ls, engine='bash'}
+ls
+```
+(Note that in Window's Command Prompt, the command is `dir` instead of `ls`). Now we are ready to download and eventually install the virtual machine, which is accomplished by one single command:
+
+```{r up, engine='bash'}
+vagrant up 
+```
+
+Depending on your internet connection, this might take a while since a file larger than 10 GB will be downloaded.
+
+If the `vagrant up` command finished without errors, you are ready to log on to the virtual machine:
+
+```{r ssh, engine='bash'}
+vagrant ssh 
+```

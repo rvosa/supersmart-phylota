@@ -10,20 +10,21 @@ Quick installation guide (see below for extended version)
 =========================================================
 
 - If not already installed, download and 
-   install VirtualBox (https://www.virtualbox.org/wiki/Downloads)
+   install [VirtualBox](https://www.virtualbox.org/wiki/Downloads)
 - If not already installed, download and
-   install Vagrant (http://www.vagrantup.com/downloads.html).
+   install [Vagrant](http://www.vagrantup.com/downloads.html).
 - Change to a suitable working directory and issue the following commands:
 - `vagrant init Naturalis/supersmart`
 - `vagrant up`
 - Log in to the virtual guest machine using `vagrant ssh`
 - SUPERSMART is installed in the directory `/home/vagrant/SUPERSMART`, i.e. $SUPERSMART_HOME
+- The working directory where you typed `vagrant up` on the host is `/vagrant` inside the VM
 
 Extended installation instructions
 ==================================
 
-For installation instructions, please also refer to the project 
-website at http://www.supersmart-project.org/.
+For installation instructions, please also refer to the 
+[project website](http://www.supersmart-project.org/).
 The SUPERSMART pipeline is designed to run on a virtual 
 guest operating system within the 'VirtualBox' software, 
 using the 'Vagrant' tool to insert the virtual guest operating

@@ -63,6 +63,11 @@ $log->info("read species names from $file");
 my @nodes = $mts->get_nodes_for_names(@names);
 ok( @nodes, "found nodes" );
 
+# try taxon Id for 'Acrocomia crispa'
+my ($n) = $mts->get_nodes_for_names('Acrocomia crispa');
+my $ti = $n->ti;
+ok ( $ti, 'found ti for Acrocomia crispa');
+
 # test searching for taxon name that is not in database but 
 # could be found using the webservice
 my $taxon = "Alouatta fusca";
@@ -106,3 +111,4 @@ my $tree = parse_tree(
     );
 my @outgroup = $mts->get_outgroup_taxa($tree, \@ingroup);
 cmp_ok ( scalar @outgroup, ">", 0, "found outgroup species for list of taxon ids");
+

@@ -79,11 +79,11 @@ sub validate {
 		$self->usage_error("file $file is empty") unless (-s $file);			
 	}
 	if ( (my $ngens = $opt->ngens) <  30_000_000 ) {
-		$self->logger->warn("chain length $ngens seem very low, are you just testing?");		
+		$self->logger->warn("chain length $ngens seems very low, are you just testing?");		
 	}
 	if ( my $sfreq = $opt->sfreq ) {
 		if ( $sfreq <  300_000 ) {
-			$self->logger->warn("sampling frequency $sfreq seem very low, are you just testing?");		
+			$self->logger->warn("sampling frequency $sfreq seems very low, are you just testing?");		
 		}
 	}
 	if ( my $lfreq = $opt->lfreq ) {

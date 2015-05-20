@@ -371,6 +371,80 @@ sub max_ti {
 	return $result;		
 }
 
+=item max_gi
+
+Returns the highest GI from the seqs table.
+
+=cut
+
+sub max_gi {
+	my $self = $_;
+	my $result;
+	eval { 
+		$result = $schema->resultset('Seq')->get_column('gi')->max;
+	};
+	if ( $@ ) {
+		throw 'BadArgs' => $@;
+	}
+	if ( not $result ) {
+		$logger->warn("no result!");
+	}
+	return $result;		
+}
+
+=item insert_seq
+
+Insert a sequence into the sequence table. Argument must be a hasref with
+keys being the column names of the seqs table (the members of a  
+Bio::Phylo::PhyLoTA::DAO::Result::Seq object).
+
+=cut
+
+sub insert_seq {
+	my ( $self, $clause ) = @_;
+	my $result;
+
+	my @cols = keys(%$clause);
+
+	eval { 
+		$result = $schema->populate('Seq', [ \@cols, [@{$clause}{@cols}] ] );
+	};
+	if ( $@ ) {
+		throw 'BadArgs' => $@;
+	}
+	if ( not $result ) {
+		$logger->warn("no result!");
+	}
+	return $result;			
+}
+
+=item insert_node
+
+Insert a node into the nodes table. Argument must be a hasref with
+keys being the column names of the seqs table (the members of a  
+Bio::Phylo::PhyLoTA::DAO::Result::Node object).
+
+=cut
+
+sub insert_node {
+	my ( $self, $clause ) = @_;
+	my $result;
+
+	my @cols = keys(%$clause);
+
+	eval { 
+		$result = $schema->populate('Node', [ \@cols, [@{$clause}{@cols}] ] );
+	};
+	if ( $@ ) {
+		throw 'BadArgs' => $@;
+	}
+	if ( not $result ) {
+		$logger->warn("no result!");
+	}
+	return $result;			
+}
+
+
 =back
 
 =cut

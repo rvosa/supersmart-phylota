@@ -71,7 +71,6 @@ smrt bbinfer -b 100 -x
 # genera Piper and Peperomia are monophyletic. The '--smooth' flag makes it so that the 
 # root is placed on the branch between the two genera such that the average root-to-tip
 # path length is equal on both sides of the root.
-# XXX THIS GIVES NEGATIVE BRANCH LENGTHS!!!!
 smrt bbreroot --smooth
 
 # Step 8: calibrate the backbone trees from step 7. This step uses treePL to create 
@@ -86,7 +85,6 @@ smrt bbcalibrate -f $FOSSILS
 # nodes can be viewed by opening the resulting file ('consensus.nex') in figtree. As the 
 # trees are bootstrap trees we don't throw out a burnin fraction. This would be different 
 # had we used exabayes in step 6.
-# XXX THIS GIVES MESSED UP NEXUS!!!
 smrt consense --burnin=0
 
 # Step 10: decompose the backbone into clades. This step traverses the consensus tree from
@@ -99,7 +97,7 @@ smrt consense --burnin=0
 smrt bbdecompose
 
 # Step 11: for each clade, merge the separate clade alignments from step 10 into a single
-# input file for *BEAST.
+# input NeXML file for *BEAST.
 smrt clademerge
 
 # Step 12: for each clade, run *BEAST. By default this uses a very small number of 
@@ -111,6 +109,7 @@ smrt clademerge
 smrt cladeinfer -n 30_000_000
 
 # Step 13: graft the clade trees onto the backbone.
+# XXX ANNOTATIONS LOST WHEN READING IN CONSENSE TREE!
 smrt cladegraft
 
 # Step 14: plot the final result

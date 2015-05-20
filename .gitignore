@@ -1,6 +1,13 @@
 *.gz
 *.dmp
-*.tsv
+examples/*/*.tsv
+examples/*/*.fa
+examples/*/*.dnd
+examples/*/*.phy
+examples/*/*.nex
+examples/*/seeds.fa.*
+examples/*/aligned.txt
+examples/*/merged.txt
 Makefile
 *.komodoproject
 data/GBIF/taxonomy-search-*
@@ -24,3 +31,6 @@ Makefile.old
 Vagrantfile
 conf/output-virtualbox-iso/
 conf/packer_cache/
+blib
+pm_to_blib
+out
