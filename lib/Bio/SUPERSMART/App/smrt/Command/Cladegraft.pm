@@ -101,10 +101,10 @@ sub run{
 
 	#my ( $newicktree, %map ) = $ts->parse_newick_from_nexus( $backbone, '-ignore_comments' => 0, '-id_map' => 1 );
 	
-	for my $n (@{$backbone_tree->get_terminals}){
-		print $n->get_generic('length_median') . "\n";
-		print $n->get_name . "\n";
-	}
+#	for my $n (@{$backbone_tree->get_terminals}){
+#		print $n->get_generic('length_median') . "\n";
+#		print $n->get_name . "\n";
+#	}
 
 	# filenames for nexus trees written by BEAST
 	$ts->remap_to_ti($backbone_tree);

@@ -738,39 +738,47 @@ Grafts a clade tree into a backbone tree, returns the altered backbone.
 
 sub graft_tree {
 	my ( $self, $backbone, $clade ) = @_;
-    my $num_terminals = scalar @{ $backbone->get_terminals };
- 
-    # sometimes single quotes are added in the beast output when dealing with special characters
-    #   removing them to match names in the backbone. Just to be sure, remove quotes also from backbone
-    $clade->visit(sub{
-        my $node = shift;
-        my $name = $node->get_name;
-        $name =~ s/\'//g;
-        $node->set_name($name);
-    });
-    $backbone->visit(sub{
-        my $node = shift;
-        my $name = $node->get_name;
-        $name =~ s/\'//g;
-        $node->set_name($name);
-    });
+	my $num_terminals = scalar @{ $backbone->get_terminals };
+	
+	# sometimes single quotes are added in the beast output when dealing with special characters
+	#   removing them to match names in the backbone. Just to be sure, remove quotes also from backbone
+	$clade->visit(sub{
+		my $node = shift;
+		my $name = $node->get_name;
+		$name =~ s/\'//g;
+		$node->set_name($name);
+		      });
+	$backbone->visit(sub{
+		my $node = shift;
+		my $name = $node->get_name;
+		$name =~ s/\'//g;
+		$node->set_name($name);
+			 });
         
-    my @names = map { $_->get_name } @{ $clade->get_terminals };
-	$log->debug("Clade terminals : @names");
+	my @ids = map { $_->get_name } @{ $clade->get_terminals };
+	$log->debug("Clade terminals : @ids");
 	
 	# retrieve the tips from the clade tree that also occur in the backbone, i.e. the 
 	# exemplars, and locate their MRCA on the backbone
 	my @exemplars;
-	for my $name ( @names ) {
-		if ( my $e = $backbone->get_by_name($name) ) {
-			$log->info("found exemplar $name in backbone: ".$e->get_name);
+	for my $id ( @ids ) {
+		my $name = $self->find_node($id)->taxon_name;
+		if ( my $e = $backbone->get_by_name($id) ) {
+			$log->info("found exemplar $name ($id) in backbone");
                         push @exemplars, $e;
 		}
 		else {
-			$log->debug("$name is not in the backbone tree");
+			$log->debug("$name ($id) is not in the backbone tree");
 		}
 	}
 	$log->info("found ".scalar(@exemplars)." exemplars in backbone");
+
+	# it is possible that no exemplars are found in the backbone tree, when there is no
+	#  marker overlap with species in the clade tree. If this happens, we cannot graft
+	if ( ! scalar(@exemplars) ) {
+		$log->warn("No matching exemplar found in backbone tree, could not graft clade tree. Possibly no marker overlap");
+		return $backbone;
+	}
 	my @copy = @exemplars; # XXX ???	
 	my $bmrca = $backbone->get_mrca(\@copy);
 	my $nodes_to_root = $bmrca->calc_nodes_to_root;
@@ -778,7 +786,7 @@ sub graft_tree {
 	if ( $bmrca->is_root ){
 		$log->fatal("Something goes wrong here: MRCA of exemplar species " . join(',', map{$_->id} @exemplars) . " in backbone is the backbone root!");
 	}
-    # find the exemplars in the clade tree and find their MRCA
+	# find the exemplars in the clade tree and find their MRCA
 	my @clade_exemplars = map { $clade->get_by_name($_->get_name) } @exemplars;
 	
     my @ccopy = @clade_exemplars;
@@ -799,9 +807,9 @@ sub graft_tree {
         	$log->debug("adjusting branch length for ".$node->get_internal_name." to ".$bl * ( $bmrca_depth / $cmrca_depth ));
         } 
         else {
-        	$log->warn("mrca of clade or backbone has depth zero!");
-        	}
-    });
+        	$log->warn("mrca of clade or backbone has depth zero, maybe the exemplar was monotypic? skipping scaling branch length for node!");
+	}
+		  });
 		
 	#$log->debug("re-scaled clade by $bmrca_depth / $cmrca_depth");
 	
