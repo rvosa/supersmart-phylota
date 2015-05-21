@@ -3,6 +3,6 @@ git pull --quiet
 commit=`git log -1 | head -1 | cut -f 2 -d ' '`
 hash=${commit:0:10}
 cd -
-cpanm --notest --quiet git://github.com/rvosa/bio-phylo.git
+sudo cpanm --notest --quiet git://github.com/rvosa/bio-phylo.git
 VERSION=`perl -MBio::SUPERSMART -e 'print $Bio::SUPERSMART::VERSION'`
 export PS1="\[\e[0;32m\]SUPERSMART $VERSION - $hash\[\e[m\] \[\e[1;34m\]\w\[\e[m\] \[\e[1;32m\]\$\[\e[m\] "
