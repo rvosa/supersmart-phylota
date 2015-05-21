@@ -1,3 +1,4 @@
 cd $SUPERSMART_HOME && git pull --quiet && cd -
+cpanm --notest --quiet git://github.com/rvosa/bio-phylo.git
 VERSION=`perl -MBio::SUPERSMART -e 'print $Bio::SUPERSMART::VERSION'`
 export PS1="\[\e[0;32m\]SUPERSMART $VERSION\[\e[m\] \[\e[1;34m\]\w\[\e[m\] \[\e[1;32m\]\$\[\e[m\] "
