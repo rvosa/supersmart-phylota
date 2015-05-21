@@ -1,4 +1,4 @@
-perl -MBio::Phylo::Util::Logger -e 'Bio::Phylo::Util::Logger::INFO("Checking for updates")'
+perl -MBio::Phylo::Util::Logger -e 'Bio::Phylo::Util::Logger->VERBOSE(-level=>4);Bio::Phylo::Util::Logger::INFO("Checking for updates")'
 cd $SUPERSMART_HOME
 git pull --quiet
 commit=`git log -1 | head -1 | cut -f 2 -d ' '`
