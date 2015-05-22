@@ -6,6 +6,7 @@ use List::Util 'sum';
 
 use Bio::Phylo::Factory;
 use Bio::Phylo::PhyLoTA::Service::TreeService;
+use Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector;
 use Bio::Phylo::IO qw(parse parse_tree);
 
 use base 'Bio::SUPERSMART::App::SubCommand';
@@ -20,16 +21,24 @@ BBinfer.pm - reroots backbone tree
 
 =head1 SYNOPSIS
 
-smrt bbreroot [-h ] [-v ] [-w <dir>] [-l <filename>] -t <file> -b <file> [-g <names>] [-o <filename>] 
+ smrt bbreroot [-h ] [-v ] [-w <dir>] [-l <filename>] -t <file> -b <file> \
+	[-g <names>] [-o <filename>] 
 
 =head1 DESCRIPTION
 
-Given input backbone tree(s) in newick format and a list of taxa with their NCBI taxonomy 
-identifiers for different taxonomic ranks, re-roots the tree such that the number of 
-paraphyletic taxa (with respect to certain taxonomic ranks) is minimized. Output is the 
-rerooted tree(s) in newick format. The taxonomic level from which the number of 
-monophyletic subtrees is counted, is set to be the highest informative taxonomic level. 
-This is, given the species list, the highest rank which still contains distinct taxa.
+Reroots input backbone tree(s) in newick format (--backbone or -b argument)
+ideally with one or more outgroups, which can be specified as comma-separated
+values for the --outgroup (or -g) argument.
+
+If no outgroups are specified, a taxa table (as produced by smrt taxize) will
+be used to attempt to reconcile the topology with the taxonomy by selecting the
+rooting that minimizes the amount of taxonomic non-monophyly on the input tree.
+Note that there often are multiple solutions possible and only the first one
+will be (arbitrarily) selected.
+
+A taxafile will be used regardless. By default this is the 'species.tsv' file
+in the current working directory, but this can be altered using the --taxafile
+or -t argument.
 
 =cut
 
@@ -65,14 +74,20 @@ sub run {
 	# collect command-line arguments
 	my $backbone = $opt->backbone;
 	my $taxafile = $opt->taxafile;
-	my $outgroup = $opt->outgroup;
 	my $smooth   = $opt->smooth;
 	my $outfile  = $self->outfile;
-	
+		
 	# instantiate helper objects
-	my $ts = Bio::Phylo::PhyLoTA::Service::TreeService->new;
-	my $mt = Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa->new;
-	my $logger = $self->logger;
+	my $ts  = Bio::Phylo::PhyLoTA::Service::TreeService->new;
+	my $mt  = Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa->new;
+	my $mts = Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector->new;
+	my $log = $self->logger;
+	
+	# identify outgroup once
+	my $outgroup;
+	if ( my $csv = $opt->outgroup ) {
+		$outgroup = [map { $_->ti } $mts->get_nodes_for_names(split /,/,$csv)];
+	}	
 	
 	# prepare taxa data
 	my @records = $mt->parse_taxa_file($taxafile);
@@ -94,7 +109,7 @@ sub run {
 		if ( $outgroup ) {			
 			$ts->outgroup_root(
 				'-tree'     => $tree,
-				'-outgroup' => [ split /,/, $outgroup ],
+				'-ids'      => $outgroup,
 				'-ranks'    => \@ranks,
 				'-records'  => \@records,
 			);		
@@ -103,14 +118,14 @@ sub run {
 		# Try to minimize paraphyly if no outgroup given
 		else {	
 			my $level = $mt->get_highest_informative_level(@records);	
-			$logger->info("highest informative taxon level : $level");		
+			$log->info("highest informative taxon level : $level");		
             $tree->resolve;	
 			$tree = $ts->reroot_tree($tree, \@records, [$level]);
 		}
 		
 		# smooth the basal branch, if requested
         if ( $smooth ) {
-            $logger->info("smoothing out diff between left and right tip heights");
+            $log->info("smoothing out diff between left and right tip heights");
 			$ts->smooth_basal_split($tree);
         }
 		
@@ -118,9 +133,9 @@ sub run {
 		$tree = $ts->remap_to_name($tree);
 		$ts->remove_internal_names($tree);
 		print $out $tree->to_newick( 'nodelabels' => 1 ), "\n";
-        $logger->info("rerooted backbone tree ".$counter++);		
+        $log->info("rerooted backbone tree ".$counter++);		
 	}
-	$logger->info("DONE, results written to $outfile");		
+	$log->info("DONE, results written to $outfile");		
 }
 
 1;
