@@ -183,20 +183,27 @@ sub _insert_taxa {
 	my $counter = 0;
 	# insert entries that are not yet in database
 	for my $rec(@records) {
-		# select species and genus; note that we do not need to 
+		# select lowest rank that has taxon ID and genus; note that we do not need to 
 		#  look for subspecies etc., since 'smrt replicate' only
 		#  produces artificial species!
 		my $taxon_name = $rec->{'name'};
-
-		my $ti;
 		my @ranks = reverse($mts->get_taxonomic_ranks);
 		
-	      RANK: for my $r ( @ranks ) {
-		      if ( $rec->{$r} =~ /[0-9]+/ ) {
-			      $ti = $rec->{$r};
-			      last RANK;
-		      }
-	      }
+		my @tis;
+		for my $r ( @ranks ) {
+			if ( $rec->{$r} =~ /[0-9]+/ ) {
+				push @tis, $rec->{$r};			      			
+			}
+		}
+		if ( not scalar(@tis) ) {
+			$logger->warn("cannot process taxon $taxon_name, no taxon IDs found");
+			next;
+		}
+		
+		# set 
+		my $ti = $tis[0];
+		my $ti_anc = $tis[1] || 0;
+		
 		my $node = $mts->find_node($ti);
 		if ( $node ) {
 			$logger->info("Taxon $taxon_name ($ti) already in database, skipping.");
@@ -206,7 +213,6 @@ sub _insert_taxa {
 		my $ti_genus = $rec->{'genus'};
 		
 		# gather other fields to enter
-		my $ti_anc = $ti_genus;
 		my $terminal_flag = 1;
 		my $rank_flag = 1;
 		my $rank = 'species';		
@@ -216,7 +222,7 @@ sub _insert_taxa {
 		$logger->info("Inserting node for taxon $taxon_name ($ti) into database ");
 		$mts->insert_node({ti             => $ti, 
 				   taxon_name     => $taxon_name,
-				   ti_anc         => $ti_genus, 
+				   ti_anc         => $ti_anc, 
 				   terminal_flag  => $terminal_flag, 
 				   rank_flag      => $rank_flag, 
 				   rank           => $rank, 
