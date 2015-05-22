@@ -359,7 +359,7 @@ sub query_taxa_table {
 	my @matching = grep { my %h = %{$_}; grep{ exists($tids{$_}) } values%h } @records;	
 	my @ids = uniq map { @{$_}{keys(%ranks)} } @matching;
 	# remove NA values from result
-	my @result = grep /[0-9]+/, @ids;
+	my @result = grep { defined $_ and /[0-9]+/ } @ids;
 	return @result;
 }
 
