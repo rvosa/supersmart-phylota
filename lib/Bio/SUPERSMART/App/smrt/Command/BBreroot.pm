@@ -77,8 +77,6 @@ sub run {
 	# prepare taxa data
 	my @records = $mt->parse_taxa_file($taxafile);
 	my @ranks = ('forma', 'varietas', 'subspecies', 'species');	
-	my $level = $mt->get_highest_informative_level(@records);	
-	$logger->info("highest informative taxon level : $level");
 	
 	# open output file	
 	open my $out, '>', $outfile or die $!;			
@@ -104,6 +102,8 @@ sub run {
 	
 		# Try to minimize paraphyly if no outgroup given
 		else {	
+			my $level = $mt->get_highest_informative_level(@records);	
+			$logger->info("highest informative taxon level : $level");		
             $tree->resolve;	
 			$tree = $ts->reroot_tree($tree, \@records, [$level]);
 		}

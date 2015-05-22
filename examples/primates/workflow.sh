@@ -9,32 +9,35 @@ smrt taxize -i names.txt
 
 # extract the common classification tree for the species in the
 # taxa table. produces a newick file with unbranched internal nodes.
-smrt classify -i species.tsv
+smrt classify
 
 # align all phylota clusters for the species in the taxa table.
 # produces many aligned fasta files and a file listing these
-smrt align -i species.tsv
+smrt align 
 
 # assign orthology among the aligned clusters by reciprocal BLAST
-smrt orthologize -i aligned.txt
+smrt orthologize
 
 # merge the orthologous clusters into a supermatrix with exemplar
 # species, two per genus
-smrt bbmerge -a merged.txt -t species.tsv
+smrt bbmerge
 
 # run an examl search on the supermatrix, resulting in a backbone tree
-smrt bbinfer -s supermatrix.phy -t classification-tree.dnd -i examl
+smrt bbinfer -b 100 -i examl
 
 # root the backbone tree by minimizing the number of non-monophyletic
 # higher taxa
-smrt bbreroot -b backbone.dnd -t species.tsv
+smrt bbreroot
 
 # calibrate the re-rooted backbone tree using treePL
-smrt bbcalibrate -t backbone-rerooted.dnd -s supermatrix.phy -f fossils.tsv -o backbone-calibrated.dnd
+smrt bbcalibrate -f fossils.tsv
+
+# build a consensus
+smrt consense -b 0.0
 
 # decompose the backbone tree into monophyletic clades. writes a directory
 # with suitable alignments for each clade
-smrt bbdecompose -b backbone-calibrated.dnd -c classification-tree.dnd -a aligned.txt -t species.tsv
+smrt bbdecompose
 
 # merge all the alignments for each clades into a nexml file
 smrt clademerge
@@ -43,4 +46,4 @@ smrt clademerge
 smrt cladeinfer
 
 # graft the *BEAST results on the backbone
-smrt cladegraft -b backbone-calibrated.dnd
+smrt cladegraft
