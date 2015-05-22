@@ -3,6 +3,7 @@ use strict;
 use warnings;
 use File::Temp 'tempfile';
 use Bio::Phylo::Factory;
+use Bio::Phylo::IO 'unparse';
 use Bio::Phylo::PhyLoTA::Service::TreeService;
 use base 'Bio::SUPERSMART::App::SubCommand';
 use Bio::SUPERSMART::App::smrt qw(-command);
