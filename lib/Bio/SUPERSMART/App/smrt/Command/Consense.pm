@@ -81,15 +81,21 @@ sub run {
     $self->logger->info("applying node labels");
     $consensus->visit(sub{
         my $node = shift;
-        if ( my $posterior = $node->get_meta_object('fig:posterior') ) {
-
-            # apply optionally converted node support as node label
-			if ( $opt->prob ) {
-				$node->set_name( $posterior );
+		if ( $node->is_internal ) {
+			if ( my $posterior = $node->get_meta_object('fig:posterior') ) {
+	
+				# apply optionally converted node support as node label
+				if ( $opt->prob ) {
+					$node->set_name( $posterior );
+				}
+				else {
+					my $count = int( $posterior * $ntrees + 0.5 );
+					$node->set_name( "$count/$ntrees");
+				}
 			}
 			else {
-				my $count = int( $posterior * $ntrees + 0.5 );
-				$node->set_name( "$count/$ntrees");
+				$self->logger->debug("no posterior probability on node");
+				$self->logger->debug($node->to_js);
 			}
 		}
     });
