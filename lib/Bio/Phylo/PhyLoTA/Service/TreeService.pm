@@ -9,6 +9,7 @@ use Bio::Phylo::PhyLoTA::Config;
 use Bio::Phylo::PhyLoTA::Service;
 use base 'Bio::Phylo::PhyLoTA::Service';
 use Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa;
+use Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector;
 use List::MoreUtils 'uniq';
 use List::Util qw'min sum';
 
@@ -237,6 +238,7 @@ Roots a tree on a list of outgroup taxon names. Arguments:
 
  -tree     => input tree object
  -outgroup => [ list of names ]
+ ( optional: -ids => [ list of outgroup IDs ] )
  -ranks    => [ list of taxonomic ranks of interest ]
  -records  => [ list of taxa table records ]
 
@@ -245,23 +247,17 @@ Roots a tree on a list of outgroup taxon names. Arguments:
 sub outgroup_root {
 	my ( $self, %args ) = @_;
 	my $tree    = $args{'-tree'};
-	my @names   = @{ $args{'-outgroup'} };
 	my @ranks   = @{ $args{'-ranks'} };
 	my @records = @{ $args{'-records'} };
+	my @ids     = $args{'-ids'} ? @{ $args{'-ids'} } : ();
+	my @names   = $args{'-outgroup'} ? @{ $args{'-outgroup'} } : ();
 	my $mt = Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa->new;
+	my $mts = Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector->new;
 			
 	# remap outgroup species names to taxon identifiers
-	my @ids = map {
-		(my $name = $_) =~ s/_/ /g;
-		my @nodes = $self->search_node({ 'taxon_name' => $name })->all;
-		
-		# verify result
-		if ( @nodes != 1 ) {
-			$log->warn("found more than one database entry for taxon $name, using first entry.") if scalar (@nodes) > 1;						
-			die "could not find database entry for taxon name $name" if scalar(@nodes) == 0;
-		}				
-		$nodes[0]->ti;
-	} @names;	
+	if ( not @ids ) {
+		@ids = map { $_->ti } $mts->get_nodes_for_names(@names);
+	}
 	my @all_ids = $mt->query_taxa_table(\@ids, \@ranks, @records);
 
 	# fetch outgroup nodes and mrca
