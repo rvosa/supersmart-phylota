@@ -11,36 +11,6 @@ use Bio::Phylo::PhyLoTA::Service::TreeService;
 my $ts = Bio::Phylo::PhyLoTA::Service::TreeService->new;
 
 {
-	# test nexus file
-	my $file = "${Bin}/testdata/testconsense.nex";
-
-
-	# make consensus tree
-	my $tree = $ts->consense_trees( '-infile' => $file );
-	ok( $tree, "have tree $tree" );
-
-	# verify annotations
-	$tree->visit(sub{
-		my $n = shift;
-		my $ann = $n->get_generic('treeannotator');
-		ok( $ann, "$ann exists" );
-		ok( ref $ann eq 'HASH', "$ann is a hash" );
-		for my $key ( keys %$ann ) {
-			my $val = $ann->{$key};
-			if ( ref $val ) {
-				ok( ref $val eq 'ARRAY', "$val is an array" );
-				for my $v ( @$val ) {
-					ok( looks_like_number $v, "$v is a number" );
-				}
-			}
-			else {
-				ok( looks_like_number $val, "$val is a number" )
-			}
-		}
-	});
-}
-
-{
 	# test newick file
 	my $file = "${Bin}/testdata/testconsense.dnd";
 
@@ -49,23 +19,25 @@ my $ts = Bio::Phylo::PhyLoTA::Service::TreeService->new;
 	my $tree = $ts->consense_trees( '-infile' => $file, '-format' => 'newick' );
 	ok( $tree, "have tree $tree" );
 
-	# verify annotations
-	$tree->visit(sub{
-		my $n = shift;
-		my $ann = $n->get_generic('treeannotator');
-		ok( $ann, "$ann exists" );
-		ok( ref $ann eq 'HASH', "$ann is a hash" );
-		for my $key ( keys %$ann ) {
-			my $val = $ann->{$key};
-			if ( ref $val ) {
-				ok( ref $val eq 'ARRAY', "$val is an array" );
-				for my $v ( @$val ) {
-					ok( looks_like_number $v, "$v is a number" );
-				}
-			}
-			else {
-				ok( looks_like_number $val, "$val is a number" )
-			}
-		}
-	});
+	# check if the semantic annotations are numerically correct
+	my $tip = $tree->get_by_name('taxon_4');
+	
+	my %exp = (		
+		'height_95_HPD_min'  => 0.0,
+		'height_95_HPD_max'  => 1.7763568394002505E-15,
+		'length_range_min'   => 0.5128205002832722,
+		'length_range_max'   => 0.9142517343483778,
+		'height_median'      => 0.0,
+		'length_95_HPD_min'  => 0.5128205002832722,
+		'length_95_HPD_max'  => 0.9142517343483778,
+		'height'             => 1.9737298215558337E-16,
+		'height_range_min'   => 0.0,
+		'height_range_max'   => 1.7763568394002505E-15,
+		'length'             => 0.6526713962566253,
+		'length_median'      => 0.6258248261274582,
+	);
+	for my $key ( keys %exp ) {
+		my $obs = $tip->get_meta_object( 'fig:' . $key );
+		ok( $obs == $exp{$key}, "$key $obs == $exp{$key}" );
+	}
 }
