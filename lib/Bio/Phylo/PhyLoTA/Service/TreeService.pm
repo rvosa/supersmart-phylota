@@ -380,9 +380,9 @@ sub remap_to_ti {
 				my @ranks =  ('forma', 'varietas', 'subspecies', 'species');
 				RECORD: for my $rec (@records) {
 					my $curr_name = $rec->{"name"};
-					if ( $curr_name eq $name ) {
+					if ( $curr_name and $curr_name eq $name ) {
 						for my $rank (@ranks) {
-							if ( ! ($rec->{$rank} eq 'NA') ) {
+							if ( $rec->{$rank} and $rec->{$rank} ne 'NA' ) {
 								$ti =  $rec->{$rank};
 								last RECORD;
 							}		
