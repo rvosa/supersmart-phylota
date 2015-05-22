@@ -269,6 +269,14 @@ sub outgroup_root {
 	my @ognodes = grep { exists($og{$_->get_name}) } @{$tree->get_terminals};
 	my $mrca = $tree->get_mrca(\@ognodes);
 
+	if ($mrca->is_root) {
+		# if mrca is the root, rerooting won't make sense.
+		# Instead, reroot at the mrca of the ingroup to get
+		# a proper bipartition
+		my @ignodes = 	my @ognodes = grep { ! exists($og{$_->get_name}) } @{$tree->get_terminals};
+		$mrca = $tree->get_mrca(\@ignodes);
+	}
+
 	# reroot at mrca of outgroup
 	$mrca->set_root_below;	
 }
