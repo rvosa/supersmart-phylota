@@ -34,12 +34,14 @@ sub options {
 	my ($self, $opt, $args) = @_;
 	my $outfile_default = "final.nex";
 	my $tree_default = "consensus.nex";
-	my $format_default = 'nexus';
+	my $informat_default = 'nexus';
+	my $outformat_default = 'nexus';
 	return (                               	
   		["backbone|b=s", "backbone tree as produced by 'smrt bbinfer'", { arg => "file", default => $tree_default }],
 		["outfile|o=s", "name of the output tree file (newick format) defaults to $outfile_default", { default=> $outfile_default, arg => "file"}],    	    
 		["cladetree|c=s", "name of tree file for single clade (newick format) if only a single cladetree should be grafted", { arg => "file"}],
-		["format|c=s", "file format of the backbone tree (newick or nexus), defaults to $format_default", { default => $format_default }],    	    		
+		["informat|i=s", "file format of the backbone tree (newick or nexus), defaults to $informat_default", { default => $informat_default }],
+		["outformat|f=s", "file format of the final (newick or nexus), defaults to $outformat_default", { default => $outformat_default }],    	    		
     );
 }
 
@@ -67,9 +69,14 @@ sub validate {
 		}
 	}
 	
-	if ( $opt->format !~ /^(?:newick|nexus)/i ) {
+	if ( $opt->informat !~ /^(?:newick|nexus)/i ) {
 		$self->usage_error("format for the backbone can only be newick or nexus");
 	}
+
+	if ( $opt->outformat !~ /^(?:newick|nexus)/i ) {
+		$self->usage_error("format for the output tree can only be newick or nexus");
+	}
+
 }
 
 sub run{
@@ -88,8 +95,16 @@ sub run{
 	# parse backbone tree
 	my $backbone_tree = parse_tree(
 		'-file'   => $backbone,
-		'-format' => $opt->format,
+		'-format' => $opt->informat,
+		'-ignore_comments' => 1,
 	);
+
+	#my ( $newicktree, %map ) = $ts->parse_newick_from_nexus( $backbone, '-ignore_comments' => 0, '-id_map' => 1 );
+	
+#	for my $n (@{$backbone_tree->get_terminals}){
+#		print $n->get_generic('length_median') . "\n";
+#		print $n->get_name . "\n";
+#	}
 
 	# filenames for nexus trees written by BEAST
 	$ts->remap_to_ti($backbone_tree);
@@ -118,7 +133,7 @@ sub run{
     $ts->remap_to_name($grafted);    
     
     my $string;
-    if ( $opt->format =~ /nexus/i ) {
+    if ( $opt->outformat =~ /nexus/i ) {
 	    $string = $grafted->to_nexus( 'nodelabels' => 1 );
     }
     else {
@@ -151,7 +166,7 @@ sub _graft_single_tree {
 	
 	# make consensus from nexus file
 	my $consensus = $ts->consense_trees( '-infile' => $file ); 
-	
+
 	# save consensus tree
 	open my $fh, '>', $stem.".dnd" or die $!;
 	print $fh $consensus->to_newick('-nodelabels' => 1);
@@ -159,6 +174,7 @@ sub _graft_single_tree {
 
 	# also save remapped consensus tree                
 	my $remapped_consensus = parse('-string'=>$consensus->to_newick( nodelabels => 1 ), '-format'=>'newick')->first;
+	
 	$ts->remap_to_name($remapped_consensus);
 	open my $fhr, '>', $stem."-remapped.dnd" or die $!;
 	print $fhr $remapped_consensus->to_newick('-nodelabels' =>1);

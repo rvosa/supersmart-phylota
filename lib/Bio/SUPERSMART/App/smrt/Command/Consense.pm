@@ -127,6 +127,7 @@ sub run {
     # write to file
     open my $out, '>', $self->outfile or die $!;
     print $out $string;
+	$self->logger->info("DONE, results written to ".$self->outfile);
 }
 
 1;

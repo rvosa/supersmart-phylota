@@ -23,8 +23,11 @@ Exec {
 		"/usr/bin",
 		"/sbin",
 		"/bin",
-	]
+	] 
 }
+
+# disable timeout for all provisioning operations
+Exec { timeout => 0 }
 
 # This class contains the instructions for configuring and installing all dependencies,
 # data, and the pipeline itself.
@@ -56,10 +59,6 @@ class install {
 		"subversion":      ensure => installed, require => Exec ["apt_update"];
 		"r-base":          ensure => installed, require => Exec ["apt_update"];
 		"r-base-dev":      ensure => installed, require => Exec ["apt_update"];
-
-		# 2015-04-19 checking to see if we can get OpenMPI from package manager, as 
-		# building from source takes so long that travis times out. Don't remember
-		# why we weren't doing this in the first place. May have to revert this -- RAV
 		"libopenmpi-dev":  ensure => installed, require => Exec ["apt_update"];
 		"openmpi-bin":     ensure => installed, require => Exec ["apt_update"];  
 	}
@@ -151,31 +150,26 @@ class install {
 		"set_locale_sh":
 			command => "echo 'export LC_ALL=en_US.UTF-8' > set_locale.sh",
 			cwd     => "/etc/profile.d",
-			timeout => 0,        
 			creates => "/etc/profile.d/set_locale.sh";
 
 		# add bin directory for all required tools and smrt executables to PATH
 		"make_bindir_sh":
 			command => "echo 'export PATH=\$PATH:${tools_bin_dir}:${src_dir}/supersmart/script' > supersmart-tools-bin.sh",
 			cwd     => "/etc/profile.d",
-			timeout => 0,        
 			creates => "/etc/profile.d/supersmart-tools-bin.sh";
 		"make_bindir_csh":
 			command => "echo 'setenv PATH \$PATH:${tools_bin_dir}:${src_dir}/supersmart/script' > supersmart-tools-bin.csh",
 			cwd     => "/etc/profile.d",
-			timeout => 0,        
 			creates => "/etc/profile.d/supersmart-tools-bin.csh";
 
 		# add default EDITOR environment variable
 		"make_editor_sh":
 			command => "echo 'export EDITOR=/etc/alternatives/editor' > supersmart-editor.sh",
 			cwd     => "/etc/profile.d",
-			timeout => 0,        
 			creates => "/etc/profile.d/supersmart-editor.sh";
 		"make_editor_csh":
 			command => "echo 'setenv EDITOR=/etc/alternatives/editor' > supersmart-editor.csh",
 			cwd     => "/etc/profile.d",
-			timeout => 0,        
 			creates => "/etc/profile.d/supersmart-editor.csh";
 
 		# make phylota database
@@ -183,18 +177,15 @@ class install {
 			command => "wget http://biovel.naturalis.nl/phylota.tar.gz",
 			cwd     => $data_dir,
 			creates => "${data_dir}/phylota.tar.gz",
-			timeout => 0,
 			require => [ File[ $data_dir ], Package[ 'wget' ] ];
 		"unzip_phylota_dump":
 			command => "tar -xzvf phylota.tar.gz",
 			creates => "${data_dir}/phylota",
 			cwd     => $data_dir,
-			timeout => 0,
 			require => Exec[ 'dl_phylota_dump'];
 		"chown_phylota_db":
 			command   => "chown -R -h mysql:mysql ${data_dir}/ && chmod 660 ${data_dir}/phylota/*",
 			logoutput => true,
-			timeout => 0,        
 			require   => Exec[ 'unzip_phylota_dump' ];
 
 		# install mafft
@@ -202,24 +193,20 @@ class install {
 			command   => "wget http://mafft.cbrc.jp/alignment/software/mafft-7.130-without-extensions-src.tgz",
 			cwd       => $tools_dir,
 			creates   => "${tools_dir}/mafft-7.130-without-extensions-src.tgz",
-			timeout => 0,        
 			require   => [ File [ $tools_dir ] ];
 		"unzip_mafft":
 			command   => "tar -xzvf mafft-7.130-without-extensions-src.tgz",
 			cwd       => $tools_dir,
 			creates   => "${tools_dir}/mafft-7.130-without-extensions",
-			timeout => 0,        
 			require   => Exec[ 'dl_mafft' ];
 		"make_nonroot_makefile_mafft":
 			command   => "sed -i -e 's|PREFIX = /usr/local|PREFIX = ${tools_dir}|g' Makefile",
 			cwd       => "${tools_dir}/mafft-7.130-without-extensions/core",
-			timeout => 0,        
 			require   => Exec[ 'unzip_mafft' ];
 		"install_mafft":
 			command   => "make && make install",
 			cwd       => "${tools_dir}/mafft-7.130-without-extensions/core",
 			creates   => "$tools_dir/bin/mafft",
-			timeout => 0,        
 			require   => Exec[ 'make_nonroot_makefile_mafft' ];
 
 		# install muscle multiple sequence alignment
@@ -227,58 +214,28 @@ class install {
 			command   => "wget http://www.drive5.com/muscle/downloads3.8.31/muscle3.8.31_i86linux64.tar.gz",
 			cwd       => $tools_dir,
 			creates   => "${tools_dir}/muscle3.8.31_i86linux64.tar.gz",
-			timeout => 0,        
 			require   => Package[ 'wget', 'tar' ];
 		"unzip_muscle":
 			command   => "tar -xzvf muscle3.8.31_i86linux64.tar.gz -C ${tools_bin_dir}",
 			cwd       => $tools_dir,
 			creates   => "${tools_bin_dir}/muscle3.8.31_i86linux64",
-			timeout => 0,        
 			require   => Exec["download_muscle"];
-
-		# 2015-04-19 checking to see if we can get OpenMPI from package manager, as 
-		# building from source takes so long that travis times out. Don't remember
-		# why we weren't doing this in the first place. May have to revert this -- RAV
-	
-		# 2015-05-06 So far this has not created any problems. We may NOT have to revert
-		# this -- RAV
-
-		# install openmpi
-	#   "download_openmpi":
-	#       command => "wget http://www.open-mpi.org/software/ompi/v1.6/downloads/openmpi-1.6.5.tar.gz",
-	#       cwd     => $tools_dir,
-	#       creates => "${tools_dir}/openmpi-1.6.5.tar.gz",
-	#       require => Package[ 'wget', 'tar' ];
-	#   "unzip_openmpi":
-	#       command => "tar -xvzf openmpi-1.6.5.tar.gz",
-	#       cwd     => $tools_dir,
-	#       creates => "${tools_dir}/openmpi-1.6.5",
-	#       require => Exec['download_openmpi'];
-	#   "install_openmpi":
-	#       command => "${tools_dir}/openmpi-1.6.5/configure --prefix=/usr --disable-dlopen && make -j 4 install",
-	#       creates => "/usr/bin/mpicc",
-	#       cwd     => "${tools_dir}/openmpi-1.6.5",
-	#       timeout => 0,
-	#       require => Exec['unzip_openmpi'];
 
 		# install phylip
 		"download_phylip":
 			command => "wget http://evolution.gs.washington.edu/phylip/download/phylip-3.696.tar.gz",
 			cwd     => $tools_dir,
 			creates => "${tools_dir}/phylip-3.696.tar.gz",
-			timeout => 0,        
 			require => Package[ 'wget', 'tar' ];
 		"unzip_phylip":
 			command => "tar -xzvf ${tools_dir}/phylip-3.696.tar.gz",
 			cwd     => $tools_dir,
 			creates => "${tools_dir}/phylip-3.696/src/Makefile.unx",
-			timeout => 0,        
 			require => Exec["download_phylip"];
 		"make_phylip":
 			command => "make -f Makefile.unx consense",
 			cwd     => "${tools_dir}/phylip-3.696/src/",
 			creates => "${tools_dir}/phylip-3.696/src/consense",
-			timeout => 0,        
 			require => Exec["unzip_phylip"];
 
 		# install examl & parser
@@ -286,19 +243,16 @@ class install {
 			command => "git clone https://github.com/stamatak/ExaML.git",
 			cwd     => $tools_dir,
 			creates => "${tools_dir}/ExaML/",
-			timeout => 0,        
 			require => Package[ 'git', 'zlib1g-dev' ];
 		"compile_examl":
 			command => "make -f Makefile.SSE3.gcc LD_LIBRARY_PATH=/usr/lib",
 			cwd     => "${tools_dir}/ExaML/examl",
 			creates => "${tools_dir}/ExaML/examl/examl",
-			timeout => 0,        
 			require => [ Exec["clone_examl"], Package["libopenmpi-dev","openmpi-bin"] ];
 		"compile_parser":
 			command => "make -f Makefile.SSE3.gcc",
 			cwd     => "${tools_dir}/ExaML/parser",
 			creates => "${tools_dir}/ExaML/parser/parser",
-			timeout => 0,        
 			require => [ Exec["clone_examl"], Package["libopenmpi-dev","openmpi-bin"] ];
 
 		# install raxml
@@ -306,13 +260,11 @@ class install {
 			command => "git clone https://github.com/stamatak/standard-RAxML.git",
 			cwd     => $tools_dir,
 			creates => "${tools_dir}/standard-RAxML/",
-			timeout => 0,        
 			require => Package[ 'git' ];
 		"compile_raxml":
 			command => "make -f Makefile.SSE3.PTHREADS.gcc LD_LIBRARY_PATH=/usr/lib",
 			cwd     => "${tools_dir}/standard-RAxML/",
 			creates => "${tools_dir}/standard-RAxML/raxmlHPC-PTHREADS-SSE3",
-			timeout => 0,        
 			require => Exec["clone_raxml"];
 
 		# install exabayes
@@ -320,25 +272,21 @@ class install {
 			command => "wget http://sco.h-its.org/exelixis/material/exabayes/1.4.1/exabayes-1.4.1-linux-openmpi-sse.tar.gz",
 			cwd     => $tools_dir,
 			creates => "${tools_dir}/exabayes-1.4.1-linux-openmpi-sse.tar.gz",
-			timeout => 0,
 			require => Package["libopenmpi-dev","openmpi-bin"];
 		"unzip_exabayes":
 			command => "tar -xvzf exabayes-1.4.1-linux-openmpi-sse.tar.gz",
 			cwd     => $tools_dir,
 			creates => "${tools_dir}/exabayes-1.4.1/",
-			timeout => 0,        
 			require => Exec[ "download_exabayes" ];
 		"configure_exabayes":		
 			command => "sh configure --enable-mpi",		
 			cwd     => "${tools_dir}/exabayes-1.4.1",		
 			creates => "${tools_dir}/exabayes-1.4.1/exabayes/Makefile",		
-			timeout => 0,		
 		require => Exec[ "unzip_exabayes" ];
 		"compile_exabayes":		
 			command => "make",		
 			cwd     => "${tools_dir}/exabayes-1.4.1",		
 			creates => "${tools_dir}/exabayes-1.4.1/exabayes",		
-			timeout => 0,		
 		require => Exec[ "configure_exabayes" ];
 
 		# install supersmart
@@ -347,35 +295,35 @@ class install {
 			cwd     => $src_dir,
 			creates => "${src_dir}/supersmart",
 			user    => $username,
-			timeout => 0,        
 			require => [ File[ $src_dir ], Package[ 'git' ] ];
 		"make_supersmart_sh":
 			command => "echo 'export LD_LIBRARY_PATH=/usr/lib:/usr/lib64:/usr/local/lib' > supersmart.sh && echo 'export SUPERSMART_HOME=${src_dir}/supersmart' >> supersmart.sh && echo 'export PERL5LIB=\$PERL5LIB:\$SUPERSMART_HOME/lib' >> supersmart.sh",
 			cwd     => "/etc/profile.d",
-			timeout => 0,        
 			creates => "/etc/profile.d/supersmart.sh";
 		"make_supersmart_csh":
 			command => "echo 'setenv LD_LIBRARY_PATH /usr/lib:/usr/lib64:/usr/local/lib' > supersmart.csh && echo 'setenv SUPERSMART_HOME ${src_dir}/supersmart' >> supersmart.csh && echo 'setenv PERL5LIB \$PERL5LIB:\$SUPERSMART_HOME/lib' >> supersmart.csh",
 			cwd     => "/etc/profile.d",
-			timeout => 0,        
 			creates => "/etc/profile.d/supersmart.csh";
+		#"copy_supersmart_login":
+		#	command => "cp .bash_login /home/vagrant/.bash_login",
+		#	cwd     => "${src_dir}/supersmart/conf",
+		#	creates => "/home/vagrant/.bash_login",
+		#	user    => $username,
+		#	require => Exec[ 'clone_supersmart' ];
 
 		# install BEAST
 		"download_beast":
 			command => "wget https://beast-mcmc.googlecode.com/files/BEASTv1.8.0.tgz",
 			cwd     => $tools_dir,
 			creates => "${tools_dir}/BEASTv1.8.0.tgz",
-			timeout => 0,
 			require => Package[ 'wget' ];
 		"unzip_beast":
 			command => "tar -xvzf BEASTv1.8.0.tgz",
-			timeout => 0,        
 			cwd     => "$tools_dir",
 			creates => "${tools_dir}/BEASTv1.8.0/bin/beast",
 			require => Exec[ 'download_beast' ];
 		"symlink_beast":
 			command => "ln -s ${tools_dir}/BEASTv1.8.0/bin/* .",
-			timeout => 0,        
 			cwd     => "/usr/local/bin/",
 			creates => "/usr/local/bin/beast",
 			require => Exec[ 'unzip_beast' ];
@@ -383,19 +331,16 @@ class install {
 		# install beagle-lib
 		"checkout_beagle_lib":
 			command => "svn checkout http://beagle-lib.googlecode.com/svn/trunk/ beagle-lib",
-			timeout => 0,        
 			cwd     => $tools_dir,
 			creates => "${tools_dir}/beagle-lib/autogen.sh",
 			require => Package[ 'subversion', "openjdk-6-jdk" ];
 		"generate_beagle_config":
 			command => "sh autogen.sh",
-			timeout => 0,        
 			cwd     => "${tools_dir}/beagle-lib/",
 			creates => "${tools_dir}/beagle-lib/configure",
 			require => Exec[ 'checkout_beagle_lib' ];
 		"build_beagle_lib":
 			command => "sh configure && make install",
-			timeout => 0,        
 			cwd     => "${tools_dir}/beagle-lib/",
 			creates => "/usr/local/lib/libhmsbeagle.so",
 			require => Exec[ 'generate_beagle_config' ];
@@ -403,43 +348,36 @@ class install {
 		# install treePL
 		"clone_treepl":
 			command => "git clone https://github.com/blackrim/treePL.git",
-			timeout => 0,        
 			cwd     => $tools_dir,
 			creates => "${tools_dir}/treePL",
 			require => Package[ 'git', 'autoconf', 'automake', 'libtool', 'build-essential', 'tar' ];
 		"unzip_adolc":
 			command => "tar -xvzf adol-c_git_saved.tar.gz",
-			timeout => 0,        
 			cwd     => "${tools_dir}/treePL/deps",
 			creates => "${tools_dir}/treePL/deps/adol-c",
 			require => [ Exec["clone_treepl"], Package["libopenmpi-dev","openmpi-bin"] ];
 		"autoreconf_adolc":
 			command => "autoreconf -fi",
-			timeout => 0,        
 			cwd     => "${tools_dir}/treePL/deps/adol-c",
 			creates => "${tools_dir}/treePL/deps/adol-c/configure",
 			require => Exec["unzip_adolc"];
 		"install_adolc":
 			command => "${tools_dir}/treePL/deps/adol-c/configure --prefix=/usr --with-openmp-flag=-fopenmp && make install",
-			timeout => 0,        
 			cwd     => "${tools_dir}/treePL/deps/adol-c",
 			creates => "/usr/lib64/libadolc.so",
 			require => Exec["autoreconf_adolc"];
 		"unzip_nlopt":
 			command => "tar -xzvf nlopt-2.2.4.tar.gz",
-			timeout => 0,        
 			cwd     => "${tools_dir}/treePL/deps",
 			creates => "${tools_dir}/treePL/deps/nlopt-2.2.4",
 			require => [ Exec["clone_treepl"], Package["libopenmpi-dev","openmpi-bin"] ];
 		"install_nlopt":
 			command => "${tools_dir}/treePL/deps/nlopt-2.2.4/configure && make install",
-			timeout => 0,        
 			cwd     => "${tools_dir}/treePL/deps/nlopt-2.2.4",
 			creates => "/usr/local/include/nlopt.h",
 			require => Exec["unzip_nlopt"];
 		"compile_treepl":
 			command => "${tools_dir}/treePL/src/configure && make",
-			timeout => 0,        
 			cwd     => "${tools_dir}/treePL/src",
 			creates => "${tools_dir}/treePL/src/treePL",
 			require => Exec["install_adolc","install_nlopt"];
@@ -447,33 +385,16 @@ class install {
 		# install R packages
 		"install_r_ape":
 			command => "echo 'install.packages(\"ape\",repos=\"${cran_url}\")' | R --vanilla",
-			timeout => 0,    	
 			require => Package['r-base', 'r-base-dev'];
 		"install_r_phylosim":
 			command => "echo 'install.packages(\"phylosim\",repos=\"${cran_url}\")' | R --vanilla",
-			timeout => 0,    	
 			require => Exec['install_r_ape'];    	
 		"install_r_phytools":
 			command => "echo 'install.packages(\"phytools\",repos=\"${cran_url}\")' | R --vanilla",
-			timeout => 0,    	
 			require => Exec['install_r_ape'];
 		"install_r_phangorn":		
 			command => "echo 'install.packages(\"phangorn\",repos=\"${cran_url}\")' | R --vanilla",		
-			timeout => 0,    			
 			require => Exec['install_r_ape'];    
-
-#		"clone_r_phangorn":
-#			command => "git clone https://github.com/KlausVigo/phangorn.git",
-#			timeout => 0,
-#			cwd     => "${tools_dir}",
-#			creates => "${tools_dir}/phangorn",				
-#			require => [ Package['git'], File [ $tools_dir ] ];
-#		"install_r_phangorn":
-#			command => "R CMD INSTALL phangorn",
-#			timeout => 0,
-#			cwd     => "${tools_dir}",
-#			require => [ Package['r-base'], Exec['clone_r_phangorn'] ];
-			
 	}
 
 	# the Travis continuous integration system has special templates for testing different
@@ -491,24 +412,19 @@ class install {
 			# install perl dependency libraries
 			"install_cpanm":
 				command => "wget -O - https://cpanmin.us | sudo perl - App::cpanminus",
-				timeout => 0,
 				require => Package['wget'];
 			"install_cpan_deps":
 				command => "cpanm --notest --installdeps .",
 				cwd     => "${src_dir}/supersmart",
-				timeout => 0,
 				require => Exec['install_cpanm','clone_supersmart'];
 			"install_bio_phylo":
 				command => "cpanm --notest git://github.com/rvosa/bio-phylo.git",
-				timeout => 0,
 				require => Exec['install_cpanm'];
 			"install_bioperl_live":
 				command => "cpanm --notest git://github.com/bioperl/bioperl-live.git@v1.6.x",
-				timeout => 0,
 				require => Exec['install_cpanm'];
 			"install_bioperl_run":
 				command => "cpanm --notest git://github.com/bioperl/bioperl-run.git",
-				timeout => 0,
 				require => Exec['install_cpanm'];
 		}
 	}
@@ -524,12 +440,10 @@ class install {
 			"mv_phylota_dump":
 				command   => "mv ${data_dir}/phylota `mysql -s -N -uroot -p information_schema -e 'SELECT Variable_Value FROM GLOBAL_VARIABLES WHERE Variable_Name = \"datadir\"'`",
 				logoutput => true,
-				timeout => 0,        
 				require   => Exec[ 'chown_phylota_db' ];                
 			"grant_phylota_db":
 				command   => "mysql -u root -e \"grant all on phylota.* to 'root'@'localhost';\"",
 				logoutput => true,
-				timeout => 0,        
 				require   => Exec[ 'mv_phylota_dump' ]; 				
 		}
 	}
@@ -540,12 +454,10 @@ class install {
 			"mv_phylota_dump":
 				command   => "ln -s ${data_dir}/phylota `mysql -s -N -uroot -p information_schema -e 'SELECT Variable_Value FROM GLOBAL_VARIABLES WHERE Variable_Name = \"datadir\"'`",
 				logoutput => true,
-				timeout => 0,        
 				require   => Exec[ 'chown_phylota_db' ];                
 			"grant_phylota_db":
 				command   => "mysql -u root -e \"grant all on phylota.* to 'root'@'localhost';\"",
 				logoutput => true,
-				timeout => 0,        
 				require   => Exec[ 'mv_phylota_dump' ];
 		} 	
 	}
@@ -559,12 +471,10 @@ class cleanup {
 
 			# clean up the VM
 			"clean_apt_get":
-				command => "apt-get clean",
-				timeout => 0;
-			"clean_meta":
+			        command => "apt-get clean";
+                        "clean_meta":
 				command => "rm MYMETA.*",	
-				cwd     => "${src_dir}/supersmart",
-				timeout => 0;				
+				cwd     => "${src_dir}/supersmart";
 		}
 	}
 }

@@ -418,6 +418,33 @@ sub insert_seq {
 	return $result;			
 }
 
+=item insert_node
+
+Insert a node into the nodes table. Argument must be a hasref with
+keys being the column names of the seqs table (the members of a  
+Bio::Phylo::PhyLoTA::DAO::Result::Node object).
+
+=cut
+
+sub insert_node {
+	my ( $self, $clause ) = @_;
+	my $result;
+
+	my @cols = keys(%$clause);
+
+	eval { 
+		$result = $schema->populate('Node', [ \@cols, [@{$clause}{@cols}] ] );
+	};
+	if ( $@ ) {
+		throw 'BadArgs' => $@;
+	}
+	if ( not $result ) {
+		$logger->warn("no result!");
+	}
+	return $result;			
+}
+
+
 =back
 
 =cut

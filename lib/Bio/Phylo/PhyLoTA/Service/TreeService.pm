@@ -10,7 +10,7 @@ use Bio::Phylo::PhyLoTA::Service;
 use base 'Bio::Phylo::PhyLoTA::Service';
 use Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa;
 use List::MoreUtils 'uniq';
-use List::Util 'min';
+use List::Util qw'min sum';
 
 my $config = Bio::Phylo::PhyLoTA::Config->new;
 my $log = Bio::Phylo::PhyLoTA::Service->logger->new;	
@@ -172,6 +172,106 @@ sub _array_minus {
 	return grep ( ! defined $b{$_}, @a );
 }
 
+
+=item smooth_basal_split
+
+After rerooting, one side of the root may have received all of the length of
+the branch on which the root was placed. This method smooths that out as much
+as possible.
+
+=cut
+
+sub smooth_basal_split {
+	my ( $self, $tree ) = @_;
+	my $root = $tree->get_root;
+
+	# compute paths left and right of the root
+	my ( $left, $right ) = @{ $root->get_children };
+	my ( @hl, @hr, %h );
+	for my $tip ( @{ $left->get_terminals } ) {
+		push @hl, $tip->calc_path_to_root;
+	}
+	for my $tip ( @{ $right->get_terminals } ) {
+		push @hr, $tip->calc_path_to_root;
+	}
+
+	# compute averages
+	my $lm = sum(@hl)/scalar(@hl);
+	$log->debug("mean height left: $lm");
+	my $rm = sum(@hr)/scalar(@hr);
+	$log->debug("mean height right: $rm");
+	my $diff = abs($rm-$lm) / 2;
+	my $r_length = $right->get_branch_length;
+	my $l_length = $left->get_branch_length;	
+	
+	if ( $lm < $rm ) {
+		
+		# don't want negative branches
+		if ( $r_length < $diff ) {
+			$diff = $r_length;
+		}		
+
+		# adjust branch lengths
+		$left->set_branch_length( $l_length + $diff );
+		$right->set_branch_length($r_length - $diff );
+		$log->info("stretched left, shrunk right, by $diff");
+	}
+	else {
+		
+		# don't want negative branches
+		if ( $l_length < $diff ) {
+			$diff = $l_length;
+		}
+
+		# adjust branch lengths
+		$left->set_branch_length( $l_length - $diff );
+		$right->set_branch_length($r_length + $diff );
+		$log->info("stretched right, shrunk left, by $diff");		
+	}
+	$root->set_branch_length(0.00);
+}
+
+=item outgroup_root
+
+Roots a tree on a list of outgroup taxon names. Arguments:
+
+ -tree     => input tree object
+ -outgroup => [ list of names ]
+ -ranks    => [ list of taxonomic ranks of interest ]
+ -records  => [ list of taxa table records ]
+
+=cut
+
+sub outgroup_root {
+	my ( $self, %args ) = @_;
+	my $tree    = $args{'-tree'};
+	my @names   = @{ $args{'-outgroup'} };
+	my @ranks   = @{ $args{'-ranks'} };
+	my @records = @{ $args{'-records'} };
+	my $mt = Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa->new;
+			
+	# remap outgroup species names to taxon identifiers
+	my @ids = map {
+		(my $name = $_) =~ s/_/ /g;
+		my @nodes = $self->search_node({ 'taxon_name' => $name })->all;
+		
+		# verify result
+		if ( @nodes != 1 ) {
+			$log->warn("found more than one database entry for taxon $name, using first entry.") if scalar (@nodes) > 1;						
+			die "could not find database entry for taxon name $name" if scalar(@nodes) == 0;
+		}				
+		$nodes[0]->ti;
+	} @names;	
+	my @all_ids = $mt->query_taxa_table(\@ids, \@ranks, @records);
+
+	# fetch outgroup nodes and mrca
+	my %og = map{ $_=>1 } @all_ids;
+	my @ognodes = grep { exists($og{$_->get_name}) } @{$tree->get_terminals};
+	my $mrca = $tree->get_mrca(\@ognodes);
+
+	# reroot at mrca of outgroup
+	$mrca->set_root_below;	
+}
 
 =item remove_internal_names 
 
@@ -638,39 +738,50 @@ Grafts a clade tree into a backbone tree, returns the altered backbone.
 
 sub graft_tree {
 	my ( $self, $backbone, $clade ) = @_;
-    my $num_terminals = scalar @{ $backbone->get_terminals };
- 
-    # sometimes single quotes are added in the beast output when dealing with special characters
-    #   removing them to match names in the backbone. Just to be sure, remove quotes also from backbone
-    $clade->visit(sub{
-        my $node = shift;
-        my $name = $node->get_name;
-        $name =~ s/\'//g;
-        $node->set_name($name);
-    });
-    $backbone->visit(sub{
-        my $node = shift;
-        my $name = $node->get_name;
-        $name =~ s/\'//g;
-        $node->set_name($name);
-    });
+	my $num_terminals = scalar @{ $backbone->get_terminals };
+	
+	# sometimes single quotes are added in the beast output when dealing with special characters
+	#   removing them to match names in the backbone. Just to be sure, remove quotes also from backbone
+	$clade->visit(sub{
+		my $node = shift;
+		my $name = $node->get_name;
+		$name =~ s/\'//g;
+		$node->set_name($name);
+		      });
+	$backbone->visit(sub{
+		my $node = shift;
+		my $name = $node->get_name;
+		$name =~ s/\'//g;
+		$node->set_name($name);
+			 });
         
-    my @names = map { $_->get_name } @{ $clade->get_terminals };
-	$log->debug("Clade terminals : @names");
+	my @ids = map { $_->get_name } @{ $clade->get_terminals };
+	$log->debug("Clade terminals : @ids");
 	
 	# retrieve the tips from the clade tree that also occur in the backbone, i.e. the 
 	# exemplars, and locate their MRCA on the backbone
 	my @exemplars;
-	for my $name ( @names ) {
-		if ( my $e = $backbone->get_by_name($name) ) {
-			$log->info("found exemplar $name in backbone: ".$e->get_name);
+	for my $id ( @ids ) {
+		my $name = $id;
+		if ( $id =~ /[0-9]+/) {
+			$name = $self->find_node($id)->taxon_name;
+		} 
+		if ( my $e = $backbone->get_by_name($id) ) {
+			$log->info("found exemplar $name ($id) in backbone");
                         push @exemplars, $e;
 		}
 		else {
-			$log->debug("$name is not in the backbone tree");
+			$log->debug("$name ($id) is not in the backbone tree");
 		}
 	}
 	$log->info("found ".scalar(@exemplars)." exemplars in backbone");
+
+	# it is possible that no exemplars are found in the backbone tree, when there is no
+	#  marker overlap with species in the clade tree. If this happens, we cannot graft
+	if ( ! scalar(@exemplars) ) {
+		$log->warn("No matching exemplar found in backbone tree, could not graft clade tree. Possibly no marker overlap");
+		return $backbone;
+	}
 	my @copy = @exemplars; # XXX ???	
 	my $bmrca = $backbone->get_mrca(\@copy);
 	my $nodes_to_root = $bmrca->calc_nodes_to_root;
@@ -678,13 +789,13 @@ sub graft_tree {
 	if ( $bmrca->is_root ){
 		$log->fatal("Something goes wrong here: MRCA of exemplar species " . join(',', map{$_->id} @exemplars) . " in backbone is the backbone root!");
 	}
-    # find the exemplars in the clade tree and find their MRCA
+	# find the exemplars in the clade tree and find their MRCA
 	my @clade_exemplars = map { $clade->get_by_name($_->get_name) } @exemplars;
 	
     my @ccopy = @clade_exemplars;
 	my $cmrca = $clade->get_mrca(\@ccopy);
 	$log->info("found equivalent ".scalar(@clade_exemplars)." exemplars in clade");
-    # calculate the respective depths, scale the clade by the ratios of depths
+	# calculate the respective depths, scale the clade by the ratios of depths
 	my $cmrca_depth = $cmrca->calc_max_path_to_tips;
 	my $bmrca_depth = $bmrca->calc_max_path_to_tips;
     $log->debug("Backbone tree before grafting: \n " . $backbone->to_newick);
@@ -699,9 +810,9 @@ sub graft_tree {
         	$log->debug("adjusting branch length for ".$node->get_internal_name." to ".$bl * ( $bmrca_depth / $cmrca_depth ));
         } 
         else {
-        	$log->warn("mrca of clade or backbone has depth zero!");
-        	}
-    });
+        	$log->warn("mrca of clade or backbone has depth zero, maybe the exemplar was monotypic? skipping scaling branch length for node!");
+	}
+		  });
 		
 	#$log->debug("re-scaled clade by $bmrca_depth / $cmrca_depth");
 	
