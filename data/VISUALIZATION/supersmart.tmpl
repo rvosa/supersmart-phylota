@@ -16,24 +16,24 @@
             height="[% height %]"
             viewBox="0 0 [% width %] [% height %]"
             xmlns="http://www.w3.org/2000/svg">
-  	    <defs>
-    		<linearGradient 
-    		    id="fadeRight"
-        	    x1="0%" y1="0%"
-        	    x2="100%" y2="0%"
-        	    spreadMethod="pad">
-      		    <stop offset="0%"   stop-color="#000000" stop-opacity="1"/>
-      		    <stop offset="100%" stop-color="#FFFFFF" stop-opacity="1"/>
-    		</linearGradient>
-    		<linearGradient 
-    		    id="fadeLeft"
-        	    x1="0%" y1="0%"
-        	    x2="100%" y2="0%"
-        	    spreadMethod="pad">
-      		    <stop offset="0%"   stop-color="#FFFFFF" stop-opacity="1"/>
-      		    <stop offset="100%" stop-color="#000000" stop-opacity="1"/>
-    		</linearGradient>    
-  	    </defs>            
+			<defs>
+				<linearGradient 
+					id="fadeRight"
+					x1="0%" y1="0%"
+					x2="100%" y2="0%"
+					spreadMethod="pad">
+					<stop offset="0%"   stop-color="#000000" stop-opacity="1"/>
+					<stop offset="100%" stop-color="#FFFFFF" stop-opacity="1"/>
+				</linearGradient>
+				<linearGradient 
+					id="fadeLeft"
+					x1="0%" y1="0%"
+					x2="100%" y2="0%"
+					spreadMethod="pad">
+					<stop offset="0%"   stop-color="#FFFFFF" stop-opacity="1"/>
+					<stop offset="100%" stop-color="#000000" stop-opacity="1"/>
+				</linearGradient>    
+			</defs>            
             <style type="text/css">
                 line.painted, circle.painted {
                     stroke: red !important;
@@ -112,10 +112,8 @@
                     var nx = node['map:x'];
                     var ny = node['map:y']; 
                     if ( node['fig:height_range_min'] && node['fig:height_range_max'] ) { 
-			var min_x = nowx - ( node['fig:height_range_min'] * pptu );
-			var max_x = nowx - ( node['fig:height_range_max'] * pptu );
-						
-			// should be a rectangle at least maxWidth + 4 (or more) wide
+						var min_x = nowx - ( node['fig:height_range_min'] * pptu );
+						var max_x = nowx - ( node['fig:height_range_max'] * pptu );
                     	var fadeRight = createSVGElt('rect',{
                             'x'      : nx,
                             'y'      : ny,

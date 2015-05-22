@@ -269,6 +269,14 @@ sub outgroup_root {
 	my @ognodes = grep { exists($og{$_->get_name}) } @{$tree->get_terminals};
 	my $mrca = $tree->get_mrca(\@ognodes);
 
+	if ($mrca->is_root) {
+		# if mrca is the root, rerooting won't make sense.
+		# Instead, reroot at the mrca of the ingroup to get
+		# a proper bipartition
+		my @ignodes = 	my @ognodes = grep { ! exists($og{$_->get_name}) } @{$tree->get_terminals};
+		$mrca = $tree->get_mrca(\@ignodes);
+	}
+
 	# reroot at mrca of outgroup
 	$mrca->set_root_below;	
 }
@@ -481,78 +489,13 @@ sub consense_trees {
     $log->debug("running command $command");
     system($command) and die "Error building consensus: $?";
 	
-    # post-process result: copy treeannotator's [&hot=comments] to generic object hash
-    my ( $newicktree, %map ) = $self->parse_newick_from_nexus( $outfile, '-ignore_comments' => 1, '-id_map' => 1 );
-
+    # parse result
+    my $tree = parse_tree(
+    	'-format' => 'figtree',
+    	'-file'   => $outfile,    	
+    );
     unlink $outfile;
-    return $self->_post_process( $newicktree, %map );
-}
-
-sub _post_process {
-	my ( $self, $newicktree, %map ) = @_;
-	$log->debug("going to post-process tree");
-    $newicktree->visit(sub{
-    	my $n = shift;
-    	my $name = $n->get_name;
-    	$name =~ s/\\//g;
-    	$log->debug("name: $name");
-    	if ( $name =~ /\[/ and $name =~ /^([^\[]+)\[(.+?)\]$/ ) {
-    		my ( $trimmed, $comments ) = ( $1, $2 );
-    		$n->set_name( $map{$trimmed} ? $map{$trimmed} : $trimmed );
-    		$log->debug("trimmed name: $trimmed");
-    		
-    		# "hot comments" start with ampersand. ignore if not.
-    		if ( $comments =~ /^&(.+)/ ) {
-    			$log->debug("hot comments: $comments");
-    			$comments = $1;
-    			my %meta;
-    			
-    			# string needs to be fully eaten up
-    			COMMENT: while( my $old_length = length($comments) ) {
-    			
-    				# grab the next key
-    				if ( $comments =~ /^(.+?)=/ ) {
-    					my $key = $1;
-    					$log->debug("key: $key");
-    					
-    					# remove the key and the =
-    					$comments =~ s/^\Q$key\E=//;
-    					
-    					# value is a comma separated range
-    					if ( $comments =~ /^{([^}]+)}/ ) {
-    						my $value = $1;    						
-    						$meta{$key} = [ split /,/, $value ];
-    						
-    						# remove the range
-    						$value = "{$value}";
-    						$comments =~ s/^\Q$value\E//;
-    					}
-    					
-    					# value is a scalar
-    					elsif ( $comments =~ /^([^,]+)/ ) {
-    						my $value = $1;
-    						$meta{$key} = $value;
-    						$comments =~ s/^\Q$value\E//;
-    						$log->debug("scalar value: $value");
-    					}
-    					
-    					# remove trailing comma, if any
-    					$comments =~ s/^,//;
-    				}
-    				if ( $old_length == length($comments) ) {
-    					$log->warn("couldn't parse newick comment: $comments");
-    					last COMMENT;
-    				}
-    			}
-    			$n->set_generic( 'treeannotator' => \%meta );
-    		}
-    		else {
-    			$log->debug("not hot: $comments");
-    		}
-    	}
-    });
-	return $newicktree;
-
+    return $tree;
 }
 
 =item parse_newick_from_nexus

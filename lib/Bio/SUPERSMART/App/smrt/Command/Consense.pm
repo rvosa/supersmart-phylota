@@ -76,32 +76,21 @@ sub run {
     );
     unlink $filename;
 
-    # insert treeannotator metadata
-    $self->logger->info("applying node annotations");
+    # update node labels to distinguish bootstraps from posteriors
+    $self->logger->info("applying node labels");
     $consensus->visit(sub{
         my $node = shift;
-        if ( my $anno = $node->get_generic('treeannotator') ) {
+        if ( my $posterior = $node->get_meta_object('fig:posterior') ) {
 
             # apply optionally converted node support as node label
-            if ( defined $anno->{'posterior'} ) {
-                if ( $opt->prob ) {
-                    $node->set_name( $anno->{'posterior'} );
-                }
-                else {
-                    my $count = int( $anno->{'posterior'} * $ntrees + 0.5 );
-                    $node->set_name( "$count/$ntrees");
-                }
-            }
-
-            # attach hot comments
-            my @tokens;
-            for my $key ( keys %$anno ) {
-                push @tokens, $key . '=';
-                my $val = $anno->{$key};
-                $tokens[-1] .= ( ref $val ? '{' . join(',',@$val) . '}' : $val );
-            }
-            $node->set_name( $node->get_name . '[&' . join(',',@tokens) . ']' );
-	}
+			if ( $opt->prob ) {
+				$node->set_name( $posterior );
+			}
+			else {
+				my $count = int( $posterior * $ntrees + 0.5 );
+				$node->set_name( "$count/$ntrees");
+			}
+		}
     });
 
     # generate output
@@ -117,8 +106,10 @@ sub run {
         $taxa->set_forest($forest);
         $project->insert($taxa);
         $project->insert($forest);
-        $string = $project->to_nexus(%args);
-	$string =~ s/\'//g; 
+        $string = unparse(
+        	'-format' => 'figtree',
+        	'-phylo'  => $project,
+        );
     }
     else {
         $string = $consensus->to_newick(%args);

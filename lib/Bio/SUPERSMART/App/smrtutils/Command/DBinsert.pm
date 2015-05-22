@@ -165,8 +165,8 @@ sub _insert_seq {
 	
 	# write FASTA file with definition line compatible with other smrt commands
 	# since the newly inserted seqs have no cluster,  we set the seed gi to the gi of the sequence
-	# and the mrca to the taxon id of the sequence
-	my $defline = "gi|$gi|seed_gi|$gi|taxon|$ti|mrca/1-" . length($seq->get_char);
+	# and the mrca to the taxon id of the sequence. Set mrca to the taxon's ti.
+	my $defline = "gi|$gi|seed_gi|$gi|taxon|$ti|mrca|$ti/1-" . length($seq->get_char);
 	$seq->set_generic('fasta_def_line', $defline);		
 
 	$logger->info("Inserted sequence with gi $gi and accession $acc into database");	
