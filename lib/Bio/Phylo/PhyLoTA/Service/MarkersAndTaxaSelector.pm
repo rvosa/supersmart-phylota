@@ -56,7 +56,7 @@ my @taxonomic_ranks = ('superkingdom', 'kingdom', 'subkingdom', 'superphylum', '
 
 =item get_nodes_for_names
 
-Accepts a list of name string, does TNRS on them and returns the equivalent
+Accepts a list of name strings, does TNRS on them and returns the equivalent
 Node objects from the database.
 
 =cut
