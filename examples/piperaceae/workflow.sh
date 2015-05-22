@@ -15,6 +15,7 @@
 # this same folder.
 export NAMES=names.txt
 export FOSSILS=fossils.tsv
+export OUTGROUP=Peperomia
 
 # Step 1: match the names to the NCBI taxonomy. This is needed because ultimately all 
 # sequences that the pipeline uses are annotated with NCBI taxonomy identifiers.
@@ -67,11 +68,8 @@ smrt bbinfer -b 100 -x
 
 # Step 7: reroot the backbone trees. The trees resulting from step 6 are unrooted. There
 # are different ways to root these (using outgroups or by picking the rooting that best 
-# fits the taxonomy). In this case we will root on the taxonomy, i.e. we assume that the 
-# genera Piper and Peperomia are monophyletic. The '--smooth' flag makes it so that the 
-# root is placed on the branch between the two genera such that the average root-to-tip
-# path length is equal on both sides of the root.
-smrt bbreroot --smooth
+# fits the taxonomy). We will root on the group Piper
+smrt bbreroot -g $OUTGROUP
 
 # Step 8: calibrate the backbone trees from step 7. This step uses treePL to create 
 # ultrametric trees ('chronogram.dnd') using a penalized likelihood approach with 
