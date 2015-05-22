@@ -3,9 +3,13 @@
 # this shell script demonstrates the steps of the SUPERSMART pipeline
 # from start to finish, as applied to the phylogeny of the primates.
 
+INPUT_NAMES=names.txt
+INPUT_FOSSILS=fossils.tsv
+OUTGROUP_TAXA=Strepsirrhini
+
 # perform taxonomic name reconciliation on an input list of names.
 # creates a table of NCBI taxonomy identifiers (the taxa table).
-smrt taxize -i names.txt
+smrt taxize -i $INPUT_NAMES
 
 # extract the common classification tree for the species in the
 # taxa table. produces a newick file with unbranched internal nodes.
@@ -27,10 +31,10 @@ smrt bbinfer -b 100 -i examl
 
 # root the backbone tree by minimizing the number of non-monophyletic
 # higher taxa
-smrt bbreroot
+smrt bbreroot -g $OUTGROUP_TAXA
 
 # calibrate the re-rooted backbone tree using treePL
-smrt bbcalibrate -f fossils.tsv
+smrt bbcalibrate -f $INPUT_FOSSILS
 
 # build a consensus
 smrt consense -b 0.0
