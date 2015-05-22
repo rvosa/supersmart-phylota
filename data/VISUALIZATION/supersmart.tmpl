@@ -117,19 +117,19 @@
 						
 			// should be a rectangle at least maxWidth + 4 (or more) wide
                     	var fadeRight = createSVGElt('rect',{
-                            'x'     : nx,
-                            'y'     : ny,
-                            'width' : nx + min_x,
-                            'y2'    : maxWidth + 4,
-                            'style' : makeStyle({ 'fill' : 'url(#fadeRight)' })
+                            'x'      : nx,
+                            'y'      : ny,
+                            'width'  : nx + min_x,
+                            'height' : maxWidth + 4,
+                            'style'  : makeStyle({ 'fill' : 'url(#fadeRight)' })
                         });
                     	svg.appendChild(fadeRight);			
                     	var fadeLeft = createSVGElt('rect',{
-                            'x'     : max_x,
-                            'y'     : ny,
-                            'width' : nx - max_x,
-                            'y2'    : maxWidth + 4,
-                            'style' : makeStyle({ 'fill' : 'url(#fadeLeft)' })
+                            'x'      : max_x,
+                            'y'      : ny,
+                            'width'  : nx - max_x,
+                            'height' : maxWidth + 4,
+                            'style'  : makeStyle({ 'fill' : 'url(#fadeLeft)' })
                         });
                     	svg.appendChild(fadeLeft);
                     }
