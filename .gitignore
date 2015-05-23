@@ -5,6 +5,9 @@ examples/*/*.fa
 examples/*/*.dnd
 examples/*/*.phy
 examples/*/*.nex
+examples/*/clade*_out.txt
+examples/*/nohup.out
+examples/*/clade*
 examples/*/seeds.fa.*
 examples/*/aligned.txt
 examples/*/merged.txt
