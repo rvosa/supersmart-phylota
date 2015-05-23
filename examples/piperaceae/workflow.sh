@@ -29,7 +29,7 @@ smrt taxize -i $NAMES
 # - seed taxon: the identifier of the taxon to which <seed gi> belongs
 # - cluster id: the internal identifier assigned by PhyLoTA to this cluster
 # - type:       the type of cluster, usually a 'subtree' from the NCBI taxonomy
-smrt align
+smrt align -d alignments
 
 # Step 3: write the NCBI taxonomy as a classification tree. This creates a newick tree 
 # file ('classification-tree.dnd') with additional, unbranched interior nodes for all 
