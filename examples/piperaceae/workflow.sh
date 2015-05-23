@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# This script demonstrate all the steps to create a tree for species from the genera Piper 
+# This script contains all the steps to create a species tree for members of the genera Piper 
 # and Peperomia that occur in the Guyanas, i.e. a small case where we have a set of names 
 # that were selected somehow (in this case, by text mining the Flora of the Guyanas) and 
 # for which we want to infer a time-calibrated tree.
@@ -18,7 +18,7 @@ export FOSSILS=fossils.tsv
 
 # Step 1: match the names to the NCBI taxonomy. This is needed because ultimately all 
 # sequences that the pipeline uses are annotated with NCBI taxonomy identifiers.
-smrt taxize -i $NAMES
+smrt taxize --infile=$NAMES
 
 # Step 2: write PhyLoTA alignments that cover the species we have matched in step 1. This
 # creates numerous aligned FASTA files and a text file ('aligned.txt') that contains a
@@ -67,9 +67,9 @@ smrt bbmerge
 # result, the output file ('backbone.dnd') will be a newick tree file a sample from the
 # posterior distribution in it. This step normally creates very many intermediate files
 # (bootstrapped matrices, various log and checkpoint files produced by the inference tool,
-# separate output tree files), which we clean up by providing the '-x' flag.
+# separate output tree files), which we clean up by providing the '--cleanup' flag.
 export SUPERSMART_EXABAYES_NUMGENS="100000"
-smrt bbinfer --inferencetool=exabayes -x
+smrt bbinfer --inferencetool=exabayes --cleanup
 
 # Step 7: reroot the backbone trees. The trees resulting from step 6 are unrooted. There
 # are different ways to root these (using outgroups or by picking the rooting that best 
@@ -81,7 +81,10 @@ smrt bbreroot --smooth
 # Step 8: calibrate the backbone trees from step 7. This step uses treePL to create 
 # ultrametric trees ('chronogram.dnd') using a penalized likelihood approach with 
 # age constraints as extracted from the fossils file.
-smrt bbcalibrate -f $FOSSILS
+smrt bbcalibrate --fossiltable=$FOSSILS
+
+# clean up temp files from treePL
+rm -rf /tmp/*
 
 # Step 9: build a consensus tree. As we ran exabayes in step 6 we will want to discard
 # a burnin. This would be different had we done a bootstrapping analysis in step 6.
@@ -108,7 +111,7 @@ smrt clademerge
 # lot of different variables (number of taxa, signal in the data, mixing of the chains)
 # so for publishable results convergence should be checked, for example using 'tracer'.
 # For this specific example, 10,000,000 generations for each clade appears to work.
-smrt cladeinfer -n 10_000_000
+smrt cladeinfer --ngens=10_000_000
 
 # Step 13: graft the clade trees onto the backbone.
 # XXX ANNOTATIONS LOST WHEN READING IN CONSENSE TREE!
