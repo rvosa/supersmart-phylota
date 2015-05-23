@@ -9,6 +9,11 @@ use Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa;
 
 my $ts  = Bio::Phylo::PhyLoTA::Service::TreeService->new;
 my $mt  = Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa->new;
+#my $log = Bio::Phylo::Util::Logger->new(
+#	'-level'  => DEBUG,
+#	'-method' => 'Bio::Phylo::PhyLoTA::Service::TreeService::outgroup_root',
+#	'-style'  => 'simple',
+#);
 my @records = $mt->parse_taxa_file("${Bin}/testdata/species.tsv");
 
 my $tree = parse_tree(
@@ -21,7 +26,6 @@ $ts->remap_to_ti($tree,@records);
 $ts->outgroup_root(
 	'-tree'     => $tree,
 	'-outgroup' => [ 'Strepsirrhini' ],
-	'-ranks'    => [ qw[forma varietas subspecies species] ],
 	'-records'  => \@records,
 );
 

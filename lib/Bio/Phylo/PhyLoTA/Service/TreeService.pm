@@ -113,6 +113,7 @@ sub reroot_tree {
 		$log->warn ("Found no optimal rerooted tree. Returning the original one");
 		return $tree;
 	}
+	$rerooted_trees{ $best_indices[0] }->get_root->set_branch_length(undef);
 	return $rerooted_trees{ $best_indices[0] };
 }
 
@@ -229,7 +230,7 @@ sub smooth_basal_split {
 		$right->set_branch_length($r_length + $diff );
 		$log->info("stretched right, shrunk left, by $diff");		
 	}
-	$root->set_branch_length(0.00);
+	$root->set_branch_length(undef);
 }
 
 =item outgroup_root
@@ -247,8 +248,8 @@ Roots a tree on a list of outgroup taxon names. Arguments:
 sub outgroup_root {
 	my ( $self, %args ) = @_;
 	my $tree    = $args{'-tree'};
-	my @ranks   = @{ $args{'-ranks'} };
 	my @records = @{ $args{'-records'} };
+	my @ranks   = $args{'-ranks'} ? @{ $args{'-ranks'} } : qw[forma varietas subspecies species];	
 	my @ids     = $args{'-ids'} ? @{ $args{'-ids'} } : ();
 	my @names   = $args{'-outgroup'} ? @{ $args{'-outgroup'} } : ();
 	my $mt = Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa->new;
@@ -256,6 +257,7 @@ sub outgroup_root {
 			
 	# remap outgroup species names to taxon identifiers
 	if ( not @ids ) {
+		$log->info("resolving outgroup name(s): @names");
 		@ids = map { $_->ti } $mts->get_nodes_for_names(@names);
 	}
 	my @all_ids = $mt->query_taxa_table(\@ids, \@ranks, @records);
@@ -266,15 +268,19 @@ sub outgroup_root {
 	my $mrca = $tree->get_mrca(\@ognodes);
 
 	if ($mrca->is_root) {
-		# if mrca is the root, rerooting won't make sense.
-		# Instead, reroot at the mrca of the ingroup to get
-		# a proper bipartition
-		my @ignodes = 	my @ognodes = grep { ! exists($og{$_->get_name}) } @{$tree->get_terminals};
-		$mrca = $tree->get_mrca(\@ignodes);
+		my @ignodes = grep { ! $og{$_->get_name} } @{$tree->get_terminals};
+		$mrca = $tree->get_mrca(\@ignodes);		
+		$log->info("rooting below MRCA of ingroup");
 	}
+	else {
+		$log->info("rooting below MRCA of outgroup");
+	}
+	
+	# set previous root edge to zero
+	$tree->get_root->set_branch_length(0.00);
 
-	# reroot at mrca of outgroup
-	$mrca->set_root_below;	
+	# reroot under mrca of outgroup
+	$mrca->set_root_below;
 }
 
 =item remove_internal_names 
