@@ -55,7 +55,7 @@ sub validate {
 	$self->usage_error("file $file is empty") unless (-s $file);			
 }
 
-
+# XXX argh - this is way, way too long
 sub run {
 	my ($self, $opt, $args) = @_;
 	
