@@ -48,7 +48,20 @@ syntax. By default this is C<conf/supersmart.ini>.
 
 sub new {
     if ( not $SINGLETON ) {
-        return $SINGLETON = shift->read(@_);    
+        $SINGLETON = shift->read(@_);
+		
+		# To allow for reproducibility of stochastic steps, such as
+		# bootstrapping, random topology resolution, tree generation, markov
+		# chains, and so on, we have defined a random seed. This gets passed
+		# to the various programs that allow for such a seed to be provided.
+		# In addition to that, we need to seed Perl's random number generator
+		# for the instances where we do stochastic things in our own code.
+		# As this seeding must happen only once, doing it here inside the
+		# pseudo-constructor of this singleton object is a decent place.
+		if ( $SINGLETON->RANDOM_SEED ) {
+			srand $SINGLETON->RANDOM_SEED;
+		}
+		return $SINGLETON;
     }
     else {
         return $SINGLETON;
