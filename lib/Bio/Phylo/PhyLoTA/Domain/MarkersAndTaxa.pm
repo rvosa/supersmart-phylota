@@ -356,7 +356,10 @@ sub query_taxa_table {
 	my %tids = ref($tids) ? map {$_=>1} @${tids} : ($tids=>1);
 	my %ranks = ref($ranks) ? map {$_=>1} @${ranks} : ($ranks=>1);
 	
-	my @matching = grep { my %h = %{$_}; grep{ exists($tids{$_}) } values%h } @records;	
+	my @matching = grep { my %h = %{$_}; grep{ exists($tids{$_}) } values%h } @records;
+	
+	# XXX why would this be necessary?
+	no warnings 'uninitialized';
 	my @ids = uniq map { @{$_}{keys(%ranks)} } @matching;
 	# remove NA values from result
 	my @result = grep { defined $_ and /[0-9]+/ } @ids;
