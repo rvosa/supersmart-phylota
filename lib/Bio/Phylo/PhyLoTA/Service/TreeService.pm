@@ -364,7 +364,7 @@ as given in the NCBI taxonomy database. The records argument is optional.
 =cut
 
 sub remap_to_ti { 
-        my ($self, $tree, @records) = @_;
+    my ($self, $tree, @records) = @_;
 
 	# no taxa table given, we will query the database
 	$tree->visit(sub{
@@ -402,9 +402,9 @@ sub remap_to_ti {
 			$n->set_name( $ti );	
 			$log->debug("Remapped name $name to $ti ");
 		}
-		     });
+	});
 	
-        return $tree;       
+    return $tree;       
 }
 
 =item newick2nexus
@@ -683,117 +683,91 @@ Grafts a clade tree into a backbone tree, returns the altered backbone.
 
 sub graft_tree {
 	my ( $self, $backbone, $clade ) = @_;
-	my $num_terminals = scalar @{ $backbone->get_terminals };
-	
-	# sometimes single quotes are added in the beast output when dealing with special characters
-	#   removing them to match names in the backbone. Just to be sure, remove quotes also from backbone
-	$clade->visit(sub{
-		my $node = shift;
-		my $name = $node->get_name;
-		$name =~ s/\'//g;
-		$node->set_name($name);
-		      });
-	$backbone->visit(sub{
-		my $node = shift;
-		my $name = $node->get_name;
-		$name =~ s/\'//g;
-		$node->set_name($name);
-			 });
-        
-	my @ids = map { $_->get_name } @{ $clade->get_terminals };
-	$log->debug("Clade terminals : @ids");
-	
+    
 	# retrieve the tips from the clade tree that also occur in the backbone, i.e. the 
 	# exemplars, and locate their MRCA on the backbone
-	my @exemplars;
-	for my $id ( @ids ) {
-		my $name = $id;
-		if ( $id =~ /[0-9]+/) {
-			$name = $self->find_node($id)->taxon_name;
-		} 
-		if ( my $e = $backbone->get_by_name($id) ) {
-			$log->info("found exemplar $name ($id) in backbone");
-                        push @exemplars, $e;
-		}
-		else {
-			$log->debug("$name ($id) is not in the backbone tree");
+	my @ids = map { $_->get_name } @{ $clade->get_terminals };
+	my ( @exemplars, @clade_exemplars );
+	for my $clade_tip ( @{ $clade->get_terminals } ) {
+		if ( my $bb_tip = $backbone->get_by_name($clade_tip->get_name) ) {
+			push @exemplars, $bb_tip;
+			push @clade_exemplars, $clade_tip;
+			my $name = $self->find_node($clade_tip->get_name)->get_name;
+			$log->info("Found exemplar taxon: $name");
 		}
 	}
-	$log->info("found ".scalar(@exemplars)." exemplars in backbone");
 
-	# it is possible that no exemplars are found in the backbone tree, when there is no
-	#  marker overlap with species in the clade tree. If this happens, we cannot graft
-	if ( ! scalar(@exemplars) ) {
+	# it is possible that no exemplars are found in the backbone tree, when
+	# there is no marker overlap with species in the clade tree. If this
+	# happens, we cannot graft
+	if ( ! scalar @exemplars ) {
 		$log->warn("No matching exemplar found in backbone tree, could not graft clade tree. Possibly no marker overlap");
 		return $backbone;
 	}
-	my @copy = @exemplars; # XXX ???	
-	my $bmrca = $backbone->get_mrca(\@copy);
-	my $nodes_to_root = $bmrca->calc_nodes_to_root;
-	$log->info("backbone MRCA distance from root : " . $nodes_to_root);
+	
+	# find MRCA of exemplars on backbone and clade
+	my $bmrca = $backbone->get_mrca(\@exemplars);
+	my $cmrca = $clade->get_mrca(\@clade_exemplars);
 	if ( $bmrca->is_root ){
 		$log->fatal("Something goes wrong here: MRCA of exemplar species " . join(',', map{$_->id} @exemplars) . " in backbone is the backbone root!");
+		return $backbone;
 	}
-	# find the exemplars in the clade tree and find their MRCA
-	my @clade_exemplars = map { $clade->get_by_name($_->get_name) } @exemplars;
 	
-    my @ccopy = @clade_exemplars;
-	my $cmrca = $clade->get_mrca(\@ccopy);
-	$log->info("found equivalent ".scalar(@clade_exemplars)." exemplars in clade");
 	# calculate the respective depths, scale the clade by the ratios of depths
 	my $cmrca_depth = $cmrca->calc_max_path_to_tips;
 	my $bmrca_depth = $bmrca->calc_max_path_to_tips;
-    $log->debug("Backbone tree before grafting: \n " . $backbone->to_newick);
-    $log->debug("Depth of exemplar mrca in backbone : $bmrca_depth");
-    $log->debug("Depth of exemplar mrca in clade : $cmrca_depth");
-        
-    $clade->visit(sub{
-		my $node = shift;
-		my $bl = $node->get_branch_length || 0; # zero for root
-        if ( $bmrca_depth > 0 and $cmrca_depth > 0 ){  		
-       		$node->set_branch_length( $bl * ( $bmrca_depth / $cmrca_depth ) );
-        	$log->debug("adjusting branch length for ".$node->get_internal_name." to ".$bl * ( $bmrca_depth / $cmrca_depth ));
-        } 
-        else {
-        	$log->warn("mrca of clade or backbone has depth zero, maybe the exemplar was monotypic? skipping scaling branch length for node!");
-	}
-		  });
-		
-	#$log->debug("re-scaled clade by $bmrca_depth / $cmrca_depth");
+	$self->_rescale( $clade, $bmrca_depth / $cmrca_depth );
+	$log->debug("multiplied clade tree by ". ($bmrca_depth/$cmrca_depth));
 	
 	# calculate the depth of the root in the clade, adjust backbone depth accordingly
 	my $crd  = $clade->get_root->calc_max_path_to_tips;
 	my $diff = $bmrca_depth - $crd;
-        my $branch_length = $bmrca->get_branch_length || 0;
-        $bmrca->set_branch_length( $branch_length + $diff );
-		$log->debug("adjusted backbone MRCA depth by $bmrca_depth - $crd");
-        # now graft!
-        $bmrca->clear();
-        $clade->visit(
-		sub {
-			my $node = shift;
-			my $name = $node->get_internal_name;
-			if ( my $p = $node->get_parent ) {
-				if ( $p->is_root ) {
-					$log->info("grafted node with id $name onto backbone MRCA");
-					$node->set_parent($bmrca);								
-				}
-			}
-			if ( $node->is_root ) {
-				$log->info("replacing root with id $name with backbone MRCA");
-				##$node->set_parent($bmrca);								
-
-			}
-			else {
-				$backbone->insert($node);
+    my $branch_length = $bmrca->get_branch_length || 0;
+    $bmrca->set_branch_length( $branch_length + $diff ); # XXX still gives negative branches
+	$log->debug("adjusted backbone MRCA depth by $bmrca_depth - $crd");
+    
+	# now graft!
+    $bmrca->clear();
+    $clade->visit(sub {
+		my $node = shift;
+		my $name = $node->get_internal_name;
+		if ( my $p = $node->get_parent ) {
+			if ( $p->is_root ) {
+				$log->info("grafted node $node onto backbone MRCA");
+				$node->set_parent($bmrca);								
 			}
 		}
-            );
-       $log->debug("Backbone tree after grafting: \n " . $backbone->to_newick);
-            
-    my $num_terminals_after = scalar @{ $backbone->get_terminals };
-	$log->info("Grafting changed number of taxa from " . $num_terminals . " to " . $num_terminals_after);
+		if ( $node->is_root ) {
+			$log->info("replacing root $cmrca with backbone MRCA");
+		}
+		else {
+			$backbone->insert($node);
+		}
+	});
 	return $backbone;
+}
+
+sub _rescale {
+	my ( $self, $tree, $ratio ) = @_;
+	$tree->visit(sub{
+		my $node  = shift;
+		
+		# adjust figtree annotations
+		my $re = qr/^fig:.*(?:height|length).*/;
+		my @annos = grep { $_->get_predicate =~ $re } @{ $node->get_meta };
+		for my $a ( @annos ) {
+			my $val       = $a->get_object;
+			my $newval    = $val * $ratio;
+			my $predicate = $a->get_predicate;
+			$a->set_triple( $predicate => $newval );
+			$self->logger->debug("$predicate: $val => $newval");
+		}
+		
+		# adjust branch length
+		my $length = $node->get_branch_length || 0;
+		$length *= $ratio;
+		$node->set_branch_length($length);
+	});
 }
 
 =item make_phylip_binary
@@ -806,9 +780,9 @@ the phylip file and writes it to the specified file.
 sub make_phylip_binary {
 	my ( $self, $phylip, $binfilename, $parser, $work_dir) = @_;
 	$log->info("going to make binary representation of $phylip => $binfilename");	
-        $log->info("using parser $parser");	
+    $log->info("using parser $parser");	
 	my ( $phylipvolume, $phylipdirectories, $phylipbase ) = File::Spec->splitpath( $phylip );
-        my $curdir = getcwd;
+    my $curdir = getcwd;
 	chdir $work_dir;       
         
         # check if filename exists in working directory, if not take the full path
