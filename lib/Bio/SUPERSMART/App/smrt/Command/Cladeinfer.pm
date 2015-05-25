@@ -63,11 +63,12 @@ samples.
 sub options {
 	my ($self, $opt, $args) = @_;
 	return (
-		[ "ngens|n=i", "number of generations in *BEAST, defaults to 100_000 (strictly for testing!)", { arg=>"int", default=>100_000} ],
-		[ "sfreq|s=i", "sampling frequency, defaults to ngens/100", { arg=>"int"} ],
-		[ "lfreq|l=i", "logging frequency, defaults to ngens/100", { arg=>"int"} ],
+		[ "ngens|n=i", "number of generations in *BEAST, defaults to 100_000 (strictly for testing!)", { arg => "int", default => 100_000 } ],
+		[ "sfreq|s=i", "sampling frequency, defaults to 1000", { arg => "int", default => 1000 } ],
+		[ "lfreq|l=i", "logging frequency, defaults to 1000", { arg => "int", default => 1000 } ],
 		[ "file|f=s", "file (nexml format) to start a single inference from", { arg=>"file" } ],
-		[ "outfile|o=s", "location of output directory", {arg=>"location", default => "cladeinfer_out.txt"} ],		
+		[ "outfile|o=s", "location of output directory", {arg=>"location", default => "cladeinfer_out.txt"} ],	
+		[ "rebuild|x", "rebuild existing *BEAST files", {}], 	
     );
 }
 
@@ -81,16 +82,6 @@ sub validate {
 	if ( (my $ngens = $opt->ngens) <  30_000_000 ) {
 		$self->logger->warn("chain length $ngens seems very low, are you just testing?");		
 	}
-	if ( my $sfreq = $opt->sfreq ) {
-		if ( $sfreq <  300_000 ) {
-			$self->logger->warn("sampling frequency $sfreq seems very low, are you just testing?");		
-		}
-	}
-	if ( my $lfreq = $opt->lfreq ) {
-		if ( $lfreq <  300_000 ) {
-			$self->logger->warn("logging frequency $lfreq seems very low, are you just testing?");		
-		}
-	}		
 }
 
 sub run {
@@ -98,20 +89,17 @@ sub run {
 
    	# collect command-line arguments
     my $ngens = $opt->ngens;
-    my $sfreq = $opt->sfreq ? $opt->sfreq : $ngens/100;
-    my $lfreq = $opt->lfreq ? $opt->lfreq : $ngens/100;
-	my  $file = $opt->file;
-	my $outfile= $self->outfile;	
-	my $workdir = $self->workdir;
-	
+    my $sfreq = $opt->sfreq;
+    my $lfreq = $opt->lfreq;
+	my $file  = $opt->file;
+	my $outfile = $self->outfile;	
+	my $workdir = $self->workdir;	
+	my $rebuild = $opt->rebuild;	
 		
     # instantiate helper objects
     my $config = Bio::Phylo::PhyLoTA::Config->new;
     my $beast  = Bio::Tools::Run::Phylo::StarBEAST->new;
 	my $logger = $self->logger;
-
-	# overwrite existing output files
-	my $overwrite = 1;
 
 	# configure beast
 	$logger->info( "setting beast executable to " . $config->BEAST_BIN );
@@ -122,15 +110,9 @@ sub run {
 	
 	$logger->info("setting sampling frequency to $sfreq");
 	$beast->sample_freq($sfreq);
-	if ( $sfreq < 300_000 ) {
-		$logger->warn("sampling frequency $sfreq seem very low, are you just testing?");
-	}
 	
 	$logger->info("setting logging frequency to $lfreq");
 	$beast->log_freq($lfreq);
-	if ( $lfreq < 300_000 ) {
-		$logger->warn("logging frequency $lfreq seems very low, are you just testing?");
-	}
 	
 	# XXX these should be configurable from phylota.ini
 	$beast->beagle_SSE(1);
@@ -138,7 +120,8 @@ sub run {
 	$beast->beagle_instances(1);
 	
 	# overwrite any previously existing files
-	$beast->overwrite($overwrite);
+	$beast->overwrite(1);
+	$beast->rebuild($rebuild);
 	
 	# run either one file or a directory
 	if ( $file and -e $file ) {
