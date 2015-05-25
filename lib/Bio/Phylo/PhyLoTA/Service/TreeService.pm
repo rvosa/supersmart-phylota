@@ -692,8 +692,6 @@ sub graft_tree {
 		if ( my $bb_tip = $backbone->get_by_name($clade_tip->get_name) ) {
 			push @exemplars, $bb_tip;
 			push @clade_exemplars, $clade_tip;
-			my $name = $self->find_node($clade_tip->get_name)->get_name;
-			$log->info("Found exemplar taxon: $name");
 		}
 	}
 
