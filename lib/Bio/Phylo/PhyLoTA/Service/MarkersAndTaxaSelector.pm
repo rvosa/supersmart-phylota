@@ -531,6 +531,49 @@ sub _process_matches {
     return;
 }
 
+=item encode_taxon_name
+    
+    Encodes a taxon name such that it can be used within SUPERSMART without ambiguity.
+    At the moment, we encode by subtituting the following strings/characters:
+
+    '_' is changed to '|', because Bio::Phylo internally converts spaces to '_', which 
+    gives trouble with taxon names containing a '_'
+    
+    ' ' is changed to '_'
+
+=cut
+
+sub encode_taxon_name {
+	my ($self, $name) = @_;
+	
+	# substitute '_' to '|'
+	$name =~ s/_/\|/g;
+	# substitute ' ' to '_'
+	$name =~ s/ /_/g;
+	
+
+	return $name;
+}
+
+=item decode_taxon_name
+
+    Decodes a taxon name back that was encoded with enceode_taxon_name,
+    decoded taxon names can be searched in the database.
+
+=cut
+
+sub decode_taxon_name {
+	my ($self, $name) = @_;
+
+	$name =~ s/^'(.*)'$/$1/g;
+	$name =~ s/^"(.*)"$/$1/g;                        
+
+	$name =~ s/_/ /g;
+	$name =~ s/\|/\_/g;
+
+	return $name;
+}
+
 =item write_taxa_file
 
 Input: An output filename and a list of taxon names.
@@ -610,11 +653,9 @@ sub write_taxa_file {
 		if ( my @entry = map { @$_ } @$res ){
 			my $name = shift @entry;
 			
-			# taxon names in NCBI taxonomy can contain the character "_", which can cause problems,
-			# since Bio::Phylo internally translates spaces with "_". We therefore substitute all "_" charachers
-			# by "|".
-			$name =~ s/_/\|/g;
-			
+			# encode taxon name to take care of special characters
+			$name = $self->encode_taxon_name($name);
+			print "Name now : $name \n";
 			my $ids = join "\t", @entry;
 	
 			# omit all taxa with higher taxonomic rank than 'Species'

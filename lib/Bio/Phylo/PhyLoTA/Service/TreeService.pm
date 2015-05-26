@@ -309,6 +309,9 @@ changes the names of the terminal nodes from NCBI taxonomy identifiers to their 
 
 sub remap_to_name {
        	my ($self, $tree) = @_;
+
+	my $mts = Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector->new;
+
         $tree->visit(sub{
                 my $n = shift;
                 if ( $n->is_terminal ) {
@@ -316,7 +319,7 @@ sub remap_to_name {
                         my $dbnode = $self->find_node($id);
                         $log->fatal("Could not find name for taxon id $id in database!") if not $dbnode;
                         my $name = $dbnode->taxon_name;
-                        $name =~ s/_/\|/g;
+                        $name = $mts->encode_taxon_name($name);
                         $n->set_name( $name );
                 }
                      });
@@ -366,16 +369,16 @@ as given in the NCBI taxonomy database. The records argument is optional.
 sub remap_to_ti { 
     my ($self, $tree, @records) = @_;
 
+        my $mts = Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector->new; 
+
 	# no taxa table given, we will query the database
 	$tree->visit(sub{
 		my $n = shift;
 		if ( $n->is_terminal and my $name = $n->get_name ) {      
+			$self->logger->debug("remapping taxon name $name");
 			my $ti;
-			$name =~ s/_/ /g;                        
-			$name =~ s/\|/_/g;
-			$name =~ s/^'(.*)'$/$1/g;
-			$name =~ s/^"(.*)"$/$1/g;                        
-			
+			$name = $mts->decode_taxon_name($name);
+			$self->logger->debug("decoded name: $name");		
 			# if taxa table is given, get ids from there
 			if (@records) {
 				# valid ranks for tip labels
