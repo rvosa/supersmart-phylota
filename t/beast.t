@@ -17,6 +17,7 @@ ok( $beast->chain_length(100) == 100, "chain length" );
 ok( $beast->sample_freq(100) == 100, "sample_freq" );
 ok( $beast->overwrite(1), "overwrite");
 ok( $beast->collapse_species(1), "collapse species");
+ok( $beast->rebuild(1), "rebuild input files");
 
 my ($handle, $file) = tempfile( 'OPEN' => 1 );
 close $handle;
