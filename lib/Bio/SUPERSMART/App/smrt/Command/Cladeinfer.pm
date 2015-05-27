@@ -113,13 +113,18 @@ sub run {
 	
 	$logger->info("setting logging frequency to $lfreq");
 	$beast->log_freq($lfreq);
+
+	$logger->info("setting seed from $config: ".$config->RANDOM_SEED );
+	$beast->seed($config->RANDOM_SEED);
 	
 	# XXX these should be configurable from phylota.ini
 	$beast->beagle_SSE(1);
 	$beast->beagle_CPU(1);
 	$beast->beagle_instances(1);
 	
-	# overwrite any previously existing files
+	# overwrite any previously existing output files, $rebuild applies
+	# to any previously existing input BEAST XML files, which may 
+	# have been edited
 	$beast->overwrite(1);
 	$beast->rebuild($rebuild);
 	
