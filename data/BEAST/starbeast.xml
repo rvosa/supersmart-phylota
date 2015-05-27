@@ -1,340 +1,339 @@
 <beast>
-	<taxa id="taxa">
-	
-	<!-- all the names of all the alignment rows in a flat list -->
-	[% FOREACH matrix IN data.get_matrices %]
-		[% FOREACH row IN matrix.get_entities %]
-			<taxon id="[% row.get_name %]"/>
-		[% END %]	
-	[% END %]
-	</taxa>
-	
-	<!-- coalescent process with constant population size -->
-	<constantSize id="constant" units="substitutions">
-		<populationSize>
-			<parameter id="constant.popSize" lower="0.0" upper="Infinity" value="0.005"/>
-		</populationSize>
-	</constantSize>	
-	
-	<!-- data and model settings for all the alignments -->
-	[% FOREACH matrix IN data.get_matrices %]
-		[% id = matrix.get_name %]
-		<alignment dataType="nucleotide" id="[% id %]">
-		[% FOREACH row IN matrix.get_entities %]
-    			<sequence><taxon idref="[% row.get_name %]"/>[% row.get_char %]</sequence>
-    		[% END %]
-		</alignment>
-		
-		<!-- site patterns -->
-		<patterns from="1" id="[% id %].patterns">
-			<alignment idref="[% id %]"/>
-		</patterns>
-		
-		<!-- coalescent tree parameters -->
-		<coalescentTree id="[% id %].startingTree" rootHeight="0.01">
-			<taxa idref="taxa"/>
-			<constantSize idref="constant"/>
-		</coalescentTree>	
-		<treeModel id="[% id %].treeModel">
-			<coalescentTree idref="[% id %].startingTree"/>
-			<rootHeight>
-				<parameter id="[% id %].treeModel.rootHeight"/>
-			</rootHeight>
-			<nodeHeights internalNodes="true">
-				<parameter id="[% id %].treeModel.internalNodeHeights"/>
-			</nodeHeights>		
-			<nodeHeights internalNodes="true" rootNode="true">
-				<parameter id="[% id %].treeModel.allInternalNodeHeights"/>
-			</nodeHeights>
-		</treeModel>
 
-		<!--  relaxed clock model parameters -->
-		<discretizedBranchRates id="[% id %].branchRates">
-			<treeModel idref="[% id %].treeModel"/>
-			<distribution>
-				<logNormalDistributionModel meanInRealSpace="true">
-					<mean>
-						<parameter id="[% id %].ucld.mean" lower="0.0" value="1.0"/>
-					</mean>
-					<stdev>
-						<parameter id="[% id %].ucld.stdev" lower="0.0" value="0.33"/>
-					</stdev>
-				</logNormalDistributionModel>
-			</distribution>
-			<rateCategories>
-				<parameter id="[% id %].branchRates.categories"/>
-			</rateCategories>
-		</discretizedBranchRates>
-		<rateStatistic external="true" id="[% id %].meanRate" internal="true" mode="mean">
-			<treeModel idref="[% id %].treeModel"/>
-			<discretizedBranchRates idref="[% id %].branchRates"/>
-		</rateStatistic>		
-		<rateStatistic external="true" id="[% id %].coefficientOfVariation" internal="true" mode="coefficientOfVariation">
-			<treeModel idref="[% id %].treeModel"/>
-			<discretizedBranchRates idref="[% id %].branchRates"/>
-		</rateStatistic>
-		<rateCovarianceStatistic id="[% id %].covariance">
-			<treeModel idref="[% id %].treeModel"/>	
-			<discretizedBranchRates idref="[% id %].branchRates"/>
-		</rateCovarianceStatistic>
-		
-		<!-- substitution model parameters -->
-		<HKYModel id="[% id %].hky">
-			<frequencies>
-				<frequencyModel dataType="nucleotide">
-					<alignment idref="[% id %]"/>
-					<frequencies>
-						<parameter dimension="4" id="[% id %].frequencies"/>
-					</frequencies>
-				</frequencyModel>
-			</frequencies>
-			<kappa>
-				<parameter id="[% id %].kappa" lower="0.0" value="2.0"/>
-			</kappa>
-		</HKYModel>
-		<siteModel id="[% id %].siteModel">
-			<gammaShape gammaCategories="4">
-				<parameter id="[% id %].alpha" lower="0.0" value="0.5"/>
-			</gammaShape>
-			<substitutionModel>
-			<HKYModel idref="[% id %].hky"/>
-			</substitutionModel>
-		</siteModel>
-
-		<!-- tree likelihood model -->  
-		<treeLikelihood id="[% id %].treeLikelihood" useAmbiguities="false">
-			<patterns idref="[% id %].patterns"/>
-			<treeModel idref="[% id %].treeModel"/>
-			<siteModel idref="[% id %].siteModel"/>
-			<discretizedBranchRates idref="[% id %].branchRates"/>
-		</treeLikelihood>
-	[% END %]		
+  <!-- all the names of all the alignment rows in a flat list -->
+  <taxa id="taxa">    
+  [% FOREACH matrix IN data.get_matrices %]
+    [% FOREACH row IN matrix.get_entities %]
+      <taxon id="[% row.get_name %]"/>
+    [% END %] 
+  [% END %]
+  </taxa>
   
-  	<!-- species normalization -->
-	<species id="species">
-		[% FOREACH taxa IN data.get_taxa %]
-			[% FOREACH taxon IN taxa.get_entities %]
-				<sp id="[% taxon.get_name %]">
-				[% FOREACH row IN taxon.get_data %]
-					<taxon idref="[% row.get_name %]"/>
-				[% END %]
-				</sp>
-			[% END %]
-		[% END %]
-		<geneTrees id="geneTrees">
-			[% FOREACH matrix IN data.get_matrices %]
-				[% id = matrix.get_name %]
-				<treeModel idref="[% id %].treeModel"/>
-			[% END %]
-		</geneTrees>
-	</species>
-
-	<!-- species tree parameters -->  
-	<speciesTree constantRoot="true" id="sptree">
-		<species idref="species"/>
-		<sppSplitPopulations value="0.02">
-			<parameter id="speciesTree.splitPopSize"/>
-		</sppSplitPopulations>
-	</speciesTree>
-	<birthDeathModel id="birthDeath" units="substitutions">
-		<birthMinusDeathRate>
-			<parameter id="species.birthDeath.meanGrowthRate" lower="0.0" upper="Infinity" value="1.0"/>
-		</birthMinusDeathRate>
-		<relativeDeathRate>
-			<parameter id="species.birthDeath.relativeDeathRate" lower="0.0" upper="1.0" value="0.5"/>
-		</relativeDeathRate>
-	</birthDeathModel>
-	<speciationLikelihood id="speciation.likelihood">
-		<model>
-			<birthDeathModel idref="birthDeath"/>
-		</model>
-		<speciesTree>
-			<speciesTree idref="sptree"/>
-		</speciesTree>
-	</speciationLikelihood>  
-	<tmrcaStatistic id="speciesTree.rootHeight" name="speciesTree.rootHeight">
-    	<speciesTree idref="sptree"/>
-	    <mrca>
-			<taxa>
-			[% FOREACH taxa in data.get_taxa %]
-    	  		[% FOREACH taxon IN taxa.get_entities %]
-					<sp idref="[% taxon.get_name %]"/>
-        		[% END %]
-        	[% END %]
-			</taxa>
-		</mrca>
-	</tmrcaStatistic>
-	<speciesCoalescent id="species.coalescent">
-		<species idref="species"/>
-		<speciesTree idref="sptree"/>
-	</speciesCoalescent>
-
-	<!-- mixed gamma distribution likelihood -->  
-	<mixedDistributionLikelihood id="species.popSize">
-		<distribution0>
-			<gammaDistributionModel>
-				<scale><parameter id="species.popMean" lower="0.0" value="0.01"/></scale>
-				<shape>2</shape>
-			</gammaDistributionModel>
-		</distribution0>
-		<distribution1>
-			<gammaDistributionModel>
-				<shape>4</shape>
-				<scale><parameter idref="species.popMean"/></scale>
-			</gammaDistributionModel>
-		</distribution1>
-		<data>
-			<parameter idref="speciesTree.splitPopSize"/>
-		</data>
-		<indicators>
-			[% ntax = data.get_taxa.first.get_ntax %]
-			[% indicators = [] %]
-			[% WHILE indicators.size < ntax %]
-				[% indicators.push('1') %]
-			[% END %]
-			[% WHILE indicators.size < ( ( 2 * ntax ) + ( ntax - 2 ) ) %]
-				[% indicators.push('0') %]
-			[% END %]
-			<parameter value="[% indicators.join(' ') %]"/>
-		</indicators>
-	</mixedDistributionLikelihood>
+  <!-- coalescent process with constant population size -->
+  <constantSize id="constant" units="substitutions">
+    <populationSize>
+      <parameter id="constant.popSize" lower="0.0" upper="Infinity" value="0.005"/>
+    </populationSize>
+  </constantSize> 
   
-  	<!-- operators -->
-	<operators id="operators">
-		[% FOREACH matrix IN data.get_matrices %]
-		[% id = matrix.get_name %]
-		<scaleOperator scaleFactor="0.75" weight="3">
-			<parameter idref="[% id %].ucld.mean"/>
-		</scaleOperator>
-		<scaleOperator scaleFactor="0.75" weight="3">
-			<parameter idref="[% id %].ucld.stdev"/>
-		</scaleOperator>
-		<scaleOperator scaleFactor="0.75" weight="0.1">
-			<parameter idref="[% id %].alpha"/>
-		</scaleOperator>
-		<scaleOperator scaleFactor="0.75" weight="0.1">
-			<parameter idref="[% id %].kappa"/>
-		</scaleOperator>
-		<subtreeSlide gaussian="true" size="0.001" weight="15">
-			<treeModel idref="[% id %].treeModel"/>
-		</subtreeSlide>
-		<narrowExchange weight="15">
-			<treeModel idref="[% id %].treeModel"/>
-		</narrowExchange>
-		<wideExchange weight="3">
-			<treeModel idref="[% id %].treeModel"/>
-		</wideExchange>
-		<wilsonBalding weight="3">
-			<treeModel idref="[% id %].treeModel"/>
-		</wilsonBalding>
-		<scaleOperator scaleFactor="0.75" weight="3">
-			<parameter idref="[% id %].treeModel.rootHeight"/>
-		</scaleOperator>
-		<uniformOperator weight="30">
-			<parameter idref="[% id %].treeModel.internalNodeHeights"/>
-		</uniformOperator>
-		<upDownOperator scaleFactor="0.75" weight="3">
-			<up><parameter idref="[% id %].ucld.mean"/></up>
-			<down><parameter idref="[% id %].treeModel.allInternalNodeHeights"/></down>
-		</upDownOperator>
-		<swapOperator autoOptimize="false" size="1" weight="10">
-			<parameter idref="[% id %].branchRates.categories"/>
-		</swapOperator>
-		<uniformIntegerOperator weight="10">
-			<parameter idref="[% id %].branchRates.categories"/>
-		</uniformIntegerOperator>
-		[% END %]
-		<scaleOperator scaleFactor="0.75" weight="3">
-			<parameter idref="species.birthDeath.relativeDeathRate"/>
-		</scaleOperator>
-		<scaleOperator scaleFactor="0.5" weight="94">
-			<parameter idref="speciesTree.splitPopSize"/>
-		</scaleOperator>
-		<scaleOperator scaleFactor="0.9" weight="5">
-			<parameter idref="species.popMean"/>
-		</scaleOperator>
-		<scaleOperator scaleFactor="0.75" weight="3">
-			<parameter idref="species.birthDeath.meanGrowthRate"/>
-		</scaleOperator>
-		<nodeReHeight weight="94">
-			<species idref="species"/>
-			<speciesTree idref="sptree"/>
-		</nodeReHeight>
-	</operators>
-  
-  	<!-- mcmc settings -->
-	<mcmc autoOptimize="true" chainLength="[% ngens %]" id="mcmc">
-	
-		<!-- posterior -->
-		<posterior id="posterior">
-		
-			<!-- priors -->
-			<prior id="prior">
-				<speciesCoalescent idref="species.coalescent"/>
-				<mixedDistributionLikelihood idref="species.popSize"/>
-				<speciationLikelihood idref="speciation.likelihood"/>
-				[% FOREACH matrix IN data.get_matrices %]
-					[% id = matrix.get_name %]
-					<logNormalPrior mean="1.0" meanInRealSpace="false" offset="0.0" stdev="1.25">
-						<parameter idref="[% id %].kappa"/>
-					</logNormalPrior>
-					<exponentialPrior mean="0.5" offset="0.0">
-						<parameter idref="[% id %].alpha"/>
-					</exponentialPrior>
-					<exponentialPrior mean="0.33" offset="0.0">
-						<parameter idref="[% id %].ucld.stdev"/>
-					</exponentialPrior>
-					<exponentialPrior mean="10.0" offset="0.0">
-						<parameter idref="[% id %].ucld.mean"/>
-					</exponentialPrior>
-				[% END %]
-
-				<oneOnXPrior>
-					<parameter idref="species.popMean"/>
-				</oneOnXPrior>
-				<oneOnXPrior>
-					<parameter idref="species.birthDeath.meanGrowthRate"/>
-				</oneOnXPrior>
-				<uniformPrior lower="0.0" upper="1.0">
-					<parameter idref="species.birthDeath.relativeDeathRate"/>
-				</uniformPrior>
-			</prior>
-			
-			<!-- likelihood -->
-			<likelihood id="likelihood">
-				<treeLikelihood idref="345114169-13215-2-subtree.treeLikelihood"/>
-			</likelihood>
-		</posterior>
-		
-		<!-- operators -->
-		<operators idref="operators"/>
+  <!-- data and model settings for all the alignments -->
+  [% FOREACH matrix IN data.get_matrices %]
+    [% id = matrix.get_name %]
+    <alignment dataType="nucleotide" id="[% id %]">
+      [% FOREACH row IN matrix.get_entities %]
+        <sequence><taxon idref="[% row.get_name %]"/>[% row.get_char %]</sequence>
+      [% END %]
+    </alignment>
     
-		<!-- where to log parameters -->
-		<log fileName="[% param_file %]" logEvery="[% sfreq %]">
-			<speciationLikelihood idref="speciation.likelihood"/>
-			<speciesCoalescent idref="species.coalescent"/>
-			<prior idref="prior"/>
-			<tmrcaStatistic idref="speciesTree.rootHeight"/>
-			<posterior idref="posterior"/>
-			<likelihood idref="likelihood"/>
-			<parameter idref="species.popMean"/>
-			<parameter idref="speciesTree.splitPopSize"/>
-			<parameter idref="species.birthDeath.meanGrowthRate"/>
-			<parameter idref="species.birthDeath.relativeDeathRate"/>
-			[% FOREACH matrix IN data.get_matrices %]
-				[% id = matrix.get_name %]
-				<parameter idref="[% id %].treeModel.rootHeight"/>
-				<parameter idref="[% id %].kappa"/>
-				<parameter idref="[% id %].frequencies"/>
-				<treeLikelihood idref="[% id %].treeLikelihood"/>
-			[% END %]
-		</log>
+    <!-- site patterns -->
+    <patterns from="1" id="[% id %].patterns">
+      <alignment idref="[% id %]"/>
+    </patterns>
     
-	    <!-- where to log output species trees -->
-    	<logTree fileName="[% tree_file %]" id="species.treeFileLog" logEvery="[% sfreq %]" nexusFormat="true" sortTranslationTable="true">
+    <!-- coalescent tree parameters -->
+    <coalescentTree id="[% id %].startingTree" rootHeight="0.01">
+      <taxa idref="taxa"/>
+      <constantSize idref="constant"/>
+    </coalescentTree> 
+    <treeModel id="[% id %].treeModel">
+      <coalescentTree idref="[% id %].startingTree"/>
+      <rootHeight>
+        <parameter id="[% id %].treeModel.rootHeight"/>
+      </rootHeight>
+      <nodeHeights internalNodes="true">
+        <parameter id="[% id %].treeModel.internalNodeHeights"/>
+      </nodeHeights>    
+      <nodeHeights internalNodes="true" rootNode="true">
+        <parameter id="[% id %].treeModel.allInternalNodeHeights"/>
+      </nodeHeights>
+    </treeModel>
+
+    <!--  relaxed clock model parameters -->
+    <discretizedBranchRates id="[% id %].branchRates">
+      <treeModel idref="[% id %].treeModel"/>
+      <distribution>
+        <logNormalDistributionModel meanInRealSpace="true">
+          <mean>
+            <parameter id="[% id %].ucld.mean" lower="0.0" value="1.0"/>
+          </mean>
+          <stdev>
+            <parameter id="[% id %].ucld.stdev" lower="0.0" value="0.33"/>
+          </stdev>
+        </logNormalDistributionModel>
+      </distribution>
+      <rateCategories>
+        <parameter id="[% id %].branchRates.categories"/>
+      </rateCategories>
+    </discretizedBranchRates>
+    <rateStatistic external="true" id="[% id %].meanRate" internal="true" mode="mean">
+      <treeModel idref="[% id %].treeModel"/>
+      <discretizedBranchRates idref="[% id %].branchRates"/>
+    </rateStatistic>    
+    <rateStatistic external="true" id="[% id %].coefficientOfVariation" internal="true" mode="coefficientOfVariation">
+      <treeModel idref="[% id %].treeModel"/>
+      <discretizedBranchRates idref="[% id %].branchRates"/>
+    </rateStatistic>
+    <rateCovarianceStatistic id="[% id %].covariance">
+      <treeModel idref="[% id %].treeModel"/> 
+      <discretizedBranchRates idref="[% id %].branchRates"/>
+    </rateCovarianceStatistic>
+    
+    <!-- substitution model parameters -->
+    <HKYModel id="[% id %].hky">
+      <frequencies>
+        <frequencyModel dataType="nucleotide">
+          <alignment idref="[% id %]"/>
+          <frequencies>
+            <parameter dimension="4" id="[% id %].frequencies"/>
+          </frequencies>
+        </frequencyModel>
+      </frequencies>
+      <kappa>
+        <parameter id="[% id %].kappa" lower="0.0" value="2.0"/>
+      </kappa>
+    </HKYModel>
+    <siteModel id="[% id %].siteModel">
+      <gammaShape gammaCategories="4">
+        <parameter id="[% id %].alpha" lower="0.0" value="0.5"/>
+      </gammaShape>
+      <substitutionModel>
+      <HKYModel idref="[% id %].hky"/>
+      </substitutionModel>
+    </siteModel>
+
+    <!-- tree likelihood model -->  
+    <treeLikelihood id="[% id %].treeLikelihood" useAmbiguities="false">
+      <patterns idref="[% id %].patterns"/>
+      <treeModel idref="[% id %].treeModel"/>
+      <siteModel idref="[% id %].siteModel"/>
+      <discretizedBranchRates idref="[% id %].branchRates"/>
+    </treeLikelihood>
+  [% END %]   
+  
+  <!-- species normalization -->
+  <species id="species">
+    [% FOREACH taxa IN data.get_taxa %]
+      [% FOREACH taxon IN taxa.get_entities %]
+        <sp id="[% taxon.get_name %]">
+        [% FOREACH row IN taxon.get_data %]
+          <taxon idref="[% row.get_name %]"/>
+        [% END %]
+        </sp>
+      [% END %]
+    [% END %]
+    <geneTrees id="geneTrees">
+      [% FOREACH matrix IN data.get_matrices %]
+        [% id = matrix.get_name %]
+        <treeModel idref="[% id %].treeModel"/>
+      [% END %]
+    </geneTrees>
+  </species>
+
+  <!-- species tree parameters -->  
+  <speciesTree constantRoot="true" id="sptree">
+    <species idref="species"/>
+    <sppSplitPopulations value="0.02">
+      <parameter id="speciesTree.splitPopSize"/>
+    </sppSplitPopulations>
+  </speciesTree>
+  <birthDeathModel id="birthDeath" units="substitutions">
+    <birthMinusDeathRate>
+      <parameter id="species.birthDeath.meanGrowthRate" lower="0.0" upper="Infinity" value="1.0"/>
+    </birthMinusDeathRate>
+    <relativeDeathRate>
+      <parameter id="species.birthDeath.relativeDeathRate" lower="0.0" upper="1.0" value="0.5"/>
+    </relativeDeathRate>
+  </birthDeathModel>
+  <speciationLikelihood id="speciation.likelihood">
+    <model>
+      <birthDeathModel idref="birthDeath"/>
+    </model>
+    <speciesTree>
+      <speciesTree idref="sptree"/>
+    </speciesTree>
+  </speciationLikelihood>  
+  <tmrcaStatistic id="speciesTree.rootHeight" name="speciesTree.rootHeight">
+    <speciesTree idref="sptree"/>
+    <mrca>
+      <taxa>
+        [% FOREACH taxa in data.get_taxa %]
+          [% FOREACH taxon IN taxa.get_entities %]
+            <sp idref="[% taxon.get_name %]"/>
+          [% END %]
+        [% END %]
+      </taxa>
+    </mrca>
+  </tmrcaStatistic>
+  <speciesCoalescent id="species.coalescent">
+    <species idref="species"/>
+    <speciesTree idref="sptree"/>
+  </speciesCoalescent>
+
+  <!-- mixed gamma distribution likelihood -->  
+  <mixedDistributionLikelihood id="species.popSize">
+    <distribution0>
+      <gammaDistributionModel>
+        <scale><parameter id="species.popMean" lower="0.0" value="0.01"/></scale>
+        <shape>2</shape>
+      </gammaDistributionModel>
+    </distribution0>
+    <distribution1>
+      <gammaDistributionModel>
+        <shape>4</shape>
+        <scale><parameter idref="species.popMean"/></scale>
+      </gammaDistributionModel>
+    </distribution1>
+    <data>
+      <parameter idref="speciesTree.splitPopSize"/>
+    </data>
+    <indicators>
+      [% ntax = data.get_taxa.first.get_ntax %]
+      [% indicators = [] %]
+      [% WHILE indicators.size < ntax %]
+        [% indicators.push('1') %]
+      [% END %]
+      [% WHILE indicators.size < ( ( 2 * ntax ) + ( ntax - 2 ) ) %]
+        [% indicators.push('0') %]
+      [% END %]
+      <parameter value="[% indicators.join(' ') %]"/>
+    </indicators>
+  </mixedDistributionLikelihood>
+  
+    <!-- operators -->
+  <operators id="operators">
+    [% FOREACH matrix IN data.get_matrices %]
+    [% id = matrix.get_name %]
+    <scaleOperator scaleFactor="0.75" weight="3">
+      <parameter idref="[% id %].ucld.mean"/>
+    </scaleOperator>
+    <scaleOperator scaleFactor="0.75" weight="3">
+      <parameter idref="[% id %].ucld.stdev"/>
+    </scaleOperator>
+    <scaleOperator scaleFactor="0.75" weight="0.1">
+      <parameter idref="[% id %].alpha"/>
+    </scaleOperator>
+    <scaleOperator scaleFactor="0.75" weight="0.1">
+      <parameter idref="[% id %].kappa"/>
+    </scaleOperator>
+    <subtreeSlide gaussian="true" size="0.001" weight="15">
+      <treeModel idref="[% id %].treeModel"/>
+    </subtreeSlide>
+    <narrowExchange weight="15">
+      <treeModel idref="[% id %].treeModel"/>
+    </narrowExchange>
+    <wideExchange weight="3">
+      <treeModel idref="[% id %].treeModel"/>
+    </wideExchange>
+    <wilsonBalding weight="3">
+      <treeModel idref="[% id %].treeModel"/>
+    </wilsonBalding>
+    <scaleOperator scaleFactor="0.75" weight="3">
+      <parameter idref="[% id %].treeModel.rootHeight"/>
+    </scaleOperator>
+    <uniformOperator weight="30">
+      <parameter idref="[% id %].treeModel.internalNodeHeights"/>
+    </uniformOperator>
+    <upDownOperator scaleFactor="0.75" weight="3">
+      <up><parameter idref="[% id %].ucld.mean"/></up>
+      <down><parameter idref="[% id %].treeModel.allInternalNodeHeights"/></down>
+    </upDownOperator>
+    <swapOperator autoOptimize="false" size="1" weight="10">
+      <parameter idref="[% id %].branchRates.categories"/>
+    </swapOperator>
+    <uniformIntegerOperator weight="10">
+      <parameter idref="[% id %].branchRates.categories"/>
+    </uniformIntegerOperator>
+    [% END %]
+    <scaleOperator scaleFactor="0.75" weight="3">
+      <parameter idref="species.birthDeath.relativeDeathRate"/>
+    </scaleOperator>
+    <scaleOperator scaleFactor="0.5" weight="94">
+      <parameter idref="speciesTree.splitPopSize"/>
+    </scaleOperator>
+    <scaleOperator scaleFactor="0.9" weight="5">
+      <parameter idref="species.popMean"/>
+    </scaleOperator>
+    <scaleOperator scaleFactor="0.75" weight="3">
+      <parameter idref="species.birthDeath.meanGrowthRate"/>
+    </scaleOperator>
+    <nodeReHeight weight="94">
+      <species idref="species"/>
+      <speciesTree idref="sptree"/>
+    </nodeReHeight>
+  </operators>
+  
+    <!-- mcmc settings -->
+  <mcmc autoOptimize="true" chainLength="[% ngens %]" id="mcmc">
+  
+    <!-- posterior -->
+    <posterior id="posterior">
+    
+      <!-- priors -->
+      <prior id="prior">
+        <speciesCoalescent idref="species.coalescent"/>
+        <mixedDistributionLikelihood idref="species.popSize"/>
+        <speciationLikelihood idref="speciation.likelihood"/>
+        [% FOREACH matrix IN data.get_matrices %]
+        [% id = matrix.get_name %]
+        <logNormalPrior mean="1.0" meanInRealSpace="false" offset="0.0" stdev="1.25">
+          <parameter idref="[% id %].kappa"/>
+        </logNormalPrior>
+        <exponentialPrior mean="0.5" offset="0.0">
+          <parameter idref="[% id %].alpha"/>
+        </exponentialPrior>
+        <exponentialPrior mean="0.33" offset="0.0">
+          <parameter idref="[% id %].ucld.stdev"/>
+        </exponentialPrior>
+        <exponentialPrior mean="10.0" offset="0.0">
+          <parameter idref="[% id %].ucld.mean"/>
+        </exponentialPrior>
+        [% END %]
+        <oneOnXPrior>
+          <parameter idref="species.popMean"/>
+        </oneOnXPrior>
+        <oneOnXPrior>
+          <parameter idref="species.birthDeath.meanGrowthRate"/>
+        </oneOnXPrior>
+        <uniformPrior lower="0.0" upper="1.0">
+          <parameter idref="species.birthDeath.relativeDeathRate"/>
+        </uniformPrior>
+      </prior>
+      
+      <!-- likelihood -->
+      <likelihood id="likelihood">
+        <treeLikelihood idref="345114169-13215-2-subtree.treeLikelihood"/>
+      </likelihood>
+    </posterior>
+    
+    <!-- operators -->
+    <operators idref="operators"/>
+    
+    <!-- where to log parameters -->
+    <log fileName="[% param_file %]" logEvery="[% sfreq %]">
+      <speciationLikelihood idref="speciation.likelihood"/>
+      <speciesCoalescent idref="species.coalescent"/>
+      <prior idref="prior"/>
+      <tmrcaStatistic idref="speciesTree.rootHeight"/>
+      <posterior idref="posterior"/>
+      <likelihood idref="likelihood"/>
+      <parameter idref="species.popMean"/>
+      <parameter idref="speciesTree.splitPopSize"/>
+      <parameter idref="species.birthDeath.meanGrowthRate"/>
+      <parameter idref="species.birthDeath.relativeDeathRate"/>
+      [% FOREACH matrix IN data.get_matrices %]
+      [% id = matrix.get_name %]
+      <parameter idref="[% id %].treeModel.rootHeight"/>
+      <parameter idref="[% id %].kappa"/>
+      <parameter idref="[% id %].frequencies"/>
+      <treeLikelihood idref="[% id %].treeLikelihood"/>
+      [% END %]
+    </log>
+    
+    <!-- where to log output species trees -->
+    <logTree fileName="[% tree_file %]" id="species.treeFileLog" logEvery="[% sfreq %]" nexusFormat="true" sortTranslationTable="true">
       <speciesTree idref="sptree"/>
       <posterior idref="posterior"/>
     </logTree>
     
-	</mcmc>
+  </mcmc>
 </beast>
