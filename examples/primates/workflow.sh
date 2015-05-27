@@ -26,18 +26,22 @@ smrt orthologize
 # species, two per genus
 smrt bbmerge
 
-# run an examl search on the supermatrix, resulting in a backbone tree
-smrt bbinfer -b 100 -i examl
+# run an exabayes search on the supermatrix, resulting in a backbone 
+# posterior sample
+export SUPERSMART_EXABAYES_NUMGENS="100000"
+smrt bbinfer --inferencetool=exabayes --cleanup
 
-# root the backbone tree by minimizing the number of non-monophyletic
-# higher taxa
+# root the backbone sample  on the outgroup
 smrt bbreroot -g $OUTGROUP_TAXA
 
 # calibrate the re-rooted backbone tree using treePL
 smrt bbcalibrate -f $INPUT_FOSSILS
 
+# clean up temp files from treePL
+rm -rf /tmp/*
+
 # build a consensus
-smrt consense -b 0.0
+smrt consense -b 0.2
 
 # decompose the backbone tree into monophyletic clades. writes a directory
 # with suitable alignments for each clade
@@ -47,7 +51,7 @@ smrt bbdecompose
 smrt clademerge
 
 # run *BEAST for each clade
-smrt cladeinfer
+smrt cladeinfer --ngens=10_000_000
 
 # graft the *BEAST results on the backbone
 smrt cladegraft
