@@ -271,39 +271,9 @@ sub root_height {
 	else {
 		$value = $aln->get_meta_object( "${beast_pre}:rootHeight" );
 		if ( not defined $value ) {
-		
-			# XXX !!!
-			return $self->root_height( $aln => 1 );
-		
-		    # write alignment to tempfile to create AlignI
-		    my ( $fh, $name ) = tempfile();
-		    my @names;
-		    $aln->visit(sub{
-		    	my $row  = shift;
-		    	my $name = $row->get_name;
-		    	my $seq  = $row->get_char;
-		    	print $fh '>', $name, "\n", $seq, "\n";
-		    	push @names, $name;
-		    });
-			my $alnin = Bio::AlignIO->new( '-format' => 'fasta', '-file' => $name );
-			my $alni = $alnin->next_aln;
-			
-			# compute distance matrix
-			my $stats = Bio::Align::DNAStatistics->new();   
-			my $jcmatrix = $stats->distance( 
-				'-align'  => $alni, 
-				'-method' => 'Jukes-Cantor' 
-			);
-			my $total;
-			my $count;
-			for my $i ( 0 .. ( $#names - 1 ) ) {
-				for my $j ( ( $i + 1 ) .. $#names ) {
-					$total += $jcmatrix->get_entry( $names[$i], $names[$j] );
-					$count++;
-				}
-			}
-
-			return $self->root_height( $aln => ( $total / $count ) );
+			my @rows = @{ $aln->get_entities };
+			# http://www.cs.utexas.edu/users/phylo/datasets/bbca/create_beast_input.pl
+			return $self->root_height( $aln => 0.002345 * scalar(@rows) - 0.03446 );		    
 		}
 	}
 	return $value;
@@ -493,7 +463,7 @@ sub _make_constant_size_xml {
 	my $parameter = _elt(
 		'parameter' => {
 			'id'    => 'constant.popSize',
-			'value' => '0.02',
+			'value' => '0.005',
 			'lower' => '0.0',
 			'upper' => 'Infinity',
 		}
@@ -600,11 +570,12 @@ sub _make_hky_model_xml {
 	$freq1->paste( 'last_child' => $HKYModel );
 	my $frequencyModel = _elt( 'frequencyModel', { 'dataType' => 'nucleotide' } );
 	$frequencyModel->paste($freq1);
+	_elt( 'alignment', { 'idref' => $id } )->paste( 'last_child' => $frequencyModel );
 	my $freq2 = _elt( 'frequencies' );
 	$freq2->paste( 'last_child' => $frequencyModel );
 	my $param1 = _elt( 'parameter', { 
 		'id'        => "${id}.frequencies", 
-		'value'     => '0.25 0.25 0.25 0.25',
+#		'value'     => '0.25 0.25 0.25 0.25', # from the data, by alignment idref
 		'dimension' => '4' } );
 	$param1->paste( 'last_child' => $freq2 );
 	
@@ -803,7 +774,7 @@ sub _make_mixed_distribution_likelihood_xml {
 	$scale1->paste( $gammaDistributionModel1 );
 	my $parm1 = _elt( 'parameter', {
 		'id'    => 'species.popMean',
-		'value' => '1.0',
+		'value' => 0.002345 * $ntax - 0.03446, # http://www.cs.utexas.edu/users/phylo/datasets/bbca/create_beast_input.pl
 		'lower' => '0.0',
 	} );
 	$parm1->paste($scale1);
