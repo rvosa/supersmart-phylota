@@ -655,7 +655,6 @@ sub write_taxa_file {
 			
 			# encode taxon name to take care of special characters
 			$name = $self->encode_taxon_name($name);
-			print "Name now : $name \n";
 			my $ids = join "\t", @entry;
 	
 			# omit all taxa with higher taxonomic rank than 'Species'
