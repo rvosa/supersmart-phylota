@@ -274,7 +274,7 @@
   </operators>
   
     <!-- mcmc settings -->
-  <mcmc autoOptimize="true" chainLength="[% ngens %]" id="mcmc">
+  <mcmc autoOptimize="true" chainLength="[% chain_length %]" id="mcmc">
   
     <!-- posterior -->
     <posterior id="posterior">
@@ -325,7 +325,7 @@
     <operators idref="operators"/>
     
     <!-- where to log parameters -->
-    <log fileName="[% param_file %]" logEvery="[% sfreq %]">
+    <log fileName="[% logfile_name %]" logEvery="[% sample_freq %]">
       <speciationLikelihood idref="speciation.likelihood"/>
       <speciesCoalescent idref="species.coalescent"/>
       <prior idref="prior"/>
@@ -346,7 +346,12 @@
     </log>
     
     <!-- where to log output species trees -->
-    <logTree fileName="[% tree_file %]" id="species.treeFileLog" logEvery="[% sfreq %]" nexusFormat="true" sortTranslationTable="true">
+    <logTree 
+      fileName="[% outfile_name %]" 
+      id="species.treeFileLog" 
+      logEvery="[% sample_freq %]" 
+      nexusFormat="true" 
+      sortTranslationTable="true">
       <speciesTree idref="sptree"/>
       <posterior idref="posterior"/>
     </logTree>
