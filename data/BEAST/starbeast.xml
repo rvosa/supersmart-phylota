@@ -3,10 +3,9 @@
   <!-- all the names of all the alignment rows in a flat list -->
   <taxa id="taxa">    
   [% matrix = data.get_matrices.first %]
-    [% FOREACH row IN matrix.get_entities %]
-      <taxon id="[% row.get_name %]"/>
-    [% END %] 
-  [% END %]
+  [% FOREACH row IN matrix.get_entities %]
+    <taxon id="[% row.get_name %]"/>
+  [% END %] 
   </taxa>
   
   <!-- coalescent process with constant population size -->
