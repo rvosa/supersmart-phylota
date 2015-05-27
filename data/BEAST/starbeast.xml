@@ -1,10 +1,10 @@
 <beast>
 
-  <!-- all the names of all the alignment rows in a flat list -->
+  <!-- the names of the rows of the first alignment in a flat list -->
   <taxa id="taxa">    
   [% matrix = data.get_matrices.first %]
   [% FOREACH row IN matrix.get_entities %]
-    <taxon id="seq_[% row.get_meta_object('smrt:gi') %]"/>
+    <taxon id="taxon_[% row.get_name %]"/>
   [% END %] 
   </taxa>
   
@@ -21,8 +21,8 @@
     <alignment dataType="nucleotide" id="[% id %]">
       [% FOREACH row IN matrix.get_entities %]
       [% sequence = row.get_char %]
-        <!-- raw sequence data for [% row.get_name %] -->
-        <sequence><taxon idref="seq_[% row.get_name %]"/>[% sequence.join('') %]</sequence>
+        <!-- raw sequence data for [% row.get_meta_object('smrt:gi') %] -->
+        <sequence><taxon idref="taxon_[% row.get_name %]"/>[% sequence.join('') %]</sequence>
       [% END %]
     </alignment>
     
@@ -117,9 +117,13 @@
       [% FOREACH taxon IN taxa.get_entities %]
         <!-- reference to the species [% taxon.get_name %] -->
         <sp id="[% taxon.get_name %]">
+        [% distinct = [] %]
         [% FOREACH row IN taxon.get_data %]
-          <!-- reference to the sequence row [% row.get_name %] -->
-          <taxon idref="seq_[% row.get_name %]"/>
+          [% distinct.push(row.get_name) %]
+        [% END %]
+        [% FOREACH row_name IN distinct.unique %]
+          <!-- reference to a distinct row name across all alignments -->
+          <taxon idref="taxon_[% row_name %]"/>
         [% END %]
         </sp>
       [% END %]
@@ -282,6 +286,7 @@
         <speciationLikelihood idref="speciation.likelihood"/>
         [% FOREACH matrix IN data.get_matrices %]
         [% id = matrix.get_name %]
+        <!-- priors for [% id %] -->
         <logNormalPrior mean="1.0" meanInRealSpace="false" offset="0.0" stdev="1.25">
           <parameter idref="[% id %].kappa"/>
         </logNormalPrior>
@@ -295,6 +300,7 @@
           <parameter idref="[% id %].ucld.mean"/>
         </exponentialPrior>
         [% END %]
+        <!-- diversification priors -->
         <oneOnXPrior>
           <parameter idref="species.popMean"/>
         </oneOnXPrior>
@@ -308,7 +314,10 @@
       
       <!-- likelihood -->
       <likelihood id="likelihood">
-        <treeLikelihood idref="345114169-13215-2-subtree.treeLikelihood"/>
+        [% FOREACH matrix IN data.get_matrices %]
+        [% id = matrix.get_name %]        
+          <treeLikelihood idref="[% id %].treeLikelihood"/>
+        [% END %]
       </likelihood>
     </posterior>
     
