@@ -21,7 +21,7 @@
     <alignment dataType="nucleotide" id="[% id %]">
       [% FOREACH row IN matrix.get_entities %]
       [% sequence = row.get_char %]
-        <!-- aligned sequence data for [% row.get_meta_object('smrt:gi') %] -->
+        <!-- aligned sequence data for http://ncbi.nlm.nih.gov/nuccore/[% row.get_meta_object('smrt:gi') %] -->
         <sequence><taxon idref="taxon_[% row.get_name %]"/>[% sequence.join('') %]</sequence>
       [% END %]
     </alignment>
@@ -115,7 +115,7 @@
   <species id="species">
     [% FOREACH taxa IN data.get_taxa %]
       [% FOREACH taxon IN taxa.get_entities %]
-        <!-- reference to the species [% taxon.get_name %] -->
+        <!-- reference to the species http://ncbi.nlm.nih.gov/taxonomy/[% taxon.get_meta_object('smrt:tid') %] -->
         <sp id="[% taxon.get_name %]">
         [% distinct = [] %]
         [% FOREACH row IN taxon.get_data %]
