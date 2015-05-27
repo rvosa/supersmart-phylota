@@ -2,7 +2,7 @@
 
   <!-- all the names of all the alignment rows in a flat list -->
   <taxa id="taxa">    
-  [% FOREACH matrix IN data.get_matrices %]
+  [% matrix = data.get_matrices.first %]
     [% FOREACH row IN matrix.get_entities %]
       <taxon id="[% row.get_name %]"/>
     [% END %] 
