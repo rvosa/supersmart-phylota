@@ -21,7 +21,7 @@
     <alignment dataType="nucleotide" id="[% id %]">
       [% FOREACH row IN matrix.get_entities %]
       [% sequence = row.get_char %]
-        <!-- raw sequence data for [% row.get_meta_object('smrt:gi') %] -->
+        <!-- aligned sequence data for [% row.get_meta_object('smrt:gi') %] -->
         <sequence><taxon idref="taxon_[% row.get_name %]"/>[% sequence.join('') %]</sequence>
       [% END %]
     </alignment>
