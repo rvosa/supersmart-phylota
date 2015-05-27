@@ -7,7 +7,7 @@ use Test::More 'no_plan';
 use Bio::Phylo::IO 'parse';
 
 # maybe provided?
-my $outfile = shift;
+my $beastfile_name = shift;
 
 # test file locations
 my $template = $ENV{'SUPERSMART_HOME'} . '/data/BEAST/starbeast.xml';
@@ -35,16 +35,16 @@ isa_ok( $tt, 'Template' );
 
 my $output;
 $tt->process( $template, {
-	'data'       => $project,
-	'ngens'      => 10_000_000,
-	'sfreq'      => 10_000,
-	'tree_file'  => $tree_file,
-	'param_file' => $param_file,
+	'data'         => $project,
+	'chain_length' => 10_000_000,
+	'sample_freq'  => 10_000,
+	'outfile_name' => $tree_file,
+	'logfile_name' => $param_file,
 }, \$output ) || die $tt->error();
 
 ok( $output );
 
-if ( $outfile ) {
-	open my $fh, '>', $outfile or die $!;
+if ( $beastfile_name ) {
+	open my $fh, '>', $beastfile_name or die $!;
 	print $fh $output;
 }
