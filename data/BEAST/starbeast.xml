@@ -21,8 +21,8 @@
 		[% id = matrix.get_name %]
 		<alignment dataType="nucleotide" id="[% id %]">
 		[% FOREACH row IN matrix.get_entities %]
-    		<sequence><taxon idref="[% row.get_name %]"/>[% row.get_char %]</sequence>
-    	[% END %]
+    			<sequence><taxon idref="[% row.get_name %]"/>[% row.get_char %]</sequence>
+    		[% END %]
 		</alignment>
 		
 		<!-- site patterns -->
