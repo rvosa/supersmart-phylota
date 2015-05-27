@@ -4,7 +4,7 @@
   <taxa id="taxa">    
   [% matrix = data.get_matrices.first %]
   [% FOREACH row IN matrix.get_entities %]
-    <taxon id="[% row.get_name %]"/>
+    <taxon id="seq_[% row.get_meta_object('smrt:gi') %]"/>
   [% END %] 
   </taxa>
   
@@ -20,7 +20,9 @@
     [% id = matrix.get_name %]
     <alignment dataType="nucleotide" id="[% id %]">
       [% FOREACH row IN matrix.get_entities %]
-        <sequence><taxon idref="[% row.get_name %]"/>[% row.get_char %]</sequence>
+      [% sequence = row.get_char %]
+        <!-- raw sequence data for [% row.get_name %] -->
+        <sequence><taxon idref="seq_[% row.get_name %]"/>[% sequence.join('') %]</sequence>
       [% END %]
     </alignment>
     
@@ -41,7 +43,7 @@
       </rootHeight>
       <nodeHeights internalNodes="true">
         <parameter id="[% id %].treeModel.internalNodeHeights"/>
-      </nodeHeights>    
+      </nodeHeights>
       <nodeHeights internalNodes="true" rootNode="true">
         <parameter id="[% id %].treeModel.allInternalNodeHeights"/>
       </nodeHeights>
@@ -113,9 +115,11 @@
   <species id="species">
     [% FOREACH taxa IN data.get_taxa %]
       [% FOREACH taxon IN taxa.get_entities %]
+        <!-- reference to the species [% taxon.get_name %] -->
         <sp id="[% taxon.get_name %]">
         [% FOREACH row IN taxon.get_data %]
-          <taxon idref="[% row.get_name %]"/>
+          <!-- reference to the sequence row [% row.get_name %] -->
+          <taxon idref="seq_[% row.get_name %]"/>
         [% END %]
         </sp>
       [% END %]
@@ -123,6 +127,7 @@
     <geneTrees id="geneTrees">
       [% FOREACH matrix IN data.get_matrices %]
         [% id = matrix.get_name %]
+        <!-- reference to the tree model for [% id %] -->
         <treeModel idref="[% id %].treeModel"/>
       [% END %]
     </geneTrees>
@@ -150,13 +155,14 @@
     <speciesTree>
       <speciesTree idref="sptree"/>
     </speciesTree>
-  </speciationLikelihood>  
+  </speciationLikelihood>
   <tmrcaStatistic id="speciesTree.rootHeight" name="speciesTree.rootHeight">
     <speciesTree idref="sptree"/>
     <mrca>
       <taxa>
         [% FOREACH taxa in data.get_taxa %]
           [% FOREACH taxon IN taxa.get_entities %]
+            <!-- reference to species [% taxon.get_name %] -->
             <sp idref="[% taxon.get_name %]"/>
           [% END %]
         [% END %]
@@ -186,22 +192,23 @@
       <parameter idref="speciesTree.splitPopSize"/>
     </data>
     <indicators>
-      [% ntax = data.get_taxa.first.get_ntax %]
-      [% indicators = [] %]
-      [% WHILE indicators.size < ntax %]
-        [% indicators.push('1') %]
-      [% END %]
-      [% WHILE indicators.size < ( ( 2 * ntax ) + ( ntax - 2 ) ) %]
-        [% indicators.push('0') %]
-      [% END %]
+      [% ntax = data.get_taxa.first.get_ntax -%]
+      [% indicators = [] -%]
+      [% WHILE indicators.size < ntax -%]
+        [% indicators.push('1') -%]
+      [% END -%]
+      [% WHILE indicators.size < ( ( 2 * ntax ) + ( ntax - 2 ) ) -%]
+        [% indicators.push('0') -%]
+      [% END -%]
       <parameter value="[% indicators.join(' ') %]"/>
     </indicators>
   </mixedDistributionLikelihood>
   
-    <!-- operators -->
+  <!-- operators -->
   <operators id="operators">
     [% FOREACH matrix IN data.get_matrices %]
     [% id = matrix.get_name %]
+    <!-- operators for [% id %] -->
     <scaleOperator scaleFactor="0.75" weight="3">
       <parameter idref="[% id %].ucld.mean"/>
     </scaleOperator>
@@ -243,6 +250,7 @@
       <parameter idref="[% id %].branchRates.categories"/>
     </uniformIntegerOperator>
     [% END %]
+    <!-- operators for the diversification process -->
     <scaleOperator scaleFactor="0.75" weight="3">
       <parameter idref="species.birthDeath.relativeDeathRate"/>
     </scaleOperator>
