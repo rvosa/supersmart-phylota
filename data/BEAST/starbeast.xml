@@ -1,11 +1,16 @@
 <beast>
 
-  <!-- the names of the rows of the first alignment in a flat list -->
-  <taxa id="taxa">    
-  [% matrix = data.get_matrices.first %]
-  [% FOREACH row IN matrix.get_entities %]
-    <taxon id="taxon_[% row.get_name %]"/>
-  [% END %] 
+  <!-- the names of all distinct rows across alignments as a flat list -->
+  <taxa id="taxa">
+  [% rows = [] -%]  
+  [% FOREACH matrix IN data.get_matrices -%]
+    [% FOREACH row IN matrix.get_entities -%]
+      [% rows.push(row.get_name) -%]
+    [% END -%] 
+  [% END -%]
+  [% FOREACH row IN rows.unique %]
+    <taxon id="taxon_[% row %]"/>
+  [% END %]
   </taxa>
   
   <!-- coalescent process with constant population size -->
@@ -16,13 +21,20 @@
   </constantSize> 
   
   <!-- data and model settings for all the alignments -->
-  [% FOREACH matrix IN data.get_matrices %]
-    [% id = matrix.get_name %]
+  [% FOREACH matrix IN data.get_matrices -%]
+    [% id = matrix.get_name -%]
+    [% nchar = matrix.get_nchar -%]
+    [% N = 'N' -%]
     <alignment dataType="nucleotide" id="[% id %]">
-      [% FOREACH row IN matrix.get_entities %]
-      [% sequence = row.get_char %]
-        <!-- aligned sequence data for http://ncbi.nlm.nih.gov/nuccore/[% row.get_meta_object('smrt:gi') %] -->
-        <sequence><taxon idref="taxon_[% row.get_name %]"/>[% sequence.join('') %]</sequence>
+      [% FOREACH row IN rows.unique -%]
+        [% seq = matrix.get_by_name(row) -%]
+        [% IF seq -%]
+          <!-- aligned sequence data for http://ncbi.nlm.nih.gov/nuccore/[% seq.get_meta_object('smrt:gi') %] -->
+          <sequence><taxon idref="taxon_[% seq.get_name %]"/>[% seq.get_char.join('') %]</sequence>
+        [% ELSE -%]
+          <!-- no sequence data for [% row %] in alignment [% id %] -->
+          <sequence><taxon idref="taxon_[% row %]"$/>[% N.repeat(nchar) %]</sequence>
+        [% END -%]
       [% END %]
     </alignment>
     
@@ -117,11 +129,11 @@
       [% FOREACH taxon IN taxa.get_entities %]
         <!-- reference to the species http://ncbi.nlm.nih.gov/taxonomy/[% taxon.get_meta_object('smrt:tid') %] -->
         <sp id="[% taxon.get_name %]">
-        [% rows = [] %]
+        [% taxon_rows = [] %]
         [% FOREACH row IN taxon.get_data %]
-          [% rows.push(row.get_name) %]
+          [% taxon_rows.push(row.get_name) %]
         [% END %]
-        [% FOREACH row_name IN row.unique %]
+        [% FOREACH row_name IN taxon_rows.unique %]
           <!-- reference to a distinct row name across all alignments -->
           <taxon idref="taxon_[% row_name %]"/>
         [% END %]
