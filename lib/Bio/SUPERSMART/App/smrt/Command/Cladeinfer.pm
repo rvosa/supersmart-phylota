@@ -88,20 +88,23 @@ sub run {
 	my ($self, $opt, $args) = @_;
 
    	# collect command-line arguments
-    my $ngens = $opt->ngens;
-    my $sfreq = $opt->sfreq;
-    my $lfreq = $opt->lfreq;
+    	my $ngens = $opt->ngens;
+    	my $sfreq = $opt->sfreq;
+    	my $lfreq = $opt->lfreq;
 	my $file  = $opt->file;
 	my $outfile = $self->outfile;	
 	my $workdir = $self->workdir;	
 	my $rebuild = $opt->rebuild;	
 		
-    # instantiate helper objects
-    my $config = Bio::Phylo::PhyLoTA::Config->new;
-    my $beast  = Bio::Tools::Run::Phylo::StarBEAST->new;
+    	# instantiate helper objects
+    	my $config = Bio::Phylo::PhyLoTA::Config->new;
+    	my $beast  = Bio::Tools::Run::Phylo::StarBEAST->new;
 	my $logger = $self->logger;
 
 	# configure beast
+	$logger->info("setting beast template file to " . $config->BEAST_TEMPLATE_FILE);
+	$beast->template($config->BEAST_TEMPLATE_FILE);
+
 	$logger->info( "setting beast executable to " . $config->BEAST_BIN );
 	$beast->executable( $config->BEAST_BIN );
 	
