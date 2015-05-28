@@ -62,13 +62,16 @@ samples.
 
 sub options {
 	my ($self, $opt, $args) = @_;
+	my $config = Bio::Phylo::PhyLoTA::Config->new;
 	return (
 		[ "ngens|n=i", "number of generations in *BEAST, defaults to 100_000 (strictly for testing!)", { arg => "int", default => 100_000 } ],
 		[ "sfreq|s=i", "sampling frequency, defaults to 1000", { arg => "int", default => 1000 } ],
 		[ "lfreq|l=i", "logging frequency, defaults to 1000", { arg => "int", default => 1000 } ],
 		[ "file|f=s", "file (nexml format) to start a single inference from", { arg=>"file" } ],
 		[ "outfile|o=s", "location of output directory", {arg=>"location", default => "cladeinfer_out.txt"} ],	
-		[ "rebuild|x", "rebuild existing *BEAST files", {}], 	
+		[ "rebuild|x", "rebuild existing *BEAST XML files", {}], 	
+                [ "append|a", "append trees and logs to existing ones", {}],
+                [ "burnin|b=f", "burnin to omit when appending to existing logs", { arg => "float", default => $config->BURNIN } ], 
     );
 }
 
@@ -102,6 +105,10 @@ sub run {
 	my $logger = $self->logger;
 
 	# configure beast
+	my $append = $opt->append ? 'append to' : 'overwrite';
+	$logger->info("going to $append any previous output files");	
+	$beast->append( $opt->append );
+
 	$logger->info("setting beast template file to " . $config->BEAST_TEMPLATE_FILE);
 	$beast->template($config->BEAST_TEMPLATE_FILE);
 
@@ -146,7 +153,7 @@ sub run {
 	else {	
 		# iterate over entries in work dir
 		opendir my $dh, $workdir or die $!;
-	    my @cladedirs;
+	    	my @cladedirs;
 		
 		while( my $entry = readdir $dh ) {
 			# peruse directories named cladeXXX
@@ -156,25 +163,25 @@ sub run {
 		}        
 		die("no clade directories found in workdir $workdir") if scalar(@cladedirs) == 0;
 
-    	# infer clades in parallel mode
-    	pmap {
-                my ($clade) = @_;
-                # this should be a nexml file with one taxa block and
-                # multiple matrices                
-                my $stem = "${workdir}/${clade}/${clade}";
-                my $file = "${stem}.xml";
-                if ( -e $file ) {
-                        $beast->outfile_name( "${stem}.nex" );
-                        $beast->logfile_name( "${stem}.log" );
-						$beast->beastfile_name( "${stem}-beast-in.xml" );
-                        $beast->run( $file );
-                        my $tmpl = 'done with %s. trees are in %s.nex, log is in %s.log';
-                        $logger->info(sprintf $tmpl, $clade, $stem, $stem);				
-                }
-                else {
-                        $logger->warn("inconsistent directory structure, missing: $file");
-                }
-        } @cladedirs;
+    		# infer clades in parallel mode
+    		pmap {
+	                my ($clade) = @_;
+        	        # this should be a nexml file with one taxa block and
+                	# multiple matrices                
+	                my $stem = "${workdir}/${clade}/${clade}";
+        	        my $file = "${stem}.xml";
+                	if ( -e $file ) {
+                        	$beast->outfile_name( "${stem}.nex" );
+          	        	$beast->logfile_name( "${stem}.log" );
+				$beast->beastfile_name( "${stem}-beast-in.xml" );
+                        	$beast->run( $file );
+                        	my $tmpl = 'done with %s. trees are in %s.nex, log is in %s.log';
+                        	$logger->info(sprintf $tmpl, $clade, $stem, $stem);				
+                	}
+                	else {
+                        	$logger->warn("inconsistent directory structure, missing: $file");
+               		}
+        	} @cladedirs;
 	}
 	open my $fh, '>', $outfile;
 	print $fh "Cladeinfer done\n";
