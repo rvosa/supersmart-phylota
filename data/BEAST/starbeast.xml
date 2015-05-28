@@ -215,36 +215,36 @@
     [% FOREACH matrix IN data.get_matrices -%]
     [% id = matrix.get_name -%]
     [% counter = counter + 1 %]
-    <!-- proposal mechanisms for [% id %] -->
-    <!-- operators for the substitution process -->
-    <scaleOperator scaleFactor="0.75" weight="0.1">
-      <parameter idref="[% id %].alpha"/>
-    </scaleOperator>
-    <scaleOperator scaleFactor="0.75" weight="0.1">
-      <parameter idref="[% id %].kappa"/>
-    </scaleOperator>
-    <deltaExchange delta="0.01" weight="1">
-      <parameter idref="[% id %].frequencies"/>
-    </deltaExchange>
-    <!-- operators for the tree topology -->
-    <subtreeSlide gaussian="true" size="0.001" weight="15">
-      <treeModel idref="[% id %].treeModel"/>
-    </subtreeSlide>
-    <narrowExchange weight="15">
-      <treeModel idref="[% id %].treeModel"/>
-    </narrowExchange>
-    <wideExchange weight="3">
-      <treeModel idref="[% id %].treeModel"/>
-    </wideExchange>
-    <wilsonBalding weight="3">
-      <treeModel idref="[% id %].treeModel"/>
-    </wilsonBalding>
-    <scaleOperator scaleFactor="0.75" weight="3">
-      <parameter idref="[% id %].treeModel.rootHeight"/>
-    </scaleOperator>
-    <uniformOperator weight="30">
-      <parameter idref="[% id %].treeModel.internalNodeHeights"/>
-    </uniformOperator>
+      <!-- proposal mechanisms for [% id %] -->
+      <!-- operators for the substitution process -->
+      <scaleOperator scaleFactor="0.75" weight="0.1">
+        <parameter idref="[% id %].alpha"/>
+      </scaleOperator>
+      <scaleOperator scaleFactor="0.75" weight="0.1">
+        <parameter idref="[% id %].kappa"/>
+      </scaleOperator>
+      <deltaExchange delta="0.01" weight="1">
+        <parameter idref="[% id %].frequencies"/>
+      </deltaExchange>
+      <!-- operators for the tree topology -->
+      <subtreeSlide gaussian="true" size="0.001" weight="15">
+        <treeModel idref="[% id %].treeModel"/>
+      </subtreeSlide>
+      <narrowExchange weight="15">
+        <treeModel idref="[% id %].treeModel"/>
+      </narrowExchange>
+      <wideExchange weight="3">
+        <treeModel idref="[% id %].treeModel"/>
+      </wideExchange>
+      <wilsonBalding weight="3">
+        <treeModel idref="[% id %].treeModel"/>
+      </wilsonBalding>
+      <scaleOperator scaleFactor="0.75" weight="3">
+        <parameter idref="[% id %].treeModel.rootHeight"/>
+      </scaleOperator>
+      <uniformOperator weight="30">
+        <parameter idref="[% id %].treeModel.internalNodeHeights"/>
+      </uniformOperator>
       [% IF counter == 1 %]
         <upDownOperator scaleFactor="0.75" weight="3">
           <up></up>
