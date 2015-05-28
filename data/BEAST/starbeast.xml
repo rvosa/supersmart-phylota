@@ -33,7 +33,7 @@
           <sequence><taxon idref="taxon_[% seq.get_name %]"/>[% seq.get_char.join('') %]</sequence>
         [% ELSE -%]
           <!-- no sequence data for [% row %] in alignment [% id %] -->
-          <sequence><taxon idref="taxon_[% row %]"$/>[% N.repeat(nchar) %]</sequence>
+          <sequence><taxon idref="taxon_[% row %]"/>[% N.repeat(nchar) %]</sequence>
         [% END -%]
       [% END %]
     </alignment>
@@ -220,7 +220,7 @@
     </indicators>
   </mixedDistributionLikelihood>
   
-  <!-- operators -->
+  <!-- proposal mechanisms -->
   <operators id="operators">
     [% FOREACH matrix IN data.get_matrices %]
     [% id = matrix.get_name %]
@@ -237,6 +237,9 @@
     <scaleOperator scaleFactor="0.75" weight="0.1">
       <parameter idref="[% id %].kappa"/>
     </scaleOperator>
+    <deltaExchange delta="0.01" weight="1">
+      <parameter idref="[% id %].frequencies"/>
+    </deltaExchange>
     <subtreeSlide gaussian="true" size="0.001" weight="15">
       <treeModel idref="[% id %].treeModel"/>
     </subtreeSlide>
@@ -313,15 +316,15 @@
         </exponentialPrior>
         [% END %]
         <!-- diversification priors -->
-        <oneOnXPrior>
+        <logNormalPrior mean="-7.0" stdev="2.0">
           <parameter idref="species.popMean"/>
-        </oneOnXPrior>
-        <oneOnXPrior>
+        </logNormalPrior> 
+        <logNormalPrior mean="4.6" stdev="2.0">
           <parameter idref="species.birthDeath.meanGrowthRate"/>
-        </oneOnXPrior>
-        <uniformPrior lower="0.0" upper="1.0">
+        </logNormalPrior>
+        <betaPrior shape="1.0" shapeB="1.0">
           <parameter idref="species.birthDeath.relativeDeathRate"/>
-        </uniformPrior>
+        </betaPrior>
       </prior>
       
       <!-- likelihood -->
