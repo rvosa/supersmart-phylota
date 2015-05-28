@@ -117,11 +117,11 @@
       [% FOREACH taxon IN taxa.get_entities %]
         <!-- reference to the species http://ncbi.nlm.nih.gov/taxonomy/[% taxon.get_meta_object('smrt:tid') %] -->
         <sp id="[% taxon.get_name %]">
-        [% distinct = [] %]
+        [% rows = [] %]
         [% FOREACH row IN taxon.get_data %]
-          [% distinct.push(row.get_name) %]
+          [% rows.push(row.get_name) %]
         [% END %]
-        [% FOREACH row_name IN distinct.unique %]
+        [% FOREACH row_name IN row.unique %]
           <!-- reference to a distinct row name across all alignments -->
           <taxon idref="taxon_[% row_name %]"/>
         [% END %]
