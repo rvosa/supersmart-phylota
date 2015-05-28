@@ -3,6 +3,8 @@ package Bio::SUPERSMART::App::smrtutils::Command::DBinsert;
 use strict;
 use warnings;
 
+use File::Spec;
+
 use Bio::Phylo::IO qw(parse unparse);
 use Bio::Phylo::Util::CONSTANT ':objecttypes';
 
@@ -12,16 +14,37 @@ use Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa;
 use base 'Bio::SUPERSMART::App::SubCommand';
 use Bio::SUPERSMART::App::smrtutils qw(-command);
 
-# ABSTRACT: 
+# ABSTRACT: Inserts sequences and taxa into the database
 
 =head1 NAME
 
-DBinsert - insert custom sequences and taxa into database
+DBinsert - insert user specified sequences and new taxa into database
 
 =head1 SYNOPSYS
 
+smrt-utils dbinsert [-h ] [-v ] [-w <dir>] [-l <file>] [-y ] [-a <file>] [-l <file>] [-t ] [-p ] [-d ] [-f ] [-g ] 
 
 =head1 DESCRIPTION
+
+This subcommand lets the user insert custom taxa and sequences into the local SUPERSMART database.
+Sequences or alignments can be provided in any sequence format that is supported by Bio::Phylo, default 
+is FASTA. IMPORTANT: Note that the inserted sequences are not added to any Phylota cluster, they are only added to
+the 'seqs' table. 'smrt align' will therefore not find these sequences, if you want to include them into the analysis,
+you will have to manually add the files to the 'smrt align' output file listing the alignments. A prefix for generated
+accessions can be given, the default is 'SMRT'. If the 'generate_fasta' flag is set, alignment files compatible
+with the 'smrt' commands are created. This includes the smrt-style fasta definition line 
+(e.g. >gi|449785701|seed_gi|449785701|taxon|292712|mrca|292712/1-1839) and the filename beginning with the 
+seed gi. Also note that the seed gi is artificial since no clustering as in phylota is performed.
+
+Custom taxa can be added if they are provided in a taxa file as produced by 'smrt taxize' or by 'smrt-utils replicate'.
+Note that the taxon ids of the added taxa and its hierarchy must be given in the input taxa file, ids are not 
+automatically generated. 
+
+At the moment, this subcommand does not provide functionality to remove entries from the database.
+Entries can be removed by hand by searching for instance for the prefixes and suffixes generated while inserting:
+
+mysql> delete from nodes_194 where common_name like "%SUPERSMART%";
+mysql> delete from seqs where acc like "SMRT%";
 
 =cut
 
@@ -74,7 +97,7 @@ sub run {
 		}
 		$logger->info( 'Got file names of ' . scalar(@files) . ' to proecess' );
 		
-		my $seq_cnt = 0;
+		my @inserted;
 		# retrieve matrix object(s) from file(s)
 		for my $file ( @files ) {
 			$logger->info ("Processing alignment file $file");
@@ -89,27 +112,37 @@ sub run {
 			
 			# iterate over sequences and insert into database
 			for my $seq ( @{$matrix->get_entities} ) {
-				$self->_insert_seq($seq, $matrix, $opt->prefix, $opt->desc );				
-				$seq_cnt++;				
+				my $gi = $self->_insert_seq($seq, $matrix, $opt->prefix, $opt->desc );				
+				push @inserted, $gi;
 			}
 			
 			# write sequence with new defline to file if generate_fasta flag is given,
 			# also write new file name into list of fasta files									
 			if ( $opt->generate_fasta ) {
-				# print fasta
-				(my $newfile = $file) =~ s/\.[^\.]+$//;
-				# file extension removed, add .fa
-				$newfile .= '-smrt-inserted.fa';
+				# prepend artificial 'seed-gi' to filename.
+				# This is needed by 'smrt orthologize', otherwise it won't find
+				# the sequences! As the seed gi, we take the last 
+				# inserted artificial gi:
+				my $newfilename = $inserted[-1] . "-";				
+				my ($volume,$dirs,$filename) = File::Spec->splitpath( $file );
+
+				#remove current file extension
+				$filename =~ s/\.[^\.]+$//;
+				$newfilename .= $filename . '-smrt-inserted.fa';
+				
+				my $newfile = File::Spec->catfile($volume, $dirs, $newfilename);
+
 				$logger->info("Writing alignment to $newfile");
 				unparse ( -phylo => $matrix, -file => $newfile, -format=>'fasta' );
+
 				# print filename to list
-				my $newlist .= 'aligned-smrt-inserted.txt';
-				open my $fh, '>>', $newlist;
+				my $list .= 'aligned-smrt-inserted.txt';
+				open my $fh, '>>', $list;
 				print $fh $newfile . "\n";
 				close $fh;
 			}	
 		}
-		$logger->info("Inserted $seq_cnt sequences into database");   	
+		$logger->info("Inserted " . scalar(@inserted) . " sequences into database");   	
 	}
 	$logger->info("DONE");
 
@@ -166,10 +199,13 @@ sub _insert_seq {
 	# write FASTA file with definition line compatible with other smrt commands
 	# since the newly inserted seqs have no cluster,  we set the seed gi to the gi of the sequence
 	# and the mrca to the taxon id of the sequence. Set mrca to the taxon's ti.
-	my $defline = "gi|$gi|seed_gi|$gi|taxon|$ti|mrca|$ti/1-" . length($seq->get_char);
+	my $defline = "gi|$gi|seed_gi|$gi|taxon|$ti|mrca|$ti/1-" . length($unaligned);
 	$seq->set_generic('fasta_def_line', $defline);		
 
 	$logger->info("Inserted sequence with gi $gi and accession $acc into database");	
+	
+	# give back the newly created artificial GI
+	return($gi);
 }
 
 sub _insert_taxa {
