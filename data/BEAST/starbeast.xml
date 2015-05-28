@@ -45,11 +45,13 @@
       <alignment idref="[% id %]"/>
     </patterns>
     
-    <!-- coalescent tree parameters -->
-    <coalescentTree id="[% id %].startingTree" rootHeight="0.01">
+    <!-- coalescent starting tree -->
+    <coalescentTree id="[% id %].startingTree" rootHeight="0.02">
       <taxa idref="taxa"/>
       <constantSize idref="constant"/>
     </coalescentTree> 
+
+    <!-- tree model -->
     <treeModel id="[% id %].treeModel">
       <coalescentTree idref="[% id %].startingTree"/>
       <rootHeight>
@@ -80,7 +82,7 @@
       </rate>
     </strictClockBranchRates>
     
-    <!-- substitution model parameters -->
+    <!-- HKY85 substitution model parameters -->
     <HKYModel id="[% id %].hky">
       <frequencies>
         <frequencyModel dataType="nucleotide">
@@ -94,6 +96,8 @@
         <parameter id="[% id %].kappa" lower="0.0" value="2.0"/>
       </kappa>
     </HKYModel>
+
+    <!-- site model: HKY85+G -->
     <siteModel id="[% id %].siteModel">
       <gammaShape gammaCategories="4">
         <parameter id="[% id %].alpha" lower="0.0" value="0.5"/>
@@ -138,13 +142,15 @@
     </geneTrees>
   </species>
 
-  <!-- species tree parameters -->  
+  <!-- species tree: provides per branch demographic function -->  
   <speciesTree constantRoot="true" id="sptree">
     <species idref="species"/>
     <sppSplitPopulations value="0.02">
       <parameter id="speciesTree.splitPopSize"/>
     </sppSplitPopulations>
   </speciesTree>
+
+  <!-- species tree: birth/death model -->
   <birthDeathModel id="birthDeath" units="substitutions">
     <birthMinusDeathRate>
       <parameter id="species.birthDeath.meanGrowthRate" lower="0.0" upper="Infinity" value="1.0"/>
@@ -153,6 +159,8 @@
       <parameter id="species.birthDeath.relativeDeathRate" lower="0.0" upper="1.0" value="0.5"/>
     </relativeDeathRate>
   </birthDeathModel>
+
+  <!-- species tree: likelihood -->
   <speciationLikelihood id="speciation.likelihood">
     <model>
       <birthDeathModel idref="birthDeath"/>
@@ -179,7 +187,7 @@
     <speciesTree idref="sptree"/>
   </speciesCoalescent>
 
-  <!-- mixed gamma distribution likelihood -->  
+  <!-- species tree: gamma2 + gamma4 -->  
   <mixedDistributionLikelihood id="species.popSize">
     <distribution0>
       <gammaDistributionModel>
@@ -261,6 +269,29 @@
         </upDownOperator>
       [% END %]
     [% END %]
+    <!-- combined up/down operator -->
+    <upDownOperator scaleFactor="0.75" weight="30">
+      <up>
+        [% counter = 0 -%]
+        [% FOREACH matrix IN data.get_matrices -%]
+          [% id = matrix.get_name -%]
+          [% IF counter -%]
+            <parameter idref="[% id %].clock.rate"/>
+          [% END -%]
+          [% counter = counter + 1 -%]
+        [% END -%]
+        <parameter idref="species.birthDeath.meanGrowthRate"/>
+      </up>
+      <down>
+        <speciesTree idref="sptree"/>
+        <parameter idref="species.popMean"/>
+        <parameter idref="speciesTree.splitPopSize"/>
+        [% FOREACH matrix IN data.get_matrices -%]
+          [% id = matrix.get_name %]
+            <parameter idref="[% id %].treeModel.allInternalNodeHeights"/>
+        [% END -%]
+      </down>
+    </upDownOperator>
     <!-- operators for the diversification process -->
     <scaleOperator scaleFactor="0.75" weight="3">
       <parameter idref="species.birthDeath.relativeDeathRate"/>
