@@ -191,7 +191,7 @@ sub run{
 
 
 		      if ( $distinct  < 3 ) {
-			      $logger->info("Not enough sequences in alignment $aln for clade # $i");
+			      $logger->debug("Not enough sequences in alignment $aln for clade # $i");
 			      next CLADE;
 		      }
 		      # calculate distance of the subset of the alignment which includes only the (ingroup!) species in this clade		      		      
@@ -201,7 +201,7 @@ sub run{
 		      }
 		      my $dist  = $mt->calc_mean_distance($fastastr);
 		      if ( $dist > $config->CLADE_MAX_DISTANCE ) {
-			      $logger->info("$aln is too divergent for clade # $i, distance $dist > ".$config->CLADE_MAX_DISTANCE);
+			      $logger->debug("$aln is too divergent for clade # $i, distance $dist > ".$config->CLADE_MAX_DISTANCE);
 			      next CLADE;
 		      }
 		      		      
