@@ -2,6 +2,7 @@ package Bio::Tools::Run::Phylo::StarBEAST;
 use strict;
 use version;
 use XML::Twig;
+use Template;
 use File::Temp 'tempfile';
 use Bio::AlignIO;
 use Bio::Phylo::Factory;
@@ -254,6 +255,19 @@ sub rebuild {
 	return $self->{'_rebuild'};
 }
 
+=item template
+
+Getter/setter for a L<Template> file to be used for generating BEAST
+input
+
+=cut
+
+sub template {
+	my $self = shift;
+	$self->{'_template'} = shift if @_;
+	return $self->{'_template'};
+}
+
 =item root_height
 
 Sets the root height to provided value. If no value is given, the root height is
@@ -319,30 +333,45 @@ sub run {
 			'-file'   => $nexml,
 			'-as_project' => 1,
 		) );
-	
-		# generate BEAST xml
-		$log->info("going to generate beast xml");	
-		my $twig = $self->_make_beast_xml;
 
-		# write to file	
-		$log->info("writing beast input file to $filename");
-		open (my $fh, ">", $filename) or die "Error writing BEAST input file: $!"; 
-		$twig->print($fh);
-		$log->info("beast xml written to $filename");
-		close $fh;
+		# create BEAST xml
+		if ( my $template = $self->template ) {
+
+			# interpolate BEAST xml template
+			my $tt = Template->new({ 'ABSOLUTE' => 1 });
+			$tt->process( $template, {
+				'data'         => $self->_alignment,
+				'chain_length' => $self->chain_length,
+				'sample_freq'  => $self->sample_freq,
+				'outfile_name' => $self->outfile_name,
+				'logfile_name' => $self->logfile_name,
+			}, $filename );
+		}
+		else {
+			# generate BEAST xml DOM tree
+			$log->info("going to generate beast xml");	
+			my $twig = $self->_make_beast_xml;
+
+			# write to file	
+			$log->info("writing beast input file to $filename");
+			open (my $fh, ">", $filename) or die "Error writing BEAST input file: $!"; 
+			$twig->print($fh);
+			$log->info("beast xml written to $filename");
+			close $fh;
+		}
 	}
 	
 	# create the invocation and run the command	
 	my $command = $self->executable . $self->_setparams($filename);
 	$log->info("going to execute '$command'");	
-    my $status  = system $command;
+    	my $status  = system $command;
     
-    # fetch the output file
-    my $outfile = $self->outfile_name();
-    if ( !-e $outfile || -z $outfile ) {
-        $self->warn("*BEAST call had status of $status: $? [command $command]\n");
-        return undef;
-    }
+    	# fetch the output file
+    	my $outfile = $self->outfile_name();
+    	if ( !-e $outfile || -z $outfile ) {
+        	$self->warn("*BEAST call had status of $status: $? [command $command]\n");
+        	return undef;
+	}
 	return $outfile;
 }
 
