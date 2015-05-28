@@ -13,6 +13,7 @@ use Bio::Tree::DistanceFactory;
 use Bio::Tools::Run::Phylo::PhyloBase;
 use Bio::Phylo::Util::Logger ':levels';
 use Bio::Phylo::Util::CONSTANT ':objecttypes';
+use Bio::Phylo::Util::Exceptions 'throw';
 use base qw(Bio::Tools::Run::Phylo::PhyloBase);
 
 our $PROGRAM_NAME = 'beast';
@@ -266,43 +267,6 @@ sub template {
 	my $self = shift;
 	$self->{'_template'} = shift if @_;
 	return $self->{'_template'};
-}
-
-=item append
-
-Getter/setter to indicate whether to append to tree files and logs
-
-=cut
-
-sub append {
-	my $self = shift;
-	$self->{'_append'} = shift if @_;
-	return $self->{'_append'};
-}
-
-=item root_height
-
-Sets the root height to provided value. If no value is given, the root height is
-computed from the distance matrix of the provided alignment.
-Returns the root height that was set.
-
-=cut 
-
-sub root_height {
-	my ( $self, $aln, $value ) = @_;
-	if ( defined $value ) {
-		$aln->set_namespaces( $beast_pre => $beast_ns );
-		$aln->set_meta_object( "${beast_pre}:rootHeight" => $value );
-	}
-	else {
-		$value = $aln->get_meta_object( "${beast_pre}:rootHeight" );
-		if ( not defined $value ) {
-			my @rows = @{ $aln->get_entities };
-			# http://www.cs.utexas.edu/users/phylo/datasets/bbca/create_beast_input.pl
-			return $self->root_height( $aln => 0.002345 * scalar(@rows) - 0.03446 );		    
-		}
-	}
-	return $value;
 }
 
 =item program_name
