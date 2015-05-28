@@ -292,15 +292,15 @@
         <mixedDistributionLikelihood idref="species.popSize"/>
         <speciationLikelihood idref="speciation.likelihood"/>
         [% FOREACH matrix IN data.get_matrices %]
-        [% id = matrix.get_name %]
-        <!-- priors for [% id %] -->
-        <logNormalPrior mean="1.0" meanInRealSpace="false" offset="0.0" stdev="1.25">
-          <parameter idref="[% id %].kappa"/>
-        </logNormalPrior>
-        <exponentialPrior mean="0.5" offset="0.0">
-          <parameter idref="[% id %].alpha"/>
-        </exponentialPrior>
-        <coalescentLikelihood idref="[% id %].coalescent"/>
+          [% id = matrix.get_name %]
+          <!-- priors for [% id %] -->
+          <logNormalPrior mean="1.0" meanInRealSpace="false" offset="0.0" stdev="1.25">
+            <parameter idref="[% id %].kappa"/>
+          </logNormalPrior>
+          <exponentialPrior mean="0.5" offset="0.0">
+            <parameter idref="[% id %].alpha"/>
+          </exponentialPrior>
+          <coalescentLikelihood idref="[% id %].coalescent"/>
         [% END %]
         <!-- diversification priors -->
         <logNormalPrior mean="-7.0" stdev="2.0">
@@ -328,24 +328,21 @@
     
     <!-- where to log parameters -->
     <log fileName="[% logfile_name %]" logEvery="[% sample_freq %]">
-      <speciationLikelihood idref="speciation.likelihood"/>
-      <speciesCoalescent idref="species.coalescent"/>
-      <prior idref="prior"/>
-      <tmrcaStatistic idref="speciesTree.rootHeight"/>
       <posterior idref="posterior"/>
+      <prior idref="prior"/>
       <likelihood idref="likelihood"/>
       <parameter idref="species.popMean"/>
       <parameter idref="speciesTree.splitPopSize"/>
       <parameter idref="species.birthDeath.meanGrowthRate"/>
       <parameter idref="species.birthDeath.relativeDeathRate"/>
       [% FOREACH matrix IN data.get_matrices %]
-      [% id = matrix.get_name %]
-      <parameter idref="[% id %].treeModel.rootHeight"/>
-      <parameter idref="[% id %].kappa"/>
-      <parameter idref="[% id %].frequencies"/>
-      <parameter idref="[% id %].clock.rate"/>
-      <treeLikelihood idref="[% id %].treeLikelihood"/>
-      <coalescentLikelihood idref="[% id %].coalescent"/>
+        [% id = matrix.get_name %]
+        <parameter idref="[% id %].treeModel.rootHeight"/>
+        <parameter idref="[% id %].kappa"/>
+        <parameter idref="[% id %].frequencies"/>
+        <parameter idref="[% id %].clock.rate"/>
+        <treeLikelihood idref="[% id %].treeLikelihood"/>
+        <coalescentLikelihood idref="[% id %].coalescent"/>
       [% END %]
     </log>
     
