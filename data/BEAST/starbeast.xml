@@ -21,8 +21,10 @@
   </constantSize> 
   
   <!-- data and model settings for all the alignments -->
+  [% counter = 0 -%]
   [% FOREACH matrix IN data.get_matrices -%]
     [% id = matrix.get_name -%]
+    [% counter = counter + 1 -%]
     [% nchar = matrix.get_nchar -%]
     [% N = 'N' -%]
     <alignment dataType="nucleotide" id="[% id %]">
@@ -61,35 +63,22 @@
       </nodeHeights>
     </treeModel>
 
-    <!--  relaxed clock model parameters -->
-    <discretizedBranchRates id="[% id %].branchRates">
-      <treeModel idref="[% id %].treeModel"/>
-      <distribution>
-        <logNormalDistributionModel meanInRealSpace="true">
-          <mean>
-            <parameter id="[% id %].ucld.mean" lower="0.0" value="1.0"/>
-          </mean>
-          <stdev>
-            <parameter id="[% id %].ucld.stdev" lower="0.0" value="0.33"/>
-          </stdev>
-        </logNormalDistributionModel>
-      </distribution>
-      <rateCategories>
-        <parameter id="[% id %].branchRates.categories"/>
-      </rateCategories>
-    </discretizedBranchRates>
-    <rateStatistic external="true" id="[% id %].meanRate" internal="true" mode="mean">
-      <treeModel idref="[% id %].treeModel"/>
-      <discretizedBranchRates idref="[% id %].branchRates"/>
-    </rateStatistic>    
-    <rateStatistic external="true" id="[% id %].coefficientOfVariation" internal="true" mode="coefficientOfVariation">
-      <treeModel idref="[% id %].treeModel"/>
-      <discretizedBranchRates idref="[% id %].branchRates"/>
-    </rateStatistic>
-    <rateCovarianceStatistic id="[% id %].covariance">
-      <treeModel idref="[% id %].treeModel"/> 
-      <discretizedBranchRates idref="[% id %].branchRates"/>
-    </rateCovarianceStatistic>
+    <!-- coalescent likelihood -->
+    <coalescentLikelihood id="[% id %].coalescent">
+      <model><constantSize idref="constant"/></model>
+      <populationTree><treeModel idref="[% id %].treeModel"/></populationTree>
+    </coalescentLikelihood>
+
+    <!-- strict clock parameters -->
+    <strictClockBranchRates id="[% id %].branchRates">
+      <rate>
+        [% IF counter == 1 %]
+          <parameter id="[% id %].clock.rate" value="1.0"/>
+        [% ELSE %]
+          <parameter id="[% id %].clock.rate" value="1.0" lower="0.0" upper="Infinity"/>
+        [% END %]
+      </rate>
+    </strictClockBranchRates>
     
     <!-- substitution model parameters -->
     <HKYModel id="[% id %].hky">
@@ -110,7 +99,7 @@
         <parameter id="[% id %].alpha" lower="0.0" value="0.5"/>
       </gammaShape>
       <substitutionModel>
-      <HKYModel idref="[% id %].hky"/>
+        <HKYModel idref="[% id %].hky"/>
       </substitutionModel>
     </siteModel>
 
@@ -119,7 +108,7 @@
       <patterns idref="[% id %].patterns"/>
       <treeModel idref="[% id %].treeModel"/>
       <siteModel idref="[% id %].siteModel"/>
-      <discretizedBranchRates idref="[% id %].branchRates"/>
+      <strictClockBranchRates idref="[% id %].branchRates"/>
     </treeLikelihood>
   [% END %]   
   
@@ -222,15 +211,12 @@
   
   <!-- proposal mechanisms -->
   <operators id="operators">
-    [% FOREACH matrix IN data.get_matrices %]
-    [% id = matrix.get_name %]
-    <!-- operators for [% id %] -->
-    <scaleOperator scaleFactor="0.75" weight="3">
-      <parameter idref="[% id %].ucld.mean"/>
-    </scaleOperator>
-    <scaleOperator scaleFactor="0.75" weight="3">
-      <parameter idref="[% id %].ucld.stdev"/>
-    </scaleOperator>
+    [% counter = 0 -%]
+    [% FOREACH matrix IN data.get_matrices -%]
+    [% id = matrix.get_name -%]
+    [% counter = counter + 1 %]
+    <!-- proposal mechanisms for [% id %] -->
+    <!-- operators for the substitution process -->
     <scaleOperator scaleFactor="0.75" weight="0.1">
       <parameter idref="[% id %].alpha"/>
     </scaleOperator>
@@ -240,6 +226,7 @@
     <deltaExchange delta="0.01" weight="1">
       <parameter idref="[% id %].frequencies"/>
     </deltaExchange>
+    <!-- operators for the tree topology -->
     <subtreeSlide gaussian="true" size="0.001" weight="15">
       <treeModel idref="[% id %].treeModel"/>
     </subtreeSlide>
@@ -258,16 +245,21 @@
     <uniformOperator weight="30">
       <parameter idref="[% id %].treeModel.internalNodeHeights"/>
     </uniformOperator>
-    <upDownOperator scaleFactor="0.75" weight="3">
-      <up><parameter idref="[% id %].ucld.mean"/></up>
-      <down><parameter idref="[% id %].treeModel.allInternalNodeHeights"/></down>
-    </upDownOperator>
-    <swapOperator autoOptimize="false" size="1" weight="10">
-      <parameter idref="[% id %].branchRates.categories"/>
-    </swapOperator>
-    <uniformIntegerOperator weight="10">
-      <parameter idref="[% id %].branchRates.categories"/>
-    </uniformIntegerOperator>
+      [% IF counter == 1 %]
+        <upDownOperator scaleFactor="0.75" weight="3">
+          <up></up>
+         <down><parameter idref="[% id %].treeModel.allInternalNodeHeights"/></down>
+        </upDownOperator>
+      [% ELSE %]
+        <!-- operators for the strict clock -->
+        <scaleOperator scaleFactor="0.75" weight="3">
+          <parameter idref="[% id %].clock.rate"/>
+        </scaleOperator>
+        <upDownOperator scaleFactor="0.75" weight="3">
+          <up><parameter idref="[% id %].clock.rate"/></up>
+          <down><parameter idref="[% id %].treeModel.allInternalNodeHeights"/></down>
+        </upDownOperator>
+      [% END %]
     [% END %]
     <!-- operators for the diversification process -->
     <scaleOperator scaleFactor="0.75" weight="3">
@@ -288,7 +280,7 @@
     </nodeReHeight>
   </operators>
   
-    <!-- mcmc settings -->
+  <!-- mcmc settings -->
   <mcmc autoOptimize="true" chainLength="[% chain_length %]" id="mcmc">
   
     <!-- posterior -->
@@ -308,12 +300,7 @@
         <exponentialPrior mean="0.5" offset="0.0">
           <parameter idref="[% id %].alpha"/>
         </exponentialPrior>
-        <exponentialPrior mean="0.33" offset="0.0">
-          <parameter idref="[% id %].ucld.stdev"/>
-        </exponentialPrior>
-        <exponentialPrior mean="10.0" offset="0.0">
-          <parameter idref="[% id %].ucld.mean"/>
-        </exponentialPrior>
+        <coalescentLikelihood idref="[% id %].coalescent"/>
         [% END %]
         <!-- diversification priors -->
         <logNormalPrior mean="-7.0" stdev="2.0">
@@ -356,7 +343,9 @@
       <parameter idref="[% id %].treeModel.rootHeight"/>
       <parameter idref="[% id %].kappa"/>
       <parameter idref="[% id %].frequencies"/>
+      <parameter idref="[% id %].clock.rate"/>
       <treeLikelihood idref="[% id %].treeLikelihood"/>
+      <coalescentLikelihood idref="[% id %].coalescent"/>
       [% END %]
     </log>
     
