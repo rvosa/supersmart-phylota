@@ -268,6 +268,18 @@ sub template {
 	return $self->{'_template'};
 }
 
+=item append
+
+Getter/setter to indicate whether to append to tree files and logs
+
+=cut
+
+sub append {
+	my $self = shift;
+	$self->{'_append'} = shift if @_;
+	return $self->{'_append'};
+}
+
 =item root_height
 
 Sets the root height to provided value. If no value is given, the root height is
