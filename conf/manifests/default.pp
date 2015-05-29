@@ -177,6 +177,7 @@ class install {
 			command => "wget http://biovel.naturalis.nl/phylota.tar.gz",
 			cwd     => $data_dir,
 			creates => "${data_dir}/phylota.tar.gz",
+			onlyif  => "/usr/bin/test ! -e  ~/SUPERSMART/data/phylota",
 			require => [ File[ $data_dir ], Package[ 'wget' ] ];
 		"unzip_phylota_dump":
 			command => "tar -xzvf phylota.tar.gz",
