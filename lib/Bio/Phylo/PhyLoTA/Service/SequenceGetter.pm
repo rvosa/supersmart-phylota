@@ -5,6 +5,8 @@ use strict;
 use warnings;
 use Moose;
 use Data::Dumper;
+use File::Spec;
+use File::Copy 'copy';
 use File::Temp 'tempfile';
 use Bio::SeqIO;
 use Bio::SearchIO;
@@ -12,6 +14,8 @@ use Bio::DB::GenBank;
 use Bio::Phylo::Factory;
 use Bio::Phylo::Util::Exceptions 'throw';
 use Bio::Phylo::IO 'parse_matrix';
+use Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa;
+use Bio::Phylo::PhyLoTA::Service::ParallelService;
 
 extends 'Bio::Phylo::PhyLoTA::Service';
 
@@ -277,6 +281,187 @@ sub run_blast_search {
 	}
 	$log->debug("found ".scalar(@hits)." hits");
 	return @hits;	
+}
+
+=item make_blast_db
+
+Given a BLAST db name (i.e. a path location where FASTA can be written) and a
+list of GIs, creates a BLAST database. Returns the name of the BLAST db.
+
+=cut
+
+sub make_blast_db {
+	my ( $self, $dbname, @gis ) = @_;
+	my $log = $self->logger;
+	@gis = keys %{ { map { $_ => 1 } @gis } };
+	$log->info("making BLAST db for ".scalar(@gis)." distinct GIs");
+	
+	# write FASTA file
+	open my $sfh, '>', $dbname or die $!;
+	for my $gi ( @gis ) {
+		my $seq = $self->find_seq($gi);
+		print $sfh '>', $gi, "\n", $seq->seq, "\n";
+	}
+	$log->info("wrote FASTA to $dbname");
+
+	# make blast db
+	my @cmd = (
+		$self->config->MAKEBLASTDB_BIN,
+		'-in'     => $dbname,
+		'-dbtype' => 'nucl',		
+	); 	
+	$log->info("going to run command ".join(" ", @cmd));
+	system("@cmd >/dev/null") == 0 or die "Command failed: @cmd";
+	return $dbname;	
+}
+
+=item run_blast_all
+
+Given the name of a BLAST DB, runs an all vs. all search against itself. Returns
+a Bio::SearchIO blast report object.
+
+=cut
+
+sub run_blast_all {
+	my ( $self, $dbname ) = @_;
+	my $log    = $self->logger;
+	my $config = $self->config;	
+	$log->info("going to run all vs all BLAST search on $dbname");
+	
+	# compose query command
+	my @cmd = (
+		$config->BLASTN_BIN,
+		'-query'  => $dbname,
+		'-db'     => $dbname,	
+	);
+	$log->info( "going to run command ".join(" ", @cmd) );
+	
+	# run query
+	my $result = `@cmd`;	
+	die "BLAST result empty" unless length $result;	
+	
+	# process results
+	$log->info("going to process BLAST results");		
+	open my $out, '<', \$result;
+	return Bio::SearchIO->new( '-format' => 'blast', '-fh' => $out );	
+}
+
+=item cluster_blast_results
+
+Given a Bio::SearchIO blast report object, clusters queries and hits that have
+sufficient overlap in single linkage clusters
+
+=cut
+
+sub cluster_blast_results {
+	my ( $self, $report ) = @_;
+	my $log    = $self->logger;
+	my $config = $self->config;
+	
+	# flatten results
+	my @blast;
+	while ( my $r = $report->next_result ) {
+		push @blast, $r;
+	}
+	$log->info("number of blast results : ".scalar(@blast));
+	die "No BLAST results!" unless @blast;
+			
+	# process results, this is all-vs-all so many results with many hits.
+	# we will discard all hits where the overlapping region is smaller
+	# than 0.51 (default) times of the length of both query and hit
+	my $overlap = $config->MERGE_OVERLAP;
+	my @res = pmap { $self->get_overlapping_hits($_,$overlap) if $_ } @blast;
+	$log->info("number of overlapping hits: ".scalar(@res));
+	
+	my %hits;
+	map { @hits{ keys %{$_} } = values %{$_} if $_ } @res;	
+	
+	# make single linkage clusters
+	my $sets = [];
+	for my $gi ( keys %hits ) {
+		if ( $hits{$gi} ) {
+			$log->info("going to cluster around seed $gi");
+			_cluster( $sets, delete $hits{$gi}, \%hits);
+		}
+	}
+
+	# now remove duplicates
+	@$sets = values %{ { map { join('|', sort { $a <=> $b } @{$_}) => $_ } @$sets } };
+	
+	# assign ids to clusters
+	my $clustid = 1;
+	return map { { 'id' => $clustid++, 'seq' => $_ } } @$sets;	
+}
+
+# Helper subroutines
+sub _cluster {
+	my ( $clusters, $hitset, $hitmap) = @_;
+		
+	# iterate over GIs in focal hit set
+	for my $gi ( @{ $hitset } ) {
+		
+		# if focal GI has itself a set of hits, add those hits 
+		# to current focal set and keep processing it
+		if ( my $hits = delete $hitmap->{$gi} ) {
+			_merge( $hitset, $hits );
+			_cluster( $clusters, $hitset, $hitmap );
+		}
+	}		
+	# when all GIs are processed, the grown hit set has become a cluster
+	push @{ $clusters }, $hitset;	
+}
+	
+sub _merge {
+	my ( $set1, $set2 ) = @_;
+	@$set1 = sort { $a <=> $b } keys %{ { map { $_ => 1 } ( @$set1, @$set2 ) } };
+}
+
+=item get_overlapping_hits
+
+Given a BLAST result and an amount of overlap (fraction), gets all the hits
+that overlap by that amount. Returns a single hash ref as follows:
+
+ { $query_gi => [ $hit_gi_1, $hit_gi_2, ...] }
+
+=cut
+
+sub get_overlapping_hits {
+	my ( $self, $result, $overlap ) = @_;
+	my $log  = $self->logger;
+	my $q_gi = $result->query_name;
+	$log->debug("querying for seed gi $q_gi");
+	
+	# we will return a hash ref with a single key,
+	# the query's GI, and as value an array ref with
+	# all other GI's that had sufficient overlap
+	my %blhits = ( $q_gi => [] );
+	
+	# iterate over hits for focal query
+	my $q_l = length($self->find_seq($q_gi)->seq);
+	while ( my $hit = $result->next_hit ) {
+		if ( my $h_gi = $hit->name ) {
+			my $h_l = length($self->find_seq($h_gi)->seq);
+			
+			# add up the lengths of the overlapping regions
+			my ( $q_hsp_l, $h_hsp_l ) = ( 0, 0 );
+			while( my $hsp = $hit->next_hsp ) {
+				$q_hsp_l += $hsp->length('query');
+				$h_hsp_l += $hsp->length('hit');
+			}
+			
+			# check if the overlapping regions are long enough
+			if ( ($q_hsp_l/$q_l) > $overlap and ($h_hsp_l/$h_l) > $overlap ) {
+				push @{ $blhits{$q_gi} }, $h_gi;
+			}
+		}
+	}
+	
+	# report progress
+	my $template = 'found %i hits for query %s (%i nt)';
+	my @args = ( scalar(@{$blhits{$q_gi}}), $q_gi, $q_l );
+	my $message  = sprintf $template, @args;
+	$log->debug($message);	
+	return \%blhits;	
 }
 
 =item get_orthologs_for_protein_id
@@ -951,11 +1136,97 @@ sub profile_align_files {
     return $result;
 }
 
+=item profile_align_all
+
+Given an outfile name, a threshold for the average pairwise distance to
+accept and a list of infiles, profile aligns the infiles to populate the
+outfile.
+
+=cut
+
+# (the effectiveness of this procedure may depend on the input order).
+# I was trying to do this using List::Util::reduce, but it segfaults.
+sub profile_align_all {
+	my ( $self, $merged, $maxdist, @files ) = @_;
+	my $mts = Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa->new;
+	my $log = $self->logger;	
+	$log->debug("going to reduce @files");
+	
+	# check for singletons
+	if ( scalar(@files) == 1 ) {
+		
+		# count number of records
+		open my $fh, '<', $files[0] or die "Could not open $files[0]: $!";
+		my $num_seqs = scalar(grep m|>|, <$fh>);
+		close $fh;		    
+		if ( $num_seqs > 2 ) {
+			$log->info("writing singleton $merged [@files]");
+			copy $files[0], $merged;			
+		}
+		else {
+			$log->debug("rejecting singleton cluster (too small), @files not written");
+		}
+	}
+	else {
+	
+		# sort files in descending number of records
+		my %sizes = map {  
+			open my $fh, '<', $_ or die "Could not open $files[0]: $!";		    
+			my $sizes = scalar(grep m|>|, <$fh>); 
+			close $fh;
+			$_ => $sizes;		    
+		} @files;
+		@files = sort { $sizes{$b} <=> $sizes{$a} } keys %sizes;	
+		
+		# copy the first (largest) file to the output
+		if ( $files[0] ) {
+			copy $files[0], $merged;
+			$log->info("starting $merged [$files[0]]");
+		}
+		
+		# iterate over the remaining files
+		for my $i ( 1 .. $#files ) {
+			
+			# as long as merges are unsuccessful, we will continue to attempt
+			# profile align the subsequent files against the first input file. 
+			my $file2 = $files[$i];
+						
+			# do the profile alignment
+			$log->debug("attempting to merge $merged and $file2 (# ". $i ." of ".$#files.")");			
+			if ( my $result = $self->profile_align_files($merged,$file2) ){
+				
+				# evaluate how this went
+				if ( $mts->calc_mean_distance($result) < $maxdist ) {
+					my %fasta = $mts->parse_fasta_string($result);				
+					%fasta = $mts->dedup(%fasta);
+					
+					# only keep if we have more than two sequences
+					if ( 2 < scalar keys %fasta ) { 
+						open my $fh, '>', $merged or die $!;
+						print $fh ">$_\n$fasta{$_}\n" for keys %fasta;
+						$log->info("merged $merged and $file2");				
+					}
+					else {
+						$log->debug("rejecting $file2 from $merged, too few sequences");
+					}
+				}
+				else {
+					$log->debug("rejecting $file2 from $merged, too distant");
+				}		
+			}
+			else {
+				$log->warn("profile alignment of $merged and $file2 failed");
+			}
+		}
+		$log->info("done merging $merged");
+	}
+}
+
 sub _temp_fasta {
     my $array = shift;
     my ( $fh, $filename ) = tempfile();
     for my $seq ( @{ $array } ) {
-	print $fh '>', $seq->get_name, "\n", $seq->get_char, "\n";
+		print $fh '>', $seq->get_name, "\n", $seq->get_char, "\n";
     }
     close $fh;
     return $filename;
