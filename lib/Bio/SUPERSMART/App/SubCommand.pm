@@ -162,7 +162,8 @@ sub init {
 			'Bio::SUPERSMART::App::SubCommand', 
 			'Bio::Phylo::PhyLoTA::Service::ParallelService', 
 			'Bio::Phylo::PhyLoTA::Service::TreeService', 
-			'Bio::Phylo::PhyLoTA::Service::CalibrationService' 
+			'Bio::Phylo::PhyLoTA::Service::CalibrationService',
+			'Bio::Phylo::PhyLoTA::Service::SequenceGetter',
 		],		
     ));
     
