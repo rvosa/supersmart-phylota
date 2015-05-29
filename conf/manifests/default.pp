@@ -174,14 +174,16 @@ class install {
 
 		# make phylota database
 		"dl_phylota_dump":
-			command => "wget http://biovel.naturalis.nl/phylota.tar.gz",
+			command => "${travis_wait} wget http://biovel.naturalis.nl/phylota.tar.gz",
 			cwd     => $data_dir,
 			creates => "${data_dir}/phylota.tar.gz",
+			##onlyif  => "/usr/bin/test ! -e  ${data_dir}/phylota",
 			require => [ File[ $data_dir ], Package[ 'wget' ] ];
 		"unzip_phylota_dump":
-			command => "tar -xzvf phylota.tar.gz",
+			command => "${travis_wait} tar -xzvf phylota.tar.gz",
 			creates => "${data_dir}/phylota",
 			cwd     => $data_dir,
+			##onlyif  => "/usr/bin/test ! -e  ${data_dir}/phylota",
 			require => Exec[ 'dl_phylota_dump'];
 		"chown_phylota_db":
 			command   => "chown -R -h mysql:mysql ${data_dir}/ && chmod 660 ${data_dir}/phylota/*",

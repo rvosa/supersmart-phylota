@@ -4,6 +4,9 @@ package Bio::Phylo::PhyLoTA::Domain::CalibrationTable;
 use strict;
 use warnings;
 use Bio::Phylo::PhyLoTA::Domain::CalibrationPoint;
+use Bio::Phylo::Util::Logger ':levels';
+
+my $log = Bio::Phylo::Util::Logger->new;
 
 =head1 NAME
 
@@ -66,18 +69,39 @@ sub to_string {
     my $self = shift;
     my $string = '';
     
-	# write the mrca statements
-	my $counter;
-	for my $row ( $self->get_rows ) {
-                my @taxa = $row->taxa;
-                $string .= "mrca = NFos" . $row->nfos . " @taxa\n";
-                if ( $row->max_age ) {
-                        $string .= "max = NFos" . $row->nfos . " " .  $row->max_age . "\n";
-                }
-                if ( $row->min_age ){
-                        $string .= "min = NFos" . $row->nfos . " " . $row->min_age . "\n";
-                }               
+    # group CP's by subtended taxon set
+    my %rows;
+    for my $row ( $self->get_rows ) {
+	my $taxa = join ',', sort { $a cmp $b } $row->taxa;
+	$rows{$taxa} = [] if not $rows{$taxa};
+	push @{ $rows{$taxa} }, $row;
+    }
+
+    # iterate over grouped CP's
+    for my $key ( keys %rows  ) {
+	my @rows = @{ $rows{$key} };
+        my $row;
+
+	# pick the "right" on if multiple
+	if ( scalar(@rows) > 1 ) {
+            my $names = join ', ', map { $_->nfos } @rows;
+	    $log->warn("Multiple calibration points for same node ($names), choosing oldest");
+            ($row) = sort { $b->max_age <=> $a->max_age } @rows;
+	}
+	else {
+	    ($row) = @rows;
+	}
+
+	# write output
+        my @taxa = $row->taxa;
+        $string .= "mrca = NFos" . $row->nfos . " @taxa\n";
+        if ( $row->max_age ) {
+            $string .= "max = NFos" . $row->nfos . " " .  $row->max_age . "\n";
         }
+        if ( $row->min_age ){
+            $string .= "min = NFos" . $row->nfos . " " . $row->min_age . "\n";
+        }               
+    }
     return $string;
 }
 

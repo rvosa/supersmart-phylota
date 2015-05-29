@@ -108,17 +108,25 @@ HEADER
 
         $ct->remove_orphan_taxa;
 	# print MRCA statements
-	print $tfh $ct->to_string, "thorough\n";
+	print $tfh $ct->to_string;
 	# run treePL
 	close $tfh;
         $self->logger->info("wrote treePL config file to  $tplfile");
-	system( $config->TREEPL_BIN, $tplfile ) && die $?;        
-        return parse_tree(
-		'-format' => 'newick',
-		'-file'   => $writetree,
-		'-as_project' => 1,
-	);
-        
+	system( $config->TREEPL_BIN, $tplfile ) && die $?;
+	if ( -e $writetree and -s $writetree ) {        
+        	my $result = parse_tree(
+			'-format'     => 'newick',
+			'-file'       => $writetree,
+			'-as_project' => 1,
+		);
+		unlink $readtree, $writetree, $tplfile;
+        	return $result;
+	}
+	else {
+		$self->logger->fatal("TreePL failed, reconsider your calibration points.");
+#		unlink $readtree, $writetree, $tplfile;
+		exit(1);
+	}
 }
 
 =item find_calibration_point
@@ -189,12 +197,11 @@ sub create_calibration_table {
 				next FOSSIL;
 			}
 			
-			# for crown (and unknown) fossils, just add the terminals present in the tree for that calibrated taxon, so it's mrca
-			# will get calibrated			
-			my @terminals = map {@{$_->get_terminal_ids}} @nodes;
+			# expand to all terminal taxa cf. the taxonomy
+			my @terminals = map { @{ $_->get_terminal_ids } } @nodes;
 
 			# only consider terminals that are present in our tree
-			@terminals = grep { exists($taxa_in_tree{$_}) } @terminals;
+			@terminals = grep { $taxa_in_tree{$_} } @terminals;
 
 			# for stem fossils, take the parent of the mrca
 			if ( lc $fd->{"CrownvsStem"} eq "stem" ) { 
@@ -210,12 +217,18 @@ sub create_calibration_table {
 				@terminals = map{ $_->get_name } @{$parent->get_terminals};
 				@terminals =  grep { exists($taxa_in_tree{$_}) } @terminals;																							
 			}
+			else {
+                        	# get the MRCA of the terminals, and then the tips subtended by it
+                        	my @tips = map { $tree->get_by_name($_) } @terminals;
+                        	my $mrca = $tree->get_mrca(\@tips);
+                        	@terminals = map { $_->get_name } @{ $mrca->get_terminals };
+			}
 			$table->add_row(
 					'taxa'    => [ sort { $a cmp $b } @terminals ],
 					'min_age' => $fd->min_age,
 					'max_age' => $fd->max_age,
 					'name'    => $fd->nfos,	    
-	                'nfos'    => $fd->nfos,	    
+	                		'nfos'    => $fd->nfos,	    
 	        );  
 			
 	}	

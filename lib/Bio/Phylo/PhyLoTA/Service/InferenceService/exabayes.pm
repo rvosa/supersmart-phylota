@@ -196,6 +196,13 @@ sub interdigitate {
 	$i++;
         last TREE unless $have_trees;
     }
+
+    # for some reason, two spurious initial trees (starting tree?)
+    # are still included, so we end up with ngens/samplefreq + 2 
+    # trees (e.g. 402). these trees are so bad that rerooting and
+    # calibrating often fails, so let's just omit them here
+    shift @interdigitated;
+    shift @interdigitated;
 	
     # write to file
     open my $out, '>', $self->outfile or die $!;
