@@ -489,7 +489,7 @@ sub consense_trees {
 	close $outfh;
 	
 	# execute command
-	my $tmpl = '%s -burnin %i %s %s 2> /dev/null';
+	my $tmpl = '%s -burnin %i %s %s';
 	my $command = sprintf $tmpl, $config->TREEANNOTATOR_BIN, $babs, $infile, $outfile;
     $log->debug("running command $command");
     system($command) and die "Error building consensus: $?";
