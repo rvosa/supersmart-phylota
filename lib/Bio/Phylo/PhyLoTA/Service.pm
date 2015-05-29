@@ -71,6 +71,64 @@ sub find_seq {
 	return $result;
 }
 
+=item find_similar_seqs
+
+Given an input sequence object, attempts to find similar sequences, i.e. 
+sequences that belong to the same taxon and are in the same cluster. The
+results are sorted by similarity in length. An optional second argument 
+sets the maximum number of similar sequences to return.
+
+=cut
+
+sub find_similar_seqs {
+	my ( $self, $seq, $limit ) = @_;
+	my $ti     = $seq->ti;
+	my $gi     = $seq->gi;
+	my $length = $seq->length;
+
+	# find clusters that this $gi participates in
+	my $cigi_rs = $schema->resultset('CiGi')->search({ 'gi' => $gi });	
+
+	# find other cluster members with the same $ti
+	my @gis;
+	while( my $cigi = $cigi_rs->next ) {
+		my $cl_type = $cigi->cl_type;
+		my $clustid = $cigi->clustid;
+		my $cti     = $cigi->ti;
+		$self->logger->info("$gi belongs to cluster: { cl_type => $cl_type, clustid => $clustid, ti => $cti }");
+
+		# fetch cluster members
+		my $cigi_member_rs = $schema->resultset('CiGi')->search({
+			'ti_of_gi' => $ti,
+			'cl_type'  => $cl_type,
+			'clustid'  => $clustid,
+			'ti'       => $cti,
+		});
+		while( my $cigi_member = $cigi_member_rs->next ) {
+			my $mgi = $cigi_member->gi;
+			if ( $mgi != $gi ) {
+				$self->logger->info("found other member: $mgi");
+				push @gis, $mgi;
+			}
+		}
+		
+	}
+
+	# sort by length similarity
+	my @sorted = map { $_->[0] } 
+	             sort { $a->[1] <=> $b->[1] }
+	             map { [ $_, abs( $length - $_->length ) ] }
+	             map { $self->find_seq($_) } @gis; 
+
+	# return (limit)
+	if ( $limit ) {
+		return @sorted[ 0 .. $limit - 1 ];
+	}
+	else {
+		return @sorted;
+	}
+}
+
 =item search_seq
 
 Given a search clause, returns the matching L<Bio::Phylo::PhyLoTA::DAO::Result::Seq> 
