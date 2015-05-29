@@ -108,17 +108,25 @@ HEADER
 
         $ct->remove_orphan_taxa;
 	# print MRCA statements
-	print $tfh $ct->to_string, "thorough\n";
+	print $tfh $ct->to_string;
 	# run treePL
 	close $tfh;
         $self->logger->info("wrote treePL config file to  $tplfile");
-	system( $config->TREEPL_BIN, $tplfile ) && die $?;        
-        return parse_tree(
-		'-format' => 'newick',
-		'-file'   => $writetree,
-		'-as_project' => 1,
-	);
-        
+	system( $config->TREEPL_BIN, $tplfile ) && die $?;
+	if ( -e $writetree and -s $writetree ) {        
+        	my $result = parse_tree(
+			'-format'     => 'newick',
+			'-file'       => $writetree,
+			'-as_project' => 1,
+		);
+		unlink $readtree, $writetree, $tplfile;
+        	return $result;
+	}
+	else {
+		$self->logger->fatal("TreePL failed, reconsider your calibration points.");
+		unlink $readtree, $writetree, $tplfile;
+		exit(1);
+	}
 }
 
 =item find_calibration_point
