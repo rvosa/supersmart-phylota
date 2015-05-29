@@ -35,10 +35,10 @@ sub options {
 	my $aln_outfile_default = 'aligned-replicated.txt';
 	my $tree_outfile_default = 'tree-replicated.dnd';
 	my $taxa_outfile_default = 'taxa-replicated.dnd';
-	my $format_default = 'nexus';
+	my $format_default = 'newick';
 	return (
 		['tree|t=s', 'file name of input tree (newick format), must be ultrametric', { arg => 'file', mandatory => 1 } ],
-		['tree_format|f=s', "format of tree input file, defaults to $format_default", { default => $format_default } ],
+		['tree_format|f=s', "format of tree input file (newick or nexus), defaults to $format_default", { default => $format_default } ],
 		['alignments|a=s', "list of alignment files to replicate, as produced by 'smrt align'", { arg => 'file' } ],
 		["aln_outfile|o=s", "name of output file listing the simulated alignments, defaults to '$aln_outfile_default'", {default => $aln_outfile_default, arg => "file"}],
 		["tree_outfile|b=s", "name of the output tree file (newick format), defaults to '$tree_outfile_default'", {default => $tree_outfile_default, arg => "file"}],
