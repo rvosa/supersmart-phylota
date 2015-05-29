@@ -3,6 +3,8 @@ package Bio::SUPERSMART::App::smrtutils::Command::Replicate;
 use strict;
 use warnings;
 
+use File::Spec;
+
 use Bio::Phylo::IO qw(parse unparse);
 use Bio::Phylo::Util::CONSTANT ':objecttypes';
 use Bio::Phylo::Models::Substitution::Dna;
@@ -33,12 +35,15 @@ sub options {
 	my $aln_outfile_default = 'aligned-replicated.txt';
 	my $tree_outfile_default = 'tree-replicated.dnd';
 	my $taxa_outfile_default = 'taxa-replicated.dnd';
+	my $format_default = 'nexus';
 	return (
 		['tree|t=s', 'file name of input tree (newick format), must be ultrametric', { arg => 'file', mandatory => 1 } ],
+		['tree_format|f=s', "format of tree input file, defaults to $format_default", { default => $format_default } ],
 		['alignments|a=s', "list of alignment files to replicate, as produced by 'smrt align'", { arg => 'file' } ],
 		["aln_outfile|o=s", "name of output file listing the simulated alignments, defaults to '$aln_outfile_default'", {default => $aln_outfile_default, arg => "file"}],
-		["tree_outfile|f=s", "name of the output tree file (newick format), defaults to '$tree_outfile_default'", {default => $tree_outfile_default, arg => "file"}],   
-		["taxa_outfile|f=s", "name the output taxa file", {default => $taxa_outfile_default, arg => "file"}],   
+		["tree_outfile|b=s", "name of the output tree file (newick format), defaults to '$tree_outfile_default'", {default => $tree_outfile_default, arg => "file"}],
+		
+		["taxa_outfile|c=s", "name the output taxa file", {default => $taxa_outfile_default, arg => "file"}],   
 		["ids|i", "return NCBI identifiers in remapped tree instead of taxon names", { default=> 0}],
 	    );	
 }
@@ -50,8 +55,8 @@ sub validate {
 	#  If the infile is absent or empty, abort  
 	my $file = $opt->tree;
 	$self->usage_error('no tree argument given') if not $file;
-	$self->usage_error('file $file does not exist') unless (-e $file);
-	$self->usage_error('file $file is empty') unless (-s $file);			
+	$self->usage_error("file $file does not exist") unless (-e $file);
+	$self->usage_error("file $file is empty") unless (-s $file);			
 }
 
 sub run {
@@ -68,7 +73,7 @@ sub run {
 	# read tree
 	my $tree = parse(
 		'-file'   => $treefile,
-		'-format' => 'newick',
+		'-format' => $opt->tree_format,
 	    )->first;
 
 	# replicate tree and write to file
@@ -106,8 +111,9 @@ sub run {
 			
 			if ( $rep_aln ) {
 				# simulated alignment will have the same file name plus added '-simulated'
-				my $filename = $aln;
-				$filename =~ s/\.fa$/-replicated\.fa/g;			
+				my ( $volume, $directories, $filename ) = File::Spec->splitpath( $aln );				
+				$filename =~ s/\.fa$/-replicated\.fa/g;
+				$filename = $self->workdir . '/' . $filename;
 				$logger->info("Writing alignment to $filename");
 				unparse ( -phylo => $rep_aln, -file => $filename, -format=>'fasta' );
 				print $outfh "$filename\n";
@@ -264,8 +270,9 @@ sub _replicate_alignment {
 
 	# make binary replicate. Here we take the relicated tree, so it is possible to have a 
 	# marker for artificial species
+	$logger->info("simulating binary occurence matrix for alignment $fasta");
 	my $binary_rep = $binary_matrix->replicate('-tree'=>$tree_replicated, '-seed'=>$config->RANDOM_SEED);	
-	
+	$logger->debug("simulated binary matrix");
 	# get taxa from replicate that have a simulated marker presence 
 	my %rep_taxa;# =  map {$_->[0]=>1} grep {$_->[1] == 1} @{$binary_rep->get_raw};
 	
@@ -284,7 +291,9 @@ sub _replicate_alignment {
 	$pruned->keep_tips( [keys %aln_taxa, keys %rep_taxa] );
 	
 	# replicate dna data: estimate model with the original tree and replicate sequences along the replicated tree
+	$logger->info("Determining substitution model for alignment $fasta");
 	my $model = 'Bio::Phylo::Models::Substitution::Dna'->modeltest($matrix, $tree);
+	$logger->info("Simulating sequences for alignment $fasta");
 	my $rep = $matrix->replicate('-tree'=>$pruned, '-seed'=>$config->RANDOM_SEED, '-model'=>$model);
 
 	# throw out sequences that are not for our desired taxa
