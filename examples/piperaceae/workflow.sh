@@ -110,8 +110,8 @@ smrt clademerge
 # make any general recommendations for what the right number is because this depends on a
 # lot of different variables (number of taxa, signal in the data, mixing of the chains)
 # so for publishable results convergence should be checked, for example using 'tracer'.
-# For this specific example, 10,000,000 generations for each clade appears to work.
-smrt cladeinfer --ngens=10_000_000
+# For this specific example, 20,000,000 generations for each clade appears to work.
+smrt cladeinfer --ngens=20_000_000
 
 # Step 13: graft the clade trees onto the backbone.
 # XXX height ranges not yet adjusted correctly
