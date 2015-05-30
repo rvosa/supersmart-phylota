@@ -19,6 +19,3 @@ env:
   - cpanm --notest git://github.com/rvosa/bio-phylo.git
   - cpanm --notest git://github.com/bioperl/bioperl-live.git@v1.6.x
   - cpanm --notest git://github.com/bioperl/bioperl-run.git
-cache:
-  directories:
-    - ~/SUPERSMART/data/phylota
