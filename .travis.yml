@@ -15,7 +15,8 @@ install:
   - sudo useradd -d /home/vagrant -m vagrant
   - sudo apt-get update
   - sudo apt-get -y install puppet
-  - wget http://biovel.naturalis.nl/phylota.tar.gz 
+  - wget http://biovel.naturalis.nl/phylota.tar.gz
+  - tar -xzvf phylota.tar.gz 
   - travis_wait sudo -E puppet apply conf/manifests/default.pp
   - cpanm --notest --installdeps .
   - cpanm --notest git://github.com/rvosa/bio-phylo.git
