@@ -118,14 +118,14 @@
   
   <!-- species normalization -->
   <species id="species">
-    [% FOREACH taxa IN data.get_taxa %]
-      [% FOREACH taxon IN taxa.get_entities %]
+    [% FOREACH taxa IN data.get_taxa -%]
+      [% FOREACH taxon IN taxa.get_entities -%]
         <!-- reference to the species http://ncbi.nlm.nih.gov/taxonomy/[% taxon.get_meta_object('smrt:tid') %] -->
         <sp id="[% taxon.get_name %]">
-        [% taxon_rows = [] %]
-        [% FOREACH row IN taxon.get_data %]
-          [% taxon_rows.push(row.get_name) %]
-        [% END %]
+        [% taxon_rows = [] -%]
+        [% FOREACH row IN taxon.get_data -%]
+          [% taxon_rows.push(row.get_name) -%]
+        [% END -%]
         [% FOREACH row_name IN taxon_rows.unique %]
           <!-- reference to a distinct row name across all alignments -->
           <taxon idref="taxon_[% row_name %]"/>
