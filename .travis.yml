@@ -10,7 +10,7 @@ env:
     - SUPERSMART_HOME=$TRAVIS_BUILD_DIR
     - PATH="$PATH:/home/vagrant/SUPERSMART/tools/bin:$TRAVIS_BUILD_DIR"
     - LD_LIBRARY_PATH=/usr/lib:/usr/lib64:/usr/local/lib
-ainstall:
+ install:
   - sudo useradd -d /home/vagrant -m vagrant
   - sudo apt-get update
   - sudo apt-get -y install puppet
