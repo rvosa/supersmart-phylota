@@ -117,6 +117,7 @@ __PACKAGE__->set_primary_key("gi");
 
 # You can replace this text with custom content, and it will be preserved on regeneration
 use Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector;
+use Bio::PrimarySeq;
 
 my $mts = Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector->new;
 
@@ -187,5 +188,27 @@ Alias for C<def>
 =cut
 
 sub get_name { shift->def }
+
+=head2 to_primary_seq
+
+Converts object to Bio::PrimarySeq
+
+=cut
+
+sub to_primary_seq {
+	my $self = shift;
+	my $gi   = $self->gi;
+	my $ti   = $self->ti;	
+	my %args = ( @_, 'gi' => $gi, 'taxon' => $ti );
+	
+	# e.g. "gi|${gi}|mrca|${mrca}|seed_gi|${seed_gi}|taxon|${ti}"
+	my $id = join '|', map { $_ => $args{$_ } } sort { $a cmp $b } keys %args;
+	return Bio::PrimarySeq->new( 
+		'-display_id' => $id,
+		'-seq'        => $self->seq, 
+		'-name'       => $gi,
+		'-type'       => 'dna'
+	);	
+}
 
 1;
