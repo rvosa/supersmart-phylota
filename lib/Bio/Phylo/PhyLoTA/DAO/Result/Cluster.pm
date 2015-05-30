@@ -245,4 +245,16 @@ sub table {
 	my $release = Bio::Phylo::PhyLoTA::Config->new->currentGBRelease;
 	$class->SUPER::table( $table . '_' . $release );
 }
+
+=head2 clinfo
+
+Serializes to a unique identifier string
+
+=cut
+
+sub clinfo {
+	my $c = shift;
+	return join '-', $c->seed_gi, $c->ti_root->ti, $c->ci, $c->cl_type;
+}
+
 1;
