@@ -164,6 +164,7 @@ sub init {
 			'Bio::Phylo::PhyLoTA::Service::TreeService', 
 			'Bio::Phylo::PhyLoTA::Service::CalibrationService',
 			'Bio::Phylo::PhyLoTA::Service::SequenceGetter',
+			'Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector',
 		],		
     ));
     
