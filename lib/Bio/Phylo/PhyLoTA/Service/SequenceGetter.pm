@@ -889,6 +889,7 @@ shorter.
 =cut
 
 # TODO: make it so that all else being equal we prefer the sequence with the lowest number of NNNN
+# TODO: make it so that we can define some higher number of haplotypes than 1 per species
 
 sub filter_seq_set {
     my ($self,@seq) = @_;
@@ -983,6 +984,37 @@ sub align_sequences{
 	my $aligner = $self->_make_aligner;
     my $alignment = $aligner->align(\@convertedseqs);
     return $alignment;
+}
+
+=item align_to_file
+
+Given an array ref of primary sequences and a filename, writes the sequences
+to the file if the file doesn't exist yet.
+
+=cut
+
+sub align_to_file {
+	my ( $self, $seqs, $filename ) = @_;
+	my $log = $self->logger;
+	
+	# alignments could be pre-computed so don't 
+	# align again if fasta file already exists  
+    if ( not -e  $filename ) {  
+        			
+        my $aligner = $self->_make_aligner;
+        $log->info("Going to align " . scalar(@{$seqs}) . " sequences");
+        my $aln = $aligner->align($seqs);
+        
+        # write alignment to fasta file                     
+        my $out = Bio::AlignIO->new(
+            '-file'   => ">$filename",
+            '-format' => 'fasta'
+        );
+        $out->write_aln($aln);                  
+    }   
+    else {
+        $log->debug("alignment with name $filename already exists, skipping");
+    }
 }
 
 =item bootstrap
