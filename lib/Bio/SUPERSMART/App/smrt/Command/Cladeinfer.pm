@@ -98,6 +98,12 @@ sub validate {
     }
 }
 
+=item make_suffix
+
+Generates a file suffix to append to tree and log file
+
+=cut
+
 sub make_suffix {
 	my ( $self, $stem, $append ) = @_;
 	my $suffix = '';
@@ -108,6 +114,12 @@ sub make_suffix {
 	}
 	return $suffix;	
 }
+
+=item append_logs
+
+Appends new log data (trees) to existing files
+
+=cut
 
 sub append_logs {
 	my ( $self, %args ) = @_;
@@ -123,8 +135,16 @@ sub append_logs {
 	my ( $source, $target ) = @{ $args{'trees'} };
 	if ( -e $source and -e $target and $source ne $target ) {	
 		$self->append_trees( $source, $target, $burner, $args{'burnin'} );
-	}	
+	}
+	
+	# XXX log data wasn't quite working, maybe need to update column 1?
 }
+
+=item append_trees
+
+Appends new trees to existing file
+
+=cut
 
 sub append_trees {
 	my ( $self, $source, $target, $burner, $burnin ) = @_;
