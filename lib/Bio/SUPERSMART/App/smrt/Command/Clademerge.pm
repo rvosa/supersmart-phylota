@@ -88,6 +88,7 @@ sub run {
 						my $row = shift;
 						my $name = $row->get_name;
 						my %fields = split /\|/, $name;
+						$fields{$_} =~ s/^(\d+).*$/$1/ for keys %fields;
 						my $binomial = $fields{'taxon'}; ##$service->find_node($fields{'taxon'})->taxon_name;
 						#$binomial =~ s/ /_/g;
 						
