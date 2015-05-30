@@ -357,6 +357,34 @@ sub mode {
 	return $mode;	
 }
 
+=item distribute
+
+Given an array of data which is assumed to be sorted in
+descending "work load", redistributes this work load into
+an array of data optimized for parallel processing using
+the available number of worker nodes.
+
+=cut
+
+sub distribute {
+    my ( $self, @data ) = @_;
+	my @result;
+    my $nworkers = num_workers();
+    if ( scalar @data >= $nworkers ) {
+        my @subset; 
+        for my $i ( 0 .. $#data ) {
+            my $j = $i % $nworkers;
+            $subset[$j] = [] if not $subset[$j];
+            push @{ $subset[$j] }, $data[$i];
+        }       
+        push @result, @{ $subset[$_] } for 0 .. ( $nworkers -1 );
+    }
+    else {
+        @result = @data;
+    }
+	return @result;
+}
+
 =back
 
 =cut
