@@ -52,81 +52,73 @@ sub options {
 sub validate {
     my ($self, $opt, $args) = @_;       
     
-    # We only have to check the 'infile' argument. 
     #  If the infile is absent or empty, abort  
     my $file = $opt->infile;
     $self->usage_error("no infile argument given") if not $file;
     $self->usage_error("file $file does not exist") unless (-e $file);
-    $self->usage_error("file $file is empty") unless (-s $file);            
+    $self->usage_error("file $file is empty") unless (-s $file);
+    
+    # Outfile must be empty because we will append to it
+    my $outfile = $opt->outfile;
+    if ( -e $outfile and -s $outfile ) {
+        $self->logger->warn("$outfile is not empty. Will overwrite.");
+        open my $outfh, '>', $outfile or die $!;
+        close $outfh;       
+    }   
 }
 
-# XXX this method is obscenely long and needs to be broken
-# down into more manageable blocks.
 sub run {
     my ($self, $opt, $args) = @_;
     
     # collect command-line arguments
-    my $infile = $opt->infile;
+    my $infile  = $opt->infile;
     my $outfile = $opt->outfile;
     
-    # create empty output file 
-    open my $outfh, '>', $outfile or die $!;
-    close $outfh;
+    # create directory for alignments if specified in argument
+    my $dir = $self->outputdir($opt->dirname);  
     
     # instantiate helper objects
     my $log = $self->logger;
     my $mts = Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector->new;
     my $mt  = Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa->new;
     my $sg  = Bio::Phylo::PhyLoTA::Service::SequenceGetter->new;
+    my $ps  = 'Bio::Phylo::PhyLoTA::Service::ParallelService';
     
-    # instantiate nodes from infile
+    # instantiate taxonomy nodes from infile
     my @nodes = $mts->get_nodes_for_table($mt->parse_taxa_file($infile));     
-    $log->info("Found " . scalar(@nodes) . " nodes for taxa table");
+    $log->info("Found ".scalar(@nodes)." nodes in taxa file $infile");
     
     # fetch all clusters for the focal nodes and organize them into
     # roughly even-sized chunks (they were initially sorted from big
     # to small so the first worker would get all the big ones).
     my @sorted_clusters = $mts->get_clusters_for_nodes(@nodes); 
-    my @clusters;   
-    my $nworkers = num_workers();
-    if ( scalar @sorted_clusters >= $nworkers ) {
-        my @subset; 
-        for my $i ( 0 .. $#sorted_clusters ) {
-            my $j = $i % $nworkers;
-            $subset[$j] = [] if not $subset[$j];
-            push @{ $subset[$j] }, $sorted_clusters[$i];
-        }       
-        push @clusters, @{ $subset[$_] } for 0 .. ( $nworkers -1 );
-    }
-    else {
-        @clusters = @sorted_clusters;
-    }   
+    my @clusters = $ps->distribute(@sorted_clusters);   
     
-    # collect and filter sequences for all clusters
-    # NOTE: We do the below in sequencial mode, which may take some time. This
-    # is for the following reason: One sequence (GI) can easily be part of multiple
-    # clusters. Since includingh ons sequence into multiple alignments (which would then
-    # most likely merged later anyway ) uses space and resources, we do not include a GI 
-    # which occured once. To make sure that we skip the GI always in the same alignment,
-    # we avoid the race conditions in parallel processing. Also see issue #56
-
+    # NOTE: We do the below in sequential mode, which may take some time. This
+    # is for the following reason: One sequence (GI) can easily be part of
+    # multiple clusters. Since including one sequence into multiple alignments
+    # (which would then most likely be merged later anyway ) uses space and
+    # resources, we do not include a GI  more than once. To make sure that we
+    # skip the GI always in the same alignment, we avoid race conditions in
+    # parallel processing. Also see issue #56
+    # Collect and filter sequences for all clusters
     my %ti =  map { $_->ti => 1 } @nodes;
-    my ( %seqs, %seen );
+    my ( %seqs, %seen, @clinfos );
     $log->info("Going to collect sequences for " . scalar(@clusters) . " clusters");
     for my $cl ( @clusters ) {
     
         # get cluster information
-        my $ci = $cl->{'ci'};
-        my $type = $cl->{'cl_type'};
+        my $ci      = $cl->{'ci'};
+        my $type    = $cl->{'cl_type'};
         my $single  = $sg->single_cluster($cl);
         my $seed_gi = $single->seed_gi;
         my $mrca    = $single->ti_root->ti;
-    
-        # make string to identify cluster
-        my $clinfo =  $seed_gi . '-' . $mrca . '-' . $ci . '-' . $type;
-        my @seqs   = $sg->filter_seq_set($sg->get_sequences_for_cluster_object($cl));   
-        $log->debug("fetched " . scalar(@seqs) . " sequences for cluster id $ci");                  
-        my $t = $seqs[0]->ti;                  
+        my $clinfo  = $single->clinfo;
+        
+        # XXX we should be able to parameterize this more so that we can filter
+        # a set down to $max haplotypes per taxon
+        my @seqs = $sg->filter_seq_set($sg->get_sequences_for_cluster_object($cl));   
+        $log->debug("fetched ".scalar(@seqs)." sequences for cluster $clinfo");
     
         # filter out sequences that we have processed before or that are
         # of uninteresting taxa
@@ -135,84 +127,66 @@ sub run {
         
         # let's not keep the ones we can't build alignments from
         if ( scalar @matching > 1 ) {
-            for my $s (@matching) {
-                $seen{$s->gi} = 1;              
-            }
-        
-            # make sequence objects
-            my @convertedseqs;
-            for my $seq ( @matching ) {
-                my $gi = $seq->gi;
-                my $ti  = $sg->find_seq($gi)->ti;
-                my $seqobj = Bio::PrimarySeq->new( 
-                    '-display_id' => "gi|${gi}|seed_gi|${seed_gi}|taxon|${ti}|mrca|${mrca}",
-                    '-seq'        => $seq->seq, 
-                    '-name'       => $gi,
-                    '-type'       => 'dna'
-                );
-                push @convertedseqs,$seqobj;            
-            }
-            # store sequences for this cluster
-            $seqs{$clinfo} = \@convertedseqs;
+            $log->info("Will align cluster: $clinfo");
+            $seqs{$clinfo} = [
+                map {
+                    $seen{$_->gi} = 1;          # skip this seq next time                                       
+                    $_->to_primary_seq(         # Bio::PrimarySeq
+                        'mrca'    => $mrca,
+                        'seed_gi' => $seed_gi,
+                    );
+                } @matching
+            ];
+            push @clinfos, $clinfo; # to keep optimized distribution for pmap
         }       
     }
-    
-    # create directory for alignments if specified in argument
-    my $dir;
-    if ( my $alndir = $opt->dirname ) {
-	    if ( $alndir =~ /^\// ) {
-		    $dir= $alndir . '/';
-	    }
-	    else {
-		    $dir = $self->workdir . '/' . $alndir . '/'; 
-	    }
-	    $log->info("creating directory $dir");
-	    mkdir  $dir or die $! if not -e $dir;  
-    }
-    else {
-	    $dir = $self->workdir . '/'; 
-    }
-    $log->debug("directory to save alignments in : $dir");
 
     # now make the alignments in parallel mode
     my @result = pmap {             
-        my ($clinfo) = @_;
+        my $clinfo = shift;
         
-	# create filename
-	my $filename = File::Spec->catfile( $dir, $clinfo.'.fa' );
-	$log->debug("alignment file name : $filename");
-
-	# alignments could be pre-computed so don't 
-	# align again if fasta file already exists  
-       if ( not ( -e  $filename ) ) {  
-        
-            my $s = $seqs{$clinfo};
-            my $aligner = $sg->_make_aligner;
-            $log->info("going to align " . scalar(@{$s}) . " sequences");
-            my $aln = $aligner->align($s);
-        
-            # write alignment to fasta file                     
-            my $out = Bio::AlignIO->new(
-                '-file'   => ">$filename",
-                '-format' => 'fasta'
-            );
-            $out->write_aln($aln);                  
-        }   
-        else {
-            $log->debug("alignment with name $filename already exists, skipping");
+        # align to file, log result
+        my $filename = File::Spec->catfile( $dir, $clinfo.'.fa' );      
+        $sg->align_to_file( $seqs{$clinfo} => $filename );         
+        if ( -s $filename ) {
+            $log->info("Have alignment file: $filename");
+            open my $outfh, '>>', $outfile or die $!;
+            print $outfh $filename . "\n";
+            close $outfh;
         }
         
-        # print alignment file name to output file 
-        # so it can be saved in output file of script          
-        open my $outfh, '>>', $outfile or die $!;
-        print $outfh $filename . "\n";
-        close $outfh;
-        
-    } keys(%seqs);
+    } @clinfos;
     
     $log->info("DONE, results written to $outfile");    
     
     return 1;
 }
 
+sub outputdir {
+    my ( $self, $dirname ) = @_;
+    my $log = $self->logger;
+    
+    # create directory for alignments if specified in argument
+    my $dir;
+    if ( my $alndir = $dirname ) {
+        
+        # is absolute
+        if ( $alndir =~ /^\// ) {
+            $dir = $alndir . '/';
+        }
+        
+        # relative
+        else {
+            $dir = $self->workdir . '/' . $alndir . '/'; 
+        }
+        $log->info("creating directory $dir");
+        mkdir $dir or die $! if not -e $dir;  
+    }
+    else {
+        $dir = $self->workdir . '/'; 
+    }
+    $log->debug("directory to save alignments in : $dir");
+    return $dir;
+}
+    
 1;
