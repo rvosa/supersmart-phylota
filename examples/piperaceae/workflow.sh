@@ -97,8 +97,8 @@ smrt consense --burnin=0.20
 # 2) are selected that meet the following criteria:
 # - CLADE_MAX_DISTANCE: maximum average pairwise distance to accept the alignment
 # - CLADE_MIN_DENSITY:  minimum number of clade members that must be present
-export SUPERSMART_CLADE_MAX_DISTANCE="0.05"
-export SUPERSMART_CLADE_MIN_DENSITY="0.4"
+export SUPERSMART_CLADE_MAX_DISTANCE="0.1"
+export SUPERSMART_CLADE_MIN_DENSITY="0.3"
 smrt bbdecompose
 
 # Step 11: for each clade, merge the separate clade alignments from step 10 into a single
