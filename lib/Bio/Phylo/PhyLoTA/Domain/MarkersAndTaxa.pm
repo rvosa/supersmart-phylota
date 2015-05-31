@@ -458,6 +458,17 @@ sub keep_taxa {
 	return %result;
 }
 
+=item to_fasta_string
+
+Returns the provided fasta hash as a concatenated string.
+
+=cut
+
+sub to_fasta_string {
+	my ( $class, %fasta ) = @_;
+	return join "\n", map { ">$_\n$fasta{$_}" } keys %fasta;
+}
+
 =back
 
 =cut
