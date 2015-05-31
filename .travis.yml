@@ -11,11 +11,12 @@ env:
     - PATH="$PATH:/home/vagrant/SUPERSMART/tools/bin:$TRAVIS_BUILD_DIR"
     - LD_LIBRARY_PATH=/usr/lib:/usr/lib64:/usr/local/lib
     - FACTER_ci=travis
-  install: 
+  before_install: 
     - sudo useradd -d /home/vagrant -m vagrant
     - sudo apt-get update
     - sudo apt-get -y install puppet
     - sudo -E puppet apply conf/manifests/default.pp
+  install: 
     - cpanm --notest --installdeps .
     - cpanm --notest git://github.com/rvosa/bio-phylo.git
     - cpanm --notest git://github.com/bioperl/bioperl-live.git@v1.6.x
