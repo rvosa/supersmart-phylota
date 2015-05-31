@@ -58,8 +58,6 @@ Instead this should be something that is more on the order of 300_000 if not muc
 more. For example, this could be 0.1% of ngens so that you end up with a thousand logged
 samples.
 
-=back
-
 =cut
 
 
@@ -180,6 +178,10 @@ sub append_trees {
 	unlink $filename;	
 	unlink $source;
 }
+
+=back
+
+=cut
 
 sub run {
     my ($self, $opt, $args) = @_;

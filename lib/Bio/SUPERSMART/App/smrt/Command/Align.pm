@@ -162,6 +162,14 @@ sub run {
     return 1;
 }
 
+=over
+
+=item outputdir
+
+Creates output folder if argument folder name is provided.
+
+=cut
+
 sub outputdir {
     my ( $self, $dirname ) = @_;
     my $log = $self->logger;
