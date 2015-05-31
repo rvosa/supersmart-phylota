@@ -17,7 +17,3 @@ env:
     - sudo apt-get update
     - sudo apt-get -y install puppet
     - sudo -E puppet apply conf/manifests/default.pp
-    #- cpanm --notest --installdeps .
-    #- cpanm --notest git://github.com/rvosa/bio-phylo.git
-    #- cpanm --notest git://github.com/bioperl/bioperl-live.git@v1.6.x
-    #- cpanm --notest git://github.com/bioperl/bioperl-run.git
