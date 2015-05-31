@@ -695,6 +695,10 @@ sub graft_tree {
 		if ( my $bb_tip = $backbone->get_by_name($clade_tip->get_name) ) {
 			push @exemplars, $bb_tip;
 			push @clade_exemplars, $clade_tip;
+			$log->info("Found shared taxon: ".$clade_tip->get_name);
+		}
+		else {
+			$log->debug("Only in clade: ".$clade_tip->get_name);
 		}
 	}
 
@@ -704,6 +708,10 @@ sub graft_tree {
 	if ( ! scalar @exemplars ) {
 		$log->warn("No matching exemplar found in backbone tree, could not graft clade tree. Possibly no marker overlap");
 		return $backbone;
+	}
+	else {
+		$log->info("Found ".scalar(@exemplars). " backbone exemplars");
+		$log->info("Found ".scalar(@clade_exemplars). " clade exemplars")
 	}
 	
 	# find MRCA of exemplars on backbone and clade
@@ -717,6 +725,8 @@ sub graft_tree {
 	# calculate the respective depths, scale the clade by the ratios of depths
 	my $cmrca_depth = $cmrca->calc_max_path_to_tips;
 	my $bmrca_depth = $bmrca->calc_max_path_to_tips;
+	$log->info("Clade depth: $cmrca_depth " . $cmrca->to_newick);
+	$log->info("Backbone MRCA depth: $bmrca_depth " . $bmrca->to_newick);
 	$self->_rescale( $clade, $bmrca_depth / $cmrca_depth );
 	$log->debug("multiplied clade tree by ". ($bmrca_depth/$cmrca_depth));
 	
@@ -896,10 +906,10 @@ sub extract_clades {
     my @valid_ranks = ("species", "subspecies", "varietas", "forma");
     my $level = $mt->get_highest_informative_level(@records);
     my @highest_taxa = $mt->get_distinct_taxa($level, @records);
-    my %all_taxa = map{$_=>1 } $mt->query_taxa_table(\@highest_taxa, \@valid_ranks, @records);
+    my %all_taxa = map { $_ => 1 } $mt->query_taxa_table(\@highest_taxa, \@valid_ranks, @records);
     	    
 	# get exemplars for genera
-	my %terminal_ids = map {$_=>1} map{$_->get_name} @{ $tree->get_terminals };
+	my %terminal_ids = map { $_ => 1 } map{$_->get_name} @{ $tree->get_terminals };
     
 	foreach my $id ( keys(%terminal_ids) ) {
 		my ($genus) = $mt->query_taxa_table($id, "genus", @records);
@@ -953,12 +963,12 @@ sub extract_clades {
 	# There is one special case, however: All genera are monotypic, so all species will be
 	#  put together into one clade!
 	my @num_elems = uniq map{scalar(@$_)} @sets;
-	if ( scalar(@num_elems)==1 and $num_elems[0] == 1 ) {
-		@sets = [ map{$_} @sets ];
+	if ( scalar(@num_elems) == 1 and $num_elems[0] == 1 ) {
+		@sets = [ map{ $_ } @sets ];
 	}
 	else {
 		# remove monotypic genera from clades and sets that have <3 species and thus cannot be resolved
-		@sets = grep {scalar(@$_)>2} @sets;
+		@sets = grep { scalar(@$_) > 2 } @sets;
 	}
 	$log->info("Extracted " . scalar(@sets) . " clades");
 	return @sets;	
