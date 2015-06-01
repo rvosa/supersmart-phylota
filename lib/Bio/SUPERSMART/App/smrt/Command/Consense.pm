@@ -37,10 +37,10 @@ sub options {
 		["infile|i=s", "newick input tree(s) file", { arg => "file", default => $intree_default}],
 		["outfile|o=s", "name of the output file, defaults to '$outfile_default'", {default => $outfile_default, arg => "file"}],
 		["format|f=s", "format of consensus tree file, (nexus, newick) defaults to 'nexus'", {default => 'nexus'}],
-        ["burnin|b=f", "fraction of burnin to omit", {default => $ts->config->BURNIN}],
-        ["heights|h=s", "how to summarize heights (keep, median, mean, ca)", {default => $ts->config->NODE_HEIGHTS}],
-        ["limit|l=f", "the minimum support for a node to be annotated",{default => 0.0}],
-        ["prob|p","write node support as probabilities (otherwise fractions)",{}],
+		["burnin|b=f", "fraction of burnin to omit", {default => $ts->config->BURNIN}],
+		["heights|h=s", "how to summarize heights (keep, median, mean, ca)", {default => $ts->config->NODE_HEIGHTS}],
+		["limit|l=f", "the minimum support for a node to be annotated",{default => 0.0}],
+		["prob|p","write node support as probabilities (otherwise fractions)",{}],
 	);
 }
 
@@ -62,13 +62,13 @@ sub run {
 	my ($self, $opt, $args) = @_;
 
 	# write simple nexus file (no translation table)
-	$self->logger->info("preparing input file");
+	$self->logger->info("Preparing input file");
     my ( $fh, $filename ) = tempfile();
     close $fh;
     my $ntrees = $ts->newick2nexus( $opt->infile => $filename );
 
     # run treeannotator, remove temp file
-    $self->logger->info("computing consensus");
+    $self->logger->Info("computing consensus");
     my $consensus = $ts->consense_trees(
         '-infile'  => $filename,
         '-burnin'  => $opt->burnin,
@@ -78,7 +78,7 @@ sub run {
     unlink $filename;
 
     # update node labels to distinguish bootstraps from posteriors
-    $self->logger->info("applying node labels");
+    $self->logger->info("Applying node labels");
     $consensus->visit(sub{
         my $node = shift;
 		if ( $node->is_internal ) {
