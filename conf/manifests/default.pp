@@ -174,7 +174,7 @@ class install {
 
 		# make phylota database
 		"dl_phylota_dump":
-			command => "wget http://biovel.naturalis.nl/phylota.tar.gz",
+			command => "curl -O http://biovel.naturalis.nl/phylota.tar.gz",
                         logoutput => true,
 			cwd     => $data_dir,
 			creates => "${data_dir}/phylota.tar.gz",                        
