@@ -77,7 +77,7 @@ sub run {
 	my $log     = $self->logger;
 	
 	# parse seed GIs of aligned clusters
-	$log->info("going to read seed GIs from $infile");
+	$log->info("Going to read seed GIs from $infile");
 	open my $fh, '<', $infile or die $!;
 	my @gis;
 	while(<$fh>) {
@@ -91,7 +91,7 @@ sub run {
 	close $fh;
 	
 	# blast and cluster the seed GIs
-	$log->info("going to cluster ".scalar(@gis)." seed GIs");
+	$log->info("Going to cluster ".scalar(@gis)." seed GIs");
 	my $dbpath   = File::Spec->catfile($workdir,'seeds.fa');
 	my $dbname   = $service->make_blast_db($dbpath,@gis);	
 	my $report   = $service->run_blast_all($dbname);
