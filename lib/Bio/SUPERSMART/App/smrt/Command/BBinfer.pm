@@ -64,9 +64,9 @@ sub validate {
     my $st = $opt->starttree;
     my $tool = $opt->inferencetool;
     
-    $self->usage_error("need supermatrix") if not $sm;
-    $self->usage_error("file $sm does not exist") unless -e $sm;
-    $self->usage_error("file $sm is empty") unless -s $sm;
+    $self->usage_error("Need supermatrix") if not $sm;
+    $self->usage_error("File $sm does not exist") unless -e $sm;
+    $self->usage_error("File $sm is empty") unless -s $sm;
 }
 
 # run the analysis
@@ -138,7 +138,7 @@ sub run {
 # append bootstrap replicate results
 sub _append {
     my ( $self, $in, $out ) = @_;
-    $self->logger->info("appending contents of $in to $out");
+    $self->logger->info("Appending contents of $in to $out");
 
     # read the in file
     open my $infh, '<', $in or die $!;

@@ -69,7 +69,7 @@ sub options {
         [ "sfreq|s=i", "sampling frequency, defaults to 1000", { arg => "int", default => 1000 } ],
         [ "lfreq|l=i", "logging frequency, defaults to 1000", { arg => "int", default => 1000 } ],
         [ "file|f=s", "file (nexml format) to start a single inference from", { arg=>"file" } ],
-        [ "outfile|o=s", "location of output directory", { arg => "location", default => "cladeinfer_out.txt"} ],
+ #       [ "outfile|o=s", "location of output directory", { arg => "location", default => "cladeinfer_out.txt"} ],
         [ "rebuild|x", "rebuild existing *BEAST XML files", {}],
         [ "append|a", "append trees to existing tree file", {}],
         [ "burnin|b=f", "burnin to omit when appending trees", { arg => "float", default => $config->BURNIN } ],
@@ -80,15 +80,15 @@ sub validate {
     my ($self, $opt, $args) = @_;
 
     if ( my $file = $opt->file ) {
-        $self->usage_error("file $file does not exist") unless -e $file;
-        $self->usage_error("file $file is empty") unless -s $file;
+        $self->usage_error("File $file does not exist") unless -e $file;
+        $self->usage_error("File $file is empty") unless -s $file;
     }
     if ( (my $ngens = $opt->ngens) <  30_000_000 ) {
-        $self->logger->warn("chain length $ngens seems very low, are you just testing?");
+        $self->logger->warn("Chain length $ngens seems very low, are you just testing?");
     }
     if ( $opt->append ) {    	
     	if ( $opt->burnin < 0 or $opt->burnin > 1 ) {
-    		$self->usage_error("burnin should be number between 0 and 1");
+    		$self->usage_error("Burnin should be number between 0 and 1");
     	}
     	if ( not $opt->rebuild ) {
     		$self->usage_error("--append requires the --rebuild flag");
@@ -191,7 +191,7 @@ sub run {
     my $sfreq = $opt->sfreq;
     my $lfreq = $opt->lfreq;
     my $file  = $opt->file;
-    my $outfile = $self->outfile;   
+#    my $outfile = $self->outfile;   
     my $workdir = $self->workdir;   
     my $rebuild = $opt->rebuild;    
         
@@ -201,22 +201,22 @@ sub run {
     my $logger = $self->logger;
 
     # configure beast
-    $logger->info("setting beast template file to " . $config->BEAST_TEMPLATE_FILE);
+    $logger->info("Setting beast template file to " . $config->BEAST_TEMPLATE_FILE);
     $beast->template($config->BEAST_TEMPLATE_FILE);
 
-    $logger->info( "setting beast executable to " . $config->BEAST_BIN );
+    $logger->info( "Setting beast executable to " . $config->BEAST_BIN );
     $beast->executable( $config->BEAST_BIN );
     
-    $logger->info("setting chain length to $ngens");
+    $logger->info("Setting chain length to $ngens");
     $beast->chain_length($ngens);
     
-    $logger->info("setting sampling frequency to $sfreq");
+    $logger->info("Setting sampling frequency to $sfreq");
     $beast->sample_freq($sfreq);
     
-    $logger->info("setting logging frequency to $lfreq");
+    $logger->info("Setting logging frequency to $lfreq");
     $beast->log_freq($lfreq);
 
-    $logger->info("setting seed from $config: ".$config->RANDOM_SEED );
+    $logger->info("Setting seed from $config: ".$config->RANDOM_SEED );
     $beast->seed($config->RANDOM_SEED);
     
     # XXX these should be configurable from phylota.ini
@@ -249,16 +249,16 @@ sub run {
         $logger->info("Setting beast input file name to ${stem}-beast-in.xml");
         $beast->beastfile_name( "${stem}-beast-in.xml" );
         $beast->run( $file );
-        $logger->info("done. trees are in ${file}.nex, BEAST log in ${file}.log");
+        $logger->info("Done. Trees are in ${file}.nex, BEAST log in ${file}.log");
         
-		# concatenate 
-		if ( $opt->append ) {
-			$self->append_logs(
-				'trees'  => [ "${stem}.nex${suffix}" => "${stem}.nex" ],
-				'params' => [ "${stem}.log${suffix}" => "${stem}.log" ],
-				'burnin' => $opt->burnin,
-			);
-		}        
+	# concatenate 
+	if ( $opt->append ) {
+		$self->append_logs(
+			'trees'  => [ "${stem}.nex${suffix}" => "${stem}.nex" ],
+			'params' => [ "${stem}.log${suffix}" => "${stem}.log" ],
+			'burnin' => $opt->burnin,
+		);
+	}        
     }
     
     else {
@@ -273,7 +273,7 @@ sub run {
                 push @cladedirs, $entry;
             }
         }        
-        die "no clade directories found in workdir $workdir" if scalar(@cladedirs) == 0;
+        die "No clade directories found in workdir $workdir" if scalar(@cladedirs) == 0;
 
         # infer clades in parallel mode
         pmap {
@@ -305,13 +305,13 @@ sub run {
                 $logger->info(sprintf $tmpl, $clade, $stem, $stem);             
             }
             else {
-                $logger->warn("inconsistent directory structure, missing: $file");
+                $logger->warn("Inconsistent directory structure, missing: $file");
             }
         } @cladedirs;
     }
-    open my $fh, '>', $outfile;
-    print $fh "Cladeinfer done\n";
-    close $fh;
+ #   open my $fh, '>', $outfile;
+ #   print $fh "Cladeinfer done\n";
+ #   close $fh;
     
     $logger->info("DONE."); 
 }

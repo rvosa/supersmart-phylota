@@ -34,7 +34,7 @@ sub options {
 	my ($self, $opt, $args) = @_;		
 	return (
 		[ "outformat|o=s", "output format for merged clade files (phylip or nexml), defaults to 'nexml'", { arg=>"format", default=> 'nexml'} ],
-		[ "outfile|f=s", "location of output directory", {arg=>"location", default => "clademerge_out.txt"} ],
+#		[ "outfile|f=s", "location of output directory", {arg=>"location", default => "clademerge_out.txt"} ],
 	);	
 }
 
@@ -45,7 +45,7 @@ sub run {
 	
 	my $workdir = $self->workdir;
 	my $outformat = $opt->outformat;
-	my $outfile= $self->outfile;	
+#	my $outfile= $self->outfile;	
 		
 	# instantiate helper objects
 	my $factory = Bio::Phylo::Factory->new;
@@ -144,9 +144,9 @@ sub run {
 			}
 		}
 	}
-	open my $fh, '>', $outfile;
-	print $fh "Clademerge done\n";
-	close $fh;
+#	open my $fh, '>', $outfile;
+#	print $fh "Clademerge done\n";
+#	close $fh;
 	$log->info("DONE");
 	return 1;
 }
