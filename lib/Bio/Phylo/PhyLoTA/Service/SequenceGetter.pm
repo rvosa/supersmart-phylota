@@ -326,7 +326,7 @@ sub run_blast_all {
 	my ( $self, $dbname ) = @_;
 	my $log    = $self->logger;
 	my $config = $self->config;	
-	$log->info("going to run all vs all BLAST search on $dbname");
+	$log->info("Going to run all vs all BLAST search on $dbname");
 	
 	# compose query command
 	my @cmd = (
@@ -334,14 +334,14 @@ sub run_blast_all {
 		'-query'  => $dbname,
 		'-db'     => $dbname,	
 	);
-	$log->info( "going to run command ".join(" ", @cmd) );
+	$log->debug( "going to run command ".join(" ", @cmd) );
 	
 	# run query
 	my $result = `@cmd`;	
 	die "BLAST result empty" unless length $result;	
 	
 	# process results
-	$log->info("going to process BLAST results");		
+	$log->debug("going to process BLAST results");		
 	open my $out, '<', \$result;
 	return Bio::SearchIO->new( '-format' => 'blast', '-fh' => $out );	
 }
@@ -363,7 +363,7 @@ sub cluster_blast_results {
 	while ( my $r = $report->next_result ) {
 		push @blast, $r;
 	}
-	$log->info("number of blast results : ".scalar(@blast));
+	$log->info("Number of blast results : ".scalar(@blast));
 	die "No BLAST results!" unless @blast;
 			
 	# process results, this is all-vs-all so many results with many hits.
@@ -371,7 +371,7 @@ sub cluster_blast_results {
 	# than 0.51 (default) times of the length of both query and hit
 	my $overlap = $config->MERGE_OVERLAP;
 	my @res = pmap { $self->get_overlapping_hits($_,$overlap) if $_ } @blast;
-	$log->info("number of overlapping hits: ".scalar(@res));
+	$log->debug("number of overlapping hits: ".scalar(@res));
 	
 	my %hits;
 	map { @hits{ keys %{$_} } = values %{$_} if $_ } @res;	
@@ -380,7 +380,7 @@ sub cluster_blast_results {
 	my $sets = [];
 	for my $gi ( keys %hits ) {
 		if ( $hits{$gi} ) {
-			$log->info("going to cluster around seed $gi");
+			$log->info("Going to cluster around seed $gi");
 			_cluster( $sets, delete $hits{$gi}, \%hits);
 		}
 	}
@@ -1192,7 +1192,7 @@ sub profile_align_all {
 		my $num_seqs = scalar(grep m|>|, <$fh>);
 		close $fh;		    
 		if ( $num_seqs > 2 ) {
-			$log->info("writing singleton $merged [@files]");
+			$log->info("Writing singleton $merged [@files]");
 			copy $files[0], $merged;			
 		}
 		else {
@@ -1213,7 +1213,7 @@ sub profile_align_all {
 		# copy the first (largest) file to the output
 		if ( $files[0] ) {
 			copy $files[0], $merged;
-			$log->info("starting $merged [$files[0]]");
+			$log->info("Starting $merged [$files[0]]");
 		}
 		
 		# iterate over the remaining files
@@ -1236,7 +1236,7 @@ sub profile_align_all {
 					if ( 2 < scalar keys %fasta ) { 
 						open my $fh, '>', $merged or die $!;
 						print $fh ">$_\n$fasta{$_}\n" for keys %fasta;
-						$log->info("merged $merged and $file2");				
+						$log->info("Merged $merged and $file2");				
 					}
 					else {
 						$log->debug("rejecting $file2 from $merged, too few sequences");
@@ -1250,7 +1250,7 @@ sub profile_align_all {
 				$log->warn("profile alignment of $merged and $file2 failed");
 			}
 		}
-		$log->info("done merging $merged");
+		$log->info("Done merging $merged");
 	}
 }
 
