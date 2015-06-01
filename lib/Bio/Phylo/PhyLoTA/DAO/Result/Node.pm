@@ -266,6 +266,41 @@ sub get_children {
 	return \@children;
 }
 
+=head2 get_siblings
+
+Returns array ref of siblings
+
+=cut
+
+sub get_siblings {
+	my $self = shift;
+
+	return [ grep { $_->ti != $self->ti } @{ $self->get_parent->get_children } ];
+}
+
+=head2 get_siblings
+
+Returns array ref of descendants which have a specific rank
+
+=cut
+
+sub get_descendants_at_rank {
+	my ( $self, $rank ) = @_;
+	
+	my @result;
+	my @queue = ($self);
+	while (@queue) {
+		my $current = shift (@queue);
+		if ( $current->rank eq $rank ) {
+			push @result, $current;
+		}
+		if ( my @ch = @{$current->get_children} ) {
+			push @queue, @ch;
+		} 
+	}
+	return \@result;
+} 
+
 =head2 get_terminal_ids
 
 Returns array ref to all terminal children
