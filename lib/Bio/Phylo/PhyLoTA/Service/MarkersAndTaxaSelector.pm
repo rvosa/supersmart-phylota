@@ -73,7 +73,7 @@ sub get_nodes_for_names {
             $log->warn("can't search on name '$name', skipping");
             next NAME;
         }
-        $log->info("going to search for name '$name'");
+        $log->debug("going to search for name '$name'");
         
         # do we have an exact match?
 		# caution: there might be multiple nodes for one taxon name 
@@ -81,16 +81,16 @@ sub get_nodes_for_names {
         
         # no exact match if ->single returns undef (i.e. false)
         if ( scalar @nodes == 0) {
-	    $log->info("no exact match for '$name' in local database");
+	    $log->debug("no exact match for '$name' in local database");
             
             # search the web service
             if ( my $id = $self->_do_tnrs_search($name) ) {
-	    		@nodes = $self->search_node( {  ti => $id } )->all;
-	    	$log->info("found match $id for $name through TNRS");
+	    	@nodes = $self->search_node( {  ti => $id } )->all;
+	    	$log->info("Found match $id for $name through TNRS");
 	    }
         }
         else {
-            $log->info("found  exact match(es) for $name in local database");
+            $log->info("Found  exact match(es) for $name in local database");
         }
         
         # store result
@@ -476,7 +476,7 @@ sub _do_tnrs_search {
         # we have a final response
         if ( $obj->{'names'} ) {
             if ( my $id = $self->_process_matches($obj->{'names'}) ) {
-                $log->info("found id $id for name '$name'");
+                $log->debug("found id $id for name '$name'");
                 return $id; # done
             }
             else {
@@ -776,21 +776,21 @@ Private method to retrieve the contents of a URL
 # fetch data from a URL
 sub _fetch_url {
 	my ( $url ) = @_;
-	$log->info("going to fetch $url");
+	$log->debug("going to fetch $url");
 	
 	# instantiate user agent
 	my $ua = LWP::UserAgent->new;
 	$ua->timeout($timeout);
-	$log->info("instantiated user agent with timeout $timeout");
+	$log->debug("instantiated user agent with timeout $timeout");
 	
 	# do the request on LWP::UserAgent $ua
 	my $response = $ua->get($url);
 	
 	# had a 200 OK
 	if ( $response->is_success or $response->code == 302 ) {
-		$log->info($response->status_line);
+		$log->debug($response->status_line);
 		my $content = $response->decoded_content;
-		$log->info($content);
+		$log->debug($content);
 		return $content;
 	}
 	else {
