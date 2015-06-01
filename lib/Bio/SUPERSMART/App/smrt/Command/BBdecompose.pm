@@ -141,7 +141,7 @@ sub run{
     if ( $add_outgroup ) {
         
         # read the classification tree, source of candidate outgroups
-        $logger->info("going to read classification tree $common");
+        $logger->info("Going to read classification tree $common");
         my $classtree = parse_tree(
             '-format'     => 'newick',
             '-file'       => $common,
@@ -180,7 +180,7 @@ sub run{
     my @table = pmap {
         my ($aln) = @_;
         my %fasta = $mt->parse_fasta_file($aln);             
-        $logger->info("checking whether alignment $aln can be included");
+        $logger->info("Checking whether alignment $aln can be included");
 
         my $mindens = $config->CLADE_MIN_DENSITY;
         my $maxdist = $config->CLADE_MAX_DISTANCE;
