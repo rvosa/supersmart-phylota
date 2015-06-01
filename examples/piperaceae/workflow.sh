@@ -88,7 +88,7 @@ rm -rf /tmp/*
 
 # Step 9: build a consensus tree. As we ran exabayes in step 6 we will want to discard
 # a burnin. This would be different had we done a bootstrapping analysis in step 6.
-smrt consense --burnin=0.20
+smrt consense --burnin=0.20 --prob
 
 # Step 10: decompose the backbone into clades. This step traverses the consensus tree from
 # step 9 and breaks it up into monophyletic clades (in principle, genera, unless these are
@@ -111,7 +111,7 @@ smrt clademerge
 # lot of different variables (number of taxa, signal in the data, mixing of the chains)
 # so for publishable results convergence should be checked, for example using 'tracer'.
 # For this specific example, 10,000,000 generations for each clade appears to work.
-smrt cladeinfer --ngens=10_000_000 --sfreq=1000 --lfreq=1000
+smrt cladeinfer --ngens=15_000_000 --sfreq=1000 --lfreq=1000
 
 # Step 13: graft the clade trees onto the backbone.
 # XXX height ranges not yet adjusted correctly
