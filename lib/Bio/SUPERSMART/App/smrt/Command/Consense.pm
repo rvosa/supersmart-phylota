@@ -5,6 +5,7 @@ use File::Temp 'tempfile';
 use Bio::Phylo::Factory;
 use Bio::Phylo::IO 'unparse';
 use Bio::Phylo::PhyLoTA::Service::TreeService;
+use Bio::Phylo::PhyLoTA::Service::CalibrationService;
 use base 'Bio::SUPERSMART::App::SubCommand';
 use Bio::SUPERSMART::App::smrt qw(-command);
 
@@ -32,15 +33,18 @@ Given an input set of trees in newick format, creates an annotated consensus tre
 sub options {
 	my ($self, $opt, $args) = @_;
 	my $outfile_default = "consensus.nex";
-	my $intree_default = "chronogram.dnd";
+	my $intree_default  = "chronogram.dnd";
+	my $fossils_default = "fossils.tsv";
+	my $heights_default = $ts->config->NODE_HEIGHTS; 
 	return (
 		["infile|i=s", "newick input tree(s) file", { arg => "file", default => $intree_default}],
 		["outfile|o=s", "name of the output file, defaults to '$outfile_default'", {default => $outfile_default, arg => "file"}],
 		["format|f=s", "format of consensus tree file, (nexus, newick) defaults to 'nexus'", {default => 'nexus'}],
 		["burnin|b=f", "fraction of burnin to omit", {default => $ts->config->BURNIN}],
-		["heights|h=s", "how to summarize heights (keep, median, mean, ca)", {default => $ts->config->NODE_HEIGHTS}],
+		["heights|h=s", "how to summarize heights (keep, median, mean, ca)", {default => $heights_default}],
 		["limit|l=f", "the minimum support for a node to be annotated",{default => 0.0}],
 		["prob|p","write node support as probabilities (otherwise fractions)",{}],
+		["fossils|s=s","fossil table (if re-applying calibration points)", {default => $fossils_default }],
 	);
 }
 
@@ -63,34 +67,33 @@ sub run {
 
 	# write simple nexus file (no translation table)
 	$self->logger->info("Preparing input file");
-    my ( $fh, $filename ) = tempfile();
-    close $fh;
-    my $ntrees = $ts->newick2nexus( $opt->infile => $filename );
+	my ( $fh, $filename ) = tempfile();
+	close $fh;
+	my $ntrees = $ts->newick2nexus( $opt->infile => $filename );
 
-    # run treeannotator, remove temp file
-    $self->logger->Info("computing consensus");
-    my $consensus = $ts->consense_trees(
-        '-infile'  => $filename,
-        '-burnin'  => $opt->burnin,
-        '-heights' => $opt->heights,
-        '-limit'   => $opt->limit,
-    );
-    unlink $filename;
+	# run treeannotator, remove temp file
+	$self->logger->info("Computing consensus with heights '".$opt->heights."'");
+	my $consensus = $ts->consense_trees(
+		'-infile'  => $filename,
+		'-burnin'  => $opt->burnin,
+		'-heights' => $opt->heights,
+		'-limit'   => $opt->limit,
+	);
+	unlink $filename;
 
-    # update node labels to distinguish bootstraps from posteriors
-    $self->logger->info("Applying node labels");
-    $consensus->visit(sub{
-        my $node = shift;
+	# update node labels to distinguish bootstraps from posteriors
+	$self->logger->info("applying node labels");
+	$consensus->visit(sub{
+        	my $node = shift;
 		if ( $node->is_internal ) {
 			if ( my $posterior = $node->get_meta_object('fig:posterior') ) {
 	
 				# apply optionally converted node support as node label
-				if ( $opt->prob ) {
-					$node->set_name( $posterior );
-				}
-				else {
+				if ( not $opt->prob ) {
 					my $count = int( $posterior * $ntrees + 0.5 );
-					$node->set_name( "$count/$ntrees");
+					$node->set_meta_object( 'fig:bootstrap' => $count );
+					my @meta = @{ $node->get_meta('fig:posterior') };
+					$node->remove_meta( $_ ) for @meta;
 				}
 			}
 			else {
@@ -98,33 +101,43 @@ sub run {
 				$self->logger->debug($node->to_js);
 			}
 		}
-    });
+	});
 
-    # generate output
-    my %args = ( '-nodelabels' => 1 );
-    my $string;
-    if ( $opt->format =~ /nexus/i ) {
+	# apply calibration points
+	if ( $opt->fossils and -e $opt->fossils ) {
+		$ts->remap_to_ti($consensus);
+		my $cs = Bio::Phylo::PhyLoTA::Service::CalibrationService->new;
+		my @fossils = $cs->read_fossil_table( $opt->fossils );
+		my @identified = map { $cs->find_calibration_point($_) } @fossils;
+		my $ct = $cs->create_calibration_table( $consensus, @identified );
+		$ts->remap_to_name($consensus);
+	}
 
-        # create and populate a mesquite-like nexus project
-        my $project = $fac->create_project;
-        my $forest  = $fac->create_forest;
-        $forest->insert($consensus);
-        my $taxa = $forest->make_taxa;
-        $taxa->set_forest($forest);
-        $project->insert($taxa);
-        $project->insert($forest);
-        $string = unparse(
-        	'-format' => 'figtree',
-        	'-phylo'  => $project,
-        );
-    }
-    else {
-        $string = $consensus->to_newick(%args);
-    }
+	# generate output
+	my %args = ( '-nodelabels' => 1 );
+	my $string;
+	if ( $opt->format =~ /nexus/i ) {
+
+		# create and populate a mesquite-like nexus project
+		my $project = $fac->create_project;
+		my $forest  = $fac->create_forest;
+		$forest->insert($consensus);
+		my $taxa = $forest->make_taxa;
+		$taxa->set_forest($forest);
+		$project->insert($taxa);
+		$project->insert($forest);
+		$string = unparse(
+        		'-format' => 'figtree',
+        		'-phylo'  => $project,
+		);
+	}
+	else {
+		$string = $consensus->to_newick(%args);
+	}
     
-    # write to file
-    open my $out, '>', $self->outfile or die $!;
-    print $out $string;
+	# write to file
+	open my $out, '>', $self->outfile or die $!;
+	print $out $string;
 	$self->logger->info("DONE, results written to ".$self->outfile);
 }
 
