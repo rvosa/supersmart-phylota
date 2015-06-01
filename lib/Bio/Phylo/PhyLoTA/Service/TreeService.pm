@@ -744,12 +744,12 @@ sub graft_tree {
 		my $name = $node->get_internal_name;
 		if ( my $p = $node->get_parent ) {
 			if ( $p->is_root ) {
-				$log->info("grafted node $node onto backbone MRCA");
+				$log->info("Grafted node $node onto backbone MRCA");
 				$node->set_parent($bmrca);								
 			}
 		}
 		if ( $node->is_root ) {
-			$log->info("replacing root $cmrca with backbone MRCA");
+			$log->info("Replacing root $cmrca with backbone MRCA");
 		}
 		else {
 			$backbone->insert($node);
