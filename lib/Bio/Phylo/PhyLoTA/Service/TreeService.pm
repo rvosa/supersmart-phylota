@@ -216,7 +216,7 @@ sub smooth_basal_split {
 		# adjust branch lengths
 		$left->set_branch_length( $l_length + $diff );
 		$right->set_branch_length($r_length - $diff );
-		$log->info("Stretched left, shrunk right, by $diff");
+		$log->info("stretched left, shrunk right, by $diff");
 	}
 	else {
 		
@@ -228,7 +228,7 @@ sub smooth_basal_split {
 		# adjust branch lengths
 		$left->set_branch_length( $l_length - $diff );
 		$right->set_branch_length($r_length + $diff );
-		$log->info("Stretched right, shrunk left, by $diff");		
+		$log->info("stretched right, shrunk left, by $diff");		
 	}
 	$root->set_branch_length(undef);
 }
@@ -489,8 +489,8 @@ sub consense_trees {
 	close $outfh;
 	
 	# execute command
-	my $tmpl = '%s -burnin %i %s %s';
-	my $command = sprintf $tmpl, $config->TREEANNOTATOR_BIN, $babs, $infile, $outfile;
+	my $tmpl = '%s -burnin %i -heights %s -limit %f %s %s';
+	my $command = sprintf $tmpl, $config->TREEANNOTATOR_BIN, $babs, $heights, $limit, $infile, $outfile;
     $log->debug("running command $command");
     system($command) and die "Error building consensus: $?";
 	
@@ -686,7 +686,7 @@ Grafts a clade tree into a backbone tree, returns the altered backbone.
 
 sub graft_tree {
 	my ( $self, $backbone, $clade ) = @_;
-    
+ 
 	# retrieve the tips from the clade tree that also occur in the backbone, i.e. the 
 	# exemplars, and locate their MRCA on the backbone
 	my @ids = map { $_->get_name } @{ $clade->get_terminals };
@@ -721,6 +721,10 @@ sub graft_tree {
 		$log->fatal("Something goes wrong here: MRCA of exemplar species " . join(',', map{$_->id} @exemplars) . " in backbone is the backbone root!");
 		return $backbone;
 	}
+	if ( my $min = $bmrca->get_meta_object('fig:fossil_age_min') and my $max = $bmrca->get_meta_object('fig:fossil_age_max') ) {
+		$log->info("Backbone MRCA is calibration point ($min..$max)");
+		$cmrca = $clade->get_root;
+	}
 	
 	# calculate the respective depths, scale the clade by the ratios of depths
 	my $cmrca_depth = $cmrca->calc_max_path_to_tips;
@@ -733,13 +737,13 @@ sub graft_tree {
 	# calculate the depth of the root in the clade, adjust backbone depth accordingly
 	my $crd  = $clade->get_root->calc_max_path_to_tips;
 	my $diff = $bmrca_depth - $crd;
-    my $branch_length = $bmrca->get_branch_length || 0;
-    $bmrca->set_branch_length( $branch_length + $diff ); # XXX still gives negative branches
+	my $branch_length = $bmrca->get_branch_length || 0;
+ 	$bmrca->set_branch_length( $branch_length + $diff ); # XXX still gives negative branches
 	$log->debug("adjusted backbone MRCA depth by $bmrca_depth - $crd");
     
 	# now graft!
-    $bmrca->clear();
-    $clade->visit(sub {
+ 	$bmrca->clear();
+ 	$clade->visit(sub {
 		my $node = shift;
 		my $name = $node->get_internal_name;
 		if ( my $p = $node->get_parent ) {
@@ -779,6 +783,28 @@ sub _rescale {
 		$length *= $ratio;
 		$node->set_branch_length($length);
 	});
+}
+
+=item heights_to_lengths
+
+Given node heights as defined by fig:height annotations, computes the branch lengths
+
+=cut
+
+sub heights_to_lengths {
+	my ( $self, $tree ) = @_;
+	$tree->visit(sub{
+		my $node = shift;
+		my $height = $node->get_meta_object('fig:height');
+		if ( not defined $height ) {
+			$log->warn("No fig:height annotation on $node");
+		}
+		else {
+			$node->set_generic( 'age' => $height );
+		}
+	});
+	$tree->agetobl;
+	return $tree;
 }
 
 =item make_phylip_binary
