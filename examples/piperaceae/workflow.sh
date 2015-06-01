@@ -83,9 +83,6 @@ smrt bbreroot --smooth
 # age constraints as extracted from the fossils file.
 smrt bbcalibrate --fossiltable=$FOSSILS
 
-# clean up temp files from treePL
-rm -rf /tmp/*
-
 # Step 9: build a consensus tree. As we ran exabayes in step 6 we will want to discard
 # a burnin. This would be different had we done a bootstrapping analysis in step 6.
 smrt consense --burnin=0.20 --prob
