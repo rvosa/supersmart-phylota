@@ -7,6 +7,7 @@ use Bio::Phylo::PhyLoTA::Service;
 use Bio::Phylo::PhyLoTA::Domain::FossilData;
 use Bio::Phylo::PhyLoTA::Domain::CalibrationTable;
 use Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector;
+use Bio::Phylo::Util::CONSTANT ':namespaces';
 use base 'Bio::Phylo::PhyLoTA::Service';
 
 =head1 NAME
@@ -185,6 +186,7 @@ sub create_calibration_table {
 	my $logger = $self->logger;        
 	my $table  = Bio::Phylo::PhyLoTA::Domain::CalibrationTable->new;
 	my $cutoff = $config->FOSSIL_BEST_PRACTICE_CUTOFF;
+	$tree->set_namespaces( 'fig' => _NS_FIGTREE_ );
 
 	my %taxa_in_tree = map { $_->get_name => 1 } @{$tree->get_terminals};
 	
