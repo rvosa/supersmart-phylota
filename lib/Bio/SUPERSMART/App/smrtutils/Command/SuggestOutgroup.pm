@@ -17,13 +17,18 @@ use Bio::SUPERSMART::App::smrtutils qw(-command);
 
 =head1 NAME
 
-SuggestOutgroup.pm - Lists possible outgroups for a list of taxa or 
+SuggestOutgroup.pm - Lists possible outgroups for a list of names, a taxa table or a root taxon
 
 =head1 SYNOPSYS
 
 smrt-utils suggestoutgroup [-h ] [-v ] [-w <dir>] [-l <file>] [-y ] [-n <file>] [-n <file>] [-r ] [-g ] 
 
 =head1 DESCRIPTION
+
+This subcommand lists possible outgroups, given an ingroup either as a list of names, a taxa file
+or a root taxon. The user can provide a target rank of interest for the outgroup, the default is Genus.
+Possible outgroups are then printed to the screen, sorted by their coverage by sequences in the
+database.
 
 =cut
 
@@ -87,8 +92,9 @@ sub run {
     
 		my $root_rank = $mt->get_root_taxon_level( @records );
 		
-		my $root_ti = $records[0]{$root_rank};		
-		$log->debug("Root taxon id : $root_rank");		
+		my $root_ti = $records[0]{$root_rank};
+		$root_node = $mts->find_node({ti=>$root_ti});
+		$log->debug("Root taxon id : $root_ti");		
 	}
 		
 	# get siblings of the root node and determine all descendents of rank of interest
