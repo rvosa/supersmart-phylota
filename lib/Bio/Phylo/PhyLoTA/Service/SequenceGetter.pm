@@ -294,7 +294,7 @@ sub make_blast_db {
 	my ( $self, $dbname, @gis ) = @_;
 	my $log = $self->logger;
 	@gis = keys %{ { map { $_ => 1 } @gis } };
-	$log->info("making BLAST db for ".scalar(@gis)." distinct GIs");
+	$log->info("Making BLAST db for ".scalar(@gis)." distinct GIs");
 	
 	# write FASTA file
 	open my $sfh, '>', $dbname or die $!;
@@ -302,7 +302,7 @@ sub make_blast_db {
 		my $seq = $self->find_seq($gi);
 		print $sfh '>', $gi, "\n", $seq->seq, "\n";
 	}
-	$log->info("wrote FASTA to $dbname");
+	$log->info("Wrote FASTA to $dbname");
 
 	# make blast db
 	my @cmd = (
@@ -310,7 +310,7 @@ sub make_blast_db {
 		'-in'     => $dbname,
 		'-dbtype' => 'nucl',		
 	); 	
-	$log->info("going to run command ".join(" ", @cmd));
+	$log->debug("going to run command ".join(" ", @cmd));
 	system("@cmd >/dev/null") == 0 or die "Command failed: @cmd";
 	return $dbname;	
 }

@@ -112,7 +112,7 @@ HEADER
 	print $tfh $ct->to_string;
 	# run treePL
 	close $tfh;
-        $self->logger->info("wrote treePL config file to  $tplfile");
+        $self->logger->info("Wrote treePL config file to  $tplfile");
 	system( $config->TREEPL_BIN, $tplfile ) && die $?;
 	if ( -e $writetree and -s $writetree ) {        
         	my $result = parse_tree(

@@ -70,13 +70,13 @@ sub get_nodes_for_names {
     # iterate over supplied names
     NAME: for my $name ( @names ) {
         if ( not $name ) {
-            $log->warn("can't search on name '$name', skipping");
+            $log->warn("Can't search on name '$name', skipping");
             next NAME;
         }
         $log->debug("going to search for name '$name'");
         
         # do we have an exact match?
-		# caution: there might be multiple nodes for one taxon name 
+	# caution: there might be multiple nodes for one taxon name 
     	my @nodes = $self->search_node( { taxon_name => $name } )->all;
         
         # no exact match if ->single returns undef (i.e. false)
@@ -90,7 +90,7 @@ sub get_nodes_for_names {
 	    }
         }
         else {
-            $log->info("Found  exact match(es) for $name in local database");
+            $log->info("Found exact match(es) for $name in local database");
         }
         
         # store result
@@ -143,7 +143,7 @@ sub get_nodes_for_table {
             $log->warn("couldn't instantiate node $id");
         }
     }
-    $log->info("created " . scalar(@nodes) . " nodes from taxon table");
+    $log->info("Created " . scalar(@nodes) . " nodes from taxon table");
     return @nodes;
 }
 
@@ -169,7 +169,7 @@ sub get_clusters_for_nodes {
     
     # iterate over nodes
     for my $node ( @nodes ) {
-        $log->info("query completion: $counter/".scalar(@nodes));
+        $log->info("Query completion: $counter/".scalar(@nodes));
         $log->debug("finding clusters for ".$node->ti);
         
         # find ci_gi intersection records for this node's ti
@@ -603,7 +603,7 @@ sub make_taxa_table {
 				$log->warn("Found more than one taxon for name $name");
 			}
 			else {
-				$log->info("found exactly one taxon for name $name");
+				$log->debug("found exactly one taxon for name $name");
 			}
 			
 			# for each node, fetch the IDs of all taxonomic levels of interest
@@ -629,7 +629,7 @@ sub make_taxa_table {
 			}
 		}
 		else {
-			$log->warn("couldn't resolve name $name");
+			$log->warn("Couldn't resolve name $name");
 		}
 		return \@res;
 	}

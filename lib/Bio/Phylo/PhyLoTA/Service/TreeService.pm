@@ -216,7 +216,7 @@ sub smooth_basal_split {
 		# adjust branch lengths
 		$left->set_branch_length( $l_length + $diff );
 		$right->set_branch_length($r_length - $diff );
-		$log->info("stretched left, shrunk right, by $diff");
+		$log->info("Stretched left, shrunk right, by $diff");
 	}
 	else {
 		
@@ -228,7 +228,7 @@ sub smooth_basal_split {
 		# adjust branch lengths
 		$left->set_branch_length( $l_length - $diff );
 		$right->set_branch_length($r_length + $diff );
-		$log->info("stretched right, shrunk left, by $diff");		
+		$log->info("Stretched right, shrunk left, by $diff");		
 	}
 	$root->set_branch_length(undef);
 }
@@ -257,7 +257,7 @@ sub outgroup_root {
 			
 	# remap outgroup species names to taxon identifiers
 	if ( not @ids ) {
-		$log->info("resolving outgroup name(s): @names");
+		$log->info("Resolving outgroup name(s): @names");
 		@ids = map { $_->ti } $mts->get_nodes_for_names(@names);
 	}
 	my @all_ids = $mt->query_taxa_table(\@ids, \@ranks, @records);
@@ -270,10 +270,10 @@ sub outgroup_root {
 	if ($mrca->is_root) {
 		my @ignodes = grep { ! $og{$_->get_name} } @{$tree->get_terminals};
 		$mrca = $tree->get_mrca(\@ignodes);		
-		$log->info("rooting below MRCA of ingroup");
+		$log->info("Rooting below MRCA of ingroup");
 	}
 	else {
-		$log->info("rooting below MRCA of outgroup");
+		$log->info("Rooting below MRCA of outgroup");
 	}
 	
 	# set previous root edge to zero
@@ -347,9 +347,9 @@ sub remap_newick {
 			while ( $newick =~ /[\(,]([^\(,]+?):/g ) {
 				my $key = $1;
 				$pos{$key} = pos($newick) - ( 1 + length($key) );
-				$log->warn("unknown label '$key' at position ".$pos{$key}) if !$map{$key};
+				$log->warn("Unknown label '$key' at position ".$pos{$key}) if !$map{$key};
 			}
-			$log->error("didn't parse any identifiers from $infile") if not scalar keys %pos; 
+			$log->error("Didn't parse any identifiers from $infile") if not scalar keys %pos; 
 			for my $key ( sort { $pos{$b} <=> $pos{$a} } keys %pos ) {
 				substr $newick, $pos{$key}, length($key), $map{$key};
 			}
@@ -604,7 +604,7 @@ sub process_commontree {
     # add these node(s) to the starting tree
     my @terminals = @{ $tree->get_terminals };
     if ( @terminals != @tipnames ) {
-        $log->warn("tips mismatch: ".scalar(@tipnames)."!=".scalar(@terminals));
+        $log->warn("Tips mismatch: ".scalar(@tipnames)."!=".scalar(@terminals));
 
         # insert unseen nodes into starting tree        
         my %seen = map { $_->get_name => 1 } @terminals;        
@@ -816,10 +816,10 @@ the phylip file and writes it to the specified file.
 
 sub make_phylip_binary {
 	my ( $self, $phylip, $binfilename, $parser, $work_dir) = @_;
-	$log->info("going to make binary representation of $phylip => $binfilename");	
-    $log->info("using parser $parser");	
+	$log->info("Going to make binary representation of $phylip => $binfilename");	
+	$log->debug("using parser $parser");	
 	my ( $phylipvolume, $phylipdirectories, $phylipbase ) = File::Spec->splitpath( $phylip );
-    my $curdir = getcwd;
+	my $curdir = getcwd;
 	chdir $work_dir;       
         
         # check if filename exists in working directory, if not take the full path
@@ -833,8 +833,8 @@ sub make_phylip_binary {
 		'2>' => File::Spec->devnull,
 	);
 	my $string = join ' ', @command;
-	$log->info("going to run '$string' inside " . $work_dir );
-    system($string) and $log->warn("Couldn't execute command '$string': $! (errno: $?)");        
+	$log->debug("going to run '$string' inside " . $work_dir );
+	system($string) and $log->warn("Couldn't execute command '$string': $! (errno: $?)");        
 	chdir $curdir;
 	return "${binfilename}.binary";
 }

@@ -152,7 +152,7 @@ sub run {
 
     # read list of alignments
     my @alignments;
-    $log->info("going to read alignment list $alnfile");
+    $log->info("Going to read alignment list $alnfile");
     open my $fh, '<', $alnfile or die $!;
     while (<$fh>) {
         chomp;
@@ -160,7 +160,7 @@ sub run {
     }
 
     # read taxa table
-    $log->info("going to read taxa table $taxafile");
+    $log->info("Going to read taxa table $taxafile");
     my @records = $mt->parse_taxa_file($taxafile);
 
     # valid ranks for taxa in supermatrix
@@ -187,7 +187,7 @@ sub run {
         my @species = $mt->query_taxa_table( $genus, \@ranks, @records );
         $species_for_genus{$genus} = \@species;
     }
-    $log->info( "read " . scalar( keys(%species_for_genus) ) . " genera" );
+    $log->info( "Read " . scalar( keys(%species_for_genus) ) . " genera" );
     my @all_species = map { @$_ } values(%species_for_genus);
 
     # build an adjacency matrix connecting species if they share markers.
@@ -240,7 +240,7 @@ sub run {
 	# we pick the taxa for which the sequences have the highest divergence.
     my @exemplars;
     for my $genus ( keys %species_for_genus ) {
-        $log->info("looking for exemplars in genus $genus");
+        $log->info("Looking for exemplars in genus $genus");
 
         # select  taxa that are in this genus and are in the candidate exemplars
         my %genus_taxa = map { $_ => 1 } @{ $species_for_genus{$genus} };
@@ -262,14 +262,14 @@ sub run {
         if ( scalar keys(%genus_candidates) < 2 ) {
             if ( my @valid_taxa = grep { exists( $candidates{$_} ) } keys %genus_taxa ) {
                 push @exemplars, $valid_taxa[0];
-                $log->info("added taxon $valid_taxa[0] as (monotypic) exemplar");
+                $log->info("Added taxon $valid_taxa[0] as (monotypic) exemplar");
             }
         }
 
         # if at this point we have two candidates, these are our exemplars
         elsif ( scalar keys(%genus_candidates) == 2 ) {
             push @exemplars, keys %genus_candidates;
-            $log->info( "added taxa "
+            $log->info( "Added taxa "
                   . join( ',', keys %genus_candidates )
                   . " as exemplars" );
         }
@@ -277,7 +277,7 @@ sub run {
 		# if we still have more than two candidates, calculate take the one which are furthest
 		# apart within this genus with resprect to the available sequences
         elsif ( scalar keys(%genus_candidates) > 2 ) {
-            $log->info("found more than two exemplar candidates, choosing the most distant ones");
+            $log->info("Found more than two exemplar candidates, choosing the most distant ones");
             my %distance;
             for my $aln ( sort @alignments ) {
                 if ( my $d = $self->_calc_aln_distances( $aln, [ keys %genus_candidates ] ) ) {
@@ -293,20 +293,20 @@ sub run {
                   map { split( /\|/, $_ ) }
                   sort { $distance{$b} <=> $distance{$a} } keys %distance;
                 push @exemplars, $sp1, $sp2;
-                $log->info("added  taxa $sp1,$sp2 as exemplars");
+                $log->info("Added taxa $sp1,$sp2 as exemplars");
             }
             else {
 
                 # if most distant pair cannot be found, add them all
                 # (not shure if this case can ever happen...)
                 push @exemplars, keys(%genus_candidates);
-                $log->info( "could not retrieve distances, added all taxa "
+                $log->info( "Could not retrieve distances, added all taxa "
                       . join( ',', keys %genus_candidates )
                       . " as exemplars" );
             }
         }
     }
-    $log->info( "identified " . scalar(@exemplars) . " exemplars" );
+    $log->info( "Identified " . scalar(@exemplars) . " exemplars" );
 
     # make the best set of alignments;
     #  select only the alignments which include an exemplar
@@ -360,7 +360,7 @@ sub run {
 
                 # this should not happen, since we selected only
                 # exemplars for which there are sufficient alignments!
-                $log->fatal("no alignment available for exemplar $taxon");
+                $log->fatal("No alignment available for exemplar $taxon");
                 next TAXON;
             }
             $aln{$aln}++;
@@ -371,8 +371,8 @@ sub run {
         }
     }
     my @sorted_alignments = sort keys %aln;
-    $log->info("using " . scalar(@sorted_alignments) . " alignments for supermatrix" );
-    $log->info( "number of exemplars : " . scalar(@sorted_exemplars) );
+    $log->info("Using " . scalar(@sorted_alignments) . " alignments for supermatrix" );
+    $log->info( "Number of exemplars : " . scalar(@sorted_exemplars) );
 
     # write alignmnets to supermatrix file
     $self->_write_supermatrix( \@sorted_alignments, \@sorted_exemplars,

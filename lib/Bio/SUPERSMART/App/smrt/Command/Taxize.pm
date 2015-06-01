@@ -88,12 +88,16 @@ sub run {
 	if ( $infile ) {
 		# read names from file or STDIN, clean line breaks
 		open my $fh, '<', $infile or die $!;
-		@names = <$fh>;
-		chomp(@names);
-		# remove empty lines if present
-		@names = grep /\S/, @names;
+		while(<$fh>) {
+
+			# strip line breaks and leading/trailing whitespace
+			chomp;
+			s/^\s*//;
+			s/\s*$//;
+			push @names, $_ if /\S/;
+		}
 		close $fh;
-		$log->info( "read " . scalar(@names) . " species names from $infile" );
+		$log->info( "Read " . scalar(@names) . " species names from $infile" );
 	}
 	if ( $root_taxa ) {
 		my @taxa = split(',', $root_taxa);
