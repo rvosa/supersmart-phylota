@@ -80,7 +80,7 @@ sub run {
 	my $mt = Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa->new;
 
         # prepare reusable variables
-        $logger->info( "reading fossils from file $fossiltable" );
+        $logger->info( "Reading fossils from file $fossiltable" );
         my @fossils = $cs->read_fossil_table($fossiltable);
         my @points = map { $cs->find_calibration_point($_) } @fossils;
         my $numsites = $mt->get_supermatrix_numsites($supermatrix);
@@ -95,7 +95,7 @@ sub run {
 			
     			# read the ML tree from newick
 			my $newick = $1;
-			$logger->info( "reading tree $counter from file $treefile" );
+			$logger->info( "Reading tree $counter from file $treefile" );
 			my $tree = parse_tree( 
             			'-format' => 'newick', 
             			'-string' => $newick, 
@@ -104,7 +104,7 @@ sub run {
 			$tree = $ts->remap_to_ti($tree);
 	
 	      		# make calibration table from fossils
-        		$logger->info( "going to make calibration table" );
+        		$logger->info( "Going to make calibration table" );
         		my $table = $cs->create_calibration_table( $tree, @points );
 
 			# calibrate the tree
