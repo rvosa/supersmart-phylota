@@ -685,7 +685,7 @@ Grafts a clade tree into a backbone tree, returns the altered backbone.
 =cut
 
 sub graft_tree {
-	my ( $self, $backbone, $clade ) = @_;
+	my ( $self, $backbone, $clade, $squish ) = @_;
  
 	# retrieve the tips from the clade tree that also occur in the backbone, i.e. the 
 	# exemplars, and locate their MRCA on the backbone
@@ -767,14 +767,28 @@ sub _rescale {
 	$tree->visit(sub{
 		my $node  = shift;
 		
-		# adjust figtree annotations
+		# select figtree annotations
 		my $re = qr/^fig:.*(?:height|length).*/;
-		my @annos = grep { $_->get_predicate =~ $re } @{ $node->get_meta };
-		for my $a ( @annos ) {
-			my $val       = $a->get_object;
-			my $newval    = $val * $ratio;
-			my $predicate = $a->get_predicate;
-			$a->set_triple( $predicate => $newval );
+		my %annos = map { $_->get_predicate => $_ } 
+		           grep { $_->get_predicate =~ $re } 
+		               @{ $node->get_meta };
+		
+		# iterate over predicates
+		for my $predicate ( keys %annos ) {
+			my $val = $annos{$predicate}->get_object;
+			my $newval;
+			if ( $predicate =~ /(.+?)_(min|max)$/ ) {
+				my ( $stem, $range ) = ( $1, $2 );
+				my $other = $stem . ( $range eq 'min' ? '_max' : '_min' );
+				my $otherval = $annos{$other}->get_object;
+				my $mid = ( $val + $otherval ) / 2;
+				my $deviation = $val / $mid;
+				$newval = ( $mid * $ratio ) * $deviation;	
+			}
+			else {
+				$newval = $val * $ratio;
+			}
+			$annos{$predicate}->set_triple( $predicate => $newval );
 			$self->logger->debug("$predicate: $val => $newval");
 		}
 		
