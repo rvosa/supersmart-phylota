@@ -5,13 +5,15 @@ use warnings;
 
 use Bio::Phylo::Factory;
 use Bio::Phylo::PhyLoTA::Service::TreeService;
+use Bio::Phylo::PhyLoTA::Config;
 use Bio::Phylo::Util::CONSTANT ':objecttypes';
 use Bio::Phylo::IO qw'parse parse_tree unparse';
 
 use base 'Bio::SUPERSMART::App::SubCommand';
 use Bio::SUPERSMART::App::smrt qw(-command);
 
-my $fac = Bio::Phylo::Factory->new;
+my $fac  = Bio::Phylo::Factory->new;
+my $conf = Bio::Phylo::PhyLoTA::Config->new;
 
 # ABSTRACT: grafts the inferred clade trees on the backbone chronogram
 
@@ -36,11 +38,13 @@ The resulting tree is exported in the NEWICK format.
 sub options {
 	my ($self, $opt, $args) = @_;
 	my $outfile_default = "final.nex";
-	my $tree_default = "consensus.nex";
+	my $tree_default    = "consensus.nex";
+	my $heights_default = $conf->NODE_HEIGHTS;
 	return (                               	
   		["backbone|b=s", "backbone tree as produced by 'smrt consense'", { arg => "file", default => $tree_default }],
 		["outfile|o=s", "name of the output tree file (newick format) defaults to $outfile_default", { default=> $outfile_default, arg => "file"}],    	    
 		["cladetree|c=s", "name of tree file for single clade (newick format) if only a single cladetree should be grafted", { arg => "file"}],
+		["heights|h=s", "node heights (ca, keep, median, mean)", { default => $heights_default } ],
     );
 }
 
@@ -66,6 +70,10 @@ sub validate {
 		if ( ! -d glob "$workdir/clade*" ){			
 			$self->usage_error("no cladetree argument given and no clade folders found in working directory $workdir");
 		}
+	}
+
+	if ( $opt->heights !~ /^(?:ca|keep|median|mean)$/ ) {
+		$self->usage_error("heights must be one of ca, keep, median or mean");
 	}
 }
 
@@ -98,7 +106,7 @@ sub run {
 	    while( my $entry = readdir $dh ) {                        
 		    if ( $entry =~ /clade\d+/ && -d "${workdir}/${entry}" ) {                                
 				$logger->info( "Processing $entry" );
-				$grafted = $self->_graft_single_tree( $grafted, $entry, $ts );					
+				$grafted = $self->_graft_single_tree( $grafted, $entry, $ts, $opt );					
 		    }       
 	    }
     }
@@ -148,7 +156,7 @@ sub _write_output {
 }
 
 sub _graft_single_tree {
-	my ( $self, $tree, $clade, $ts ) = @_;
+	my ( $self, $tree, $clade, $ts, $opt ) = @_;
 	my $logger = $self->logger;
 
 	# make file names
@@ -161,7 +169,10 @@ sub _graft_single_tree {
 	}
 	
 	# make consensus from BEAST clade output
-	my $consensus = $ts->consense_trees( '-infile' => $file ); 
+	my $consensus = $ts->consense_trees( 
+		'-infile'  => $file,
+		'-heights' => $opt->heights,
+	); 
 
 	# prune outgroup from consensus tree (if exists)
 	if ( -e $ogfile ) {
