@@ -181,7 +181,6 @@ sub run {
 
     # extract the distinct species for each genus
     my %species_for_genus;
-    my @g = $mt->get_distinct_taxa( 'genus' => @records );
     for my $genus ( $mt->get_distinct_taxa( 'genus' => @records ) ) {
 
         # extract the distinct species (and lower) for the focal genus
