@@ -574,35 +574,33 @@ sub decode_taxon_name {
 	return $name;
 }
 
-=item write_taxa_file
+=item make_taxa_table
 
-Input: An output filename and a list of taxon names.
-Searches for each name all possible ranks as listed in the
-NCBI taxonomy and writes a tsv table.
-Each row represents one taxon, columns are taxon name followed
-by all possible taxonomic ranks, ordered from low to high.
-If a taxonomic rank is not given for a certain taxon name,
-'NA' is written into the table cell.
+Given a list of taxon names, returns a taxa table containing 
+the taxonomic classifications for each name (if found in database), for all
+taxonomic ranks. Returns an array of hashes with keys being ranks (and taxon name), 
+values are the taxon IDs at each rank.
 
 =cut
 
-sub write_taxa_file {
-	my ($self, $outfile, @names) = @_;
+sub make_taxa_table {
+	my ($self, @names) = @_;
 
 	# get all possible taxonomic ranks
-	my @levels = reverse $self->get_taxonomic_ranks;
-		
+	my %levels = map{ $_=>1 } $self->get_taxonomic_ranks;
+	
 	# this will take some time to do the taxonomic name resolution in the
 	# database and with webservices. The below code runs in parallel
 	my @result = pmap {
 		my ($name) = @_;
+
 		# replace consecutive whitespaces with one
 		$name =~ s/\s+/ /g;
 		my @res   = ();
 		my @nodes = $self->get_nodes_for_names($name);
 		if (@nodes) {
 			if ( @nodes > 1 ) {
-				$log->warn("found more than one taxon for name $name");
+				$log->warn("Found more than one taxon for name $name");
 			}
 			else {
 				$log->info("found exactly one taxon for name $name");
@@ -611,23 +609,23 @@ sub write_taxa_file {
 			# for each node, fetch the IDs of all taxonomic levels of interest
 			for my $node (@nodes) {
 				
-				# create hash of taxonomic levels so that when we walk up the
-				# taxonomy tree we can more easily check to see if we are at a
-				# level of interest
-				my %level = map { $_ => "NA" } @levels;
-				
+				# walk up the  taxonomy tree and get tids for levels of interest,
+				# store all ids and taxon name in hash
+				my %taxinfo;				
+				$taxinfo{'name'} = $node->taxon_name;
+
 				# traverse up the tree
-				while ($node) {
-					my $tn   = $node->taxon_name;
+				while ( $node ) {
 					my $ti   = $node->ti;
 					my $rank = $node->rank;
-					if ( exists $level{$rank} ) {
-						$level{$rank} = $node->get_id;
+					
+					if ( $levels{$rank} ) {
+						$taxinfo{$rank} = $ti;
+						
 					}
 					$node = $node->get_parent;
 				}
-				my @entry = ( $name, @level{@levels} );
-				push @res, \@entry;
+				push @res, \%taxinfo;
 			}
 		}
 		else {
@@ -637,50 +635,54 @@ sub write_taxa_file {
 	}
 	@names;
 	
-	# clean the results for duplicates and rows that represent taxa with levels higher
-	# than 'Species', then write the results to the output file
-	$log->info("Data received, writing outfile!");
+	# flatten result lists (in case there were multiple nodes for one name)
+	@result = map {@{$_}} @result;
+	$log->info('Created taxa table containing ' . scalar (@result) . ' rows'); 
+	
+	return @result;
+}
 
+=item write_taxa_file
+
+Given a refrence to a taxa table (array of hashes with keys being ranks (and taxon name), values are tids),
+writes the file to a tab separated table with headers. Each row corresponds to a taxon, 
+first entry is the taxon name followed by the ids for all possible taxonomic ranks, ordered
+from low to high. If a taxon ID is not found at a certain level, 'NA' is written into the
+table cell.
+Omits entries for taxa of higher level than "species".
+
+=cut
+
+sub write_taxa_file {
+	my ($self, $outfile, @table) = @_;
+
+	my @levels = reverse ( $self->get_taxonomic_ranks );
+	
 	open my $out, '>', $outfile or die $!;
-
+	
 	# print table header
 	print $out join( "\t", 'name', @levels ), "\n";
-
-	my %seen = ();
-	foreach my $res (@result) {
-
-		# flatten list of references		
-		if ( my @entry = map { @$_ } @$res ){
-			my $name = shift @entry;
-			
-			# encode taxon name to take care of special characters
-			$name = $self->encode_taxon_name($name);
-			my $ids = join "\t", @entry;
 	
-			# omit all taxa with higher taxonomic rank than 'Species'
-			my $highest_rank = "Species";
-			my $idx          = firstidx { lc($_) eq lc($highest_rank) } @levels;
-			my @subset       = @entry[ 0 .. $idx ];
-			if ( uniq(@subset) == 1 ) {
-				$log->debug(
-	"rank of taxon with resolved name $name is higher than $highest_rank, omitting"
-				);
-			}
+	# only write row for taxon if id for one of the below ranks is given
+	my @valid_ranks = ("species", "subspecies", "varietas", "forma");
 	
-			# filter taxa with duplicate species id
-			elsif ( exists $seen{$ids} ) {
-				$log->debug(
-	"taxon with resolved name $name already in species table, omitting"
-				);
-			}
-			else {
-				print $out "$name\t$ids\n";
-				$seen{$ids} = 1;
-			}
+	# loop over table and write each entry, if no id at a taxonomic level exists, write "NA"
+	for my $row ( @table ) {
+		my %h = %$row;
+
+		# set cell to NA if no taxon ID for rank		
+		my @missing_ranks = grep { ! $h{$_}} @levels;
+		$h{ $_ } = "NA" for @missing_ranks;
+		
+		# omit taxa higher than species
+		if ( ! grep /[0-9]+/, @h{@valid_ranks} ) {
+			$log->info("Omitting higher level taxon " . $h{'name'});
+			next;
 		}
+		print $out join( "\t", $self->encode_taxon_name($h{'name'}),  @h{@levels} ) . "\n";
 	}
-	$log->info("wrote taxa file to $outfile");
 	close $out;
+	$log->info("Wrote taxa table to $outfile");
 }
 
 =item write_marker_summary

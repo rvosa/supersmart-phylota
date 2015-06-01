@@ -104,7 +104,9 @@ sub run {
 	if ( $expand_rank or $root_taxa ) {
 		@names = $mts->expand_taxa( \@names, $expand_rank || "species" );
 	}
-	$mts->write_taxa_file( $opt->outfile, @names );
+	
+	my @taxa_table = $mts->make_taxa_table( @names );	
+	$mts->write_taxa_file( $opt->outfile, @taxa_table );
 
 	$log->info("DONE, results written to " . $opt->outfile);
 	return 1;
