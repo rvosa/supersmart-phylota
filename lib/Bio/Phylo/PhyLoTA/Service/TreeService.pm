@@ -216,7 +216,7 @@ sub smooth_basal_split {
 		# adjust branch lengths
 		$left->set_branch_length( $l_length + $diff );
 		$right->set_branch_length($r_length - $diff );
-		$log->info("stretched left, shrunk right, by $diff");
+		$log->info("Stretched left, shrunk right, by $diff");
 	}
 	else {
 		
@@ -228,7 +228,7 @@ sub smooth_basal_split {
 		# adjust branch lengths
 		$left->set_branch_length( $l_length - $diff );
 		$right->set_branch_length($r_length + $diff );
-		$log->info("stretched right, shrunk left, by $diff");		
+		$log->info("Stretched right, shrunk left, by $diff");		
 	}
 	$root->set_branch_length(undef);
 }
