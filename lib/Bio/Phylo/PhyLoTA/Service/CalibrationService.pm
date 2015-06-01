@@ -89,10 +89,10 @@ sub calibrate_tree {
 	my $tree      = $args{'-tree'}              || die "Need -tree argument";
 	my $nthreads  = $config->NODES;
 	my $seed = $config->RANDOM_SEED;
-	my ($ifh,$writetree) = tempfile();
-	my ($ofh,$readtree)  = tempfile();
-	my ($tfh,$tplfile)   = 	tempfile();
-	print $ofh $tree->to_newick( nodelabels => 1);
+	my ( $ifh, $writetree ) = tempfile();
+	my ( $ofh, $readtree )  = tempfile();
+	my ( $tfh, $tplfile )   = tempfile();
+	print $ofh $tree->to_newick( nodelabels => 1 );
 	close $ofh;
 	close $ifh;
 	
@@ -111,7 +111,7 @@ HEADER
 	print $tfh $ct->to_string;
 	# run treePL
 	close $tfh;
-        $self->logger->info("Wrote treePL config file to  $tplfile");
+        $self->logger->info("wrote treePL config file to  $tplfile");
 	system( $config->TREEPL_BIN, $tplfile ) && die $?;
 	if ( -e $writetree and -s $writetree ) {        
         	my $result = parse_tree(
@@ -119,7 +119,7 @@ HEADER
 			'-file'       => $writetree,
 			'-as_project' => 1,
 		);
-		unlink $readtree, $writetree, $tplfile;
+		unlink $readtree, $writetree, $tplfile, "${tplfile}.r8s", "${writetree}.r8s";
         	return $result;
 	}
 	else {
@@ -180,61 +180,66 @@ approximation to the stem age.
 =cut
 
 sub create_calibration_table {
-    my ( $self, $tree, @fossildata ) = @_;
-    my $config = $self->config;
-    my $logger = $self->logger;        
-    my $table  = Bio::Phylo::PhyLoTA::Domain::CalibrationTable->new;
-    my $cutoff = $config->FOSSIL_BEST_PRACTICE_CUTOFF;
+	my ( $self, $tree, @fossildata ) = @_;
+	my $config = $self->config;
+	my $logger = $self->logger;        
+	my $table  = Bio::Phylo::PhyLoTA::Domain::CalibrationTable->new;
+	my $cutoff = $config->FOSSIL_BEST_PRACTICE_CUTOFF;
 
 	my %taxa_in_tree = map { $_->get_name => 1 } @{$tree->get_terminals};
 	
 	# find all descendants of all calibrated higher taxa that are present in the tree
 	FOSSIL: for my $fd ( @fossildata ) {
-			my @nodes = $fd->calibration_points; # returns higher taxa
-			my $score = $fd->best_practice_score || 0;
-			if ( $score < $cutoff ) {
-				$logger->warn("Quality score of fossil for calibrated taxon " .  $fd->{"Calibrated_taxon"} .  " too low. Skipping.");
+		my @nodes = $fd->calibration_points; # returns higher taxa
+		my $score = $fd->best_practice_score || 0;
+		if ( $score < $cutoff ) {
+			$logger->warn("Quality score of fossil for calibrated taxon " .  $fd->{"Calibrated_taxon"} .  " too low. Skipping.");
+			next FOSSIL;
+		}
+			
+		# expand to all terminal taxa cf. the taxonomy
+		my @terminals = map { @{ $_->get_terminal_ids } } @nodes;
+
+		# only consider terminals that are present in our tree
+		@terminals = grep { $taxa_in_tree{$_} } @terminals;
+
+		# for stem fossils, take the parent of the mrca
+		if ( lc $fd->{"CrownvsStem"} eq "stem" ) { 
+
+			my %t = map {$_=>1} @terminals;
+			my @tree_nodes =  grep { exists($t{$_->get_name})  }  @{$tree->get_terminals};					
+			my $mrca = $tree->get_mrca(\@tree_nodes);
+			my $parent = $mrca->get_parent;
+			if ( ! $parent ) {
+				$logger->warn("Could not calibrate stem fossil # " . $fd->nfos . " (" . $fd->fossil_name . ") because the mrca of all calibrated taxa has no parent node. Skipping.");
 				next FOSSIL;
 			}
-			
-			# expand to all terminal taxa cf. the taxonomy
-			my @terminals = map { @{ $_->get_terminal_ids } } @nodes;
-
-			# only consider terminals that are present in our tree
-			@terminals = grep { $taxa_in_tree{$_} } @terminals;
-
-			# for stem fossils, take the parent of the mrca
-			if ( lc $fd->{"CrownvsStem"} eq "stem" ) { 
-
-				my %t = map {$_=>1} @terminals;
-				my @tree_nodes =  grep { exists($t{$_->get_name})  }  @{$tree->get_terminals};					
-				my $mrca = $tree->get_mrca(\@tree_nodes);
-				my $parent = $mrca->get_parent;
-				if ( ! $parent ) {
-					$logger->warn("Could not calibrate stem fossil # " . $fd->nfos . " (" . $fd->fossil_name . ") because the mrca of all calibrated taxa has no parent node. Skipping.");
-					next FOSSIL;
-				}
-				@terminals = map{ $_->get_name } @{$parent->get_terminals};
-				@terminals =  grep { exists($taxa_in_tree{$_}) } @terminals;																							
-			}
-			else {
-                        	# get the MRCA of the terminals, and then the tips subtended by it
-                        	my @tips = map { $tree->get_by_name($_) } @terminals;
-                        	my $mrca = $tree->get_mrca(\@tips);
-                        	@terminals = map { $_->get_name } @{ $mrca->get_terminals };
-			}
-			$table->add_row(
-					'taxa'    => [ sort { $a cmp $b } @terminals ],
-					'min_age' => $fd->min_age,
-					'max_age' => $fd->max_age,
-					'name'    => $fd->nfos,	    
-	                		'nfos'    => $fd->nfos,	    
+			@terminals = map{ $_->get_name } @{$parent->get_terminals};
+			@terminals =  grep { exists($taxa_in_tree{$_}) } @terminals;																							
+			$mrca->set_name( $fd->fossil_name );
+			$mrca->set_meta_object( 'fig:fossil_age_min' => $fd->min_age );
+			$mrca->set_meta_object( 'fig:fossil_age_max' => $fd->max_age );
+		}
+		else {
+                        # get the MRCA of the terminals, and then the tips subtended by it
+                        my @tips = map { $tree->get_by_name($_) } @terminals;
+                        my $mrca = $tree->get_mrca(\@tips);
+                        @terminals = map { $_->get_name } @{ $mrca->get_terminals };
+			$mrca->set_meta_object( 'fig:fossil_age_min' => $fd->min_age );
+			$mrca->set_meta_object( 'fig:fossil_age_max' => $fd->max_age );
+		}
+		$table->add_row(
+			'taxa'    => [ sort { $a cmp $b } @terminals ],
+			'min_age' => $fd->min_age,
+			'max_age' => $fd->max_age,
+			'name'    => $fd->nfos,	    
+	                'nfos'    => $fd->nfos,	    
 	        );  
 			
 	}	
 		
-    $table->sort_by_min_age;
-    return $table;	
+	$table->sort_by_min_age;
+	return $table;	
 }
 
 =item read_fossil_table
