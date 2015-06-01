@@ -118,22 +118,22 @@ sub run {
 		# Try to minimize paraphyly if no outgroup given
 		else {	
 			my $level = $mt->get_highest_informative_level(@records);	
-			$log->info("highest informative taxon level : $level");		
-            $tree->resolve;	
+			$log->debug("highest informative taxon level : $level");		
+			$tree->resolve;	
 			$tree = $ts->reroot_tree($tree, \@records, [$level]);
 		}
 		
 		# smooth the basal branch, if requested
-        if ( $smooth ) {
-            $log->info("smoothing out diff between left and right tip heights");
+        	if ( $smooth ) {
+            		$log->debug("smoothing out diff between left and right tip heights");
 			$ts->smooth_basal_split($tree);
-        }
+        	}
 		
 		# clean up labels and write to file
 		$tree = $ts->remap_to_name($tree);
 		$ts->remove_internal_names($tree);
 		print $out $tree->to_newick( 'nodelabels' => 1 ), "\n";
-        $log->info("rerooted backbone tree ".$counter++);		
+        $log->info("Rerooted backbone tree ".$counter++);		
 	}
 	$log->info("DONE, results written to $outfile");		
 }
