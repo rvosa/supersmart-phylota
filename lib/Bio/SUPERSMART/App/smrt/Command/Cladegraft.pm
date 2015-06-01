@@ -40,11 +40,13 @@ sub options {
 	my $outfile_default = "final.nex";
 	my $tree_default    = "consensus.nex";
 	my $heights_default = $conf->NODE_HEIGHTS;
+	my $squish_default  = 'none';
 	return (                               	
   		["backbone|b=s", "backbone tree as produced by 'smrt consense'", { arg => "file", default => $tree_default }],
 		["outfile|o=s", "name of the output tree file (newick format) defaults to $outfile_default", { default=> $outfile_default, arg => "file"}],    	    
 		["cladetree|c=s", "name of tree file for single clade (newick format) if only a single cladetree should be grafted", { arg => "file"}],
 		["heights|h=s", "node heights (ca, keep, median, mean)", { default => $heights_default } ],
+		["squish|s=s", "how to treat negative branches (zero, yulish, none)", { default => $squish_default } ],
     );
 }
 
@@ -75,6 +77,10 @@ sub validate {
 	if ( $opt->heights !~ /^(?:ca|keep|median|mean)$/ ) {
 		$self->usage_error("heights must be one of ca, keep, median or mean");
 	}
+	
+	if ( $opt->squish !~ /^(?:zero|none|yulish)$/ ) {
+		$self->usage_error("squish must be one of yulish, zero or none");
+	}
 }
 
 sub run {
@@ -96,7 +102,7 @@ sub run {
 	if ( $cladetree=~ /(clade\d+)/ ) {
 		$logger->info("Grafting tree $cladetree");
 		my $stem = $1;
-		$grafted = $self->_graft_single_tree( $grafted, $stem, $ts );
+		$grafted = $self->_graft_single_tree( $grafted, $stem, $ts, $opt );
 	}
 	
 	# graft all clades in working directory
@@ -172,7 +178,7 @@ sub _graft_single_tree {
 	my $consensus = $ts->consense_trees( 
 		'-infile'  => $file,
 		'-heights' => $opt->heights,
-	); 
+	);
 
 	# prune outgroup from consensus tree (if exists)
 	if ( -e $ogfile ) {
@@ -189,7 +195,7 @@ sub _graft_single_tree {
 		$consensus->prune_tips(\@outgroup_taxa);
 	}
 
-	return $ts->graft_tree( $tree, $consensus );
+	return $ts->graft_tree( $tree, $consensus, $opt->squish );
 }
 
 1;
