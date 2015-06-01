@@ -54,13 +54,13 @@ sub run {
 	my $ns = 'http://www.supersmart-project.org/terms#';
 
 	# start iterating
-	$log->info("going to look for clade data in $workdir");
+	$log->info("Going to look for clade data in $workdir");
 	opendir my $odh, $workdir or die $!;
 	while( my $dir = readdir $odh ) {
 		if ( $dir =~ /^clade\d+$/ and -d "${workdir}/${dir}" ) {
 		
 			# start processing the directory
-			$log->info("going to merge alignments in $workdir/$dir");
+			$log->info("Going to merge alignments in $workdir/$dir");
 			my $project = $factory->create_project( '-namespaces' => { 'smrt' => $ns } );
 			my $taxa = $factory->create_taxa;
 			$project->insert($taxa);
@@ -73,7 +73,7 @@ sub run {
 					my $id = $1;
 					
 					# parse the file
-					$log->info("adding alignment $file");
+					$log->info("Adding alignment $file");
 					my $matrix = parse_matrix(
 						'-type'       => 'dna',
 						'-format'     => 'fasta',
@@ -132,14 +132,14 @@ sub run {
 			
 			if (lc $outformat eq 'nexml'){
 				# write the merged nexml
-				$log->info("going to write file ${workdir}/${dir}/${dir}.xml");
+				$log->info("Going to write file ${workdir}/${dir}/${dir}.xml");
 				open my $outfh, '>', "${workdir}/${dir}/${dir}.xml" or die $!;
 				print $outfh $project->to_xml( '-compact' => 1 );
 			}
 			elsif (lc $outformat eq 'phylip'){
 				my @matrices = @{ $project->get_items(_MATRIX_) };
 				my ($taxa) = @{$project->get_items(_TAXA_)} ;
-				$log->info("going to write file ${workdir}/${dir}/${dir}.phy");
+				$log->info("Going to write file ${workdir}/${dir}/${dir}.phy");
 				$service->make_phylip_from_matrix($taxa, "${workdir}/${dir}/${dir}.phy", @matrices);
 			}
 		}
