@@ -112,6 +112,14 @@ smrt cladeinfer --ngens=15_000_000 --sfreq=1000 --lfreq=1000
 
 # Step 13: graft the clade trees onto the backbone.
 # XXX height ranges not yet adjusted correctly
+# We need some general solutions for negative branch lengths. These can happen for
+# example when a pair of exemplars actually doesn't cross the root of the clade they
+# represent. Scaling on their MRCA very often results in the actual root of the clade
+# being older than its parent, which in turn results in negative branch lengths. Some
+# approaches:
+# 1. set negative branch lengths to zero
+# 2. rescale the whole clade (+ its root branch) to fit below its parent
+# 3. push the parent deeper (might just move the problem)
 smrt cladegraft
 
 # Step 14: plot the final result
