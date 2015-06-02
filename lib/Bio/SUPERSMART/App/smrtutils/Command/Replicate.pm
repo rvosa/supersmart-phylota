@@ -145,7 +145,8 @@ sub _write_taxafile {
 	@names = grep {! $artificial{$_}} @names;
 		
 	# write initial taxa table to file
-	$mts->write_taxa_file( $filename, @names );	
+	my @taxa_table = $mts->make_taxa_table( @names );
+	$mts->write_taxa_file( $filename, @taxa_table );
 	
 	# for the species with artificial taxon names, do as follows: first: assign an artificial
 	# ti to the species. Then iteratively select the children of the father of the focal node, and
@@ -293,6 +294,8 @@ sub _replicate_alignment {
 	# replicate dna data: estimate model with the original tree and replicate sequences along the replicated tree
 	$logger->info("Determining substitution model for alignment $fasta");
 	my $model = 'Bio::Phylo::Models::Substitution::Dna'->modeltest($matrix, $tree);
+
+	$logger->debug("Pruned replicated tree for sequence simulation: " . $pruned->to_newick);
 	$logger->info("Simulating sequences for alignment $fasta");
 	my $rep = $matrix->replicate('-tree'=>$pruned, '-seed'=>$config->RANDOM_SEED, '-model'=>$model);
 
