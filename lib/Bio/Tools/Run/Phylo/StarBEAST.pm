@@ -368,11 +368,11 @@ sub _alignment {
 				'-file'       => $thing,
 				'-as_project' => 1,
 			);
-			$self->_validate;
+			#$self->_validate;
 		}
 		elsif ( ref $thing ) {
 			$self->{'_alignment'} = $thing;
-			$self->_validate;
+			#$self->_validate;
 		}
 	}
 	return $self->{'_alignment'};
