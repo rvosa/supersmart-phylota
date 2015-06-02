@@ -4,9 +4,11 @@ use strict;
 use warnings;
 
 use Bio::Phylo::Factory;
-use Bio::Phylo::PhyLoTA::Service::TreeService;
 use Bio::Phylo::IO 'parse_matrix';
 use Bio::Phylo::Util::CONSTANT ':objecttypes';
+use Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa;
+use Bio::Phylo::PhyLoTA::Service::TreeService;
+use Bio::Phylo::PhyLoTA::Service::ParallelService;
 use Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector;
 
 use base 'Bio::SUPERSMART::App::SubCommand';
@@ -32,127 +34,102 @@ produces a single output file that can be analysed by the subcommand cladeinfer.
 
 
 sub options {
-	my ($self, $opt, $args) = @_;		
-	return (
-		[ "outformat|o=s", "output format for merged clade files (phylip or nexml), defaults to 'nexml'", { arg=>"format", default=> 'nexml'} ],
-		[ "enrich|e", "enrich the selected markers with additional haplotypes", {} ],
-	);	
+    my ($self, $opt, $args) = @_;       
+    return (
+        [ "outformat|o=s", "output format for merged clade files (phylip or nexml), defaults to 'nexml'", { arg=>"format", default=> 'nexml'} ],
+        [ "enrich|e", "enrich the selected markers with additional haplotypes", {} ],
+    );  
 }
 
 sub validate {};
 
 sub run {
-	my ($self, $opt, $args) = @_;		
-	
-	my $workdir = $self->workdir;
-	my $outformat = $opt->outformat;
-		
-	# instantiate helper objects
-	my $factory = Bio::Phylo::Factory->new;
-	my $service = Bio::Phylo::PhyLoTA::Service::TreeService->new;
-	my $mts     = Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector->new;
-	my $log     = $self->logger;
-	my $ns = 'http://www.supersmart-project.org/terms#';
+    my ($self, $opt, $args) = @_;       
+    
+    my $workdir   = $self->workdir;
+    my $outformat = $opt->outformat;
+        
+    # instantiate helper objects
+    my $factory = Bio::Phylo::Factory->new;
+    my $service = Bio::Phylo::PhyLoTA::Service::TreeService->new;
+    my $mts     = Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector->new;
+    my $mt      = Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa->new;
+    my $log     = $self->logger;
+    my $ns      = 'http://www.supersmart-project.org/terms#';
 
-	# start iterating
-	$log->info("Going to look for clade data in $workdir");
-	opendir my $odh, $workdir or die $!;
-	while( my $dir = readdir $odh ) {
-		if ( $dir =~ /^clade\d+$/ and -d "${workdir}/${dir}" ) {
-		
-			# start processing the directory
-			$log->info("Going to merge alignments in $workdir/$dir");
-			my $project = $factory->create_project( '-namespaces' => { 'smrt' => $ns } );
-			my $taxa = $factory->create_taxa;
-			$project->insert($taxa);
-			my %t; # to keep track of taxa
-			opendir my $idh, "${workdir}/${dir}" or die $!;
-			while( my $file = readdir $idh ) {
-			
-				# found an alignment
-				if ( $file =~ /(.+?)\.fa$/ ) {
-					my $id = $1;
-					
-					# parse the file
-					$log->info("Adding alignment $file");
-					my $matrix = parse_matrix(
-						'-type'       => 'dna',
-						'-format'     => 'fasta',
-						'-file'       => "${workdir}/${dir}/${file}",
-						'-as_project' => 1,
-					);
-					$matrix->set_name($id);
-
-					# update sequence labels, link to taxon objects
-					my ( %gaps, $ntax );
-					$matrix->visit(sub{
-						my $row = shift;
-						my $name = $row->get_name;
-						my %fields = split /\|/, $name;
-						$fields{$_} =~ s/^(\d+).*$/$1/ for keys %fields;
-						my $binomial = $fields{'taxon'};
-						
-						# create new taxon object if none seen yet
-						if ( not $t{$binomial} ) {
-							$t{$binomial} = $factory->create_taxon( '-name' => $binomial );
-							$t{$binomial}->set_meta_object( 'smrt:tid' => $fields{'taxon'} );
-							$taxa->insert($t{$binomial});
-						}
-						$row->set_name( $binomial );
-						$row->set_taxon( $t{$binomial} );
-						$row->set_meta_object( 'smrt:gi'      => $fields{'gi'} );
-						$row->set_meta_object( 'smrt:mrca'    => $fields{'mrca'} );
-						$row->set_meta_object( 'smrt:seed_gi' => $fields{'seed_gi'} );
-						
-						# keep track of which columns might be all gaps
-						my @char = $row->get_char;
-						for my $i ( 0 .. $#char ) {
-							my $c = $char[$i];
-							if ( $c eq '-' or $c eq '?' or $c eq 'N' ) {
-								$gaps{$i}++;							
-							}
-						}
-						$ntax++;
-					});
-					$matrix->set_taxa($taxa);
-
-                                        # enrich, if requested
-                                        if ( $opt->enrich ) {
-                                                $mts->enrich_matrix($matrix);
-                                        }
-					
-					# delete all-gaps columns. this can happen because we are now 
-					# operating on taxon subsets of the clustered alignments
-					my $max = $matrix->get_nchar - 1;
-					my @indices = grep { not defined $gaps{$_} or $gaps{$_} < $ntax } 0 .. $max;
-					$matrix->visit(sub{
-						my $row = shift;
-						my @char = $row->get_char;
-						my @ungapped = @char[@indices];
-						$row->set_char(@ungapped);
-					});
-					
-					# add to project
-					$project->insert($matrix);
-				}
-			}
-			
-			if (lc $outformat eq 'nexml'){
-				# write the merged nexml
-				$log->info("Going to write file ${workdir}/${dir}/${dir}.xml");
-				open my $outfh, '>', "${workdir}/${dir}/${dir}.xml" or die $!;
-				print $outfh $project->to_xml( '-compact' => 1 );
-			}
-			elsif (lc $outformat eq 'phylip'){
-				my @matrices = @{ $project->get_items(_MATRIX_) };
-				my ($taxa) = @{$project->get_items(_TAXA_)} ;
-				$log->info("Going to write file ${workdir}/${dir}/${dir}.phy");
-				$service->make_phylip_from_matrix($taxa, "${workdir}/${dir}/${dir}.phy", @matrices);
-			}
-		}
-	}
-	$log->info("DONE");
-	return 1;
+    # collect candidate dirs
+    $log->info("Going to look for clade data in $workdir");
+    my @dirs;
+    opendir my $odh, $workdir or die $!;
+    while( my $dir = readdir $odh ) {
+        if ( $dir =~ /^clade\d+$/ and -d "${workdir}/${dir}" ) {
+            push @dirs, $dir;
+        }
+    }
+    
+    # process in parallel
+    my @result = grep { defined $_ and -e $_ } pmap {
+        my ( $dir ) = @_;
+        
+        # initialize the container objects
+        my $project = $factory->create_project( '-namespaces' => { 'smrt' => $ns } );
+        my $taxa    = $factory->create_taxa;
+        $project->insert($taxa);        
+        
+        # start processing the directory
+        $log->info("Going to merge alignments in $workdir/$dir");
+        my @matrices;
+        opendir my $idh, "${workdir}/${dir}" or die $!;
+        while( my $file = readdir $idh ) {
+        
+            # found an alignment
+            if ( $file =~ /(.+?)\.fa$/ ) {
+                my $id = $1;
+                
+                # parse the file, enrich and degap it
+                $log->info("Adding alignment $file");
+                my $matrix = $mt->parse_fasta_as_matrix(
+                    '-name' => $id,
+                    '-file' => "${workdir}/${dir}/${file}",
+                    '-taxa' => $taxa,
+                );
+                $mts->enrich_matrix($matrix) if $opt->enrich;
+                $matrix = $mts->degap_matrix($matrix);
+                push @matrices, $matrix if $matrix;
+            }
+        }
+        return undef if not @matrices;
+        
+        # pick CLADE_MAX_MARKERS biggest alignments
+        @matrices = sort { $b->get_ntax <=> $a->get_ntax } @matrices;
+        for my $i ( 0 .. $self->config->CLADE_MAX_MARKERS - 1 ) {
+            $project->insert($matrices[$i]) if $matrices[$i];
+        }
+        
+        # write the merged nexml
+        if ( lc $outformat eq 'nexml' ) {
+            my $outfile = "${workdir}/${dir}/${dir}.xml";
+            $log->info("Going to write file $outfile");
+            open my $outfh, '>', $outfile or die $!;
+            print $outfh $project->to_xml( '-compact' => 1 );
+            return $outfile;
+        }
+        
+        # write supermatrix phylip
+        elsif ( lc $outformat eq 'phylip' ) {
+            my $outfile = "${workdir}/${dir}/${dir}.phy";
+            my @matrices = @{ $project->get_items(_MATRIX_) };
+            my ($taxa) = @{$project->get_items(_TAXA_)} ;
+            $log->info("Going to write file $outfile");
+            $service->make_phylip_from_matrix($taxa, $outfile, @matrices);
+            return $outfile;
+        }
+    } @dirs;
+    
+    # report result
+    $log->info("Wrote outfile $_") for @result;
+    $log->info("DONE");
+    return 1;
 }
 
 1;
