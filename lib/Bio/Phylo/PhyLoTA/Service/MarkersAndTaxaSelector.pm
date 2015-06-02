@@ -14,6 +14,7 @@ use Bio::Phylo::Factory;
 use Bio::Phylo::Util::Logger;
 use Bio::Phylo::Util::Exceptions 'throw';
 use Bio::Phylo::PhyLoTA::DAO;
+use Bio::Phylo::PhyLoTA::Service::SequenceGetter;
 use Bio::Phylo::PhyLoTA::Service::ParallelService;
 
 extends 'Bio::Phylo::PhyLoTA::Service';
@@ -766,6 +767,118 @@ sub generate_seqids {
 	return (acc=>$acc, gi=>$gi);
 }
 
+
+=item enrich_matrix
+
+Given an input matrix, attempts to add up to $config->HAPLOTYPES_MAX additional haplotypes to it.
+
+=cut
+
+sub enrich_matrix {
+	my ($self, $matrix) = @_;
+	my $log = $self->logger;
+	my $max = $self->config->HAPLOTYPES_MAX;
+	my %taxa;
+	my %lookup;
+	$matrix->visit( sub {
+
+		# cache the existing row
+		my $row   = shift;
+		my $gi    = $row->get_meta_object("smrt:gi");
+		my $ti    = $row->get_taxon->get_meta_object("smrt:tid");
+		my $mrca  = $row->get_meta_object("smrt:mrca");
+		my $seed  = $row->get_meta_object("smrt:seed_gi");
+		my $taxon = $row->get_taxon;
+		$matrix->delete($row);
+		$taxon->unset_datum($row);
+		$taxa{$ti} = {} if not $taxa{$ti};
+		$taxa{$ti}->{$gi} = $self->find_seq($gi);
+		$lookup{$gi} = { "smrt:tid" => $ti, "smrt:mrca" => $mrca, "smrt:seed_gi" => $seed };
+
+		# find its cluster(s)
+		$log->info("Going to search subtree clusters with seed_gi $seed, mrca $mrca");
+		my $results = $self->search_cluster({
+			'seed_gi' => $seed,
+			'ti_root' => $mrca,
+			'cl_type' => 'subtree',
+		});
+
+		# find other candidates: same species, diff gi
+		my ( @candidates );
+		while ( my $res = $results->next ) {
+			my $ci = $res->ci;
+			$log->info("Going to search other haplotypes for species $ti in focal cluster");
+			my $joins = $self->search_ci_gi({
+				'clustid'  => $ci,
+				'ti'       => $mrca,
+				'cl_type'  => 'subtree',
+				'ti_of_gi' => $ti,
+			});
+			my ( @c, $seen );
+			while ( my $join = $joins->next ) {
+				my $cgi = $join->gi;
+				if ( $cgi != $gi ) {
+					push @c, $cgi;
+					$log->info("Found candidate: $cgi");
+				}
+				$seen++ if $cgi == $gi;
+			}
+			push @candidates, @c if $seen;
+		}
+
+		# reduce to MAX_HAPLOTYPES sorted by length
+		$log->info("Found ".scalar(@candidates)." sibling haplotypes for $gi");
+		my @sorted = sort { $b->length <=> $a->length } map { $self->find_seq($_) } @candidates;
+		my %seq = ( $taxa{$ti}->{$gi}->seq => 1 );
+		CANDIDATE: while ( $max > scalar keys %{ $taxa{$ti} } ) {
+			my $c = shift @candidates;
+			if ( $c ) {
+				$c = $self->find_seq($c);
+				my $seq = $c->seq;
+				if ( not $seq{$seq}++ ) {
+					$taxa{$ti}->{$c->gi} = $c;
+					$lookup{$c->gi} = $lookup{$gi};
+				}
+			}
+			last CANDIDATE unless @candidates;
+		}
+	});
+
+	# now align
+	my $sg = Bio::Phylo::PhyLoTA::Service::SequenceGetter->new;
+	my @seqs;
+	for my $ti ( keys %taxa ) {
+		push @seqs, values %{ $taxa{$ti} };
+	}
+	$log->info("Going to align ".scalar(@seqs)." sequences");
+	my $aln = $sg->align_sequences(@seqs);
+
+	# and add to the matrix
+	my $taxa = $matrix->get_taxa;
+	my $to   = $matrix->get_type_object;
+	my $fac  = Bio::Phylo::Factory->new;
+	my %counter;
+	for my $row ( $aln->each_seq ) {
+		my $gi     = $row->id;
+		my $seq    = $row->seq;
+		my $lookup = $lookup{$gi};
+		my $ti     = $lookup->{"smrt:tid"};
+		my $suffix = ++$counter{$ti};
+		my $taxon  = $taxa->get_by_name( $ti );
+		my $datum  = $fac->create_datum(
+			'-type_object' => $to,
+			'-taxon'       => $taxon,
+			'-name'        => $ti . '_' . $suffix,
+			'-char'        => $seq,
+		);
+		$datum->set_meta_object( "smrt:gi" => $gi );
+		for my $predicate ( keys %$lookup ) {
+			$datum->set_meta_object( $predicate => $lookup->{$predicate} );
+		}
+		$matrix->insert($datum);
+	}
+	return $matrix;
+}
 
 =begin comment
 
