@@ -7,6 +7,7 @@ use Bio::Phylo::Factory;
 use Bio::Phylo::PhyLoTA::Service::TreeService;
 use Bio::Phylo::IO 'parse_matrix';
 use Bio::Phylo::Util::CONSTANT ':objecttypes';
+use Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector;
 
 use base 'Bio::SUPERSMART::App::SubCommand';
 use Bio::SUPERSMART::App::smrt qw(-command);
@@ -34,7 +35,7 @@ sub options {
 	my ($self, $opt, $args) = @_;		
 	return (
 		[ "outformat|o=s", "output format for merged clade files (phylip or nexml), defaults to 'nexml'", { arg=>"format", default=> 'nexml'} ],
-#		[ "outfile|f=s", "location of output directory", {arg=>"location", default => "clademerge_out.txt"} ],
+		[ "enrich|e", "enrich the selected markers with additional haplotypes", {} ],
 	);	
 }
 
@@ -45,12 +46,12 @@ sub run {
 	
 	my $workdir = $self->workdir;
 	my $outformat = $opt->outformat;
-#	my $outfile= $self->outfile;	
 		
 	# instantiate helper objects
 	my $factory = Bio::Phylo::Factory->new;
 	my $service = Bio::Phylo::PhyLoTA::Service::TreeService->new;
-	my $log = $self->logger;
+	my $mts     = Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector->new;
+	my $log     = $self->logger;
 	my $ns = 'http://www.supersmart-project.org/terms#';
 
 	# start iterating
@@ -81,7 +82,7 @@ sub run {
 						'-as_project' => 1,
 					);
 					$matrix->set_name($id);
-													
+
 					# update sequence labels, link to taxon objects
 					my ( %gaps, $ntax );
 					$matrix->visit(sub{
@@ -89,8 +90,7 @@ sub run {
 						my $name = $row->get_name;
 						my %fields = split /\|/, $name;
 						$fields{$_} =~ s/^(\d+).*$/$1/ for keys %fields;
-						my $binomial = $fields{'taxon'}; ##$service->find_node($fields{'taxon'})->taxon_name;
-						#$binomial =~ s/ /_/g;
+						my $binomial = $fields{'taxon'};
 						
 						# create new taxon object if none seen yet
 						if ( not $t{$binomial} ) {
@@ -100,7 +100,9 @@ sub run {
 						}
 						$row->set_name( $binomial );
 						$row->set_taxon( $t{$binomial} );
-						$row->set_meta_object( 'smrt:gi' => $fields{'gi'} );
+						$row->set_meta_object( 'smrt:gi'      => $fields{'gi'} );
+						$row->set_meta_object( 'smrt:mrca'    => $fields{'mrca'} );
+						$row->set_meta_object( 'smrt:seed_gi' => $fields{'seed_gi'} );
 						
 						# keep track of which columns might be all gaps
 						my @char = $row->get_char;
@@ -113,6 +115,11 @@ sub run {
 						$ntax++;
 					});
 					$matrix->set_taxa($taxa);
+
+                                        # enrich, if requested
+                                        if ( $opt->enrich ) {
+                                                $mts->enrich_matrix($matrix);
+                                        }
 					
 					# delete all-gaps columns. this can happen because we are now 
 					# operating on taxon subsets of the clustered alignments
@@ -144,9 +151,6 @@ sub run {
 			}
 		}
 	}
-#	open my $fh, '>', $outfile;
-#	print $fh "Clademerge done\n";
-#	close $fh;
 	$log->info("DONE");
 	return 1;
 }
