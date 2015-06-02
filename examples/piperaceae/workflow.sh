@@ -100,7 +100,7 @@ smrt bbdecompose
 
 # Step 11: for each clade, merge the separate clade alignments from step 10 into a single
 # input NeXML file for *BEAST.
-smrt clademerge
+smrt clademerge --enrich
 
 # Step 12: for each clade, run *BEAST. By default this uses a very small number of 
 # generations (100,000), which is strictly intended for testing. It is not possible to 
