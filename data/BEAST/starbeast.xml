@@ -8,6 +8,7 @@
       [% rows.push(row.get_name) -%]
     [% END -%] 
   [% END -%]
+  [% rows = rows.nsort -%]
   [% FOREACH row IN rows.unique %]
     <taxon id="taxon_[% row %]"/>
   [% END %]
