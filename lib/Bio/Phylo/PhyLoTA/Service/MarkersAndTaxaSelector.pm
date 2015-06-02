@@ -77,18 +77,18 @@ sub get_nodes_for_names {
         $log->debug("going to search for name '$name'");
         
         # do we have an exact match?
-	# caution: there might be multiple nodes for one taxon name 
-    	my @nodes = $self->search_node( { taxon_name => $name } )->all;
+    # caution: there might be multiple nodes for one taxon name 
+        my @nodes = $self->search_node( { taxon_name => $name } )->all;
         
         # no exact match if ->single returns undef (i.e. false)
         if ( scalar @nodes == 0) {
-	    $log->debug("no exact match for '$name' in local database");
+        $log->debug("no exact match for '$name' in local database");
             
             # search the web service
             if ( my $id = $self->_do_tnrs_search($name) ) {
-	    	@nodes = $self->search_node( {  ti => $id } )->all;
-	    	$log->info("Found match $id for $name through TNRS");
-	    }
+            @nodes = $self->search_node( {  ti => $id } )->all;
+            $log->info("Found match $id for $name through TNRS");
+        }
         }
         else {
             $log->info("Found exact match(es) for $name in local database");
@@ -110,35 +110,35 @@ and returns instantiated node objects
 
 sub get_nodes_for_table {
     my ( $self, @taxatable ) = @_;
-   	my @nodes = ();
+    my @nodes = ();
     
     # iterate over lines
     foreach (@taxatable) {
-		
-		my %entry = %{$_};
-    	
-    	# get the entries of the row sorted from lower to higher taxa
+        
+        my %entry = %{$_};
+        
+        # get the entries of the row sorted from lower to higher taxa
         my @fields =  @entry{reverse $self->get_taxonomic_ranks};
-		
-		# get the id of the lowest taxon that is mapped to the entry and skip e.g. NA values
-		my $id;
-		foreach my $f ( @fields ) {
-			if ( $f ) {
-				if ( $f =~ /^\d+$/ ) {
-					$id = $f;
-					last;
-				} 			
-			}
-		}	
-		# omit e.g. header, rows with only NA...
-		next if not $id;
-		
-		my $node = $self->find_node($id);
+        
+        # get the id of the lowest taxon that is mapped to the entry and skip e.g. NA values
+        my $id;
+        foreach my $f ( @fields ) {
+            if ( $f ) {
+                if ( $f =~ /^\d+$/ ) {
+                    $id = $f;
+                    last;
+                }           
+            }
+        }   
+        # omit e.g. header, rows with only NA...
+        next if not $id;
+        
+        my $node = $self->find_node($id);
             
         # this *could* fail because perhaps the IDs have been found by TNRS
         # without being present in our local database
         if ( $node ) {
-        	push @nodes, $node;
+            push @nodes, $node;
         }
         else {
             $log->warn("couldn't instantiate node $id");
@@ -326,14 +326,14 @@ sub expand_taxa {
                 my @child_ranks = map { $_->rank } @children;
                 foreach  my $rank ( @child_ranks ) {
                         if ( grep { $_ eq $rank } @valid_ranks ) {
-                				push @queue, @children;                                
+                                push @queue, @children;                                
                                 last;
                         }
                 }                
                 # check if current node has valid rank, if yes it 
                 # is in the result list, except if it is the root taxon that
                 #  is expanded!
-				my $name = $node->get_name;
+                my $name = $node->get_name;
                 if ( grep { $_ eq $node->rank } @valid_ranks) {  #and not  grep (/^$name$/, @root_taxa)  ) {
                                 my $tipname = $name;
                                 push @result, $tipname;                        
@@ -349,8 +349,8 @@ Returns a string with the taxonomic rank for the given taxon id
 =cut
 
 sub get_rank_for_taxon {
-	my ($self, $tid) = @_;
-	return $self->find_node($tid)->rank;
+    my ($self, $tid) = @_;
+    return $self->find_node($tid)->rank;
 }
 
 =item get_taxonomic_ranks
@@ -360,8 +360,8 @@ Getter for all taxonomic ranks which are considered
 =cut
 
 sub get_taxonomic_ranks {
-	my $self = shift;
-	return @taxonomic_ranks;
+    my $self = shift;
+    return @taxonomic_ranks;
 }
 
 =item get_outgroup_taxa
@@ -374,39 +374,39 @@ terminal nodes
 =cut
 
 sub get_outgroup_taxa {
-	my ( $self, $tree, $ingroup ) = @_;
-	
-	# get node object for taxon ids (or names) 
-	my @ids = @{$ingroup};
-	my @nodes;
-	$tree->visit(
-		sub{ 
-			my $node = shift;
-			my $name = $node->get_name;
-			if (  grep ( $_ eq $name, @ids )) {
-				push @nodes, $node; 
-			}
-		}
-	);
-	
-	my $mrca = $tree->get_mrca(\@nodes);
-		
-	my @terminals;
-	while ( (scalar (@terminals)) == 0 and (! $mrca->is_root) ){
-		my $sister = $mrca->get_next_sister || $mrca->get_previous_sister;
-		if ($sister) {
-			@terminals = @{ $sister->get_terminals };
-		} else {
-			$mrca = $mrca->get_parent;
-		}
-	}
-	
-	if ($mrca->is_root){
-		$log->warn("cannot determine outgroup taxa since the mrca of the ingroup is the root of the tree!");	
-		return ();	
-	}
-	
-	return ( map {$_->get_name} @terminals );
+    my ( $self, $tree, $ingroup ) = @_;
+    
+    # get node object for taxon ids (or names) 
+    my @ids = @{$ingroup};
+    my @nodes;
+    $tree->visit(
+        sub{ 
+            my $node = shift;
+            my $name = $node->get_name;
+            if (  grep ( $_ eq $name, @ids )) {
+                push @nodes, $node; 
+            }
+        }
+    );
+    
+    my $mrca = $tree->get_mrca(\@nodes);
+        
+    my @terminals;
+    while ( (scalar (@terminals)) == 0 and (! $mrca->is_root) ){
+        my $sister = $mrca->get_next_sister || $mrca->get_previous_sister;
+        if ($sister) {
+            @terminals = @{ $sister->get_terminals };
+        } else {
+            $mrca = $mrca->get_parent;
+        }
+    }
+    
+    if ($mrca->is_root){
+        $log->warn("cannot determine outgroup taxa since the mrca of the ingroup is the root of the tree!");    
+        return ();  
+    }
+    
+    return ( map {$_->get_name} @terminals );
 }
 
 
@@ -460,13 +460,13 @@ sub _do_tnrs_search {
     # chokes on. the best we can do is try to trap these and give up.
     my $obj;
     eval { 
-    	my $json_bytes = encode('UTF-8', $result);
-    	$obj = JSON->new->utf8->decode($json_bytes); 
+        my $json_bytes = encode('UTF-8', $result);
+        $obj = JSON->new->utf8->decode($json_bytes); 
     
     };
     if ( $@ ) {
-    	$log->warn( "error decoding JSON $result: $@" );
-    	return;
+        $log->warn( "error decoding JSON $result: $@" );
+        return;
     }    
     
     $log->debug("parsed response: ".Dumper($obj));
@@ -545,15 +545,15 @@ sub _process_matches {
 =cut
 
 sub encode_taxon_name {
-	my ($self, $name) = @_;
-	
-	# substitute '_' to '|'
-	$name =~ s/_/\|/g;
-	# substitute ' ' to '_'
-	$name =~ s/ /_/g;
-	
+    my ($self, $name) = @_;
+    
+    # substitute '_' to '|'
+    $name =~ s/_/\|/g;
+    # substitute ' ' to '_'
+    $name =~ s/ /_/g;
+    
 
-	return $name;
+    return $name;
 }
 
 =item decode_taxon_name
@@ -564,15 +564,15 @@ sub encode_taxon_name {
 =cut
 
 sub decode_taxon_name {
-	my ($self, $name) = @_;
+    my ($self, $name) = @_;
 
-	$name =~ s/^'(.*)'$/$1/g;
-	$name =~ s/^"(.*)"$/$1/g;                        
+    $name =~ s/^'(.*)'$/$1/g;
+    $name =~ s/^"(.*)"$/$1/g;                        
 
-	$name =~ s/_/ /g;
-	$name =~ s/\|/\_/g;
+    $name =~ s/_/ /g;
+    $name =~ s/\|/\_/g;
 
-	return $name;
+    return $name;
 }
 
 =item make_taxa_table
@@ -585,62 +585,62 @@ values are the taxon IDs at each rank.
 =cut
 
 sub make_taxa_table {
-	my ($self, @names) = @_;
+    my ($self, @names) = @_;
 
-	# get all possible taxonomic ranks
-	my %levels = map{ $_=>1 } $self->get_taxonomic_ranks;
-	
-	# this will take some time to do the taxonomic name resolution in the
-	# database and with webservices. The below code runs in parallel
-	my @result = pmap {
-		my ($name) = @_;
+    # get all possible taxonomic ranks
+    my %levels = map{ $_=>1 } $self->get_taxonomic_ranks;
+    
+    # this will take some time to do the taxonomic name resolution in the
+    # database and with webservices. The below code runs in parallel
+    my @result = pmap {
+        my ($name) = @_;
 
-		# replace consecutive whitespaces with one
-		$name =~ s/\s+/ /g;
-		my @res   = ();
-		my @nodes = $self->get_nodes_for_names($name);
-		if (@nodes) {
-			if ( @nodes > 1 ) {
-				$log->warn("Found more than one taxon for name $name");
-			}
-			else {
-				$log->debug("found exactly one taxon for name $name");
-			}
-			
-			# for each node, fetch the IDs of all taxonomic levels of interest
-			for my $node (@nodes) {
-				
-				# walk up the  taxonomy tree and get tids for levels of interest,
-				# store all ids and taxon name in hash
-				my %taxinfo;				
-				$taxinfo{'name'} = $node->taxon_name;
+        # replace consecutive whitespaces with one
+        $name =~ s/\s+/ /g;
+        my @res   = ();
+        my @nodes = $self->get_nodes_for_names($name);
+        if (@nodes) {
+            if ( @nodes > 1 ) {
+                $log->warn("Found more than one taxon for name $name");
+            }
+            else {
+                $log->debug("found exactly one taxon for name $name");
+            }
+            
+            # for each node, fetch the IDs of all taxonomic levels of interest
+            for my $node (@nodes) {
+                
+                # walk up the  taxonomy tree and get tids for levels of interest,
+                # store all ids and taxon name in hash
+                my %taxinfo;                
+                $taxinfo{'name'} = $node->taxon_name;
 
-				# traverse up the tree
-				while ( $node ) {
-					my $ti   = $node->ti;
-					my $rank = $node->rank;
-					
-					if ( $levels{$rank} ) {
-						$taxinfo{$rank} = $ti;
-						
-					}
-					$node = $node->get_parent;
-				}
-				push @res, \%taxinfo;
-			}
-		}
-		else {
-			$log->warn("Couldn't resolve name $name");
-		}
-		return \@res;
-	}
-	@names;
-	
-	# flatten result lists (in case there were multiple nodes for one name)
-	@result = map {@{$_}} @result;
-	$log->info('Created taxa table containing ' . scalar (@result) . ' rows'); 
-	
-	return @result;
+                # traverse up the tree
+                while ( $node ) {
+                    my $ti   = $node->ti;
+                    my $rank = $node->rank;
+                    
+                    if ( $levels{$rank} ) {
+                        $taxinfo{$rank} = $ti;
+                        
+                    }
+                    $node = $node->get_parent;
+                }
+                push @res, \%taxinfo;
+            }
+        }
+        else {
+            $log->warn("Couldn't resolve name $name");
+        }
+        return \@res;
+    }
+    @names;
+    
+    # flatten result lists (in case there were multiple nodes for one name)
+    @result = map {@{$_}} @result;
+    $log->info('Created taxa table containing ' . scalar (@result) . ' rows'); 
+    
+    return @result;
 }
 
 =item write_taxa_file
@@ -655,35 +655,35 @@ Omits entries for taxa of higher level than "species".
 =cut
 
 sub write_taxa_file {
-	my ($self, $outfile, @table) = @_;
+    my ($self, $outfile, @table) = @_;
 
-	my @levels = reverse ( $self->get_taxonomic_ranks );
-	
-	open my $out, '>', $outfile or die $!;
-	
-	# print table header
-	print $out join( "\t", 'name', @levels ), "\n";
-	
-	# only write row for taxon if id for one of the below ranks is given
-	my @valid_ranks = ("species", "subspecies", "varietas", "forma");
-	
-	# loop over table and write each entry, if no id at a taxonomic level exists, write "NA"
-	for my $row ( @table ) {
-		my %h = %$row;
+    my @levels = reverse ( $self->get_taxonomic_ranks );
+    
+    open my $out, '>', $outfile or die $!;
+    
+    # print table header
+    print $out join( "\t", 'name', @levels ), "\n";
+    
+    # only write row for taxon if id for one of the below ranks is given
+    my @valid_ranks = ("species", "subspecies", "varietas", "forma");
+    
+    # loop over table and write each entry, if no id at a taxonomic level exists, write "NA"
+    for my $row ( @table ) {
+        my %h = %$row;
 
-		# set cell to NA if no taxon ID for rank		
-		my @missing_ranks = grep { ! $h{$_}} @levels;
-		$h{ $_ } = "NA" for @missing_ranks;
-		
-		# omit taxa higher than species
-		if ( ! grep /[0-9]+/, @h{@valid_ranks} ) {
-			$log->info("Omitting higher level taxon " . $h{'name'});
-			next;
-		}
-		print $out join( "\t", $self->encode_taxon_name($h{'name'}),  @h{@levels} ) . "\n";
-	}
-	close $out;
-	$log->info("Wrote taxa table to $outfile");
+        # set cell to NA if no taxon ID for rank        
+        my @missing_ranks = grep { ! $h{$_}} @levels;
+        $h{ $_ } = "NA" for @missing_ranks;
+        
+        # omit taxa higher than species
+        if ( ! grep /[0-9]+/, @h{@valid_ranks} ) {
+            $log->info("Omitting higher level taxon " . $h{'name'});
+            next;
+        }
+        print $out join( "\t", $self->encode_taxon_name($h{'name'}),  @h{@levels} ) . "\n";
+    }
+    close $out;
+    $log->info("Wrote taxa table to $outfile");
 }
 
 =item write_marker_summary
@@ -694,57 +694,57 @@ reports the genbank accession of a specific marker for a species.
 =cut
 
 sub write_marker_summary {
-	my ( $self, $file, $tab, $specs ) = @_;
-	my @table = @$tab;
-	my @all_species = @$specs;
+    my ( $self, $file, $tab, $specs ) = @_;
+    my @table = @$tab;
+    my @all_species = @$specs;
 
-	# remove empty columns (for markers that are never included)
-	@table = grep {keys %{$_}} @table;
+    # remove empty columns (for markers that are never included)
+    @table = grep {keys %{$_}} @table;
 
-	my @seed_gis;
-	
-	# parse seed gis from fasta defline
-	for my $col (@table) {
-		# all entries in one row have the same seed GIs
-		my $k = (keys(%$col))[0];
-		my $defline = $col->{$k}[0];
-		push @seed_gis, $1 if $defline =~ /seed_gi\|([0-9]+)\|/;
-	}
-	open my $outfh, '>', $file or die $!;
-	
-	# print table header
-	print $outfh "taxon\t";
-	print $outfh "marker" . $_ ."\t" for 1..$#seed_gis+1;
-	print $outfh "\n";
-	foreach my $species ( @all_species ) {
-		my $name = $self->find_node($species)->taxon_name;
-		print $outfh $name . "\t";
-		foreach my $column ( @table ) {
-			my %h = %{$column};
-			if (  my $seqs = $h{$species} ) {
+    my @seed_gis;
+    
+    # parse seed gis from fasta defline
+    for my $col (@table) {
+        # all entries in one row have the same seed GIs
+        my $k = (keys(%$col))[0];
+        my $defline = $col->{$k}[0];
+        push @seed_gis, $1 if $defline =~ /seed_gi\|([0-9]+)\|/;
+    }
+    open my $outfh, '>', $file or die $!;
+    
+    # print table header
+    print $outfh "taxon\t";
+    print $outfh "marker" . $_ ."\t" for 1..$#seed_gis+1;
+    print $outfh "\n";
+    foreach my $species ( @all_species ) {
+        my $name = $self->find_node($species)->taxon_name;
+        print $outfh $name . "\t";
+        foreach my $column ( @table ) {
+            my %h = %{$column};
+            if (  my $seqs = $h{$species} ) {
                                 my @accessions;
-				foreach my $seq ( @$seqs ) {
-					# parse the GI from fasta descripion
-					my ($gi) = $seq =~ /gi\|([0-9]+)\|/;
-					my $seqobj = $self->find_seq($gi);
-					push @accessions,  $seqobj->acc;
-				}
-				print $outfh join (',', @accessions) . "\t";
-			}			
-			else {
-				print $outfh "\t";
-			}
-		}
-		print $outfh "\n";
-	}
-	print $outfh "\n";
-	
-	# print information about markers at the bottom of the table
-	foreach my $i ( 1..$#seed_gis+1 ) {
-		my $seqobj = $self->find_seq( $seed_gis[$i-1] );
-		print $outfh "# marker$i cluster seed: " . $seqobj->acc . ", description: " . $seqobj->def . "\n"; 
-	}
-	close $outfh;
+                foreach my $seq ( @$seqs ) {
+                    # parse the GI from fasta descripion
+                    my ($gi) = $seq =~ /gi\|([0-9]+)\|/;
+                    my $seqobj = $self->find_seq($gi);
+                    push @accessions,  $seqobj->acc;
+                }
+                print $outfh join (',', @accessions) . "\t";
+            }           
+            else {
+                print $outfh "\t";
+            }
+        }
+        print $outfh "\n";
+    }
+    print $outfh "\n";
+    
+    # print information about markers at the bottom of the table
+    foreach my $i ( 1..$#seed_gis+1 ) {
+        my $seqobj = $self->find_seq( $seed_gis[$i-1] );
+        print $outfh "# marker$i cluster seed: " . $seqobj->acc . ", description: " . $seqobj->def . "\n"; 
+    }
+    close $outfh;
 }
 
 =item generate_seqids
@@ -759,12 +759,12 @@ Default for prefix is 'SMRT'.
 =cut
 
 sub generate_seqids {
-	my ($self, $prefix) = @_;	
-	my $gi = $self->max_gi + 1;	
-	my $acc = $prefix || 'SMRT';	
-	my @set= ('0' ..'9', 'A' .. 'Z');
-	$acc .= '_' . join ('',map {$set[rand @set]} 1 .. 6);	       
-	return (acc=>$acc, gi=>$gi);
+    my ($self, $prefix) = @_;   
+    my $gi = $self->max_gi + 1; 
+    my $acc = $prefix || 'SMRT';    
+    my @set= ('0' ..'9', 'A' .. 'Z');
+    $acc .= '_' . join ('',map {$set[rand @set]} 1 .. 6);          
+    return (acc=>$acc, gi=>$gi);
 }
 
 
@@ -775,109 +775,149 @@ Given an input matrix, attempts to add up to $config->CLADE_MAX_HAPLOTYPES addit
 =cut
 
 sub enrich_matrix {
-	my ($self, $matrix) = @_;
-	my $log = $self->logger;
-	my $max = $self->config->CLADE_MAX_HAPLOTYPES;
-	my %taxa;
-	my %lookup;
-	$matrix->visit( sub {
+    my ($self, $matrix) = @_;
+    my $log = $self->logger;
+    my $max = $self->config->CLADE_MAX_HAPLOTYPES;
+    my %taxa;
+    my %lookup;
+    $matrix->visit( sub {
 
-		# cache the existing row
-		my $row   = shift;
-		my $gi    = $row->get_meta_object("smrt:gi");
-		my $ti    = $row->get_taxon->get_meta_object("smrt:tid");
-		my $mrca  = $row->get_meta_object("smrt:mrca");
-		my $seed  = $row->get_meta_object("smrt:seed_gi");
-		my $taxon = $row->get_taxon;
-		$matrix->delete($row);
-		$taxon->unset_datum($row);
-		$taxa{$ti} = {} if not $taxa{$ti};
-		$taxa{$ti}->{$gi} = $self->find_seq($gi);
-		$lookup{$gi} = { "smrt:tid" => $ti, "smrt:mrca" => $mrca, "smrt:seed_gi" => $seed };
+        # cache the existing row
+        my $row   = shift;
+        my $gi    = $row->get_meta_object("smrt:gi");
+        my $ti    = $row->get_taxon->get_meta_object("smrt:tid");
+        my $mrca  = $row->get_meta_object("smrt:mrca");
+        my $seed  = $row->get_meta_object("smrt:seed_gi");
+        my $taxon = $row->get_taxon;
+        $matrix->delete($row);
+        $taxon->unset_datum($row);
+        $taxa{$ti} = {} if not $taxa{$ti};
+        $taxa{$ti}->{$gi} = $self->find_seq($gi);
+        $lookup{$gi} = { "smrt:tid" => $ti, "smrt:mrca" => $mrca, "smrt:seed_gi" => $seed };
 
-		# find its cluster(s)
-		$log->info("Going to search subtree clusters with seed_gi $seed, mrca $mrca");
-		my $results = $self->search_cluster({
-			'seed_gi' => $seed,
-			'ti_root' => $mrca,
-			'cl_type' => 'subtree',
-		});
+        # find its cluster(s)
+        $log->info("Going to search subtree clusters with seed_gi $seed, mrca $mrca");
+        my $results = $self->search_cluster({
+            'seed_gi' => $seed,
+            'ti_root' => $mrca,
+            'cl_type' => 'subtree',
+        });
 
-		# find other candidates: same species, diff gi
-		my ( @candidates );
-		while ( my $res = $results->next ) {
-			my $ci = $res->ci;
-			$log->info("Going to search other haplotypes for species $ti in focal cluster");
-			my $joins = $self->search_ci_gi({
-				'clustid'  => $ci,
-				'ti'       => $mrca,
-				'cl_type'  => 'subtree',
-				'ti_of_gi' => $ti,
-			});
-			my ( @c, $seen );
-			while ( my $join = $joins->next ) {
-				my $cgi = $join->gi;
-				if ( $cgi != $gi ) {
-					push @c, $cgi;
-					$log->info("Found candidate: $cgi");
-				}
-				$seen++ if $cgi == $gi;
-			}
-			push @candidates, @c if $seen;
-		}
+        # find other candidates: same species, diff gi
+        my ( @candidates );
+        while ( my $res = $results->next ) {
+            my $ci = $res->ci;
+            $log->info("Going to search other haplotypes for species $ti in focal cluster");
+            my $joins = $self->search_ci_gi({
+                'clustid'  => $ci,
+                'ti'       => $mrca,
+                'cl_type'  => 'subtree',
+                'ti_of_gi' => $ti,
+            });
+            my ( @c, $seen );
+            while ( my $join = $joins->next ) {
+                my $cgi = $join->gi;
+                if ( $cgi != $gi ) {
+                    push @c, $cgi;
+                    $log->info("Found candidate: $cgi");
+                }
+                $seen++ if $cgi == $gi;
+            }
+            push @candidates, @c if $seen;
+        }
 
-		# reduce to MAX_HAPLOTYPES sorted by length
-		$log->info("Found ".scalar(@candidates)." sibling haplotypes for $gi");
-		my @sorted = sort { $b->length <=> $a->length } map { $self->find_seq($_) } @candidates;
-		my %seq = ( $taxa{$ti}->{$gi}->seq => 1 );
-		CANDIDATE: while ( $max > scalar keys %{ $taxa{$ti} } ) {
-			my $c = shift @candidates;
-			if ( $c ) {
-				$c = $self->find_seq($c);
-				my $seq = $c->seq;
-				if ( not $seq{$seq}++ ) {
-					$taxa{$ti}->{$c->gi} = $c;
-					$lookup{$c->gi} = $lookup{$gi};
-				}
-			}
-			last CANDIDATE unless @candidates;
-		}
-	});
+        # reduce to MAX_HAPLOTYPES sorted by length
+        $log->info("Found ".scalar(@candidates)." sibling haplotypes for $gi");
+        my @sorted = sort { $b->length <=> $a->length } map { $self->find_seq($_) } @candidates;
+        my %seq = ( $taxa{$ti}->{$gi}->seq => 1 );
+        CANDIDATE: while ( $max > scalar keys %{ $taxa{$ti} } ) {
+            my $c = shift @candidates;
+            if ( $c ) {
+                $c = $self->find_seq($c);
+                my $seq = $c->seq;
+                if ( not $seq{$seq}++ ) {
+                    $taxa{$ti}->{$c->gi} = $c;
+                    $lookup{$c->gi} = $lookup{$gi};
+                }
+            }
+            last CANDIDATE unless @candidates;
+        }
+    });
 
-	# now align
-	my $sg = Bio::Phylo::PhyLoTA::Service::SequenceGetter->new;
-	my @seqs;
-	for my $ti ( keys %taxa ) {
-		push @seqs, values %{ $taxa{$ti} };
-	}
-	$log->info("Going to align ".scalar(@seqs)." sequences");
-	my $aln = $sg->align_sequences(@seqs);
+    # now align
+    my $sg = Bio::Phylo::PhyLoTA::Service::SequenceGetter->new;
+    my @seqs;
+    for my $ti ( keys %taxa ) {
+        push @seqs, values %{ $taxa{$ti} };
+    }
+    $log->info("Going to align ".scalar(@seqs)." sequences");
+    my $aln = $sg->align_sequences(@seqs);
 
-	# and add to the matrix
-	my $taxa = $matrix->get_taxa;
-	my $to   = $matrix->get_type_object;
-	my $fac  = Bio::Phylo::Factory->new;
-	my %counter;
-	for my $row ( $aln->each_seq ) {
-		my $gi     = $row->id;
-		my $seq    = $row->seq;
-		my $lookup = $lookup{$gi};
-		my $ti     = $lookup->{"smrt:tid"};
-		my $suffix = ++$counter{$ti};
-		my $taxon  = $taxa->get_by_name( $ti );
-		my $datum  = $fac->create_datum(
-			'-type_object' => $to,
-			'-taxon'       => $taxon,
-			'-name'        => $ti . '_' . $suffix,
-			'-char'        => $seq,
-		);
-		$datum->set_meta_object( "smrt:gi" => $gi );
-		for my $predicate ( keys %$lookup ) {
-			$datum->set_meta_object( $predicate => $lookup->{$predicate} );
-		}
-		$matrix->insert($datum);
-	}
-	return $matrix;
+    # and add to the matrix
+    my $taxa = $matrix->get_taxa;
+    my $to   = $matrix->get_type_object;
+    my $fac  = Bio::Phylo::Factory->new;
+    my %counter;
+    for my $row ( $aln->each_seq ) {
+        my $gi     = $row->id;
+        my $seq    = $row->seq;
+        my $lookup = $lookup{$gi};
+        my $ti     = $lookup->{"smrt:tid"};
+        my $suffix = ++$counter{$ti};
+        my $taxon  = $taxa->get_by_name( $ti );
+        my $datum  = $fac->create_datum(
+            '-type_object' => $to,
+            '-taxon'       => $taxon,
+            '-name'        => $ti . '_' . $suffix,
+            '-char'        => $seq,
+        );
+        $datum->set_meta_object( "smrt:gi" => $gi );
+        for my $predicate ( keys %$lookup ) {
+            $datum->set_meta_object( $predicate => $lookup->{$predicate} );
+        }
+        $matrix->insert($datum);
+    }
+    return $matrix;
+}
+
+=item degap_matrix
+
+Given an input matrix, splices out all columns with only gaps
+
+=cut
+
+
+sub degap_matrix {
+    my ( $self, $matrix ) = @_;
+    
+    my ( %gaps, $ntax );
+    $matrix->visit(sub{
+        my $row = shift;
+        
+        # keep track of which columns might be all gaps
+        my @char = $row->get_char;
+        for my $i ( 0 .. $#char ) {
+            my $c = $char[$i];
+            if ( $c eq '-' or $c eq '?' or $c eq 'N' ) {
+                $gaps{$i}++;                            
+            }
+        }
+        $ntax++;
+    });                 
+    my $max = $matrix->get_nchar - 1;
+    my @indices = grep { not defined $gaps{$_} or $gaps{$_} < $ntax } 0 .. $max;
+    if ( @indices < $matrix->get_nchar ) {
+        $matrix->visit(sub{
+            my $row = shift;
+            my @char = $row->get_char;
+            my @ungapped = @char[@indices];
+            $row->set_char(@ungapped);
+        });
+        return $matrix;
+    }
+    else {
+        return undef;
+    }
 }
 
 =begin comment
@@ -890,28 +930,28 @@ Private method to retrieve the contents of a URL
 
 # fetch data from a URL
 sub _fetch_url {
-	my ( $url ) = @_;
-	$log->debug("going to fetch $url");
-	
-	# instantiate user agent
-	my $ua = LWP::UserAgent->new;
-	$ua->timeout($timeout);
-	$log->debug("instantiated user agent with timeout $timeout");
-	
-	# do the request on LWP::UserAgent $ua
-	my $response = $ua->get($url);
-	
-	# had a 200 OK
-	if ( $response->is_success or $response->code == 302 ) {
-		$log->debug($response->status_line);
-		my $content = $response->decoded_content;
-		$log->debug($content);
-		return $content;
-	}
-	else {
-		$log->error($url . ' - ' . $response->status_line);
-		return undef;
-	}	
+    my ( $url ) = @_;
+    $log->debug("going to fetch $url");
+    
+    # instantiate user agent
+    my $ua = LWP::UserAgent->new;
+    $ua->timeout($timeout);
+    $log->debug("instantiated user agent with timeout $timeout");
+    
+    # do the request on LWP::UserAgent $ua
+    my $response = $ua->get($url);
+    
+    # had a 200 OK
+    if ( $response->is_success or $response->code == 302 ) {
+        $log->debug($response->status_line);
+        my $content = $response->decoded_content;
+        $log->debug($content);
+        return $content;
+    }
+    else {
+        $log->error($url . ' - ' . $response->status_line);
+        return undef;
+    }   
 }
 
 =back 
