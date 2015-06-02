@@ -770,14 +770,14 @@ sub generate_seqids {
 
 =item enrich_matrix
 
-Given an input matrix, attempts to add up to $config->HAPLOTYPES_MAX additional haplotypes to it.
+Given an input matrix, attempts to add up to $config->CLADE_MAX_HAPLOTYPES additional haplotypes to it.
 
 =cut
 
 sub enrich_matrix {
 	my ($self, $matrix) = @_;
 	my $log = $self->logger;
-	my $max = $self->config->HAPLOTYPES_MAX;
+	my $max = $self->config->CLADE_MAX_HAPLOTYPES;
 	my %taxa;
 	my %lookup;
 	$matrix->visit( sub {
