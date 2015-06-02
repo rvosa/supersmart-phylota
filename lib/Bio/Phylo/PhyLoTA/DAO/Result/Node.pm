@@ -278,9 +278,10 @@ sub get_siblings {
 	return [ grep { $_->ti != $self->ti } @{ $self->get_parent->get_children } ];
 }
 
-=head2 get_siblings
+=head2 get_descendants_at_rank
 
-Returns array ref of descendants which have a specific rank
+Given a taxonomic rank, gets all the decendants of the
+invocant which are of that rank.
 
 =cut
 

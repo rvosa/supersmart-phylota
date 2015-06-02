@@ -3,7 +3,6 @@ package Bio::SUPERSMART::App::smrt::Command::Cladegraft;
 use strict;
 use warnings;
 
-use Bio::Phylo::Factory;
 use Bio::Phylo::PhyLoTA::Service::TreeService;
 use Bio::Phylo::PhyLoTA::Config;
 use Bio::Phylo::Util::CONSTANT ':objecttypes';
@@ -12,7 +11,6 @@ use Bio::Phylo::IO qw'parse parse_tree unparse';
 use base 'Bio::SUPERSMART::App::SubCommand';
 use Bio::SUPERSMART::App::smrt qw(-command);
 
-my $fac  = Bio::Phylo::Factory->new;
 my $conf = Bio::Phylo::PhyLoTA::Config->new;
 
 # ABSTRACT: grafts the inferred clade trees on the backbone chronogram
@@ -95,7 +93,7 @@ sub run {
 	# instantiate helper objects
 	my $ts      = Bio::Phylo::PhyLoTA::Service::TreeService->new;
 	my $logger  = $self->logger;	
-	my $grafted = $self->_read_input( $ts => $backbone );
+	my $grafted = $ts->read_figtree( $backbone );
 	$logger->info("Read backbone $backbone");
 	
 	# graft single clade tree 
@@ -115,50 +113,11 @@ sub run {
 				$grafted = $self->_graft_single_tree( $grafted, $entry, $ts, $opt );					
 		    }       
 	    }
-    }
+	}
 	
-    # map taxon IDs back to names and write to file
-	$self->_write_output( $ts, $grafted => $outfile );
-    $logger->info("DONE, results written to $outfile");	    
-}
-
-sub _read_input {
-	my ( $self, $ts, $filename ) = @_;
-	my $logger = $self->logger;
-	
-	# parse backbone tree
-	$logger->debug("going to read $filename as figtree/NEXUS");
-	my $backbone_tree = parse_tree(
-		'-file'   => $filename,
-		'-format' => 'figtree',
-	);
-
-	# map backbone names to taxon IDs
-	$logger->debug("going to map names to taxon IDs on $backbone_tree");
-	$ts->remap_to_ti($backbone_tree);	
-	return $backbone_tree;
-}
-
-sub _write_output {
-   my ( $self, $ts, $grafted, $outfile ) = @_;
-    $ts->remap_to_name($grafted); 	
-    
-	# create output 
-	my $project = $fac->create_project;
-	my $forest  = $fac->create_forest;
-	$forest->insert($grafted);
-	my $taxa = $forest->make_taxa;
-	$project->insert($taxa);
-	$project->insert($forest);	
-    my $string = unparse(
-		'-format' => 'figtree',
-		'-phylo'  => $project,
-	);
-
-	# write to file
-    open my $outfh, '>', $outfile or die $!;        
-    print $outfh $string; 
-    close $outfh;		
+	# map taxon IDs back to names and write to file
+	$ts->write_figtree( $grafted, $outfile );
+	$logger->info("DONE, results written to $outfile");	    
 }
 
 sub _graft_single_tree {

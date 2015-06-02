@@ -28,6 +28,57 @@ clade trees onto a backbone tree.
 
 =over
 
+=item read_figtree
+
+Reads a tree in figtree-NEXUS format
+
+=cut 
+
+sub read_figtree {
+	my ( $self, $filename ) = @_;
+	my $logger = $self->logger;
+	
+	# parse backbone tree
+	$logger->debug("going to read $filename as figtree/NEXUS");
+	my $backbone_tree = parse_tree(
+		'-file'   => $filename,
+		'-format' => 'figtree',
+	);
+
+	# map backbone names to taxon IDs
+	$logger->debug("going to map names to taxon IDs on $backbone_tree");
+	$self->remap_to_ti($backbone_tree);	
+	return $backbone_tree;
+}
+
+=item write_figtree
+
+Writes a tree in figtree-NEXUS format
+
+=cut 
+
+sub write_figtree {
+	my ( $self, $tree, $outfile ) = @_;
+	$self->remap_to_name($tree); 	
+    
+	# create output 
+	my $project = $fac->create_project;
+	my $forest  = $fac->create_forest;
+	$forest->insert($tree);
+	my $taxa = $forest->make_taxa;
+	$project->insert($taxa);
+	$project->insert($forest);	
+	my $string = unparse(
+		'-format' => 'figtree',
+		'-phylo'  => $project,
+	    );
+	
+	# write to file
+	open my $outfh, '>', $outfile or die $!;        
+	print $outfh $string; 
+	close $outfh;		
+}
+
 =item reroot_tree
 
 Reroots a backbone tree. All possible rerootings are evaluated and the tree is returned 

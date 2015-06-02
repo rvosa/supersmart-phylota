@@ -5,12 +5,14 @@ use FindBin '$Bin';
 use Test::More 'no_plan';
 use Bio::Phylo::IO 'parse_tree';
 use Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa 'parse_taxa_file';
+use Bio::Phylo::PhyLoTA::Config;
 
 # load the package
 BEGIN { use_ok('Bio::Phylo::PhyLoTA::Service::TreeService'); }
 
 # create a new instance
 my $ts = new_ok('Bio::Phylo::PhyLoTA::Service::TreeService');
+my $conf = Bio::Phylo::PhyLoTA::Config->new;
 
 my $tf = $Bin . '/testdata/testtree.dnd';
 my $tree = parse_tree(
@@ -47,22 +49,18 @@ my $phylip_large = "$Bin/testdata/testmatrix.phy";
 my @names_large = $ts->read_tipnames($phylip_large);
 is($names_large[0], "Orthogeomys_heterodus", "read_tipnames from phylip file");
 
-# build a consensus tree
+# build a consensus clade tree
 my $treefile  = "$Bin/testdata/testclade.nex";
-my $consensus = $ts->consense_trees( '-infile' => $treefile );
-isa_ok($consensus,'Bio::Phylo::Forest::Tree');
+my $cladetree = $ts->consense_trees( '-infile' => $treefile, '-heights' => $conf->NODE_HEIGHTS );
+isa_ok( $cladetree,'Bio::Phylo::Forest::Tree' );
 
 # parse the backbone tree
-my $bbfile = "$Bin/testdata/testtree-labelled.dnd";
-my $bbtree = parse_tree(
-	'-file'   => $bbfile,
-	'-format' => 'newick',
-	'-as_project' => 1,
-);
+my $bbfile = "$Bin/testdata/backbone-consensus.nex";
+my $bbtree = $ts->read_figtree( $bbfile );
 
 # graft clade onto backbone tree
 my $bbstr = $bbtree->to_newick;
-my $grafted = $ts->graft_tree( $bbtree, $consensus );
+my $grafted = $ts->graft_tree( $bbtree, $cladetree );
 isa_ok($grafted,'Bio::Phylo::Forest::Tree');
 ok (length $grafted->to_newick > length $bbstr, "tree is larger after grafting");
 
