@@ -6,7 +6,7 @@ use warnings;
 use Bio::Phylo::PhyLoTA::Service::TreeService;
 use Bio::Phylo::PhyLoTA::Config;
 use Bio::Phylo::Util::CONSTANT ':objecttypes';
-use Bio::Phylo::IO qw'parse parse_tree unparse';
+use Bio::Phylo::IO qw'parse parse_tree';
 
 use base 'Bio::SUPERSMART::App::SubCommand';
 use Bio::SUPERSMART::App::smrt qw(-command);
@@ -138,7 +138,6 @@ sub _graft_single_tree {
 		'-infile'  => $file,
 		'-heights' => $opt->heights,
 	);
-
 	# prune outgroup from consensus tree (if exists)
 	if ( -e $ogfile ) {
 		
