@@ -796,7 +796,7 @@ sub enrich_matrix {
         $lookup{$gi} = { "smrt:tid" => $ti, "smrt:mrca" => $mrca, "smrt:seed_gi" => $seed };
 
         # find its cluster(s)
-        $log->info("Going to search subtree clusters with seed_gi $seed, mrca $mrca");
+        $log->debug("Going to search subtree clusters with seed_gi $seed, mrca $mrca");
         my $results = $self->search_cluster({
             'seed_gi' => $seed,
             'ti_root' => $mrca,
@@ -807,7 +807,7 @@ sub enrich_matrix {
         my ( @candidates );
         while ( my $res = $results->next ) {
             my $ci = $res->ci;
-            $log->info("Going to search other haplotypes for species $ti in focal cluster");
+            $log->debug("Going to search other haplotypes for species $ti in focal cluster");
             my $joins = $self->search_ci_gi({
                 'clustid'  => $ci,
                 'ti'       => $mrca,
@@ -819,7 +819,7 @@ sub enrich_matrix {
                 my $cgi = $join->gi;
                 if ( $cgi != $gi ) {
                     push @c, $cgi;
-                    $log->info("Found candidate: $cgi");
+                    $log->debug("Found candidate: $cgi");
                 }
                 $seen++ if $cgi == $gi;
             }
@@ -851,7 +851,8 @@ sub enrich_matrix {
         push @seqs, values %{ $taxa{$ti} };
     }
     $log->info("Going to align ".scalar(@seqs)." sequences");
-    my $aln = $sg->align_sequences(@seqs);
+    my $msa = $sg->_make_aligner;
+    my $aln = $msa->align([ map { $_->to_primary_seq } @seqs ]);
 
     # and add to the matrix
     my $taxa = $matrix->get_taxa;
@@ -859,7 +860,8 @@ sub enrich_matrix {
     my $fac  = Bio::Phylo::Factory->new;
     my %counter;
     for my $row ( $aln->each_seq ) {
-        my $gi     = $row->id;
+        my %fields = split /\|/, $row->display_id;
+        my $gi     = $fields{'gi'};
         my $seq    = $row->seq;
         my $lookup = $lookup{$gi};
         my $ti     = $lookup->{"smrt:tid"};
@@ -906,7 +908,7 @@ sub degap_matrix {
     });                 
     my $max = $matrix->get_nchar - 1;
     my @indices = grep { not defined $gaps{$_} or $gaps{$_} < $ntax } 0 .. $max;
-    if ( @indices < $matrix->get_nchar ) {
+    if ( @indices > 0 ) {
         $matrix->visit(sub{
             my $row = shift;
             my @char = $row->get_char;
