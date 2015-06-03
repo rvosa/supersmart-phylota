@@ -58,7 +58,6 @@ smrt bbmerge
 # posterior distribution in it. This step normally creates very many intermediate files
 # (bootstrapped matrices, various log and checkpoint files produced by the inference tool,
 # separate output tree files), which we clean up by providing the '--cleanup' flag.
-export SUPERSMART_EXABAYES_NUMGENS="100000"
 smrt bbinfer --inferencetool=exabayes --cleanup
 
 # Step 7: reroot the backbone trees. The trees resulting from step 6 are unrooted. There
