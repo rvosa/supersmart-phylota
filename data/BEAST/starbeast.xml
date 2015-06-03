@@ -8,7 +8,7 @@
       [% rows.push(row.get_name) -%]
     [% END -%] 
   [% END -%]
-  [% rows = rows.nsort -%]
+  [% rows = rows.sort -%]
   [% FOREACH row IN rows.unique %]
     <taxon id="taxon_[% row %]"/>
   [% END %]
@@ -119,21 +119,29 @@
   
   <!-- species normalization -->
   <species id="species">
+    [% ntax = 0 -%]
     [% FOREACH taxa IN data.get_taxa -%]
       [% FOREACH taxon IN taxa.get_entities -%]
-        <!-- reference to the species http://ncbi.nlm.nih.gov/taxonomy/[% taxon.get_meta_object('smrt:tid') %] -->
-        <sp id="[% taxon.get_name %]">
+      
         [% taxon_rows = [] -%]
         [% FOREACH row IN taxon.get_data -%]
           [% taxon_rows.push(row.get_name) -%]
         [% END -%]
-        [% FOREACH row_name IN taxon_rows.unique %]
-          <!-- reference to a distinct row name across all alignments -->
-          <taxon idref="taxon_[% row_name %]"/>
-        [% END %]
-        </sp>
-      [% END %]
-    [% END %]
+        
+        [% IF taxon_rows.unique.size > 0 -%]  
+          [% ntax = ntax + 1 -%]    
+          <!-- reference to the species http://ncbi.nlm.nih.gov/taxonomy/[% taxon.get_meta_object('smrt:tid') %] -->
+          <sp id="[% taxon.get_name %]">
+          [% FOREACH row_name IN taxon_rows.unique -%]
+            <!-- reference to a distinct row name across all alignments -->
+            <taxon idref="taxon_[% row_name %]"/>
+          [% END -%]
+          </sp>
+        [% ELSE -%]
+          <!-- no data for [% taxon.get_name %] in any alignment -->
+        [% END -%]
+      [% END -%]
+    [% END -%]
     <geneTrees id="geneTrees">
       [% FOREACH matrix IN data.get_matrices %]
         [% id = matrix.get_name %]
@@ -176,8 +184,10 @@
       <taxa>
         [% FOREACH taxa in data.get_taxa %]
           [% FOREACH taxon IN taxa.get_entities %]
-            <!-- reference to species [% taxon.get_name %] -->
-            <sp idref="[% taxon.get_name %]"/>
+            [% IF taxon.get_data.size > 0 %]
+              <!-- reference to species [% taxon.get_name %] -->
+              <sp idref="[% taxon.get_name %]"/>
+            [% END %]
           [% END %]
         [% END %]
       </taxa>
@@ -206,7 +216,6 @@
       <parameter idref="speciesTree.splitPopSize"/>
     </data>
     <indicators>
-      [% ntax = data.get_taxa.first.get_ntax -%]
       [% indicators = [] -%]
       [% WHILE indicators.size < ntax -%]
         [% indicators.push('1') -%]
