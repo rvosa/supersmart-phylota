@@ -45,11 +45,9 @@ smrt orthologize
 #                          is too saturated to be of use.
 # - BACKBONE_MIN_COVERAGE: the minimum number of times a taxon must participate in loci
 #                          in the supermatrix in order to include it.
-# We can override these config values from the environment. As we are studying only two
-# genera we will get a backbone of only four tips, we can therefore safely build a
-# supermatrix with more coverage
+# We can override these config values from the environment, like so:
 export SUPERSMART_BACKBONE_MAX_DISTANCE="0.05"
-export SUPERSMART_BACKBONE_MIN_COVERAGE="7"
+export SUPERSMART_BACKBONE_MIN_COVERAGE="3"
 smrt bbmerge
 
 # Step 6: build a backbone tree. There are multiple inference tools that can be used for
