@@ -142,6 +142,12 @@ class install {
 			ensure  => link,
 			target  => "${tools_dir}/treePL/src/treePL",
 			require => Exec["compile_treepl"];
+		"bash_login_link":
+			path    => "/home/${username}/.bash_login",
+			ensure  => link,
+			target  => "${src_dir}/supersmart/conf/.bash_login",
+			user    => $username,
+			require => Exec["clone_supersmart"];
 	}
 
 	# command line tasks
