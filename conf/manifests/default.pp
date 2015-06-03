@@ -146,7 +146,6 @@ class install {
 			path    => "/home/${username}/.bash_login",
 			ensure  => link,
 			target  => "${src_dir}/supersmart/conf/.bash_login",
-			user    => $username,
 			require => Exec["clone_supersmart"];
 	}
 

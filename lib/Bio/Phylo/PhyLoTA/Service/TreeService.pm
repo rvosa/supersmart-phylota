@@ -3,7 +3,7 @@ use strict;
 use warnings;
 use Cwd;
 use File::Temp 'tempfile';
-use Bio::Phylo::IO qw'parse parse_tree';
+use Bio::Phylo::IO qw'parse parse_tree unparse';
 use Bio::Phylo::Factory;
 use Bio::Phylo::PhyLoTA::Config;
 use Bio::Phylo::PhyLoTA::Service;
@@ -833,7 +833,7 @@ sub _rescale {
 				my $other = $stem . ( $range eq 'min' ? '_max' : '_min' );
 				my $otherval = $annos{$other}->get_object;
 				my $mid = ( $val + $otherval ) / 2;
-				my $deviation = $val / $mid;
+				my $deviation = $mid > 0 ? $val / $mid : 0;
 				$newval = ( $mid * $ratio ) * $deviation;	
 			}
 			else {
