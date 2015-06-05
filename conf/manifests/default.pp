@@ -41,8 +41,7 @@ class install {
 
 	# install packages.
 	package {
-		"mysql-server":    ensure => installed, require => Exec ["apt_update"];
-		"mysql-client":    ensure => installed, require => Exec ["apt_update"];
+	        "sqlite3":         ensure => installed, require => Exec ["apt_update"];
 		"ncbi-blast+":     ensure => installed, require => Exec ["apt_update"];
 		"wget":            ensure => installed, require => Exec ["apt_update"];
 		"tar":             ensure => installed, require => Exec ["apt_update"];
@@ -61,15 +60,6 @@ class install {
 		"r-base-dev":      ensure => installed, require => Exec ["apt_update"];
 		"libopenmpi-dev":  ensure => installed, require => Exec ["apt_update"];
 		"openmpi-bin":     ensure => installed, require => Exec ["apt_update"];  
-	}
-
-
-	# set up the mysql daemon process
-	service {
-		"mysql":
-			enable  => true,
-			ensure  => running,
-			require => [ Package["mysql-server"], Exec["chown_phylota_db"] ];
 	}
 
 	# create links for executables and data directories
@@ -423,39 +413,6 @@ class install {
 				command => "cpanm --notest git://github.com/bioperl/bioperl-run.git",
 				require => Exec['install_cpanm'];
 		}
-	}
-	
-	# On travis there is not enough space to physically move our data from where we 
-	# downloaded it to the mysql data directory, so instead we create symbolic links
-	# to it. On the other hand, in virtualbox this symlinking does not work and we
-	# DO have to do an actual move of the data, else we get errno: 13 when trying
-	# to run queries.
-	if $virtual == 'virtualbox' {
-		exec {			
-			# phylota database files need to be moved
-			"mv_phylota_dump":
-				command   => "mv ${data_dir}/phylota `mysql -s -N -uroot -p information_schema -e 'SELECT Variable_Value FROM GLOBAL_VARIABLES WHERE Variable_Name = \"datadir\"'`",
-				logoutput => true,
-				require   => Exec[ 'chown_phylota_db' ];                
-			"grant_phylota_db":
-				command   => "mysql -u root -e \"grant all on phylota.* to 'root'@'localhost';\"",
-				logoutput => true,
-				require   => Exec[ 'mv_phylota_dump' ]; 				
-		}
-	}
-	else {	
-		exec {
-		
-			# phylota database files need to be symlinked
-			"mv_phylota_dump":
-				command   => "ln -s ${data_dir}/phylota `mysql -s -N -uroot -p information_schema -e 'SELECT Variable_Value FROM GLOBAL_VARIABLES WHERE Variable_Name = \"datadir\"'`",
-				logoutput => true,
-				require   => Exec[ 'chown_phylota_db' ];                
-			"grant_phylota_db":
-				command   => "mysql -u root -e \"grant all on phylota.* to 'root'@'localhost';\"",
-				logoutput => true,
-				require   => Exec[ 'mv_phylota_dump' ];
-		} 	
 	}
 }
 
