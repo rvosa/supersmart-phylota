@@ -178,22 +178,11 @@ class install {
 			creates => "/etc/profile.d/supersmart-editor.csh";
 
 		# make phylota database
-		"dl_phylota_dump":
-			command => "wget http://biovel.naturalis.nl/phylota.tar.gz",
-	                #logoutput => true,
+		"dl_phylota_db":
+			command => "wget http://biovel.naturalis.nl/phylota.sqlite",
 			cwd     => $data_dir,
-			creates => "${data_dir}/phylota.tar.gz",                        
+			creates => "${data_dir}/phylota.sqlite",                        
 			require => [ File[ $data_dir ], Package[ 'wget' ] ];
-		"unzip_phylota_dump":
-			command => "tar -xzvf phylota.tar.gz",
-                        #logoutput => true,
-			creates => "${data_dir}/phylota",
-			cwd     => $data_dir,
-			require => Exec[ 'dl_phylota_dump'];
-		"chown_phylota_db":
-			command   => "chown -R -h mysql:mysql ${data_dir}/ && chmod 660 ${data_dir}/phylota/*",
-			logoutput => true,
-			require   => Exec[ 'unzip_phylota_dump' ];
 
 		# install mafft
 		"dl_mafft":

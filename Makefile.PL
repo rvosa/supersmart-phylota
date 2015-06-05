@@ -26,6 +26,7 @@ WriteMakefile(
 		'IO::String'            => 0,
 		'Statistics::R'         => 0,
 		'Parallel::ForkManager' => 0,
+		'File::Path'            => 0,
 		# 'Parallel::MPI::Simple' => 0,
 		
 		# XXX would be good if there was some way to define a dependency on

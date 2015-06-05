@@ -15,6 +15,7 @@ __PACKAGE__->load_namespaces;
 # Created by DBIx::Class::Schema::Loader v0.07002 @ 2012-05-26 14:28:40
 # DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:qy8gwA4ReJ1Jez7iqtYMBQ
 
+use File::Path::Expand;
 
 # You can replace this text with custom content, and it will be preserved on regeneration
 
@@ -75,18 +76,21 @@ sub new {
 				
 		my %args  = ();		
 		$args{'rdbms'}    = $config->RDBMS;
-		$args{'database'} = $config->DATABASE;
+		$args{'database'} = expand_filename( $config->DATABASE );
 		$args{'host'}     = $config->HOST;
 		$args{'user'}     = $config->USER;
-        $args{'pass'}     = undef;		
+		$args{'pass'}     = undef;		
 		$args{'limit_dialect'}  = 'LimitXY';
-
-        # create "dsn string" template, insert values
+		
+		# create "dsn string" template, insert values
 		my $dsn_tmpl  = 'DBI:%s:database=%s;host=%s';		
-		$args{'dsn'} = sprintf($dsn_tmpl, @args{qw[rdbms database host]});
-				
-		$SINGLETON = $package->connect( \%args);
 
+		$args{'dsn'} = sprintf($dsn_tmpl, @args{qw[rdbms database host]});		
+		use Data::Dumper;
+		print Dumper(\%args);
+		
+		$SINGLETON = $package->connect( \%args);
+		
 	}
 	else {
 		$log->info("additional, no-op call to singleton constuctor");
