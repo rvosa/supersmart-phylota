@@ -174,7 +174,7 @@ class install {
 			creates => "${data_dir}/phylota.sqlite.gz",                        
 			require => [ File[ $data_dir ], Package[ 'wget' ] ];
 		"unzip_phylota_db":		
-			command => "tar -xzvf phylota.sqlite.gz",		
+			command => "gunzip phylota.sqlite.gz",		
 			creates => "${data_dir}/phylota.sqlite",		
 			cwd     => $data_dir,		
 			require => Exec[ 'dl_phylota_db'];
