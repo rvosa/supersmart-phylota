@@ -21,6 +21,6 @@ now is only of interest to developers.
 
 =cut
 
-use version; our $VERSION = version->declare('v0.1.19');
+use version; our $VERSION = version->declare('v0.1.20');
 
 1;
