@@ -6,13 +6,13 @@
 # infrastructure such as an MPI compute cluster.
 
 # set user and default paths for storing data, tools and source code
-$username       = "vagrant"
-$supersmart_dir = "/home/${username}/SUPERSMART"
-$tools_dir      = "${supersmart_dir}/tools"
-$tools_bin_dir  = "${tools_dir}/bin"
-$src_dir        = "${supersmart_dir}/src"
-$data_dir       = "${supersmart_dir}/data"
-$cran_url       = "http://cran.us.r-project.org"
+$username        = "vagrant"
+$home_dir        = "/home/${username}"
+$supersmart_home = "${homedir}/supersmart"
+$tools_dir       = "${supersmart_home}/tools"
+$tools_bin_dir   = "${tools_dir}/bin"
+$data_dir        = "${supersmart_home}/data"
+$cran_url        = "http://cran.us.r-project.org"
 
 # update the $PATH environment variable
 Exec {
@@ -64,7 +64,7 @@ class install {
 
 	# create links for executables and data directories
 	file {
-		$supersmart_dir:
+		$supersmart_home:
 			ensure  => directory,
 			group   => $username,
 			owner   => $username;
@@ -72,11 +72,6 @@ class install {
 			ensure  => directory,
 			group   => $username,
 			owner   => $username;
-		$src_dir:
-			ensure  => directory,
-			group   => $username,
-			owner   => $username,
-			recurse => true;
 		$tools_dir:
 			ensure  => directory,
 			group   => $username,
@@ -135,7 +130,7 @@ class install {
 		"bash_login_link":
 			path    => "/home/${username}/.bash_login",
 			ensure  => link,
-			target  => "${src_dir}/supersmart/conf/.bash_login",
+			target  => "${supersmart_home}/conf/.bash_login",
 			require => Exec["clone_supersmart"];
 	}
 
@@ -149,11 +144,11 @@ class install {
 
 		# add bin directory for all required tools and smrt executables to PATH
 		"make_bindir_sh":
-			command => "echo 'export PATH=\$PATH:${tools_bin_dir}:${src_dir}/supersmart/script' > supersmart-tools-bin.sh",
+			command => "echo 'export PATH=\$PATH:${tools_bin_dir}:${supersmart_home}/script' > supersmart-tools-bin.sh",
 			cwd     => "/etc/profile.d",
 			creates => "/etc/profile.d/supersmart-tools-bin.sh";
 		"make_bindir_csh":
-			command => "echo 'setenv PATH \$PATH:${tools_bin_dir}:${src_dir}/supersmart/script' > supersmart-tools-bin.csh",
+			command => "echo 'setenv PATH \$PATH:${tools_bin_dir}:${supersmart_home}/script' > supersmart-tools-bin.csh",
 			cwd     => "/etc/profile.d",
 			creates => "/etc/profile.d/supersmart-tools-bin.csh";
 
@@ -283,24 +278,18 @@ class install {
 		# install supersmart
 		"clone_supersmart":
 			command => "git clone https://github.com/naturalis/supersmart.git",
-			cwd     => $src_dir,
-			creates => "${src_dir}/supersmart",
+			cwd     => $home_dir,
+			creates => "${supersmart_home}",
 			user    => $username,
-			require => [ File[ $src_dir ], Package[ 'git' ] ];
+			require => [ Package[ 'git' ] ];
 		"make_supersmart_sh":
-			command => "echo 'export LD_LIBRARY_PATH=/usr/lib:/usr/lib64:/usr/local/lib' > supersmart.sh && echo 'export SUPERSMART_HOME=${src_dir}/supersmart' >> supersmart.sh && echo 'export PERL5LIB=\$PERL5LIB:\$SUPERSMART_HOME/lib' >> supersmart.sh",
+			command => "echo 'export LD_LIBRARY_PATH=/usr/lib:/usr/lib64:/usr/local/lib' > supersmart.sh && echo 'export SUPERSMART_HOME=${supersmart_home}' >> supersmart.sh && echo 'export PERL5LIB=\$PERL5LIB:\$SUPERSMART_HOME/lib' >> supersmart.sh",
 			cwd     => "/etc/profile.d",
 			creates => "/etc/profile.d/supersmart.sh";
 		"make_supersmart_csh":
-			command => "echo 'setenv LD_LIBRARY_PATH /usr/lib:/usr/lib64:/usr/local/lib' > supersmart.csh && echo 'setenv SUPERSMART_HOME ${src_dir}/supersmart' >> supersmart.csh && echo 'setenv PERL5LIB \$PERL5LIB:\$SUPERSMART_HOME/lib' >> supersmart.csh",
+			command => "echo 'setenv LD_LIBRARY_PATH /usr/lib:/usr/lib64:/usr/local/lib' > supersmart.csh && echo 'setenv SUPERSMART_HOME ${supersmart_home}' >> supersmart.csh && echo 'setenv PERL5LIB \$PERL5LIB:\$SUPERSMART_HOME/lib' >> supersmart.csh",
 			cwd     => "/etc/profile.d",
 			creates => "/etc/profile.d/supersmart.csh";
-		#"copy_supersmart_login":
-		#	command => "cp .bash_login /home/vagrant/.bash_login",
-		#	cwd     => "${src_dir}/supersmart/conf",
-		#	creates => "/home/vagrant/.bash_login",
-		#	user    => $username,
-		#	require => Exec[ 'clone_supersmart' ];
 
 		# install BEAST
 		"download_beast":
@@ -406,7 +395,7 @@ class install {
 				require => Package['wget'];
 			"install_cpan_deps":
 				command => "cpanm --notest --installdeps .",
-				cwd     => "${src_dir}/supersmart",
+				cwd     => "${supersmart_home}",
 				require => Exec['install_cpanm','clone_supersmart'];
 			"install_bio_phylo":
 				command => "cpanm --notest git://github.com/rvosa/bio-phylo.git",
@@ -432,7 +421,7 @@ class cleanup {
 			        command => "apt-get clean";
                         "clean_meta":
 				command => "rm MYMETA.*",	
-				cwd     => "${src_dir}/supersmart";
+				cwd     => "${supersmart_home}";
 		}
 	}
 }
