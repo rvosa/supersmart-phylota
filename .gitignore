@@ -37,3 +37,4 @@ conf/packer_cache/
 blib
 pm_to_blib
 out
+*.sqlite
