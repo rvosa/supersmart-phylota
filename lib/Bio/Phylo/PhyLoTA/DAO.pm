@@ -76,7 +76,7 @@ sub new {
 				
 		my %args  = ();		
 		$args{'rdbms'}    = $config->RDBMS;
-		$args{'database'} = expand_filename( $config->DATABASE );
+		$args{'database'} = $config->DATABASE_FILE;
 		$args{'host'}     = $config->HOST;
 		$args{'user'}     = $config->USER;
 		$args{'pass'}     = undef;		
