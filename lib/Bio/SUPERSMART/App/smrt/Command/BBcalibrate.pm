@@ -26,14 +26,16 @@ smrt bbcalibrate [-h ] [-v ] [-w <dir>] -t <file> -s <file> -f <file> [-o <file>
 
 =head1 DESCRIPTION
 
-Given a rooted molecular backbone phylogeny and a table of fossils, performs tree calibration using treePL. 
-Produces an ultrametric tree with branch lengths proportional to evolutionary time (i.e. a "chronogram").
+Given a rooted molecular backbone phylogeny and a table of fossils, 
+performs tree calibration using treePL. Produces an ultrametric tree 
+with branch lengths proportional to evolutionary time (i.e. a "chronogram").
 
 Runs the treePL program to calibrate the tree using penalized likelihood. 
-The treePL algorithm requires a smoothing parameter and number of sites, which must be provided as
-arguments. Also the supermatrix which has been used for tree inference has to be provided because the number of alignment sites has
-to be given to TreePL. Writes the calibrated tree in newick format to the 
-file specified by the 'outfile' argument. 
+The treePL algorithm requires a smoothing parameter and number of sites, 
+which must be provided as arguments. Also the supermatrix which has been 
+used for tree inference has to be provided because the number of alignment 
+sites has to be given to TreePL. Writes the calibrated tree in newick 
+format to the file specified by the 'outfile' argument. 
 
 =cut
 
@@ -43,9 +45,9 @@ sub options {
 	my $tree_default    = "backbone-rerooted.dnd";
 	my $matrix_default  = "supermatrix.phy";
 	return (
+                ["fossiltable|f=s", "tsv (tab-separated value) file containing fossil table with at least 5 columns (id, name, crown/stem, taxon, age)", { arg => "file", mandatory => 1}],
 		["tree|t=s", "backbone tree to calibrate as produced by 'smrt bbreroot'", { arg => "file", default => $tree_default}],
 		["supermatrix|s=s", "matrix of concatenated multiple sequece alignments which was used to generate the tree", { arg => "file", default => $matrix_default}],	
-		["fossiltable|f=s", "tsv (tab-separated value) file containing fossil table with at least 5 columns (id, name, crown/stem, taxon, age)", { arg => "file", mandatory => 1}],	
 		["outfile|o=s", "name of the output tree file (in newick format), defaults to '$outfile_default'", {default => $outfile_default, arg => "file"}],			
 
 	);	

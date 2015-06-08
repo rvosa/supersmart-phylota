@@ -190,12 +190,12 @@ subcommand specific options.
 sub opt_spec {
 	my ($class, $app) = @_;		
 	return (
-		[ "help|h", "display help screen", { type => 'super' } ],
-		[ "verbose|v+", "increase verbosity level", { type => 'super' } ],
-		[ "workdir|w=s", "directory in which results and intermediate files are stored", { arg => "dir", type => 'super' } ],
-		[ "logfile|l=s", "write run-time information to logfile", { arg => "file", type => 'super' }],	
-		[ "logstyle|y=s", "toggles logging style between 'simple' and 'detailed'", { default => "simple", type => 'super' }],
 		$class->options($app),
+		[ "help|h", "display help screen", { urgency => 'super' } ],
+		[ "verbose|v+", "increase verbosity level", { urgency => 'super' } ],
+		[ "workdir|w=s", "directory in which results and intermediate files are stored", { arg => "dir", urgency => 'super' } ],
+		[ "logfile|l=s", "write run-time information to logfile", { arg => "file", urgency => 'super' }],	
+		[ "logstyle|y=s", "toggles logging style between 'simple' and 'detailed'", { default => "simple", urgency => 'super' }],
 	);	
 }
 
@@ -204,7 +204,7 @@ sub opt_spec {
 Returns the description for a specific subcommand. This method is invoked by 
 the child classes when the global option 'help' is used, e.g. in 
 $ smrt help subcommand
-The actual description of the subcommand is parsed from it's DESCRIPTION field
+The actual description of the subcommand is parsed from its DESCRIPTION field
 in the POD documentation.
 
 =cut
@@ -221,14 +221,27 @@ sub description {
 	
   	# if the pm file exists, open it and parse it
   	open my $fh, "<", $pm_file or return "(unknown)";
-	undef $/;	
-	my $content = <$fh>;
-	chomp($content);
-	my ($desc) = 
-         ($content =~ m/.*?DESCRIPTION\n(.*?)\n=.*/s);	
-	close $fh;
-	$content =~ s/^\s+//;	
-	return $desc;
+	my $seen;
+	my $description = '';
+	LINE: while( <$fh> ) {
+#		chomp;
+		if ( /DESCRIPTION/ ) {
+			$seen++;
+			next LINE;
+		}
+		if ( /^=cut/ and $seen ) {
+			$seen--;
+		}
+		if ( $seen and not $description and not /\S/ ) {
+			next LINE;
+		}
+		if ( $seen and not $descripton and /\S/ ) {
+			$description .= $_;
+			next LINE;
+		}
+		$description .= $_ if $seen and $description;
+	}
+	return $description;
 }
 
 =item validate_args
@@ -279,7 +292,7 @@ sub usage_desc {
 		
 	# build custom usage string (default was "%c $cmd %o" )
 	my @args = ( '' );
-	@opts = sort { ( $a->[2]->{type} eq 'super' ) <=> ( $b->[2]->{type} eq 'super' ) } @opts;
+	@opts = sort { ( $a->[2]->{urgency} eq 'super' ) <=> ( $b->[2]->{urgency} eq 'super' ) } @opts;
 	for my $opt (@opts){
 		my $s = $opt->[0];
 		my %h = %{ $opt->[2] };
@@ -291,7 +304,7 @@ sub usage_desc {
 		$opt_str     = !$required ? "[$opt_str] " : " $opt_str ";		
 
 		# encode colored
-		if ( $h{'type'} =~ /super/ ) {
+		if ( $h{'urgency'} =~ /super/ ) {
 			$args[-1] .= "\033[0;37m" . $opt_str . "\033[0m";
 		}
 		elsif ( $required ) {
@@ -306,7 +319,7 @@ sub usage_desc {
 			push @args, '';
 		}
 	}
-	return $usage . join( "\\\n\t", @args ) . "\n";	
+	return $usage . join( "\\\n\t", grep { /\S/ } @args );	
 }
 
 =item usage_error

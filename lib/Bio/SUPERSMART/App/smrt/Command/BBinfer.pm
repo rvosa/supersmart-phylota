@@ -30,10 +30,8 @@ smrt bbinfer [-h ] [-v ] [-w <dir>] -s <file> -t <file> [-i <tool>] [-o <file>]
 Given an input supermatrix (in interleaved PHYLIP format), infers a backbone tree or set
 of trees. In the case of maximum likelihood inference, the set of trees are bootstrapped
 replicates (this applies to the tools ExaML and RAxML, currently). For ExaBayes, this
-is sample of the posterior distribution of trees.
-
-The tree(s) resulting from this command are written to file. ExaML and ExaBayes produce 
-many intermediate checkpoint files, for which a directory location needs to be specified. 
+is sample of the posterior distribution of trees. The tree(s) resulting from this command 
+are written to file.
 
 =cut
 

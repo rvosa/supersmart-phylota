@@ -45,8 +45,9 @@ sub options {
 		],
 		[
 			"root_taxa|r=s",
-			"one or multiple taxon names (seperated by commata) to be expanded to either 'Species' or to taxonomic rank given in <expand_rank>. Taxon names containing spaces must be enclosed in quotes",
-			{}
+			"one or multiple taxon names (seperated by commata) to be expanded to either 'Species' or to taxonomic rank "
+			. "given in <expand_rank>. Taxon names containing spaces must be enclosed in quotes",
+			{ arg => "taxon,taxon,..." }
 		],
 		[
 			"expand_rank|e=s",

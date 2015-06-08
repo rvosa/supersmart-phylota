@@ -28,9 +28,10 @@ Align.pm - assesses orthology in different sequence alignments and merges them i
 
 =head1 DESCRIPTION
 
-Given a list of aligned candidate clusters, assigns orthology among the clusters by performing reciprocal 
-blast searches on the seed sequences around which the clusters were assembled. Produces a list of 
-re-aligned superclusters. 
+Given a list of aligned candidate clusters, assigns orthology among the 
+clusters by performing reciprocal BLAST searches on the seed sequences 
+around which the clusters were assembled. Produces a list of re-aligned 
+superclusters. 
 
 =cut
 

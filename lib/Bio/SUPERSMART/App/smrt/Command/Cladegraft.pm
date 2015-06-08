@@ -25,11 +25,12 @@ smrt cladegraft [-h ] [-v ] [-w <dir>] -b <file> [-o <file>] [-c <file>]
 
 =head1 DESCRIPTION
 
-Combines a backbone tree of representative genera with one or more clade trees which have been
-infered independently. Given a directory as argument 'workdir', traverses it, looks for subdirectories
-and files that match the pattern clade*.nex. These must be NEXUS files. 
-Given a single NEXUS file file as 'cladetree' argument, grafts this tree onto the backbone.
-The resulting tree is exported in the NEWICK format.
+Combines a backbone tree of representative genera with one or more clade trees 
+that have been inferred independently. Given a directory as argument 'workdir', 
+traverses it, looks for subdirectories and files that match the pattern clade*.nex. 
+These must be NEXUS files. Given a single NEXUS file file as 'cladetree' argument, 
+grafts this tree onto the backbone. The resulting tree is exported in the NEXUS 
+(figtree) format.
     
 =cut
 
@@ -43,8 +44,8 @@ sub options {
   		["backbone|b=s", "backbone tree as produced by 'smrt consense'", { arg => "file", default => $tree_default }],
 		["outfile|o=s", "name of the output tree file (newick format) defaults to $outfile_default", { default=> $outfile_default, arg => "file"}],    	    
 		["cladetree|c=s", "name of tree file for single clade (newick format) if only a single cladetree should be grafted", { arg => "file"}],
-		["heights|h=s", "node heights (ca, keep, median, mean)", { default => $heights_default } ],
-		["squish|s=s", "how to treat negative branches (zero, yulish, none)", { default => $squish_default } ],
+		["heights|e=s", "node heights (ca, keep, median, mean)", { default => $heights_default, arg => 'keep|median|mean|ca' } ],
+		["squish|s=s", "how to treat negative branches (zero, yulish, none)", { default => $squish_default, arg => 'zero|yulish|none' } ],
     );
 }
 

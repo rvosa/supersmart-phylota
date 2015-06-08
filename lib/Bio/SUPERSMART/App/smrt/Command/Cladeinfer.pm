@@ -37,26 +37,13 @@ argument, analyses a single file. *BEAST is run for each clade with one chain. H
 make use of parallel processing by simultaneously running *BEAST for different clades
 on different processors. 
 
-=over
+* ngens - Specifies the number of generations. The default, which is strictly for 
+  testing, is 100_000. Instead this should be something that is more on the order of 
+  10_000_000 if not much more.
 
-=item ngens
+* sfreq - Specifies the sampling frequency. Default is 1000.
 
-Specifies the number of generations. The default, which is strictly for testing, is 100.
-Instead this should be something that is more on the order of 30_000_000 if not much
-more.
-
-=item sfreq
-    
-Specifies the sampling frequency. The default, which is strictly for testing, is 100.
-Instead this should be something that is more on the order of 300_000 if not much
-more. For example, this could be 0.1% of ngens so that you end up with a thousand trees.
-
-=item lfreq
-
-Species the logging frequency. The default, which is strictly for testing, is 100.
-Instead this should be something that is more on the order of 300_000 if not much
-more. For example, this could be 0.1% of ngens so that you end up with a thousand logged
-samples.
+* lfreq - Species the logging frequency. Default is 1000. 
 
 =cut
 
@@ -65,14 +52,14 @@ sub options {
     my ($self, $opt, $args) = @_;
     my $config = Bio::Phylo::PhyLoTA::Config->new;
     return (
-        [ "ngens|n=i", "number of generations in *BEAST, defaults to 100_000 (strictly for testing!)", { arg => "int", default => 100_000 } ],
-        [ "sfreq|s=i", "sampling frequency, defaults to 1000", { arg => "int", default => 1000 } ],
-        [ "lfreq|l=i", "logging frequency, defaults to 1000", { arg => "int", default => 1000 } ],
+        [ "ngens|n=i", "number of generations in *BEAST, defaults to 100_000 (strictly for testing!)", { arg => "value", default => 100_000 } ],
+        [ "sfreq|s=i", "sampling frequency, defaults to 1000", { arg => "value", default => 1000 } ],
+        [ "lfreq|l=i", "logging frequency, defaults to 1000", { arg => "value", default => 1000 } ],
         [ "file|f=s", "file (nexml format) to start a single inference from", { arg=>"file" } ],
  #       [ "outfile|o=s", "location of output directory", { arg => "location", default => "cladeinfer_out.txt"} ],
         [ "rebuild|x", "rebuild existing *BEAST XML files", {}],
         [ "append|a", "append trees to existing tree file", {}],
-        [ "burnin|b=f", "burnin to omit when appending trees", { arg => "float", default => $config->BURNIN } ],
+        [ "burnin|b=f", "burnin to omit when appending trees", { arg => "value", default => $config->BURNIN } ],
     );
 }
 

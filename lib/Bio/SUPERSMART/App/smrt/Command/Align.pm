@@ -45,7 +45,7 @@ sub options {
     return (
     ["infile|i=s", "taxa file (tab-seperated value format) as produced by 'smrt taxize'", { arg => "file", default => $taxa_default }],
     ["outfile|o=s", "name of the output file, defaults to '$outfile_default'", {default => $outfile_default, arg => "file"}],   
-    ["dirname|d=s", "write alignments to specified directory name, if not given, alignments are written to working directory", {}]
+    ["dirname|d=s", "write alignments to specified directory name, if not given, alignments are written to working directory", { arg => "dir" }]
     );  
 }
 

@@ -50,7 +50,8 @@ sub options {
 	return (
 		["taxafile|t=s", "tsv (tab-seperated value) taxa file as produced by 'smrt taxize'", { arg => "file", default => $taxa_default}],
 		["backbone|b=s", "a backbone tree(s) file as produced by 'smrt bbinfer'", { arg => "file", default => $tree_default}],	
-		["outgroup|g=s", "one or multiple taxa (names or NCBI identifiers, separated by commata) representing the outgroup at which the tree is rerooted. Outgroup must be enclosed in quotes.", {} ],
+		["outgroup|g=s", "one or multiple taxa (names or NCBI identifiers, separated by commata) representing the outgroup at "
+                 ."which the tree is rerooted. Outgroup must be enclosed in quotes.", { arg => "taxon,taxon,..." } ],
 		["outfile|o=s", "name of the output tree file (in newick format), defaults to '$outfile_default'", {default => $outfile_default, arg => "file"}],
 		["smooth|s", "smooth tip heights left and right of root (i.e. midpointify)",{}],
 	);	

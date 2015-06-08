@@ -58,11 +58,11 @@ sub options {
     my $format_default  = "nexus";
     return (
         ["backbone|b=s", "backbone tree as produced by e.g. 'smart bbinfer' and 'smrt consense', defaults to $tree_default", { arg => "file", default => $tree_default}],
-        ["format|f=s", "file format of the backbone tree as produced by 'smrt consense', defaults to $format_default", { default => $format_default }],
+        ["format|f=s", "file format of the backbone tree as produced by 'smrt consense', defaults to $format_default", { default => $format_default, arg => "format" }],
         ["classtree|c=s", "classification tree as produced by 'smrt classify', only needed with '-g' option", { arg => "file"}],
         ["alnfile|a=s", "list of file locations of merged alignments as produced by 'smrt aln'", { arg => "file", default => $aln_default}],    
         ["taxafile|t=s", "tsv (tab-seperated value) taxa file as produced by 'smrt taxize'", { arg => "file", default => $taxa_default}],
-        ["add_outgroups|g", "attempt to automatically add outgroup from sister genus for each clade, if sufficient marker overlap between clades", { default=> 0} ],
+        ["add_outgroups|g", "attempt to automatically add outgroup from sister genus for each clade, if sufficient marker overlap between clades", { default=> 0 } ],
         ["outfile|o=s", "name of the output file (summary table with included accessions), defaults to $outfile_default", { default=> $outfile_default, arg => "file"}],
     );  
 }
