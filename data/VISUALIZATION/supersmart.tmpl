@@ -69,7 +69,8 @@
                 var NCBI    = 'http://ncbi.nlm.nih.gov/';
                 var NCBITaxonomy = NCBI + 'taxonomy/';
                 var NCBINuccore  = NCBI + 'nuccore/';
-                var markers      = tree.markers;
+                var markers      = tree['backbone-markers'];
+                var clades       = tree['clade-markers'];
                 var maxMarkers   = Object.keys(markers).length;
                 var maxWidth     = 10;
 
@@ -111,9 +112,9 @@
                 function drawAgeRange(svg, node) {
                     var nx = node['map:x'];
                     var ny = node['map:y']; 
-                    if ( node['fig:height_range_min'] && node['fig:height_range_max'] ) { 
-						var min_x = nowx - ( node['fig:height_range_min'] * pptu );
-						var max_x = nowx - ( node['fig:height_range_max'] * pptu );
+                    if ( node['fig:height_95_HPD_min'] && node['fig:height_95_HPD_max'] ) { 
+						var min_x = nowx - ( node['fig:height_95_HPD_min'] * pptu );
+						var max_x = nowx - ( node['fig:height_95_HPD_max'] * pptu );
                     	var fadeRight = createSVGElt('rect',{
                             'x'      : nx,
                             'y'      : ny,
