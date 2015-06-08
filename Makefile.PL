@@ -13,7 +13,6 @@ WriteMakefile(
 	'PREREQ_PM' => {
 		'DBIx::Class'           => 0,
 		'DBI'                   => 0,
-		'DBD::mysql'            => 0,
 		'Template'              => 0,
 		'Config::Tiny'          => 0,
 		'Moose'                 => 0,
