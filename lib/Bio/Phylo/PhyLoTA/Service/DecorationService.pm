@@ -105,6 +105,7 @@ sub apply_taxon_colors {
 	$self->logger->info("going to apply taxon colors using $file");
 	my $mts = Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa->new;
 	my @records = $mts->parse_taxa_file($file);
+	$_->{'name'} =~ s/_/ /g for @records;
 
 	# create lookup table for genus colors, which we
 	# will then blend in a traversal from tips to root
