@@ -222,6 +222,7 @@ sub description {
   	open my $fh, "<", $pm_file or return "(unknown)";
 	undef $/;	
 	my $content = <$fh>;
+	chomp($content);
 	my ($desc) = 
          ($content =~ m/.*?DESCRIPTION\n(.*?)\n=.*/s);	
 	close $fh;
@@ -261,7 +262,7 @@ sub validate_args {
 
 =item usage_desc
 
-Overrides the method from App:Cmd to compile a custom 'usage' 
+Overrides the method from L<App::Cmd> to compile a custom 'usage' 
 string for a given subcommand with options and arguments 
 of the form 'smrt subcommand option1 <arg1> [option2 <arg2>] [option3]'.  
 Options that require arguments followed by the argument name enclosed in '<>'.
@@ -276,18 +277,35 @@ sub usage_desc {
 	my $usage = "%c $cmd ";
 		
 	# build custom usage string (default was "%c $cmd %o" )
+	my @args = ( '' );
 	for my $opt (@opts){
 		my $s = @{$opt}[0];
 		my %h = %{@{$opt}[2]};
 		my ($short_opt) = ($s =~ /\|([a-z]+)/);
 		my $required = $h{'mandatory'};
-		my $arg = $h{'arg'};
-		my $opt_str = "-$short_opt ";
-		$opt_str .= $arg ? " <$arg>"  :"";
-		$opt_str = !$required ? "[$opt_str] " : " $opt_str ";		
-		$usage .= $opt_str;		
+		my $arg      = $h{'arg'};
+		my $opt_str  = "-$short_opt";
+		$opt_str    .= $arg ? " <$arg>"  :"";
+		$opt_str     = !$required ? "[$opt_str] " : " $opt_str ";		
+		$args[-1]   .= $opt_str;
+		if ( length($args[-1]) > 60 ) {
+			push @args, '';
+		}
 	}
-	return $usage;	
+	return $usage . join( "\\\n\t", @args ) . "\n";	
+}
+
+=item usage_error
+
+Subclasses the method from L<App::Cmd> to display the error message using
+the logger before delegating to the super class.
+
+=cut
+
+sub usage_error {
+	my ( $self, $message ) = @_;
+	$self->logger->error($message);
+	die "Usage: " . $self->_usage_text . "\n";
 }
 
 =item options
