@@ -24,17 +24,13 @@ Plot - Visualizes a tree
 
 =head1 DESCRIPTION
 
-Creates a file with a graphical representation of a tree. Currently supported formats:
+Creates a file with a graphical representation of a tree. 
 
-=over
+Currently supported formats:
 
-=item Onezoom (html format, see L<http://www.onezoom.org>)
-
-=item jsPhyloSVG (html format, see L<http://www.jsphylosvg.org>)
-
-=item supersmart (html format)
-
-=back
+- Onezoom (html format, see L<http://www.onezoom.org>)
+- jsPhyloSVG (html format, see L<http://www.jsphylosvg.org>)
+- supersmart (html format)
 
 =cut
 
@@ -49,35 +45,56 @@ sub options {
 	my $format_default    = 'supersmart';
 	my $outfile_default   = "$format_default.$formats{$format_default}";
 	my $width_default     = 800;
-	my $height_default    = 600;
 	my $style_default     = 'rectangular';
 	my $bbmarkers_default = 'markers-backbone.tsv';
 	my $taxa_default      = 'species.tsv';
 	my $fossil_default    = 'fossils.tsv';
-	my $clade_default     = 0;
+	my $tree_default      = 'final.nex';
+	my $clade_default     = 'markers-clades.tsv';
 	return (
-		['tree|t=s', 'file name of input tree (newick format)', { arg => 'file', mandatory => 1 } ],
+		['tree|t=s', 'file name of input tree (newick format)', { default => $tree_default, arg => 'file', mandatory => 1 } ],
 		['outfile|o=s', "name of the output file, defaults to '$outfile_default'", { default => $outfile_default, arg => 'file' } ],	
-		['format|f=s', "output format, currently supported: OneZoom, jsPhyloSVG, SUPERSMART. Default: $format_default", { default => $format_default } ],
-		['width|w=i', "visualization width. Default: $width_default", { default => $width_default } ],
-		['height|h=i', "visualization height. Default: $height_default", { default => $height_default } ],
-		['style|s=s', "visualization style (rectangular or circular). Default: $style_default", { default => $style_default } ],
-		['markers|m=s', "backbone markers table. Default: $bbmarkers_default", { default => $bbmarkers_default } ],
-		['taxa|i=s', "taxa table. Default: $taxa_default", { default => $taxa_default } ],
-		['fossils|p=s', "fossil table. Default: $fossil_default", { default => $fossil_default } ],
-		['clades|c=s', "Search cladeXXX folders in workdir. Default: $clade_default", { default => $clade_default } ],
+		['format|f=s', "output format, currently supported: OneZoom, jsPhyloSVG, SUPERSMART. Default: $format_default", { default => $format_default, arg => 'string' } ],
+		['width|w=i', "visualization width. Default: $width_default", { default => $width_default, arg => 'int' } ],
+		['height|e=i', "visualization height", { arg => 'int' } ],
+		['style|s=s', "visualization style (rectangular or circular). Default: $style_default", { default => $style_default, arg => 'file' } ],
+		['markers|m=s', "backbone markers table. Default: $bbmarkers_default", { default => $bbmarkers_default, arg => 'file' } ],
+		['taxa|i=s', "taxa table. Default: $taxa_default", { default => $taxa_default, arg => 'file' } ],
+		['fossils|p=s', "fossil table. Default: $fossil_default", { default => $fossil_default, arg => 'file' } ],
+		['clades|c=s', "clade markers table. Default: $clade_default", { default => $clade_default, arg => 'file' } ],
 	);	
 }
 
 sub validate {
 	my ($self, $opt, $args) = @_;		
 	
-	# we only have to check the 'infile' argument. 
+	# we have to check the 'infile' argument. 
 	# if the infile is absent or empty, abort  
 	my $file = $opt->tree;
-	$self->usage_error('no tree argument given') if not $file;
-	$self->usage_error('file $file does not exist') unless (-e $file);
-	$self->usage_error('file $file is empty') unless (-s $file);			
+	$self->usage_error("tree file $file does not exist") unless -e $file;
+	$self->usage_error("tree file $file is empty") unless -s $file;			
+
+	# needs to be positive
+	if ( $opt->width < 0 ) {
+		$self->usage_error("width must be a positive integer, not ".$opt->width);
+	}
+	if ( defined( $opt->height ) and $opt->height < 0 ) {
+		$self->usage_error("height must be a positive integer, not ".$opt->height);
+	}
+
+	# check if exists
+	if ( not -e $opt->markers ) {
+		$self->logger->info("backbone marker table not found, will not process ".$opt->markers); 
+	}
+	if ( not -e $opt->taxa ) {
+		$self->logger->info("taxa table not found, will not process ".$opt->taxa);
+	}
+	if ( not -e $opt->fossils ) {
+		$self->logger->info("fossil table not found, will not process ".$opt->fossils);
+	}
+	if ( not -e $opt->clades ) {
+		$self->logger->info("clade marker table not found, will not process ".$opt->clades);
+	}
 }
 
 # here is my wish list for this:
@@ -89,13 +106,14 @@ sub validate {
 # + mark fossil nodes (maybe mark ranges?)
 # + show branch coverage as line thickness
 # + make taxa clickable (popup with link to NCBI taxonomy and to used sequences)
-# - show age ranges from *BEAST
-# - show bootstrapped age ranges
+# + show age ranges from *BEAST
+# + show bootstrapped age ranges
 
 sub run {
 	my ($self, $opt, $args) = @_;
 	my $outfile = $opt->outfile;
 	my $logger  = $self->logger;	
+	my $ntax    = 0;
 	
 	# read tree, clean labels
 	my $tree = parse_tree(
@@ -108,12 +126,13 @@ sub run {
 		$name =~ s/_/ /g;
 		$name =~ s/'(.+?)'/$1/;
 		$n->set_name($name);
+		$ntax++ if $n->is_terminal;
 	});
 	
 	# compute coordinates and round to nearest integer
 	my $drawer = Bio::Phylo::Treedrawer->new(
 		'-width'  => $opt->width,
-		'-height' => $opt->height,
+		'-height' => ( $opt->height || ( $ntax * 50 ) ),
 		'-tree'   => $tree,
 	);
 	$drawer->compute_coordinates;
@@ -132,10 +151,10 @@ sub run {
 	
 	# apply metadata for styling
 	my $ds = Bio::Phylo::PhyLoTA::Service::DecorationService->new;
-	$ds->apply_taxon_colors($opt->taxa,$tree) if -s $opt->taxa;
-	$ds->apply_backbone_markers($opt->markers,$tree) if -s $opt->markers;
-	$ds->apply_fossil_nodes($opt->fossils,$tree) if -s $opt->fossils;
-	$ds->apply_clade_markers($opt->clades,$tree) if -d $opt->clades;
+	$ds->apply_taxon_colors($opt->taxa,$tree)        if -e $opt->taxa    and -s $opt->taxa;
+	$ds->apply_backbone_markers($opt->markers,$tree) if -e $opt->markers and -s $opt->markers;
+	$ds->apply_fossil_nodes($opt->fossils,$tree)     if -e $opt->fossils and -s $opt->fossils;
+	$ds->apply_clade_markers($opt->clades,$tree)     if -e $opt->clades  and -s $opt->clades;
 	
 	# get template file
 	my $tool = lc $opt->format;
