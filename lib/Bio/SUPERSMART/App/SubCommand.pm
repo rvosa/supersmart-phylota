@@ -1,6 +1,7 @@
 package Bio::SUPERSMART::App::SubCommand;
 
 use Cwd;
+use Term::ANSIColor ':constants';
 use Bio::Phylo::PhyLoTA::Config;
 use Bio::Phylo::Util::Logger ':levels';
 use Bio::Phylo::Util::Exceptions 'throw';
@@ -189,11 +190,11 @@ subcommand specific options.
 sub opt_spec {
 	my ($class, $app) = @_;		
 	return (
-		[ "help|h", "display help screen", {} ],
-		[ "verbose|v+", "increase verbosity level", {} ],
-		[ "workdir|w=s", "directory in which results and intermediate files are stored", { arg => "dir"} ],
-		[ "logfile|l=s", "write run-time information to logfile", { arg => "file" }],	
-		[ "logstyle|y=s", "toggles logging style between 'simple' and 'detailed'", { default => "simple" }],
+		[ "help|h", "display help screen", { type => 'super' } ],
+		[ "verbose|v+", "increase verbosity level", { type => 'super' } ],
+		[ "workdir|w=s", "directory in which results and intermediate files are stored", { arg => "dir", type => 'super' } ],
+		[ "logfile|l=s", "write run-time information to logfile", { arg => "file", type => 'super' }],	
+		[ "logstyle|y=s", "toggles logging style between 'simple' and 'detailed'", { default => "simple", type => 'super' }],
 		$class->options($app),
 	);	
 }
@@ -278,16 +279,29 @@ sub usage_desc {
 		
 	# build custom usage string (default was "%c $cmd %o" )
 	my @args = ( '' );
+	@opts = sort { ( $a->[2]->{type} eq 'super' ) <=> ( $b->[2]->{type} eq 'super' ) } @opts;
 	for my $opt (@opts){
-		my $s = @{$opt}[0];
-		my %h = %{@{$opt}[2]};
+		my $s = $opt->[0];
+		my %h = %{ $opt->[2] };
 		my ($short_opt) = ($s =~ /\|([a-z]+)/);
 		my $required = $h{'mandatory'};
 		my $arg      = $h{'arg'};
 		my $opt_str  = "-$short_opt";
 		$opt_str    .= $arg ? " <$arg>"  :"";
 		$opt_str     = !$required ? "[$opt_str] " : " $opt_str ";		
-		$args[-1]   .= $opt_str;
+
+		# encode colored
+		if ( $h{'type'} =~ /super/ ) {
+			$args[-1] .= "\033[0;37m" . $opt_str . "\033[0m";
+		}
+		elsif ( $required ) {
+			$opt_str =~ s/^\s*//;
+			$opt_str =~ s/\s*$//;
+			$args[-1] .= " \033[4m" . $opt_str . "\033[0m ";
+		}
+		else {
+			$args[-1] .= $opt_str;
+		}
 		if ( length($args[-1]) > 60 ) {
 			push @args, '';
 		}
