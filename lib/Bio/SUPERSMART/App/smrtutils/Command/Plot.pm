@@ -52,9 +52,9 @@ sub options {
 	my $tree_default      = 'final.nex';
 	my $clade_default     = 'markers-clades.tsv';
 	return (
-		['tree|t=s', 'file name of input tree (newick format)', { default => $tree_default, arg => 'file', mandatory => 1 } ],
+		['tree|t=s', "file name of input tree (NEXUS/figtree format, default is '$tree_default')", { default => $tree_default, arg => 'file' } ],
 		['outfile|o=s', "name of the output file, defaults to '$outfile_default'", { default => $outfile_default, arg => 'file' } ],	
-		['format|f=s', "output format, currently supported: OneZoom, jsPhyloSVG, SUPERSMART. Default: $format_default", { default => $format_default, arg => 'string' } ],
+		['format|f=s', "output format, currently supported: OneZoom, jsPhyloSVG, SUPERSMART. Default: '$format_default'", { default => $format_default, arg => 'string' } ],
 		['width|w=i', "visualization width. Default: $width_default", { default => $width_default, arg => 'int' } ],
 		['height|e=i', "visualization height", { arg => 'int' } ],
 		['style|s=s', "visualization style (rectangular or circular). Default: $style_default", { default => $style_default, arg => 'file' } ],
@@ -116,9 +116,10 @@ sub run {
 	my $ntax    = 0;
 	
 	# read tree, clean labels
+	$logger->info("Going to read tree file ".$opt->tree);
 	my $tree = parse_tree(
 		'-file'   => $opt->tree,
-		'-format' => 'newick',
+		'-format' => 'figtree',
 	);
 	$tree->visit(sub{
 		my $n = shift;
@@ -130,6 +131,7 @@ sub run {
 	});
 	
 	# compute coordinates and round to nearest integer
+	$logger->info("Going to compute node coordinates");
 	my $drawer = Bio::Phylo::Treedrawer->new(
 		'-width'  => $opt->width,
 		'-height' => ( $opt->height || ( $ntax * 50 ) ),
@@ -141,7 +143,7 @@ sub run {
 		my $n = shift;
 		my $x = $n->get_x;
 		push @present, $x if $n->is_terminal;
-		my $l = $n->get_branch_length;
+		my $l = $n->get_branch_length || 0;
 		if ( $l > 0 and $n->get_parent ) {
 			push @pptu, ( $x - $n->get_parent->get_x ) / $l;
 		}
@@ -151,10 +153,22 @@ sub run {
 	
 	# apply metadata for styling
 	my $ds = Bio::Phylo::PhyLoTA::Service::DecorationService->new;
-	$ds->apply_taxon_colors($opt->taxa,$tree)        if -e $opt->taxa    and -s $opt->taxa;
-	$ds->apply_backbone_markers($opt->markers,$tree) if -e $opt->markers and -s $opt->markers;
-	$ds->apply_fossil_nodes($opt->fossils,$tree)     if -e $opt->fossils and -s $opt->fossils;
-	$ds->apply_clade_markers($opt->clades,$tree)     if -e $opt->clades  and -s $opt->clades;
+	if ( -e $opt->taxa and -s $opt->taxa ) {
+		$logger->info("Going to apply taxon colors from file ".$opt->taxa);
+		$ds->apply_taxon_colors($opt->taxa,$tree);
+	}
+	if ( -e $opt->markers and -s $opt->markers ) {
+		$logger->info("Going to apply backbone markers from file ".$opt->markers);
+		$ds->apply_backbone_markers($opt->markers,$tree);
+	}
+	if ( -e $opt->fossils and -s $opt->fossils ) {
+		$logger->info("Going to apply fossil annotations from file ".$opt->fossils);
+		$ds->apply_fossil_nodes($opt->fossils,$tree);
+	}
+	if ( -e $opt->clades and -s $opt->clades ) {
+		$logger->info("Going to apply clade markers from file ".$opt->clades);
+		$ds->apply_clade_markers($opt->clades,$tree);
+	}
 	
 	# get template file
 	my $tool = lc $opt->format;
