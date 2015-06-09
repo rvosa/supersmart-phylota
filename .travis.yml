@@ -16,6 +16,7 @@ install:
   - sudo apt-get update
   - sudo apt-get -y install puppet
   - travis_wait 60 sudo -E puppet apply conf/manifests/default.pp
+  - export PERL5LIB=$PERL5LIB:$SUPERSMART_HOME/lib
   - perl -e "use Bio::Phylo::PhyLoTA::Service; use Bio::Phylo::PhyLoTA::DAO;"
   - cpanm --notest --installdeps .
   - cpanm --notest git://github.com/rvosa/bio-phylo.git
