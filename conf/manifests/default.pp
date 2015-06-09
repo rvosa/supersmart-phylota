@@ -8,9 +8,8 @@
 # set user and default paths for storing data, tools and source code
 $username        = "vagrant"
 $home_dir        = "/home/${username}"
-$supersmart_dir  = "/home/${username}/SUPERSMART"
-$src_dir         = "${supersmart_dir}/src"
 $supersmart_home = "${home_dir}/supersmart"
+$src_dir         = "${supersmart_dir}/src"
 $tools_dir       = "${supersmart_home}/tools"
 $tools_bin_dir   = "${tools_dir}/bin"
 $data_dir        = "${supersmart_home}/data"
@@ -66,10 +65,6 @@ class install {
 
 	# create links for executables and data directories
 	file {
-                $supersmart_dir:
-			ensure  => directory,
-			group   => $username,
-			owner   => $username;
                 $home_dir:
 			ensure  => directory,
 			group   => $username,
@@ -180,9 +175,9 @@ class install {
 		# make phylota database
 		"dl_phylota_db":
 			command => "wget http://biovel.naturalis.nl/phylota.sqlite.gz",
-			cwd     => $home_dir,
+			cwd     => $data_dir,
 			creates => "${data_dir}/phylota.sqlite.gz",                        
-			require => [ File[ $home_dir ], Package[ 'wget' ], Exec[ 'clone_supersmart' ] ];
+			require => [ File[ $data_dir ], Package[ 'wget' ], Exec[ 'clone_supersmart' ] ];
 		"unzip_phylota_db":		
 			command => "gunzip phylota.sqlite.gz",		
 			creates => "${data_dir}/phylota.sqlite",		
@@ -294,7 +289,6 @@ class install {
 		"clone_supersmart":
 			command => "git clone https://github.com/naturalis/supersmart.git",
                   	cwd     => $home_dir,
-                        logoutput => true,
                         creates => "${home_dir}/supersmart",
 			user    => $username,
                       	require => [ File[ $home_dir ], Package[ 'git' ] ];
