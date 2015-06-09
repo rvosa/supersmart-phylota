@@ -8,7 +8,7 @@
 # set user and default paths for storing data, tools and source code
 $username        = "vagrant"
 $home_dir        = "/home/${username}"
-$supersmart_home = "${homedir}/supersmart"
+$supersmart_home = "${home_dir}/supersmart"
 $tools_dir       = "${supersmart_home}/tools"
 $tools_bin_dir   = "${tools_dir}/bin"
 $data_dir        = "${supersmart_home}/data"
