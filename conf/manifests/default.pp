@@ -70,6 +70,10 @@ class install {
 			ensure  => directory,
 			group   => $username,
 			owner   => $username;
+                $home_dir:
+			ensure  => directory,
+			group   => $username,
+			owner   => $username;
                 $src_dir:
 			ensure  => directory,
 			group   => $username,
