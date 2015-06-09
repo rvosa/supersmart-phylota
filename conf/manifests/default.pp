@@ -77,6 +77,10 @@ class install {
 			ensure  => directory,
 			group   => $username,
 			owner   => $username;
+		$data_dir:
+			ensure  => directory,
+			group   => $username,
+			owner   => $username;
 
 		"muscle_link":
 			path    => "${tools_bin_dir}/muscle",
