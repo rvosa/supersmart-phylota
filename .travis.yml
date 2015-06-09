@@ -16,7 +16,8 @@ install:
   - sudo apt-get update
   - sudo apt-get -y install puppet
   - travis_wait 60 sudo -E puppet apply conf/manifests/default.pp
-  - ls $SUPERSMART_HOME/data/phylota.sqlite && echo "dbfile present" || echo "dbfile not present"
+  - ls /home/vagrant/supersmart/data
+  - pwd
   - cpanm --notest --installdeps .
   - cpanm --notest git://github.com/rvosa/bio-phylo.git
   - cpanm --notest git://github.com/bioperl/bioperl-live.git@v1.6.x
