@@ -9,7 +9,6 @@
 $username        = "vagrant"
 $home_dir        = "/home/${username}"
 $supersmart_home = "${home_dir}/supersmart"
-$src_dir         = "${supersmart_dir}/src"
 $tools_dir       = "${supersmart_home}/tools"
 $tools_bin_dir   = "${tools_dir}/bin"
 $data_dir        = "${supersmart_home}/data"
@@ -69,11 +68,6 @@ class install {
 			ensure  => directory,
 			group   => $username,
 			owner   => $username;
-                $src_dir:
-			ensure  => directory,
-			group   => $username,
-			owner   => $username,
-			recurse => true;
 		$supersmart_home:
 			ensure  => directory,
 			group   => $username,
