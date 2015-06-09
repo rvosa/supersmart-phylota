@@ -68,10 +68,6 @@ class install {
 			ensure  => directory,
 			group   => $username,
 			owner   => $username;
-		$data_dir:
-			ensure  => directory,
-			group   => $username,
-			owner   => $username;
 		$tools_dir:
 			ensure  => directory,
 			group   => $username,
@@ -167,7 +163,7 @@ class install {
 			command => "wget http://biovel.naturalis.nl/phylota.sqlite.gz",
 			cwd     => $data_dir,
 			creates => "${data_dir}/phylota.sqlite.gz",                        
-			require => [ File[ $data_dir ], Package[ 'wget' ] ];
+			require => [ File[ $data_dir ], Package[ 'wget' ], Exec[ 'clone_supersmart' ] ];
 		"unzip_phylota_db":		
 			command => "gunzip phylota.sqlite.gz",		
 			creates => "${data_dir}/phylota.sqlite",		
