@@ -176,9 +176,9 @@ class install {
 		# make phylota database
 		"dl_phylota_db":
 			command => "wget http://biovel.naturalis.nl/phylota.sqlite.gz",
-			cwd     => $data_dir,
+			cwd     => $home_dir,
 			creates => "${data_dir}/phylota.sqlite.gz",                        
-			require => [ File[ $data_dir ], Package[ 'wget' ], Exec[ 'clone_supersmart' ] ];
+			require => [ File[ $home_dir ], Package[ 'wget' ], Exec[ 'clone_supersmart' ] ];
 		"unzip_phylota_db":		
 			command => "gunzip phylota.sqlite.gz",		
 			creates => "${data_dir}/phylota.sqlite",		
@@ -289,10 +289,11 @@ class install {
 		# install supersmart
 		"clone_supersmart":
 			command => "git clone https://github.com/naturalis/supersmart.git",
-                  	cwd     => $src_dir,
-			creates => "${src_dir}/supersmart",
+                  	cwd     => $home_dir,
+                        logoutput => true,
+                        creates => "${home_dir}/supersmart",
 			user    => $username,
-                      	require => [ File[ $src_dir ], Package[ 'git' ] ];
+                      	require => [ File[ $home_dir ], Package[ 'git' ] ];
 
 		"make_supersmart_sh":
 			command => "echo 'export LD_LIBRARY_PATH=/usr/lib:/usr/lib64:/usr/local/lib' > supersmart.sh && echo 'export SUPERSMART_HOME=${supersmart_home}' >> supersmart.sh && echo 'export PERL5LIB=\$PERL5LIB:\$SUPERSMART_HOME/lib' >> supersmart.sh",

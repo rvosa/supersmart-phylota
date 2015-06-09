@@ -15,7 +15,8 @@ install:
   - sudo useradd -d /home/vagrant -m vagrant
   - sudo apt-get update
   - sudo apt-get -y install puppet
-  - travis_wait 60 sudo -E puppet apply conf/manifests/default.pp
+  #- travis_wait 60 sudo -E puppet apply conf/manifests/default.pp
+  - sudo -E puppet apply conf/manifests/default.pp
   - echo $SUPERSMART_HOME
   - ls $SUPERSMART_HOME/data/phylota.sqlite && echo "dbfile present" || echo "dbfile not present"
   - ls /home/vagrant/supersmart/data/phylota.sqlite && echo "dbfile present" || echo "dbfile not present"
