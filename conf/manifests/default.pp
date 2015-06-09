@@ -8,6 +8,8 @@
 # set user and default paths for storing data, tools and source code
 $username        = "vagrant"
 $home_dir        = "/home/${username}"
+$supersmart_dir  = "/home/${username}/SUPERSMART"
+$src_dir         = "${supersmart_dir}/src"
 $supersmart_home = "${home_dir}/supersmart"
 $tools_dir       = "${supersmart_home}/tools"
 $tools_bin_dir   = "${tools_dir}/bin"
@@ -64,6 +66,15 @@ class install {
 
 	# create links for executables and data directories
 	file {
+                $supersmart_dir:
+			ensure  => directory,
+			group   => $username,
+			owner   => $username;
+                $src_dir:
+			ensure  => directory,
+			group   => $username,
+			owner   => $username,
+			recurse => true;
 		$supersmart_home:
 			ensure  => directory,
 			group   => $username,
@@ -278,10 +289,11 @@ class install {
 		# install supersmart
 		"clone_supersmart":
 			command => "git clone https://github.com/naturalis/supersmart.git",
-			cwd     => $home_dir,
-			creates => "${supersmart_home}",
+                  	cwd     => $src_dir,
+			creates => "${src_dir}/supersmart",
 			user    => $username,
-			require => [ Package[ 'git' ] ];
+                      	require => [ File[ $src_dir ], Package[ 'git' ] ];
+
 		"make_supersmart_sh":
 			command => "echo 'export LD_LIBRARY_PATH=/usr/lib:/usr/lib64:/usr/local/lib' > supersmart.sh && echo 'export SUPERSMART_HOME=${supersmart_home}' >> supersmart.sh && echo 'export PERL5LIB=\$PERL5LIB:\$SUPERSMART_HOME/lib' >> supersmart.sh",
 			cwd     => "/etc/profile.d",
