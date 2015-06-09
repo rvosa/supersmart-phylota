@@ -86,7 +86,8 @@ sub new {
 		my $dsn_tmpl  = 'DBI:%s:database=%s;host=%s';		
 
 		$args{'dsn'} = sprintf($dsn_tmpl, @args{qw[rdbms database host]});		
-
+		use Data::Dumper;
+		print Dumper(\%args);
 		$SINGLETON = $package->connect( \%args);
 		
 	}
