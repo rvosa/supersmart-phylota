@@ -15,8 +15,6 @@ __PACKAGE__->load_namespaces;
 # Created by DBIx::Class::Schema::Loader v0.07002 @ 2012-05-26 14:28:40
 # DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:qy8gwA4ReJ1Jez7iqtYMBQ
 
-use File::Path::Expand;
-
 # You can replace this text with custom content, and it will be preserved on regeneration
 
 =head1 NAME
@@ -86,8 +84,7 @@ sub new {
 		my $dsn_tmpl  = 'DBI:%s:database=%s;host=%s';		
 
 		$args{'dsn'} = sprintf($dsn_tmpl, @args{qw[rdbms database host]});		
-		use Data::Dumper;
-		print STDERR Dumper(\%args);
+
 		$SINGLETON = $package->connect( \%args);
 		
 	}

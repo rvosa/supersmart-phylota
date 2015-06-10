@@ -52,12 +52,12 @@ BIN: for my $var ( @bins ) {
 
 
 # verify these servers are reachable
-my @servers = qw(HOST SERVER);
-my $p = Net::Ping->new;
-for my $server ( @servers ) {
-	SKIP : {
-		skip "no SERVER available yet", 2 if $server =~ /SERVER/;
-		ok( $config->$server, "server $server is defined" );
-		ok( $p->ping($config->$server), "server $server is reachable" );
-	};
-}
+# my @servers = qw(HOST SERVER);
+# my $p = Net::Ping->new;
+# for my $server ( @servers ) {
+#	SKIP : {
+#		skip "no SERVER available yet", 2 if $server =~ /SERVER/;
+#		ok( $config->$server, "server $server is defined" );
+#		ok( $p->ping($config->$server), "server $server is reachable" );
+#	};
+#}

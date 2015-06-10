@@ -83,6 +83,8 @@ sub validate {
     }
 }
 
+=over
+
 =item make_suffix
 
 Generates a file suffix to append to tree and log file
