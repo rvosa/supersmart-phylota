@@ -44,7 +44,7 @@ sub options {
 	my ($self, $opt, $args) = @_;
 	my $format_default    = 'supersmart';
 	my $outfile_default   = "$format_default.$formats{$format_default}";
-	my $width_default     = 800;
+	my $width_default     = 1200;
 	my $style_default     = 'rectangular';
 	my $bbmarkers_default = 'markers-backbone.tsv';
 	my $taxa_default      = 'species.tsv';
@@ -131,7 +131,7 @@ sub run {
 	});
 	
 	# compute coordinates and round to nearest integer
-	my $height = $opt->height || $ntax * 50;
+	my $height = $opt->height || $ntax * 25;
 	$logger->info("Going to compute node coordinates");
 	my $drawer = Bio::Phylo::Treedrawer->new(
 		'-width'  => $opt->width,
