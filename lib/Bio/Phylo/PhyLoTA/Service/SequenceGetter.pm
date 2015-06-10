@@ -834,8 +834,10 @@ with which the sequence was annotated.
 
 =cut
 
+my %marker_cache;
 sub get_markers_for_accession {
 	my ( $self, $acc ) = @_;
+	return @{ $marker_cache{$acc} } if $marker_cache{$acc};
 	my $gb = Bio::DB::GenBank->new();
 	my $seq = $gb->get_Seq_by_acc($acc);
 
@@ -846,6 +848,7 @@ sub get_markers_for_accession {
 		'repeat_region' => 'rpt_family',
 		'gene'          => 'gene',
 		'CDS'           => 'product',
+		'misc_feature'  => 'note',
 	);
 	
 	# iterate over features
@@ -890,6 +893,7 @@ sub get_markers_for_accession {
 		my ($shortest) = sort { length($a) <=> length($b) } @{ $result{$m} };
 		push @markers, $shortest;
 	}
+	$marker_cache{$acc} = [ @markers ];
 	return @markers;
 }
 
