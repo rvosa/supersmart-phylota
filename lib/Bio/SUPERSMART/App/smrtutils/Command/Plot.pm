@@ -131,10 +131,11 @@ sub run {
 	});
 	
 	# compute coordinates and round to nearest integer
+	my $height = $opt->height || $ntax * 50;
 	$logger->info("Going to compute node coordinates");
 	my $drawer = Bio::Phylo::Treedrawer->new(
 		'-width'  => $opt->width,
-		'-height' => ( $opt->height || ( $ntax * 50 ) ),
+		'-height' => $height,
 		'-tree'   => $tree,
 	);
 	$drawer->compute_coordinates;
@@ -181,7 +182,7 @@ sub run {
 	my %args = (
 		'tree'    => $tree,
 		'width'   => $opt->width,
-		'height'  => $opt->height,
+		'height'  => $height,
 		'style'   => $opt->style,
 		'date'    => $date,
 		'command' => "$script @ARGV",
