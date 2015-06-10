@@ -159,15 +159,15 @@ sub run {
 	}
 	if ( -e $opt->markers and -s $opt->markers ) {
 		$logger->info("Going to apply backbone markers from file ".$opt->markers);
-		$ds->apply_backbone_markers($opt->markers,$tree);
+		$ds->apply_markers($opt->markers,$tree,'backbone');
 	}
+        if ( -e $opt->clades and -s $opt->clades ) {
+                $logger->info("Going to apply clade markers from file ".$opt->clades);
+                $ds->apply_markers($opt->clades,$tree,'clade');
+        }
 	if ( -e $opt->fossils and -s $opt->fossils ) {
 		$logger->info("Going to apply fossil annotations from file ".$opt->fossils);
 		$ds->apply_fossil_nodes($opt->fossils,$tree);
-	}
-	if ( -e $opt->clades and -s $opt->clades ) {
-		$logger->info("Going to apply clade markers from file ".$opt->clades);
-		$ds->apply_clade_markers($opt->clades,$tree);
 	}
 	
 	# get template file
