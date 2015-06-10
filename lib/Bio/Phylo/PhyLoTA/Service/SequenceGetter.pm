@@ -865,6 +865,20 @@ sub get_markers_for_accession {
 				my $key = $loc->start . '.' . $loc->end;
 				$result{$key} = [] if not $result{$key};
 				my ($value) = $feature->each_tag_value($subtag);
+
+				# if we just get the rpt_family we will end up
+				# calling a lot of different markers something
+				# generic such as SINE or LINE. this will not
+				# be very informative and it will suggest that
+				# the 'orthologize' step didn't function as 
+				# intended (when in fact it did). We will therefore
+				# try to see if the sequence submitter has been 
+				# dilligent enough to put the name for the repeat
+				# element in the `/note=...` annotation:
+				if ( $subtag eq 'rpt_family' ) {
+					my ($note) = $feature->each_tag_value('note');
+					$value .= '/' . $note if $note;
+				}
 				push @{ $result{$key} }, $value;
 			}
 		}
