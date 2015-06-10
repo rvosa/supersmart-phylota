@@ -22,75 +22,6 @@ which markers were included in the supermatrix, and so on.
 
 =over
 
-=item apply_clade_markers
-
-Given a directory that contains cladeXXX folders and a tree, add the clade
-clusters in which each taxon participates to it, using the 'clusters' key
-in the generic hash of the respective exemplar tips.
-
-=cut
-
-
-sub apply_clade_markers {
-	my ($self,$dir,$tree) = @_;
-	$self->logger->info("going to apply clade markers using dir $dir");
-	my $mts = Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa->new;
-	my %lookup = map { $_->get_generic('species') => $_ } @{ $tree->get_terminals };
-
-	# iterate over root directory
-	opendir my $rootdh, $dir or die $!;
-	while( my $entry = readdir $rootdh ) {
-
-		# have a clade directory
-		if ( $entry =~ /^clade\d+$/ and -d "${dir}/${entry}" ) {
-			opendir my $cladedh, "${dir}/${entry}" or die $!;
-			while( my $clade_entry = readdir $cladedh ) {
-
-				# have a fasta file
-				if ( $entry =~ /^(cluster\d+)\.fa/ ) {
-					my $cluster = $1;
-					my %fasta = $mts->parse_fasta_file("${dir}/${entry}/${cluster}.fa");
-					my %gis = $mts->get_gis_from_fasta(%fasta);
-					for my $taxon ( keys %gis ) {
-						my $node = $lookup{$taxon};
-
-						# extend list of clusters taxon participates in
-						my $clusters = $node->get_generic('clusters') || [];
-						push @$clusters, $cluster;
-						$node->set_generic( 'clusters' => $clusters );
-
-						# store gi(s) of focal cluster
-						$node->set_generic( $cluster => $gis{$taxon} );
-					}
-				}
-			}
-		}
-	}
-
-	# collect GIs for deeper nodes
-	$tree->visit_depth_first(
-		'-post' => sub {
-			my $n = shift;
-			if ( $n->is_internal ) {
-
-				# merge all cluster GIs from children
-				my %clusters;
-				for my $c ( @{ $n->get_children } ) {
-					my @clusters = @{ $c->get_generic('clusters') };
-					for my $cluster ( @clusters ) {
-						$clusters{$cluster} = [] if not $clusters{$cluster};
-						push @{ $clusters{$cluster} }, @{ $c->get_generic($cluster) };
-					}
-				}
-
-				# carry forward
-				%clusters = map { $_ => [ uniq @{ $clusters{$_} } ] } keys %clusters;
-				$n->set_generic( 'clusters' => [ keys %clusters ], %clusters );
-			}
-		}
-	);
-}
-
 =item apply_taxon_colors
 
 Given a taxa table (file) and a tree, applies colors to the genera. The colors
@@ -102,7 +33,7 @@ the NCBI species ID is attached with C<set_guid>.
 
 sub apply_taxon_colors {
 	my ($self,$file,$tree) = @_;
-	$self->logger->info("going to apply taxon colors using $file");
+	$self->logger->debug("going to apply taxon colors using $file");
 	my $mts = Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa->new;
 	my @records = $mts->parse_taxa_file($file);
 	$_->{'name'} =~ s/_/ /g for @records;
@@ -154,55 +85,68 @@ sub apply_taxon_colors {
 	);
 }
 
-=item apply_backbone_markers
+=item apply_markers
 
-Given a backbone marker file and a tree,
+Given a marker file, a tree and an argument to distinguis 'backbone' from 'clade',
 sets the following annotations:
 
-- exemplar tips are given a true value for the 'exemplar' key in the generic hash
+- backbone exemplar tips are given a true value for the 'exemplar' key in the generic hash
 - exemplar tips are given a hash of marker ID to accession mappings under 'backbone'
 - backbone nodes are given hash of marker ID to n seqs mappings under 'backbone'
 - the root is given a hash of marker ID to marker name mappings under 'markers'
 
 =cut
 
-sub apply_backbone_markers {
-	my ($self,$file,$tree) = @_;
-	$self->logger->info("going to apply backbone markers using $file");
+sub apply_markers {
+	my ($self,$file,$tree,$type) = @_;
+	my $logger = $self->logger;
+	$logger->debug("going to apply $type markers using $file");
 	my $mts = Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa->new;
-	my $sg = Bio::Phylo::PhyLoTA::Service::SequenceGetter->new;
-	my @records = $mts->parse_taxa_file($file);
+	my $sg  = Bio::Phylo::PhyLoTA::Service::SequenceGetter->new;
+	my @records   = $mts->parse_taxa_file($file);
+	my $predicate = $type . '_markers'; 
 
 	# iterate over record, add generic annotation to all nodes on the path
 	# listing which markers and accessions participated in the node
 	for my $r ( @records ) {
 		if ( my $tip = $tree->get_by_name( $r->{'taxon'} ) ) {
-			$tip->set_generic( 'exemplar' => 1 );
+			$tip->set_generic( 'exemplar' => 1 ) if $type eq 'backbone';
 
 			# store marker ID and accession number
-            my %markers;
-            for my $m ( @{ $r->{'keys'} } ) {
+			my %markers;
+			for my $m ( @{ $r->{'keys'} } ) {
 				next if $m eq 'taxon';
-                $markers{$m} = $r->{$m} if $r->{$m} and $r->{$m} =~ m/\S/;
-            }
-			$tip->set_generic( 'backbone' => \%markers );
+				$markers{$m} = $r->{$m} if $r->{$m} and $r->{$m} =~ m/\S/;
+			}
+			$tip->set_generic( $predicate => \%markers );
+			$logger->debug("attached ".scalar(keys(%markers))." $type markers to ".$r->{'taxon'});
 
 			# start the counts at 1
 			my %counts = map { $_ => 1 } keys %markers;
-			for my $node ( @{ $tip->get_ancestors } ) {
+			my $ancestors = 0;
+			NODE: for my $node ( @{ $tip->get_ancestors } ) {
 
 				# may have visited node from another descendent, need
 				# to add current counts
-				if ( my $h = $node->get_generic('backbone') ) {
+				if ( my $h = $node->get_generic($predicate) ) {
 					$h->{$_} += $counts{$_} for keys %counts;
 					my %copy = %$h;
-					$node->set_generic( 'backbone' => \%copy );
+					$node->set_generic( $predicate => \%copy );
 				}
 				else {
 					my %copy = %counts;
-					$node->set_generic( 'backbone' => \%copy );
+					$node->set_generic( $predicate => \%copy );
 				}
+				last NODE if $node->get_meta_object('fig:clade');
+				$ancestors++;
 			}
+			$logger->debug("updated annotations for $ancestors ancestors");
+		}
+		else {
+			# XXX this really shouldn't happen, yet it did on @rvosa's bunch
+			# of primate files. Possibly this is because I had been poking around
+			# merging files under different settings?
+			$logger->debug("Couldn't find taxon '".$r->{'taxon'}."' from file $file");
 		}
 	}
 
@@ -218,7 +162,7 @@ sub apply_backbone_markers {
 			$self->logger->info("$marker ($acc): @desc");
 		}
 	}
-	$tree->get_root->set_generic( 'markers' => \%markers );
+	$tree->get_root->set_generic( $predicate => \%markers );
 }
 
 =item apply_fossil_nodes
@@ -231,7 +175,7 @@ generic hash.
 
 sub apply_fossil_nodes {
 	my ($self,$file,$tree) = @_;
-	$self->logger->info("going to apply fossil nodes using $file");
+	$self->logger->debug("going to apply fossil nodes using $file");
 
 	# read fossil table and convert to calibration table
 	my $mts = Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector->new;
