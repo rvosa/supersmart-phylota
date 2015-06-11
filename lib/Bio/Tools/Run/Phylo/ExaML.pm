@@ -269,7 +269,6 @@ sub run {
 	my $curdir = getcwd;
 	chdir $self->work_dir;	
 	$log->info("going to run '$string' inside ".$self->work_dir);
-        print "going to run '$string' inside " . $self->work_dir . "\n";
 	system($string) and $self->warn("Couldn't run ExaML: $?");
 	chdir $curdir;
 	
