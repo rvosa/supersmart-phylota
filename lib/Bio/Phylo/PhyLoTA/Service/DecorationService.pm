@@ -41,6 +41,7 @@ sub apply_taxon_colors {
 	# create lookup table for genus colors, which we
 	# will then blend in a traversal from tips to root
 	my %genera  = map { $_->{'genus'} => 1 } @records;
+	
 	my @genera  = keys %genera;
 	my $steps   = 255 / $#genera;
 	for my $i ( 0 .. $#genera ) {
@@ -101,9 +102,9 @@ sub apply_markers {
 	my ($self,$file,$tree,$type) = @_;
 	my $logger = $self->logger;
 	$logger->debug("going to apply $type markers using $file");
-	my $mts = Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa->new;
+	my $mt = Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa->new;
 	my $sg  = Bio::Phylo::PhyLoTA::Service::SequenceGetter->new;
-	my @records   = $mts->parse_taxa_file($file);
+	my @records   = $mt->parse_taxa_file($file);
 	my $predicate = $type . '_markers'; 
 
 	# iterate over record, add generic annotation to all nodes on the path
@@ -152,16 +153,17 @@ sub apply_markers {
 
 	# get marker names
 	my %markers;
-	open my $fh, '<', $file or die $!;
-	while(<$fh>) {
-		chomp;
-		if ( /# (marker\d+) cluster seed: ([^,]+),/ ) {
-			my ( $marker, $acc ) = ( $1, $2 );
-			my @desc = $sg->get_markers_for_accession( $acc );
-			$markers{$marker} = \@desc;
-			$self->logger->info("$marker ($acc): @desc");
+	my @markers_table = $mt->parse_taxa_file( $file );
+
+	for my $row ( @markers_table ) {
+		my %h = %$row;
+		my @cols = @{$h{'keys'}};
+		for my $c ( 1 .. $#cols ) {			
+			if ( my $marker = $h{$c} ) {
+				$markers{$marker} = $marker;
+			}
 		}
-	}
+	}	
 	$tree->get_root->set_generic( $predicate => \%markers );
 }
 
