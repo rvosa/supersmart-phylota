@@ -695,8 +695,13 @@ reports the genbank accession of a specific marker for a species.
 
 sub write_marker_summary {
     my ( $self, $file, $tab, $specs ) = @_;
+
+    $self->logger->info("Writing marker summary table to $file");
+
     my @table = @$tab;
     my @all_species = @$specs;
+
+    my $sg = Bio::Phylo::PhyLoTA::Service::SequenceGetter->new;
 
     # remove empty columns (for markers that are never included)
     @table = grep {keys %{$_}} @table;
@@ -711,11 +716,45 @@ sub write_marker_summary {
         push @seed_gis, $1 if $defline =~ /seed_gi\|([0-9]+)\|/;
     }
     open my $outfh, '>', $file or die $!;
-    
-    # print table header
+
+    # Get marker names for seed gis. Set to 'unknown' if information cannot be retrieved
+    my %markers = pmap {
+	    my $gi = $_;
+	    $self->logger->debug("Searching marker name for seed gi $gi");
+	    my $marker;
+	    my $acc = $self->single_seq({gi=>$gi})->acc;
+	    my @mk = eval {$sg->get_markers_for_accession($acc)};
+	    
+	    if ( ! scalar @mk ) {
+		    $marker = 'unknown';		    
+	    } 
+	    else {
+		    #  when more than one name is found, pick the shortest one
+		    my @srt = sort { length $a <=> length $b } @mk;
+		    ( $marker = $srt[0] ) =~ s/\s/-/g;
+	    }	    
+	    return( $gi=>$marker );
+	    
+    } @seed_gis;
+
+    # Print table header consisting of marker names from the seed GIs.
+    # In case a column name appears more than once, add an index to the marker name.
     print $outfh "taxon\t";
-    print $outfh "marker" . $_ ."\t" for 1..$#seed_gis+1;
+    my %seen;    
+    for my $gi ( @seed_gis ) {	  
+	    
+	    my $colname = $markers{$gi};
+
+	    # append index if already present
+	    if (my $cnt = $seen{$markers{$gi}}) {
+		    $colname .= ".$cnt";
+	    }
+	    print $outfh $colname ."\t";	    
+	    $seen{$markers{$gi}}++;	    
+    }
     print $outfh "\n";
+    
+    # Write the table rows
     foreach my $species ( @all_species ) {
         my $name = $self->find_node($species)->taxon_name;
         print $outfh $name . "\t";
@@ -736,15 +775,9 @@ sub write_marker_summary {
             }
         }
         print $outfh "\n";
-    }
-    print $outfh "\n";
-    
-    # print information about markers at the bottom of the table
-    foreach my $i ( 1..$#seed_gis+1 ) {
-        my $seqobj = $self->find_seq( $seed_gis[$i-1] );
-        print $outfh "# marker$i cluster seed: " . $seqobj->acc . ", description: " . $seqobj->def . "\n"; 
-    }
+    }    
     close $outfh;
+    $self->logger->info("Marker summary table written to $file");
 }
 
 =item generate_seqids
