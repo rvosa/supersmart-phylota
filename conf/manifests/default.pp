@@ -60,6 +60,7 @@ class install {
 		"r-base-dev":      ensure => installed, require => Exec ["apt_update"];
 		"libopenmpi-dev":  ensure => installed, require => Exec ["apt_update"];
 		"openmpi-bin":     ensure => installed, require => Exec ["apt_update"];  
+		"libnlopt-dev":	   ensure => installed, require => Exec ["apt_update"];  		
 	}
 
 	# create links for executables and data directories
@@ -91,11 +92,6 @@ class install {
 			ensure  => link,
 			target  => "${tools_bin_dir}/muscle3.8.31_i86linux64",
 			require => Exec["unzip_muscle"];
-		"phylip-consense_link":
-			path    => "/usr/local/bin/consense-phylip",
-			ensure  => link,
-			target  => "${tools_dir}/phylip-3.696/src/consense",
-			require => Exec["make_phylip"];
 		"examl_link":
 			path    => "${tools_bin_dir}/examl",
 			ensure  => link,
@@ -210,23 +206,6 @@ class install {
 			cwd       => $tools_dir,
 			creates   => "${tools_bin_dir}/muscle3.8.31_i86linux64",
 			require   => Exec["download_muscle"];
-
-		# install phylip
-		"download_phylip":
-			command => "wget http://evolution.gs.washington.edu/phylip/download/phylip-3.696.tar.gz",
-			cwd     => $tools_dir,
-			creates => "${tools_dir}/phylip-3.696.tar.gz",
-			require => Package[ 'wget', 'tar' ];
-		"unzip_phylip":
-			command => "tar -xzvf ${tools_dir}/phylip-3.696.tar.gz",
-			cwd     => $tools_dir,
-			creates => "${tools_dir}/phylip-3.696/src/Makefile.unx",
-			require => Exec["download_phylip"];
-		"make_phylip":
-			command => "make -f Makefile.unx consense",
-			cwd     => "${tools_dir}/phylip-3.696/src/",
-			creates => "${tools_dir}/phylip-3.696/src/consense",
-			require => Exec["unzip_phylip"];
 
 		# install examl & parser
 		"clone_examl":
@@ -351,21 +330,11 @@ class install {
 			cwd     => "${tools_dir}/treePL/deps/adol-c",
 			creates => "/usr/lib64/libadolc.so",
 			require => Exec["autoreconf_adolc"];
-		"unzip_nlopt":
-			command => "tar -xzvf nlopt-2.2.4.tar.gz",
-			cwd     => "${tools_dir}/treePL/deps",
-			creates => "${tools_dir}/treePL/deps/nlopt-2.2.4",
-			require => [ Exec["clone_treepl"], Package["libopenmpi-dev","openmpi-bin"] ];
-		"install_nlopt":
-			command => "${tools_dir}/treePL/deps/nlopt-2.2.4/configure && make install",
-			cwd     => "${tools_dir}/treePL/deps/nlopt-2.2.4",
-			creates => "/usr/local/include/nlopt.h",
-			require => Exec["unzip_nlopt"];
 		"compile_treepl":
 			command => "${tools_dir}/treePL/src/configure && make",
 			cwd     => "${tools_dir}/treePL/src",
 			creates => "${tools_dir}/treePL/src/treePL",
-			require => Exec["install_adolc","install_nlopt"];
+			require => [ Exec["install_adolc"], Package["libnlopt-dev"] ];
 		
 		# install R packages
 		"install_r_ape":
