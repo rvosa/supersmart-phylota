@@ -317,8 +317,13 @@ sub outgroup_root {
 	# fetch outgroup nodes and mrca
 	my %og = map{ $_=>1 } @all_ids;
 	my @ognodes = grep { exists($og{$_->get_name}) } @{$tree->get_terminals};
-	my $mrca = $tree->get_mrca(\@ognodes);
+	if ( ! scalar @ognodes ) {
+		my @specnames = map{$self->find_node($_)->taxon_name} @all_ids;
+		$log->warn("Cannot reroot at outgroup! None of the following names are in the tree: " . join(', ', @specnames));
+		return;
+	}
 
+	my $mrca = $tree->get_mrca(\@ognodes);
 	if ($mrca->is_root) {
 		my @ignodes = grep { ! $og{$_->get_name} } @{$tree->get_terminals};
 		$mrca = $tree->get_mrca(\@ignodes);		
