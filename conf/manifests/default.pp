@@ -60,7 +60,6 @@ class install {
 		"r-base-dev":      ensure => installed, require => Exec ["apt_update"];
 		"libopenmpi-dev":  ensure => installed, require => Exec ["apt_update"];
 		"openmpi-bin":     ensure => installed, require => Exec ["apt_update"];  
-		"libnlopt-dev":	   ensure => installed, require => Exec ["apt_update"];  		
 	}
 
 	# create links for executables and data directories
@@ -330,11 +329,21 @@ class install {
 			cwd     => "${tools_dir}/treePL/deps/adol-c",
 			creates => "/usr/lib64/libadolc.so",
 			require => Exec["autoreconf_adolc"];
+		"unzip_nlopt":
+			command => "tar -xzvf nlopt-2.2.4.tar.gz",
+			cwd     => "${tools_dir}/treePL/deps",
+			creates => "${tools_dir}/treePL/deps/nlopt-2.2.4",
+			require => [ Exec["clone_treepl"], Package["libopenmpi-dev","openmpi-bin"] ];
+		"install_nlopt":
+			command => "${tools_dir}/treePL/deps/nlopt-2.2.4/configure && make install",
+			cwd     => "${tools_dir}/treePL/deps/nlopt-2.2.4",
+			creates => "/usr/local/include/nlopt.h",
+			require => Exec["unzip_nlopt"];
 		"compile_treepl":
 			command => "${tools_dir}/treePL/src/configure && make",
 			cwd     => "${tools_dir}/treePL/src",
 			creates => "${tools_dir}/treePL/src/treePL",
-			require => [ Exec["install_adolc"], Package["libnlopt-dev"] ];
+			require => Exec["install_adolc","install_nlopt"];
 		
 		# install R packages
 		"install_r_ape":
