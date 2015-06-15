@@ -1,4 +1,4 @@
-{
+var data = {
     "fig:length" : "0.0",
     "map:x" : 50,
     "map:branch_color" : [
@@ -23722,4 +23722,4 @@
     "fig:height_95_HPD_min" : "77.500001",
     "fig:height_95_HPD_max" : "77.50000200000001",
     "fig:fossil_age_max" : "77.5"
-}
+};
