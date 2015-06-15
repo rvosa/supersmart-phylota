@@ -76,12 +76,7 @@ TreeDrawer.prototype.recursiveDraw = function(node,parent) {
 };
 
 /**
-* Draws the age range around a node. This method expects that the node is annotated
-* with the phylomap annotations map:x and map:y (for the coordinates) and the figtree
-* annotations fig:height_95_HPD_min and fig:height_95_HPD_max for the age ranges in
-* some time unit that is convertible to phylomap coordinates by multiplying with the
-* pixels per time unit (pptu) constant and subtracting that from the x coordinate of
-* the present (nowx).
+* Draws the age range around a node.
 * @param {TreeNode} node - focal node
 */
 TreeDrawer.prototype.drawAgeRange = function(node) {
@@ -92,6 +87,7 @@ TreeDrawer.prototype.drawAgeRange = function(node) {
 
     // have age range
     if ( node.hasAgeRange() ) {
+        var y = ny - ( this.maxWidth / 2 );
 
         // rightmost limit x coordinate
         var min_x = this.nowx - ( node.getMinAge() * this.pptu );
@@ -103,15 +99,15 @@ TreeDrawer.prototype.drawAgeRange = function(node) {
 
         var fadeRight = this.createSVGElt('rect',{
             x      : nx,
-            y      : ny - ( this.maxWidth / 2 ),
+            y      : y,
             width  : min_width,
             height : this.maxWidth,
             style  : this.makeStyle({ fill : 'url(#fadeRight)', stroke : 'none' })
         });
         this.svg.appendChild(fadeRight);
         var fadeLeft = this.createSVGElt('rect',{
-            x      : max_x,
-            y      : ny - ( this.maxWidth / 2 ),
+            x      : ( nx - max_width ),
+            y      : y,
             width  : max_width,
             height : this.maxWidth,
             style  : this.makeStyle({ fill : 'url(#fadeLeft)', stroke : 'none' })
@@ -122,11 +118,7 @@ TreeDrawer.prototype.drawAgeRange = function(node) {
 
 /**
 * Draws the focal node, i.e. draws the node glyph (a circle) and any attached behaviours
-* (i.e. click events that pop up additional node metadata). This method expects that the
-* node object is annotated with the phylomap predicates map:x, map:y, map:radius and map:branch_width.
-* Optionally, the node may also have an annotation to indicate that it is the root of a
-* decomposed clade, using the fig:clade annotation, and it may have the fossil attribute to indicate
-* that this node was calibrated.
+* (i.e. click events that pop up additional node metadata).
 * @param {TreeNode} node - the focal node
 */
 TreeDrawer.prototype.drawNode = function(node) {
@@ -152,9 +144,7 @@ TreeDrawer.prototype.drawNode = function(node) {
 };
 
 /**
-* Draws the branch between the focal node and its parent. The nodes are expected to have
-* the phylomap attributes map:x, map:y and map:branch_color. The branch is further decorated
-* to indicate the amount of backbone marker support.
+* Draws the branch between the focal node and its parent.
 * @param {TreeNode} node - the focal node
 * @param {TreeNode} parent - the focal node's parent
 */
@@ -211,7 +201,6 @@ TreeDrawer.prototype.drawNodeLabel = function(node) {
         node.getName(),
         {
             cursor        : 'pointer',
-            stroke        : node.getFontColor(),
             'font-family' : node.getFontFace(),
             'font-size'   : node.getFontSize(),
             'font-style'  : node.getFontStyle(),
