@@ -1,10 +1,11 @@
-/*
-Constructor for the tree drawer. The arguments are provided as a an object, with the
-following keys:
-    svg - the SVG root (document) element to which all drawn elements are appended
-    pptu - pixels per time unit, e.g. if the time units are in MY, how many pixels is 1 MY
-    nowx - where the present is on the X axis
-    maxWidth - maximum width for any branch, default is 10 pixels
+/**
+* Constructs a TreeDrawer object
+* @constructor
+* @param {Object} args - a command object with the following keys:
+* @param {Object} args.svg - the SVG root (document) element to which all drawn elements are appended
+* @param {Number} args.pptu - pixels per time unit, e.g. if the time units are in MY, how many pixels is 1 MY
+* @param {Number} args.nowx - where the present is on the X axis
+* @param {Number} args.maxWidth - maximum width for any branch, default is 10 pixels
 */
 var TreeDrawer = function(args) {
     this.svg = args.svg;
@@ -20,9 +21,9 @@ var TreeDrawer = function(args) {
     this.NCBI_NUCCORE = NCBI + 'nuccore/';
 };
 
-/*
-Once the tree drawer is constructed, this is the only method that you would use from the
-outside. The argument tree is a JSON object as produced by Bio::Phylo::to_js
+/**
+* Draws the supplied tree object
+* @param {Tree} tree - an instance of the Tree class
 */
 TreeDrawer.prototype.drawTree = function(tree) {
     this.markers = tree.getBackboneMarkers();
@@ -31,13 +32,13 @@ TreeDrawer.prototype.drawTree = function(tree) {
     this.recursiveDraw(tree.getRoot());
 };
 
-/*
-Starting from the root, i.e. invoked as recursiveDraw(root,null), traverses
-the tree to draw it, invoking all relevant item drawers.  Age ranges, branches,
-and node handlers are invoked in pre-order, the node drawer is invoked in post-order
-so that the node lands on top of age ranges and abutting branches.
-@param node - the focal node and its attributes to draw
-@param parent - optionally, the focal node's parents to draw branches to
+/**
+* Starting from the root, i.e. invoked as recursiveDraw(root,null), traverses
+* the tree to draw it, invoking all relevant item drawers.  Age ranges, branches,
+* and node handlers are invoked in pre-order, the node drawer is invoked in post-order
+* so that the node lands on top of age ranges and abutting branches.
+* @param {TreeNode} node - the focal node and its attributes to draw
+* @param {TreeNode} parent - optionally, the focal node's parents to draw branches to
  */
 TreeDrawer.prototype.recursiveDraw = function(node,parent) {
     var td = this;
@@ -74,14 +75,15 @@ TreeDrawer.prototype.recursiveDraw = function(node,parent) {
     }
 };
 
-/*
-Draws the age range around a node. This method expects that the node is annotated
-with the phylomap annotations map:x and map:y (for the coordinates) and the figtree
-annotations fig:height_95_HPD_min and fig:height_95_HPD_max for the age ranges in
-some time unit that is convertible to phylomap coordinates by multiplying with the
-pixels per time unit (pptu) constant and subtracting that from the x coordinate of
-the present (nowx).
- */
+/**
+* Draws the age range around a node. This method expects that the node is annotated
+* with the phylomap annotations map:x and map:y (for the coordinates) and the figtree
+* annotations fig:height_95_HPD_min and fig:height_95_HPD_max for the age ranges in
+* some time unit that is convertible to phylomap coordinates by multiplying with the
+* pixels per time unit (pptu) constant and subtracting that from the x coordinate of
+* the present (nowx).
+* @param {TreeNode} node - focal node
+*/
 TreeDrawer.prototype.drawAgeRange = function(node) {
 
     // coordinates of the node
@@ -118,14 +120,15 @@ TreeDrawer.prototype.drawAgeRange = function(node) {
     }
 };
 
-/*
-Draws the focal node, i.e. draws the node glyph (a circle) and any attached behaviours
-(i.e. click events that pop up additional node metadata). This method expects that the
-node object is annotated with the phylomap predicates map:x, map:y, map:radius and map:branch_width.
-Optionally, the node may also have an annotation to indicate that it is the root of a
-decomposed clade, using the fig:clade annotation, and it may have the fossil attribute to indicate
-that this node was calibrated.
- */
+/**
+* Draws the focal node, i.e. draws the node glyph (a circle) and any attached behaviours
+* (i.e. click events that pop up additional node metadata). This method expects that the
+* node object is annotated with the phylomap predicates map:x, map:y, map:radius and map:branch_width.
+* Optionally, the node may also have an annotation to indicate that it is the root of a
+* decomposed clade, using the fig:clade annotation, and it may have the fossil attribute to indicate
+* that this node was calibrated.
+* @param {TreeNode} node - the focal node
+*/
 TreeDrawer.prototype.drawNode = function(node) {
     var td = this;
     var nx = node.getX();
@@ -148,11 +151,13 @@ TreeDrawer.prototype.drawNode = function(node) {
     circleElt.node = node;
 };
 
-/*
-Draws the branch between the focal node and its parent. The nodes are expected to have
-the phylomap attributes map:x, map:y and map:branch_color. The branch is further decorated
-to indicate the amount of backbone marker support.
- */
+/**
+* Draws the branch between the focal node and its parent. The nodes are expected to have
+* the phylomap attributes map:x, map:y and map:branch_color. The branch is further decorated
+* to indicate the amount of backbone marker support.
+* @param {TreeNode} node - the focal node
+* @param {TreeNode} param - the focal node's parent
+*/
 TreeDrawer.prototype.drawBranch = function(node,parent){
     var nx = node.getX();
     var ny = node.getY();
@@ -191,10 +196,11 @@ TreeDrawer.prototype.drawBranch = function(node,parent){
     node['branch'] = lines;
 };
 
-/*
-Draws the focal node's label.
-@param node - the focal node
- */
+/**
+* Draws the focal node's label.
+* @param {TreeNode} node - the focal node
+* @return {SVGElement}
+*/
 TreeDrawer.prototype.drawNodeLabel = function(node) {
     var nx = node.getX();
     var ny = node.getY();
@@ -214,14 +220,15 @@ TreeDrawer.prototype.drawNodeLabel = function(node) {
     );
 };
 
-/*
-Draws a line glyph.
-@param x1 - the starting point x coordinate
-@param y1 - the starting point y coordinate
-@param x2 - the endpoint x coordinate
-@param y2 - the endpoint y coordinate
-@param style - a simple object that contains CSS styles
- */
+/**
+* Draws a line glyph.
+* @param {Number} x1 - the starting point x coordinate
+* @param {Number} y1 - the starting point y coordinate
+* @param {Number} x2 - the endpoint x coordinate
+* @param {Number} y2 - the endpoint y coordinate
+* @param {Object} style - a simple object that contains CSS styles
+* @return {SVGElement}
+*/
 TreeDrawer.prototype.drawLine = function(x1,y1,x2,y2,style) {
     var lineElt = this.createSVGElt('line',{
         x1    : x1,
@@ -234,13 +241,14 @@ TreeDrawer.prototype.drawLine = function(x1,y1,x2,y2,style) {
     return lineElt;
 };
 
-/*
-Draws a circle glyph.
-@param cx - the x coordinate of the circle's center
-@param cy - the y coordinate of the circle's center
-@param r - the radius of the circle
-@param style - a simple object that contains CSS styles
- */
+/**
+* Draws a circle glyph.
+* @param {Number} cx - the x coordinate of the circle's center
+* @param {Number} cy - the y coordinate of the circle's center
+* @param {Number} r - the radius of the circle
+* @param {Object} style - a simple object that contains CSS styles
+* @return {SVGElement}
+*/
 TreeDrawer.prototype.drawCircle = function(cx,cy,r,style) {
     var nodeElt = this.createSVGElt('circle',{
         cx    : cx,
@@ -252,13 +260,14 @@ TreeDrawer.prototype.drawCircle = function(cx,cy,r,style) {
     return nodeElt;
 };
 
-/*
-Draws SVG text.
-@param x - the x coordinate of the start of the string
-@param y - the y coordinate of the start of the string
-@param text - the text string to draw
-@param style - a simple object that contains CSS styles
-@param url - a URL to turn the text into a clickable link
+/**
+* Draws SVG text.
+* @param {Number} x - the x coordinate of the start of the string
+* @param {Number} y - the y coordinate of the start of the string
+* @param {String} text - the text string to draw
+* @param {Object} style - a simple object that contains CSS styles
+* @param {String} url - a URL to turn the text into a clickable link
+* @return {SVGElement}
  */
 TreeDrawer.prototype.drawText = function(x,y,text,style,url) {
     if ( url ) {
@@ -287,15 +296,14 @@ TreeDrawer.prototype.drawText = function(x,y,text,style,url) {
     }
 };
 
-/*
-Draws an (xhtml) table row.
-@param row - an object that can contain the following: 'url', a link
-             to make clickable. Any values that are functions, which
-             are applied as event handlers. Any other, textual, key/
-             value pairs are written in the left and right row cells,
-             respectively.
-@param tr - an xhtml tr (table row) element into which to insert the cells
- */
+/**
+* Draws an (xhtml) table row.
+* @param {Object} row - an object that can contain the following: 
+* @param {String} row.url - a link to make clickable. 
+*   Any values that are functions, which are applied as event handlers. 
+*   Any other, textual, key/value pairs are written in the left and right row cells, respectively.
+* @param {Element} tr - an xhtml tr (table row) element into which to insert the cells
+*/
 TreeDrawer.prototype.drawTableRow = function(row,tr) {
     var events = {};
     var textElt;
@@ -357,12 +365,12 @@ TreeDrawer.prototype.drawTableRow = function(row,tr) {
     }
 };
 
-/*
-Draws an xhtml table with node metadata.
-@param x - the x coordinate of the table (top-left)
-@param y - the y coordinate of the table (top-left)
-@param content - an array of node metadata items
- */
+/**
+* Draws an xhtml table with node metadata.
+* @param {Number} x - the x coordinate of the table (top-left)
+* @param {Number} y - the y coordinate of the table (top-left)
+* @param {Object[]} content - an array of node metadata items
+*/
 TreeDrawer.prototype.drawTable = function(x,y,content) {
     var lines    = content.length;
     var height   = 15;
@@ -422,12 +430,12 @@ TreeDrawer.prototype.drawTable = function(x,y,content) {
     $(table).fadeIn(400);
 };
 
-/*
-XXX use jQuery for this
-Adds the provided class name to the provided element.
-@param elt - the element to attach the class name to
-@param className - the class name to attach to the element
- */
+/**
+* XXX use jQuery for this
+* Adds the provided class name to the provided element.
+* @param {Element} elt - the element to attach the class name to
+* @param {String} className - the class name to attach to the element
+*/
 TreeDrawer.prototype.addClass = function(elt,className) {
     var current = elt.getAttributeNS(null, 'class');
     if ( current ) {
@@ -436,12 +444,12 @@ TreeDrawer.prototype.addClass = function(elt,className) {
     elt.setAttributeNS(null, 'class', className);
 };
 
-/*
-XXX use jQuery for this
-Removes the provided class name from the provided element
-@param elt - the element to remove the class name from
-@param className - the class name to remove from the element
- */
+/**
+* XXX use jQuery for this
+* Removes the provided class name from the provided element
+* @param {Element} elt - the element to remove the class name from
+* @param {String} className - the class name to remove from the element
+*/
 TreeDrawer.prototype.removeClass = function(elt,className) {
     var current = elt.getAttributeNS(null, 'class');
     if ( current ) {
@@ -457,12 +465,13 @@ TreeDrawer.prototype.removeClass = function(elt,className) {
     }
 };
 
-/*
-XXX use jQuery for this
-Checks if the provided element belongs to the provided class
-@param elt - the element to check
-@param className - the class name to check
- */
+/**
+* XXX use jQuery for this
+* Checks if the provided element belongs to the provided class
+* @param {Element} elt - the element to check
+* @param {String} className - the class name to check
+* @return {Boolean}
+*/
 TreeDrawer.prototype.hasClass = function(elt,className) {
     var current = elt.getAttributeNS(null, 'class');
     if ( current ) {
@@ -477,22 +486,23 @@ TreeDrawer.prototype.hasClass = function(elt,className) {
     return false;
 };
 
-/*
-XXX maybe make this a private static method
-Turns the provided array of three numbers (should be integers between
-0 and 255) into a CSS-compatible rgb() statement.
-@param triple - an array of three numbers
+/**
+* XXX maybe make this a private static method
+* Turns the provided array of three numbers (should be integers between
+* 0 and 255) into a CSS-compatible rgb() statement.
+* @param {Number[]} triple - an array of three numbers
+* @return {String}
  */
 TreeDrawer.prototype.rgb = function(triplet) {
     return 'rgb(' + triplet.join() + ')';
 };
 
-/*
-XXX maybe make this a private static method
-Turns the provided object with CSS styles into a string.
-@param style - a simple object whose keys and values are CSS
-syntax (e.g. { color: 'black' } )
- */
+/**
+* XXX maybe make this a private static method
+* Turns the provided object with CSS styles into a string.
+* @param {Object} style - a simple object whose keys and values are CSS
+* @return {String}
+*/
 TreeDrawer.prototype.makeStyle = function(style){
     var string = '';
     for ( var property in style ) {
@@ -503,12 +513,13 @@ TreeDrawer.prototype.makeStyle = function(style){
     return string;
 };
 
-/*
-XXX maybe make this a private static method
-Shortens the provided string to at most 14 characters, last
-three are ellipsis.
-@param string - the string to shorten
- */
+/**
+* XXX maybe make this a private static method
+* Shortens the provided string to at most 14 characters, last
+* three are ellipsis.
+* @param {String} string - the string to shorten
+* @return {String}
+*/
 TreeDrawer.prototype.shorten = function (string) {
     if ( string.length > 11 ) {
         var shortened = string.substring(0,11);
@@ -518,11 +529,12 @@ TreeDrawer.prototype.shorten = function (string) {
     return string;
 };
 
-/*
-XXX maybe make this a private static method
-Counts the number of subsections in a collection of node metadata.
-@param content - an array of node metadata
- */
+/**
+* XXX maybe make this a private static method
+* Counts the number of subsections in a collection of node metadata.
+* @param {Object[]} content - an array of node metadata
+* @return {Number}
+*/
 TreeDrawer.prototype.countSections = function(content){
     var count = 0;
     var cl = content.length;
@@ -534,15 +546,15 @@ TreeDrawer.prototype.countSections = function(content){
     return count;
 };
 
-/*
-Recursively applies or removes the class name 'painted' to the focal node and
-all descendants that are supported by the provided marker. Optionally applies
-a callback to each applicable node.
-@param node - the focal node to paint
-@param marker - if the focal node is supported by this marker (un)paint it
-@param remove - boolean to switch between adding or removing the class name 'painted'
-@param func - optional callback to apply to the node
- */
+/**
+* Recursively applies or removes the class name 'painted' to the focal node and
+* all descendants that are supported by the provided marker. Optionally applies
+* a callback to each applicable node.
+* @param {TreeNode} node - the focal node to paint
+* @param {String} marker - if the focal node is supported by this marker (un)paint it
+* @param {Boolean} remove - boolean to switch between adding or removing the class name 'painted'
+* @param {Function} func - optional callback to apply to the node
+*/
 TreeDrawer.prototype.recursivePaint = function(node,marker,remove,func) {
     var i = 0;
     var bbmarkers = node.getBackboneMarkers();
@@ -578,12 +590,12 @@ TreeDrawer.prototype.recursivePaint = function(node,marker,remove,func) {
     }
 };
 
-/*
-Animates the branches leading to the focal node (or turns it off when already
-animated). The animation consists of shifting the stroke-dashoffset by one,
-ten times per second.
-@param node - the node whose branches to animate
- */
+/**
+* Animates the branches leading to the focal node (or turns it off when already
+* animated). The animation consists of shifting the stroke-dashoffset by one,
+* ten times per second.
+* @param {TreeNode} node - the node whose branches to animate
+*/
 TreeDrawer.prototype.branchAnimator = function(node) {
     for ( var i = 0; i < node.branch.length; i++ ) {
         var intervalId = node.branch[i].getAttributeNS(null,'intervalId');
@@ -615,22 +627,24 @@ TreeDrawer.prototype.branchAnimator = function(node) {
     }
 };
 
-/*
-XXX - maybe use jQuery for this?
-Creates the SVG element with the provided name and attributes
-@param name - the tag name of the element
-@param attributes - the attributes to attach to the element
- */
+/**
+* XXX - maybe use jQuery for this?
+* Creates the SVG element with the provided name and attributes
+* @param {String} name - the tag name of the element
+* @param {Object} attributes - the attributes to attach to the element
+* @return {Element}
+*/
 TreeDrawer.prototype.createSVGElt = function(name,attributes){
     return this.createElt(name,attributes,this.NS_SVG);
 };
 
-/*
-Creates the XML element with the provided name, attributes and namespace
-@param name - the tag name of the element
-@param attributes - the attributes to attach to the element
-@param ns - the namespace of the element
- */
+/**
+* Creates the XML element with the provided name, attributes and namespace
+* @param {String} name - the tag name of the element
+* @param {Object} attributes - the attributes to attach to the element
+* @param {String} ns - the namespace of the element
+* @return {Element}
+*/
 TreeDrawer.prototype.createElt = function(name,attributes,ns) {
     var elt = this.doc.createElementNS(ns,name);
     if ( attributes != null ) {
@@ -643,15 +657,15 @@ TreeDrawer.prototype.createElt = function(name,attributes,ns) {
     return elt;
 };
 
-/*
-Populates the provided content array with metadata about the markers that apply
-to the provided node.
-@param markerSet - set of markers that applies to the focal node
-@param title - node title (XXX remove me)
-@param content - growing array of node metadata content
-@param markerLookup - lookup table of marker IDs to marker names
-@param node - the focal node
- */
+/**
+* Populates the provided content array with metadata about the markers that apply
+* to the provided node.
+* @param {Object} markerSet - set of markers that applies to the focal node
+* @param {String} title - node title (XXX remove me)
+* @param {Object[]} content - growing array of node metadata content
+* @param {Object} markerLookup - lookup table of marker IDs to marker names
+* @param {Object} node - the focal node
+*/
 TreeDrawer.prototype.createMarkerContent = function(markerSet,title,content,markerLookup,node) {
     content.push(title);
     var td = this;
@@ -699,12 +713,12 @@ TreeDrawer.prototype.createMarkerContent = function(markerSet,title,content,mark
     }
 };
 
-/*
-Given a focal node and a growing array of node metadata content, inserts
-a section on fossil calibration points.
-@param node - the focal node
-@param content - the metadata content to expand
- */
+/**
+* Given a focal node and a growing array of node metadata content, inserts
+* a section on fossil calibration points.
+* @param {Object} node - the focal node
+* @param {Object[]} content - the metadata content to expand
+*/
 TreeDrawer.prototype.createFossilContent = function(node,content) {
     content.push('Fossil');
     content.push({ 'name'        : node.getFossilName()});
@@ -712,10 +726,11 @@ TreeDrawer.prototype.createFossilContent = function(node,content) {
     content.push({ 'maximum age' : node.getFossilMaxAge()});
 };
 
-/*
-Populates and returns an array of metadata content for the provided node
-@param node - the focal node whose metadata is returned
- */
+/**
+* Populates and returns an array of metadata content for the provided node
+* @param node - the focal node whose metadata is returned
+* @return {Object[]}
+*/
 TreeDrawer.prototype.createNodeContent = function(node) {
     // content for the popup table
     var content = [];
