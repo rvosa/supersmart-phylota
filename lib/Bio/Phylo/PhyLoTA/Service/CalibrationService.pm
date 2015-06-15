@@ -204,6 +204,10 @@ sub create_calibration_table {
 
 		# only consider terminals that are present in our tree
 		@terminals = grep { $taxa_in_tree{$_} } @terminals;
+		if ( ! scalar(@terminals) ) {
+			$logger->warn("Could not calibrate fossil # " . $fd->nfos . " (" . $fd->fossil_name . "). Could not find tips for calibrated taxon " . $fd->calibrated_taxon . "in tree!");
+			next FOSSIL;
+		}
 
 		# for stem fossils, take the parent of the mrca
 		if ( lc $fd->{"CrownvsStem"} eq "stem" ) { 
