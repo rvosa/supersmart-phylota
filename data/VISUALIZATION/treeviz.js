@@ -100,19 +100,19 @@ TreeDrawer.prototype.drawAgeRange = function(node) {
         var max_width = Math.abs(max_x - nx);
 
         var fadeRight = this.createSVGElt('rect',{
-            'x'      : nx,
-            'y'      : ny - ((this.maxWidth/2)),
-            'width'  : min_width,
-            'height' : this.maxWidth,
-            'style'  : this.makeStyle({ 'fill' : 'url(#fadeRight)', 'stroke' : 'none' })
+            x      : nx,
+            y      : ny - ( this.maxWidth / 2 ),
+            width  : min_width,
+            height : this.maxWidth,
+            style  : this.makeStyle({ fill : 'url(#fadeRight)', stroke : 'none' })
         });
         this.svg.appendChild(fadeRight);
         var fadeLeft = this.createSVGElt('rect',{
-            'x'      : max_x,
-            'y'      : ny - ((this.maxWidth/2)),
-            'width'  : max_width,
-            'height' : this.maxWidth,
-            'style'  : this.makeStyle({ 'fill' : 'url(#fadeLeft)', 'stroke' : 'none' })
+            x      : max_x,
+            y      : ny - ( this.maxWidth / 2 ),
+            width  : max_width,
+            height : this.maxWidth,
+            style  : this.makeStyle({ fill : 'url(#fadeLeft)', stroke : 'none' })
         });
         this.svg.appendChild(fadeLeft);
     }
@@ -133,10 +133,10 @@ TreeDrawer.prototype.drawNode = function(node) {
     var strokeColor = node.getCladeName() ? 'lime' : 'black';
     var nodeColor = node.getFossil() ? 'red' : 'white';
     var circleElt = this.drawCircle(nx, ny, node.getRadius(),{
-        'fill'         : nodeColor,
-        'stroke'       : strokeColor,
+        fill         : nodeColor,
+        stroke       : strokeColor,
         'stroke-width' : node.getBranchWidth(),
-        'cursor'       : 'pointer'
+        cursor       : 'pointer'
     });
     var content = this.createNodeContent(node);
     circleElt.onclick = function () {
@@ -171,9 +171,9 @@ TreeDrawer.prototype.drawBranch = function(node,parent){
 
     // draw styled lines, one vertical, one horizontal
     var branchStyle = {
-        'stroke': this.rgb(node.getBranchColor()),
-        'stroke-width': width,
-        'stroke-linecap': 'round'
+        stroke           : this.rgb(node.getBranchColor()),
+        'stroke-width'   : width,
+        'stroke-linecap' : 'round'
     };
     this.drawLine(px, py, px, ny, branchStyle);
     this.drawLine(px, ny, nx, ny, branchStyle);
@@ -192,17 +192,8 @@ TreeDrawer.prototype.drawBranch = function(node,parent){
 };
 
 /*
-Draws the focal node's label. For the @param node, expects the following
-phylomap attributes:
-- map:x
-- map:y
-- map:font_color (optional)
-- map:text_horiz_offset (optional)
-- map:text_vert_offset (optional)
-- map:font_face (optional)
-- map:font_size (optional)
-- map:font_style (optional)
-In addition, optionally expects the attribute 'exemplar'
+Draws the focal node's label.
+@param node - the focal node
  */
 TreeDrawer.prototype.drawNodeLabel = function(node) {
     var nx = node.getX();
@@ -213,12 +204,12 @@ TreeDrawer.prototype.drawNodeLabel = function(node) {
         ny + node.getTextVertOffset(),
         node.getName(),
         {
-            'stroke': node.getFontColor(),
-            'font-family': node.getFontFace(),
-            'font-size': node.getFontSize(),
-            'font-style': node.getFontStyle(),
-            'cursor': 'pointer',
-            'font-weight': fontWeight
+            cursor        : 'pointer',
+            stroke        : node.getFontColor(),
+            'font-family' : node.getFontFace(),
+            'font-size'   : node.getFontSize(),
+            'font-style'  : node.getFontStyle(),
+            'font-weight' : fontWeight
         }
     );
 };
@@ -233,11 +224,11 @@ Draws a line glyph.
  */
 TreeDrawer.prototype.drawLine = function(x1,y1,x2,y2,style) {
     var lineElt = this.createSVGElt('line',{
-        'x1'    : x1,
-        'y1'    : y1,
-        'x2'    : x2,
-        'y2'    : y2,
-        'style' : this.makeStyle(style)
+        x1    : x1,
+        y1    : y1,
+        x2    : x2,
+        y2    : y2,
+        style : this.makeStyle(style)
     });
     this.svg.appendChild(lineElt);
     return lineElt;
@@ -252,10 +243,10 @@ Draws a circle glyph.
  */
 TreeDrawer.prototype.drawCircle = function(cx,cy,r,style) {
     var nodeElt = this.createSVGElt('circle',{
-        'cx'    : cx,
-        'cy'    : cy,
-        'r'     : r,
-        'style' : this.makeStyle(style)
+        cx    : cx,
+        cy    : cy,
+        r     : r,
+        style : this.makeStyle(style)
     });
     this.svg.appendChild(nodeElt);
     return nodeElt;
@@ -415,7 +406,7 @@ TreeDrawer.prototype.drawTable = function(x,y,content) {
         if ( typeof content[i] === 'string' ) {
             var th = this.createElt('th',{
                 colspan : 2,
-                class   : 'sectionHeader'
+                'class' : 'sectionHeader'
             },this.NS_XHTML);
             var txt = this.doc.createTextNode(content[i]);
             th.appendChild(txt);
@@ -716,9 +707,9 @@ a section on fossil calibration points.
  */
 TreeDrawer.prototype.createFossilContent = function(node,content) {
     content.push('Fossil');
-    content.push({'name':node.getFossilName()});
-    content.push({'minimum age' : node.getFossilMinAge()});
-    content.push({'maximum age' : node.getFossilMaxAge()});
+    content.push({ 'name'        : node.getFossilName()});
+    content.push({ 'minimum age' : node.getFossilMinAge()});
+    content.push({ 'maximum age' : node.getFossilMaxAge()});
 };
 
 /*
@@ -768,10 +759,10 @@ TreeDrawer.prototype.createNodeContent = function(node) {
     if ( node.hasSupport() ) {
         content.push('Support');
         if ( node.getBootstrap() ) {
-            content.push({ 'bootstrap' : node.getBootstrap(2) });
+            content.push({ bootstrap : node.getBootstrap(2) });
         }
         else if ( node.getPosterior() ) {
-            content.push({ 'posterior' : node.getPosterior(2) });
+            content.push({ posterior : node.getPosterior(2) });
         }
     }
 
@@ -781,7 +772,7 @@ TreeDrawer.prototype.createNodeContent = function(node) {
         content.push('Backbone decomposition');
         content.push({
             'clade ID' : cladeName,
-            'url' : cladeName + '/' + cladeName + '-beast-in.xml'
+            'url'      : cladeName + '/' + cladeName + '-beast-in.xml'
         });
     }
 
