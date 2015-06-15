@@ -7,7 +7,7 @@ var Tree = function(json) {
         var children = node.getChildren();
         var wrapped = [];
         for ( var i = 0; i < children.length; i++ ) {
-            var wrappedNode = new TreeNode(children[i],parent);
+            var wrappedNode = new TreeNode(children[i],node);
             wrapped.push(wrappedNode);
             wrapRecurse(wrappedNode);
         }
