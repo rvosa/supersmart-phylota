@@ -121,7 +121,7 @@ TreeNode.prototype.getId = function () {
 
 TreeNode.prototype.getBootstrap = function (precision) {
     if ( precision ) {
-        parseFloat(this['fig:bootstrap']).toFixed(precision);
+        return parseFloat(this['fig:bootstrap']).toFixed(precision);
     }
     else {
         return this['fig:bootstrap'];
@@ -130,7 +130,7 @@ TreeNode.prototype.getBootstrap = function (precision) {
 
 TreeNode.prototype.getPosterior = function (precision) {
     if ( precision ) {
-        parseFloat(this['fig:posterior']).toFixed(precision);
+        return parseFloat(this['fig:posterior']).toFixed(precision);
     }
     else {
         return this['fig:posterior'];
