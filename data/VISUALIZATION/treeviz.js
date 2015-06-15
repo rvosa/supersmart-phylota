@@ -29,7 +29,7 @@ TreeDrawer.prototype.drawTree = function(tree) {
     this.markers = tree.getBackboneMarkers();
     this.clades = tree.getCladeMarkers();
     this.maxMarkers = Object.keys(this.markers).length;
-    this.recursiveDraw(tree.getRoot());
+    this.recursiveDraw(tree.getRoot(),null);
 };
 
 /**
@@ -136,10 +136,10 @@ TreeDrawer.prototype.drawNode = function(node) {
     var strokeColor = node.getCladeName() ? 'lime' : 'black';
     var nodeColor = node.getFossil() ? 'red' : 'white';
     var circleElt = this.drawCircle(nx, ny, node.getRadius(),{
-        fill         : nodeColor,
-        stroke       : strokeColor,
+        fill           : nodeColor,
+        stroke         : strokeColor,
         'stroke-width' : node.getBranchWidth(),
-        cursor       : 'pointer'
+        cursor         : 'pointer'
     });
     var content = this.createNodeContent(node);
     circleElt.onclick = function () {
@@ -156,7 +156,7 @@ TreeDrawer.prototype.drawNode = function(node) {
 * the phylomap attributes map:x, map:y and map:branch_color. The branch is further decorated
 * to indicate the amount of backbone marker support.
 * @param {TreeNode} node - the focal node
-* @param {TreeNode} param - the focal node's parent
+* @param {TreeNode} parent - the focal node's parent
 */
 TreeDrawer.prototype.drawBranch = function(node,parent){
     var nx = node.getX();
@@ -216,7 +216,8 @@ TreeDrawer.prototype.drawNodeLabel = function(node) {
             'font-size'   : node.getFontSize(),
             'font-style'  : node.getFontStyle(),
             'font-weight' : fontWeight
-        }
+        },
+        null
     );
 };
 
@@ -416,14 +417,14 @@ TreeDrawer.prototype.drawTable = function(x,y,content) {
                 colspan : 2,
                 'class' : 'sectionHeader'
             },this.NS_XHTML);
-            var txt = this.doc.createTextNode(content[i]);
+            var txt = this.doc.createTextNode(content[i].toString());
             th.appendChild(txt);
             tr.appendChild(th);
         }
 
         // line is an item with extra annotations (events? links? key/value data?)
         else if ( content[i] != null ) {
-            this.drawTableRow(x, y, content[i], tr);
+            this.drawTableRow(content[i], tr);
         }
         table.appendChild(tr);
     }
@@ -490,7 +491,7 @@ TreeDrawer.prototype.hasClass = function(elt,className) {
 * XXX maybe make this a private static method
 * Turns the provided array of three numbers (should be integers between
 * 0 and 255) into a CSS-compatible rgb() statement.
-* @param {Number[]} triple - an array of three numbers
+* @param {Number[]} triplet - an array of three numbers
 * @return {String}
  */
 TreeDrawer.prototype.rgb = function(triplet) {
@@ -568,25 +569,26 @@ TreeDrawer.prototype.recursivePaint = function(node,marker,remove,func) {
         if ( remove ) {
 
             // tips don't have a node object reference
-            if ( node.node ) {
-                this.removeClass(node.node,'painted');
+            if ( node['node'] ) {
+                this.removeClass(node['node'],'painted');
             }
-            for ( i = 0; i < node.branch.length; i++ ) {
-                this.removeClass(node.branch[i],'painted');
+            for ( i = 0; i < node['branch'].length; i++ ) {
+                this.removeClass(node['branch'][i],'painted');
             }
         }
         else {
-            if ( node.node ) {
-                this.addClass(node.node,'painted');
+            if ( node['node'] ) {
+                this.addClass(node['node'],'painted');
             }
-            for ( i = 0; i < node.branch.length; i++ ) {
-                this.addClass(node.branch[i],'painted');
+            for ( i = 0; i < node['branch'].length; i++ ) {
+                this.addClass(node['branch'][i],'painted');
             }
         }
     }
-    var childCount = node.children.length;
+    var children = node.getChildren();
+    var childCount = children.length;
     for ( i = 0; i < childCount; i++ ) {
-        this.recursivePaint(node.children[i],marker,remove,func);
+        this.recursivePaint(children[i],marker,remove,func);
     }
 };
 
@@ -597,13 +599,13 @@ TreeDrawer.prototype.recursivePaint = function(node,marker,remove,func) {
 * @param {TreeNode} node - the node whose branches to animate
 */
 TreeDrawer.prototype.branchAnimator = function(node) {
-    for ( var i = 0; i < node.branch.length; i++ ) {
-        var intervalId = node.branch[i].getAttributeNS(null,'intervalId');
+    for ( var i = 0; i < node['branch'].length; i++ ) {
+        var intervalId = node['branch'][i].getAttributeNS(null,'intervalId');
 
         // animation was activated, kill it
         if ( intervalId ) {
             clearInterval(parseInt(intervalId));
-            node.branch[i].removeAttributeNS(null,'intervalId');
+            node['branch'][i].removeAttributeNS(null,'intervalId');
         }
 
         // start a new animation
@@ -621,8 +623,8 @@ TreeDrawer.prototype.branchAnimator = function(node) {
                     var newVal = Number.toString( ( oldVal - 1 ) % 10 );
                     myElt.style.setProperty('stroke-dashoffset',newVal,null);
                 };
-            }(node.branch[i])),100);
-            node.branch[i].setAttributeNS(null,'intervalId',intervalId);
+            }(node['branch'][i])),100);
+            node['branch'][i].setAttributeNS(null,'intervalId',intervalId);
         }
     }
 };
@@ -680,15 +682,17 @@ TreeDrawer.prototype.createMarkerContent = function(markerSet,title,content,mark
             // value is the number of sequences per marker
             if (typeof markerSet[property] === 'number') {
                 row['mouseover'] = function () {
+                    var children = node.getChildren();
                     var marker = this.getAttributeNS(null,'title');
-                    for ( var i = 0; i < node.children.length; i++ ) {
-                        td.recursivePaint(node.children[i],marker,false);
+                    for ( var i = 0; i < children.length; i++ ) {
+                        td.recursivePaint(children[i],marker,false,null);
                     }
                 };
                 row['mouseout'] = function () {
+                    var children = node.getChildren();
                     var marker = this.getAttributeNS(null,'title');
-                    for ( var i = 0; i < node.children.length; i++ ) {
-                        td.recursivePaint(node.children[i],marker,true);
+                    for ( var i = 0; i < children.length; i++ ) {
+                        td.recursivePaint(children[i],marker,true,null);
                     }
                 };
                 row['click'] = function () {
@@ -699,8 +703,9 @@ TreeDrawer.prototype.createMarkerContent = function(markerSet,title,content,mark
                         td.addClass(this,'painted');
                     }
                     var marker = this.getAttributeNS(null,'title');
-                    for ( var i = 0; i < node.children.length; i++ ) {
-                        td.recursivePaint(node.children[i],marker,false,td.branchAnimator);
+                    var children = node.getChildren();
+                    for ( var i = 0; i < children.length; i++ ) {
+                        td.recursivePaint(children[i],marker,false,td.branchAnimator);
                     }
                 }
             }
