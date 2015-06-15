@@ -17,7 +17,8 @@ use Bio::Phylo::PhyLoTA::Service::ParallelService;
 use base 'Bio::SUPERSMART::App::SubCommand';
 use Bio::SUPERSMART::App::smrtutils qw(-command);
 
-# ABSTRACT: 
+# ABSTRACT: replicate trees and alignments with simulations
+
 
 =head1 NAME
 
@@ -25,6 +26,11 @@ Replicate - make simulated replicates of trees and alignments
 
 =head1 SYNOPSYS
 
+This subcommand provides functionality to generate a complete synthetic dataset from a supersmart run.
+The generated synthetic dataset consists of a replicated (final) species tree and replicated alignments,
+which resemble the input alignments.  
+The replicated dataset can then be used as input for the SUPERSMART pipeline to validate the method and
+parameters chosen for the initial run. 
 
 =head1 DESCRIPTION
 
@@ -37,7 +43,7 @@ sub options {
 	my $taxa_outfile_default = 'taxa-replicated.dnd';
 	my $format_default = 'newick';
 	return (
-		['tree|t=s', 'file name of input tree (newick format), must be ultrametric', { arg => 'file', mandatory => 1 } ],
+		['tree|t=s', 'file name of input tree, must be ultrametric', { arg => 'file', mandatory => 1 } ],
 		['tree_format|f=s', "format of tree input file (newick or nexus), defaults to $format_default", { default => $format_default } ],
 		['alignments|a=s', "list of alignment files to replicate, as produced by 'smrt align'", { arg => 'file' } ],
 		["aln_outfile|o=s", "name of output file listing the simulated alignments, defaults to '$aln_outfile_default'", {default => $aln_outfile_default, arg => "file"}],
@@ -293,7 +299,7 @@ sub _replicate_alignment {
 	
 	# replicate dna data: estimate model with the original tree and replicate sequences along the replicated tree
 	$logger->info("Determining substitution model for alignment $fasta");
-	my $model = 'Bio::Phylo::Models::Substitution::Dna'->modeltest($matrix, $tree);
+	my $model = 'Bio::Phylo::Models::Substitution::Dna'->modeltest($matrix);
 
 	$logger->debug("Pruned replicated tree for sequence simulation: " . $pruned->to_newick);
 	$logger->info("Simulating sequences for alignment $fasta");

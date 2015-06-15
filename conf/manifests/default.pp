@@ -91,11 +91,6 @@ class install {
 			ensure  => link,
 			target  => "${tools_bin_dir}/muscle3.8.31_i86linux64",
 			require => Exec["unzip_muscle"];
-		"phylip-consense_link":
-			path    => "/usr/local/bin/consense-phylip",
-			ensure  => link,
-			target  => "${tools_dir}/phylip-3.696/src/consense",
-			require => Exec["make_phylip"];
 		"examl_link":
 			path    => "${tools_bin_dir}/examl",
 			ensure  => link,
@@ -210,23 +205,6 @@ class install {
 			cwd       => $tools_dir,
 			creates   => "${tools_bin_dir}/muscle3.8.31_i86linux64",
 			require   => Exec["download_muscle"];
-
-		# install phylip
-		"download_phylip":
-			command => "wget http://evolution.gs.washington.edu/phylip/download/phylip-3.696.tar.gz",
-			cwd     => $tools_dir,
-			creates => "${tools_dir}/phylip-3.696.tar.gz",
-			require => Package[ 'wget', 'tar' ];
-		"unzip_phylip":
-			command => "tar -xzvf ${tools_dir}/phylip-3.696.tar.gz",
-			cwd     => $tools_dir,
-			creates => "${tools_dir}/phylip-3.696/src/Makefile.unx",
-			require => Exec["download_phylip"];
-		"make_phylip":
-			command => "make -f Makefile.unx consense",
-			cwd     => "${tools_dir}/phylip-3.696/src/",
-			creates => "${tools_dir}/phylip-3.696/src/consense",
-			require => Exec["unzip_phylip"];
 
 		# install examl & parser
 		"clone_examl":

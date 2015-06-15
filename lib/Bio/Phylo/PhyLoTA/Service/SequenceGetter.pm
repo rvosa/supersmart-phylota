@@ -834,8 +834,10 @@ with which the sequence was annotated.
 
 =cut
 
+my %marker_cache;
 sub get_markers_for_accession {
 	my ( $self, $acc ) = @_;
+	return @{ $marker_cache{$acc} } if $marker_cache{$acc};
 	my $gb = Bio::DB::GenBank->new();
 	my $seq = $gb->get_Seq_by_acc($acc);
 
@@ -846,6 +848,7 @@ sub get_markers_for_accession {
 		'repeat_region' => 'rpt_family',
 		'gene'          => 'gene',
 		'CDS'           => 'product',
+		'misc_feature'  => 'note',
 	);
 	
 	# iterate over features
@@ -865,6 +868,20 @@ sub get_markers_for_accession {
 				my $key = $loc->start . '.' . $loc->end;
 				$result{$key} = [] if not $result{$key};
 				my ($value) = $feature->each_tag_value($subtag);
+
+				# if we just get the rpt_family we will end up
+				# calling a lot of different markers something
+				# generic such as SINE or LINE. this will not
+				# be very informative and it will suggest that
+				# the 'orthologize' step didn't function as 
+				# intended (when in fact it did). We will therefore
+				# try to see if the sequence submitter has been 
+				# dilligent enough to put the name for the repeat
+				# element in the `/note=...` annotation:
+				if ( $subtag eq 'rpt_family' ) {
+					my ($note) = $feature->each_tag_value('note');
+					$value .= '/' . $note if $note;
+				}
 				push @{ $result{$key} }, $value;
 			}
 		}
@@ -876,6 +893,7 @@ sub get_markers_for_accession {
 		my ($shortest) = sort { length($a) <=> length($b) } @{ $result{$m} };
 		push @markers, $shortest;
 	}
+	$marker_cache{$acc} = [ @markers ];
 	return @markers;
 }
 

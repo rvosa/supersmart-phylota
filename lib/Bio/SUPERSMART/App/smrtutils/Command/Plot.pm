@@ -44,7 +44,7 @@ sub options {
 	my ($self, $opt, $args) = @_;
 	my $format_default    = 'supersmart';
 	my $outfile_default   = "$format_default.$formats{$format_default}";
-	my $width_default     = 800;
+	my $width_default     = 1200;
 	my $style_default     = 'rectangular';
 	my $bbmarkers_default = 'markers-backbone.tsv';
 	my $taxa_default      = 'species.tsv';
@@ -131,10 +131,11 @@ sub run {
 	});
 	
 	# compute coordinates and round to nearest integer
+	my $height = $opt->height || $ntax * 25;
 	$logger->info("Going to compute node coordinates");
 	my $drawer = Bio::Phylo::Treedrawer->new(
 		'-width'  => $opt->width,
-		'-height' => ( $opt->height || ( $ntax * 50 ) ),
+		'-height' => $height,
 		'-tree'   => $tree,
 	);
 	$drawer->compute_coordinates;
@@ -159,15 +160,15 @@ sub run {
 	}
 	if ( -e $opt->markers and -s $opt->markers ) {
 		$logger->info("Going to apply backbone markers from file ".$opt->markers);
-		$ds->apply_backbone_markers($opt->markers,$tree);
+		$ds->apply_markers($opt->markers,$tree,'backbone');
 	}
+        if ( -e $opt->clades and -s $opt->clades ) {
+                $logger->info("Going to apply clade markers from file ".$opt->clades);
+                $ds->apply_markers($opt->clades,$tree,'clade');
+        }
 	if ( -e $opt->fossils and -s $opt->fossils ) {
 		$logger->info("Going to apply fossil annotations from file ".$opt->fossils);
 		$ds->apply_fossil_nodes($opt->fossils,$tree);
-	}
-	if ( -e $opt->clades and -s $opt->clades ) {
-		$logger->info("Going to apply clade markers from file ".$opt->clades);
-		$ds->apply_clade_markers($opt->clades,$tree);
 	}
 	
 	# get template file
@@ -181,7 +182,7 @@ sub run {
 	my %args = (
 		'tree'    => $tree,
 		'width'   => $opt->width,
-		'height'  => $opt->height,
+		'height'  => $height,
 		'style'   => $opt->style,
 		'date'    => $date,
 		'command' => "$script @ARGV",

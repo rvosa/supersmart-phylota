@@ -5,7 +5,7 @@ use warnings;
 
 use Bio::Phylo::PhyLoTA::Service::TreeService;
 use Bio::Phylo::PhyLoTA::Config;
-use Bio::Phylo::Util::CONSTANT ':objecttypes';
+use Bio::Phylo::Util::CONSTANT qw':objecttypes :namespaces';
 use Bio::Phylo::IO qw'parse parse_tree';
 
 use base 'Bio::SUPERSMART::App::SubCommand';
@@ -139,6 +139,9 @@ sub _graft_single_tree {
 		'-infile'  => $file,
 		'-heights' => $opt->heights,
 	);
+	$consensus->set_namespaces( "fig" => _NS_FIGTREE_ );
+	$consensus->get_root->set_meta_object( "fig:clade" => $clade );
+
 	# prune outgroup from consensus tree (if exists)
 	if ( -e $ogfile ) {
 		

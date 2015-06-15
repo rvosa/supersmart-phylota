@@ -7,6 +7,7 @@ use Bio::Phylo::IO qw'parse parse_tree unparse';
 use Bio::Phylo::Factory;
 use Bio::Phylo::PhyLoTA::Config;
 use Bio::Phylo::PhyLoTA::Service;
+use Bio::Phylo::Util::CONSTANT ':namespaces';
 use base 'Bio::Phylo::PhyLoTA::Service';
 use Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa;
 use Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector;
@@ -316,8 +317,13 @@ sub outgroup_root {
 	# fetch outgroup nodes and mrca
 	my %og = map{ $_=>1 } @all_ids;
 	my @ognodes = grep { exists($og{$_->get_name}) } @{$tree->get_terminals};
-	my $mrca = $tree->get_mrca(\@ognodes);
+	if ( ! scalar @ognodes ) {
+		my @specnames = map{$self->find_node($_)->taxon_name} @all_ids;
+		$log->warn("Cannot reroot at outgroup! None of the following names are in the tree: " . join(', ', @specnames));
+		return;
+	}
 
+	my $mrca = $tree->get_mrca(\@ognodes);
 	if ($mrca->is_root) {
 		my @ignodes = grep { ! $og{$_->get_name} } @{$tree->get_terminals};
 		$mrca = $tree->get_mrca(\@ignodes);		
@@ -791,7 +797,13 @@ sub graft_tree {
 	my $branch_length = $bmrca->get_branch_length || 0;
  	$bmrca->set_branch_length( $branch_length + $diff ); # XXX still gives negative branches
 	$log->debug("adjusted backbone MRCA depth by $bmrca_depth - $crd");
-    
+
+	# copy the clade annotation, if any
+	if ( my $value = $clade->get_root->get_meta_object('fig:clade') ) {
+		$bmrca->set_namespaces( 'fig' => _NS_FIGTREE_ );
+		$bmrca->set_meta_object( 'fig:clade' => $value );
+	}
+
 	# now graft!
  	$bmrca->clear();
  	$clade->visit(sub {
