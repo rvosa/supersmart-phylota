@@ -5,7 +5,7 @@ use warnings;
 
 use File::Spec;
 
-use Bio::Phylo::IO qw(parse unparse);
+use Bio::Phylo::IO qw(parse parse_tree unparse);
 use Bio::Phylo::Util::CONSTANT ':objecttypes';
 use Bio::Phylo::Models::Substitution::Dna;
 
@@ -40,7 +40,7 @@ sub options {
 	my ($self, $opt, $args) = @_;
 	my $aln_outfile_default = 'aligned-replicated.txt';
 	my $tree_outfile_default = 'tree-replicated.dnd';
-	my $taxa_outfile_default = 'taxa-replicated.dnd';
+	my $taxa_outfile_default = 'taxa-replicated.tsv';
 	my $format_default = 'newick';
 	return (
 		['tree|t=s', 'file name of input tree, must be ultrametric', { arg => 'file', mandatory => 1 } ],
@@ -77,10 +77,10 @@ sub run {
 	my $mt  = Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa->new;
 
 	# read tree
-	my $tree = parse(
+	my $tree = parse_tree(
 		'-file'   => $treefile,
 		'-format' => $opt->tree_format,
-	    )->first;
+	    );
 
 	# replicate tree and write to file
 	my $tree_replicated = $self->_replicate_tree($tree)->first;
@@ -235,6 +235,14 @@ sub _replicate_alignment {
 		'-as_project' => 1,
 	    );
 	my ($matrix) = @{ $project->get_items(_MATRIX_) };
+
+	# modeltest needs at least 3 sequences to estimate the substitution model;
+	# the number of taxa in the alignment that are also present in the tree therefore
+	# has to be > 2
+	if ( scalar( @{$matrix->get_entities}) < 3 ) {
+		$logger->warn("Cannot replicate alignment $fasta, number of taxa < 3");
+		return 0;
+	}
 	
 	$logger->info("Number of sequences in alignment $fasta : " . scalar(@{$matrix->get_entities}));
 
@@ -250,16 +258,9 @@ sub _replicate_alignment {
 			$logger->debug('Changing FASTA definition line from ' . $seq->get_name . " to $seqname");
 			$seq->set_name($seqname);
 		    }	
-		$matching_taxa++ if $tree_taxa{$seqname};
+#		$matching_taxa++ if $tree_taxa{$seqname};
 		$seq->set_generic('fasta_def_line'=>$seqname);
 	}	
-	# modeltest needs a tree with at least 3 species to estimate the substitution model;
-	# the number of taxa in the alignment that are also present in the tree therefore
-	# has to be > 2
-	if ( $matching_taxa < 3 ) {
-		$logger->warn("Cannot replicate alignment $fasta, number of taxa < 3");
-		return 0;
-	}
 
 	# The alignment now contains as many sequences as the tree has tips.
 	# We will therefore prune set of sequences. This is done by simulating a binary matrix (character is the 
@@ -281,15 +282,18 @@ sub _replicate_alignment {
 	my $binary_rep = $binary_matrix->replicate('-tree'=>$tree_replicated, '-seed'=>$config->RANDOM_SEED);	
 	$logger->debug("simulated binary matrix");
 	# get taxa from replicate that have a simulated marker presence 
-	my %rep_taxa;# =  map {$_->[0]=>1} grep {$_->[1] == 1} @{$binary_rep->get_raw};
+	my %rep_taxa =  map {$_->[0]=>1} grep {$_->[1] == 1} @{$binary_rep->get_raw};
+	
+	$logger->info("Number of taxa in alignment to replicate : " . scalar(keys %aln_taxa));
+	$logger->info("Number of taxa estimated from binary simulation : " . scalar(keys %rep_taxa));	
 	
 	# it can happen that no taxon is predicted to have the alignment,
 	# in this case, take the original taxa from the alignment
-	if ( ! keys(%rep_taxa) ) {
-		$logger->warn("setting taxa for replicating $fasta to original alignment taxa, no other taxa were predicted in binary simulation");
+	if ( scalar(keys %rep_taxa) < 3 ) {
+		$logger->warn("setting taxa for replicating $fasta to original alignment taxa, binary simulation yielded < 3 taxa");
 		%rep_taxa = %aln_taxa;
-	}
-	
+	}	
+
 	# Lets not simulate all tips, that would take too long. Instead, 
 	# prune the replicated tree to: 
 	# 1. The taxa we have data for and 
@@ -297,6 +301,11 @@ sub _replicate_alignment {
 	my $pruned = parse('-format'=>'newick', '-string'=>$tree_replicated->to_newick)->first;
 	$pruned->keep_tips( [keys %aln_taxa, keys %rep_taxa] );
 	
+	if ( scalar(@{$pruned->get_terminals}) < 3 ) {
+		$logger->warn("Less than three taxa in pruned replicated tree. Binary simulation probably yielded too few taxa. Cannot replicate alignment.");
+		return 0;
+	}
+
 	# replicate dna data: estimate model with the original tree and replicate sequences along the replicated tree
 	$logger->info("Determining substitution model for alignment $fasta");
 	my $model = 'Bio::Phylo::Models::Substitution::Dna'->modeltest($matrix);

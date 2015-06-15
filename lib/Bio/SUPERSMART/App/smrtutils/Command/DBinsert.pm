@@ -54,7 +54,7 @@ sub options {
 	my $prefix_default = 'SMRT';
 	return (
 		['alignment|a=s', "alignment file(s) to insert into database, multiple files should be separatet by commata", { arg => 'file' }],		
-		['list|l=s', "list of alignment files to insert into database", { arg => 'file' } ],		
+		['list|s=s', "list of alignment files to insert into database", { arg => 'file' } ],		
 		['taxafile|t=s', "taxa file as produced by 'smrt-utils replicate'; if given, possible artificial taxa are inserted", {}],
 		['prefix|p=s', "prefix for generated sequence accessions, defaults to $prefix_default", {default => $prefix_default}],
 		['desc|d=s', "description for sequence(s)", {}],
@@ -123,15 +123,16 @@ sub run {
 				# This is needed by 'smrt orthologize', otherwise it won't find
 				# the sequences! As the seed gi, we take the last 
 				# inserted artificial gi:
+
 				my $newfilename = $inserted[-1] . "-";				
 				my ($volume,$dirs,$filename) = File::Spec->splitpath( $file );
 
 				#remove current file extension
 				$filename =~ s/\.[^\.]+$//;
 				$newfilename .= $filename . '-smrt-inserted.fa';
-				
-				my $newfile = File::Spec->catfile($volume, $dirs, $newfilename);
 
+				my $newfile = $volume || $dirs ? File::Spec->catfile($volume, $dirs, $newfilename) : $newfilename;
+				
 				$logger->info("Writing alignment to $newfile");
 				unparse ( -phylo => $matrix, -file => $newfile, -format=>'fasta' );
 
