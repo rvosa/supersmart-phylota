@@ -392,7 +392,12 @@ TreeDrawer.prototype.drawTable = function(x,y,content) {
     table.appendChild(header);
 
     // create XHTML close button, insert in header
-    var button = this.createElt('button',{ title :'close'},this.NS_XHTML);
+    var args = {
+        title : 'close',
+        type  : 'image',
+        src   : "data:image/gif;base64,R0lGODlhEwATAOYAAAAAAP////f399zc3NXV1dDQ0MzMzMXFxcPDw8LCwr+/v76+vru7u7m5uba2trS0tLOzs7KysrGxsbCwsK+vr66urq2traysrKurq6qqqqmpqaioqKenp6ampqWlpaSkpKOjo6KioqGhoaCgoJ+fn56enp2dnZycnJubm5qampmZmZiYmJeXl5aWlpWVlZSUlJOTk5KSkpGRkZCQkI+Pj46Ojo2NjYyMjIuLi4qKiomJiYiIiIeHh4aGhoWFhYSEhIODg4KCgoGBgX9/f35+fn19fXx8fHt7e3p6enl5eXh4eHd3d3Z2dnV1dXR0dHNzc3FxcW9vb25ubmxsbGlpaWhoaGVlZWRkZGJiYmFhYWBgYF9fX15eXl1dXVtbW1paWllZWVhYWFdXV1VVVf///wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACH5BAEAAGQALAAAAAATABMAAAf/gAoUHyUqLTAvMjI0NDk5Oj9FQUkSCgkNExcaHB4gICMlKCwyOklPHAgHDBAVGBsdHh4hIycrMDdFWyMMCw4VGR2fJigrLIk1OURYJxEPFQMBIyYqLjE1NgEFOjxDVioXFhkB49TWOOMBPD3dLhsZHCDoMDM36D89PURXLh8eHyIm0NVAByQIkB/6aIwIMeuECnTjfAARYrDIFRsnSIwg4bAFuh0SKQo5giXHChMlSjiEGKDHDyFChiTJ0uNFihPD0MUYJ+DlECJMtASZ0SIFCnSJaKCLecRJFyI3YLBA5+LYuXFFkkDxcoRHDRgEAryAscjGtgAGjiyRAkZJEB01RmbMYFTjhg6XQrI6mRLmyZEgPXTk2LFDnU8jSZpAqTIGSZQnSpAgSUJZiZImTqBEmUIlixgkbLmI7rJFy5Ytor18+SKmdSAAOw=="
+    };
+    var button = this.createElt('input',args,this.NS_XHTML);
     header.appendChild(button);
     button.onclick = function(){ $(fo).fadeOut(400) };
 
