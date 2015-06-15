@@ -25,10 +25,10 @@ Once the tree drawer is constructed, this is the only method that you would use 
 outside. The argument tree is a JSON object as produced by Bio::Phylo::to_js
 */
 TreeDrawer.prototype.drawTree = function(tree) {
-    this.markers = tree.backbone_markers;
-    this.clades = tree.clade_markers;
+    this.markers = tree.getBackboneMarkers();
+    this.clades = tree.getCladeMarkers();
     this.maxMarkers = Object.keys(this.markers).length;
-    this.recursiveDraw(tree);
+    this.recursiveDraw(tree.getRoot());
 };
 
 /*
@@ -41,7 +41,8 @@ so that the node lands on top of age ranges and abutting branches.
  */
 TreeDrawer.prototype.recursiveDraw = function(node,parent) {
     var td = this;
-    var childCount = node.children.length;
+    var children = node.getChildren();
+    var childCount = children.length;
 
     // draw the age range for interior nodes
     if ( childCount != 0 ) {
@@ -54,17 +55,17 @@ TreeDrawer.prototype.recursiveDraw = function(node,parent) {
     }
 
     // if node has a label, draw it. make bold if exemplar. add link.
-    if ( node.binomial != null ) {
+    if ( node.getName() != null ) {
         var label = this.drawNodeLabel(node);
         var content = this.createNodeContent(node);
         label.onclick = function () {
-            td.drawTable(node['map:x'],node['map:y'],content);
+            td.drawTable(node.getX(),node.getY(),content);
         }
     }
 
     // recurse
     for ( var i = 0; i < childCount; i++ ) {
-        this.recursiveDraw(node.children[i],node);
+        this.recursiveDraw(children[i],node);
     }
 
     // draw the node if internal
@@ -84,18 +85,18 @@ the present (nowx).
 TreeDrawer.prototype.drawAgeRange = function(node) {
 
     // coordinates of the node
-    var nx = node['map:x'];
-    var ny = node['map:y'];
+    var nx = node.getX();
+    var ny = node.getY();
 
     // have age range
-    if ( node['fig:height_95_HPD_min'] && node['fig:height_95_HPD_max'] ) {
+    if ( node.hasAgeRange() ) {
 
         // rightmost limit x coordinate
-        var min_x = this.nowx - ( node['fig:height_95_HPD_min'] * this.pptu );
+        var min_x = this.nowx - ( node.getMinAge() * this.pptu );
         var min_width = Math.abs(min_x - nx);
 
         // leftmost limit
-        var max_x = this.nowx - ( node['fig:height_95_HPD_max'] * this.pptu );
+        var max_x = this.nowx - ( node.getMaxAge() * this.pptu );
         var max_width = Math.abs(max_x - nx);
 
         var fadeRight = this.createSVGElt('rect',{
@@ -127,20 +128,22 @@ that this node was calibrated.
  */
 TreeDrawer.prototype.drawNode = function(node) {
     var td = this;
-    var nx = node['map:x'];
-    var ny = node['map:y'];
-    var strokeColor = node['fig:clade'] ? 'lime' : 'black';
-    var nodeColor = node.fossil ? 'red' : 'white';
-    var circleElt = this.drawCircle(nx, ny, node['map:radius'] || 5,{
+    var nx = node.getX();
+    var ny = node.getY();
+    var strokeColor = node.getCladeName() ? 'lime' : 'black';
+    var nodeColor = node.getFossil() ? 'red' : 'white';
+    var circleElt = this.drawCircle(nx, ny, node.getRadius(),{
         'fill'         : nodeColor,
         'stroke'       : strokeColor,
-        'stroke-width' : node['map:branch_width'] || 2,
+        'stroke-width' : node.getBranchWidth(),
         'cursor'       : 'pointer'
     });
     var content = this.createNodeContent(node);
     circleElt.onclick = function () {
         td.drawTable(nx, ny, content);
     };
+
+    // the element and the node object hold references to each other
     node['node'] = circleElt;
     circleElt.node = node;
 };
@@ -151,23 +154,24 @@ the phylomap attributes map:x, map:y and map:branch_color. The branch is further
 to indicate the amount of backbone marker support.
  */
 TreeDrawer.prototype.drawBranch = function(node,parent){
-    var nx = node['map:x'];
-    var ny = node['map:y'];
-    var px = parent['map:x'];
-    var py = parent['map:y'];
+    var nx = node.getX();
+    var ny = node.getY();
+    var px = parent.getX();
+    var py = parent.getY();
     var lines = [];
 
     // calculate branch width (proportional to
     // number of markers
     var width = 2;
-    if (node.backbone_markers) {
-        var mc = Object.keys(node.backbone_markers).length;
+    var bbmarkers = node.getBackboneMarkers();
+    if (bbmarkers) {
+        var mc = Object.keys(bbmarkers).length;
         width = this.maxWidth * ( mc / this.maxMarkers );
     }
 
     // draw styled lines, one vertical, one horizontal
     var branchStyle = {
-        'stroke': this.rgb(node['map:branch_color']) || 'black',
+        'stroke': this.rgb(node.getBranchColor()),
         'stroke-width': width,
         'stroke-linecap': 'round'
     };
@@ -175,13 +179,15 @@ TreeDrawer.prototype.drawBranch = function(node,parent){
     this.drawLine(px, ny, nx, ny, branchStyle);
 
     // overlay black dotted line if backbone
-    if (node.backbone_markers) {
+    if (bbmarkers) {
         branchStyle['stroke'] = 'black';
         branchStyle['stroke-dasharray'] = '5, ' + ( width + 5 );
         branchStyle['stroke-linecap'] = 'square';
         lines.push(this.drawLine(px, py, px, ny, branchStyle));
         lines.push(this.drawLine(px, ny, nx, ny, branchStyle));
     }
+
+    // the node holds references to the in-pointing branch segments
     node['branch'] = lines;
 };
 
@@ -199,18 +205,18 @@ phylomap attributes:
 In addition, optionally expects the attribute 'exemplar'
  */
 TreeDrawer.prototype.drawNodeLabel = function(node) {
-    var nx = node['map:x'];
-    var ny = node['map:y'];
-    var fontWeight = node.exemplar ? 'bold' : 'normal';
+    var nx = node.getX();
+    var ny = node.getY();
+    var fontWeight = node.isExemplar() ? 'bold' : 'normal';
     return this.drawText(
-        nx + ( node['map:text_horiz_offset'] || 12 ),
-        ny + ( node['map:text_vert_offset']  || 3 ),
-        node.binomial,
+        nx + node.getTextHorizOffset(),
+        ny + node.getTextVertOffset(),
+        node.getName(),
         {
-            'stroke': node['map:font_color']     || 'black',
-            'font-family': node['map:font_face'] || 'Verdana',
-            'font-size': node['map:font_size']   || '10px',
-            'font-style': node['map:font_style'] || 'italic',
+            'stroke': node.getFontColor(),
+            'font-family': node.getFontFace(),
+            'font-size': node.getFontSize(),
+            'font-style': node.getFontStyle(),
             'cursor': 'pointer',
             'font-weight': fontWeight
         }
@@ -373,10 +379,10 @@ TreeDrawer.prototype.drawTable = function(x,y,content) {
 
     // probably want to reduce the amount of magic numbers here
     var fo = this.createSVGElt('foreignObject',{
-        'x'      : x,
-        'y'      : y,
-        'width'  : 220,
-        'height' : height * ( lines + 2 ) + sections * ( height + 15 ) + 60
+        x      : x,
+        y      : y,
+        width  : 220,
+        height : height * ( lines + 2 ) + sections * ( height + 15 ) + 60
     });
     this.svg.appendChild(fo);
 
@@ -386,18 +392,18 @@ TreeDrawer.prototype.drawTable = function(x,y,content) {
 
     // create XHTML table, append to body
     var table = this.createElt('table',{
-        'cellpadding':0,
-        'cellspacing':0,
-        'style':'display:none'
+        cellpadding : 0,
+        cellspacing : 0,
+        style       :'display:none'
     },this.NS_XHTML);
     body.appendChild(table);
 
     // create XHTML table header, append to table
-    var header = this.createElt('th',{'colspan':2,'class':'widget'},this.NS_XHTML);
+    var header = this.createElt('th',{ colspan : 2, class : 'widget' },this.NS_XHTML);
     table.appendChild(header);
 
     // create XHTML close button, insert in header
-    var button = this.createElt('button',{'title':'close'},this.NS_XHTML);
+    var button = this.createElt('button',{ title :'close'},this.NS_XHTML);
     header.appendChild(button);
     button.onclick = function(){ $(fo).fadeOut(400) };
 
@@ -408,8 +414,8 @@ TreeDrawer.prototype.drawTable = function(x,y,content) {
         // line is a single string, use as section header
         if ( typeof content[i] === 'string' ) {
             var th = this.createElt('th',{
-                'colspan': 2,
-                'class': 'sectionHeader'
+                colspan : 2,
+                class   : 'sectionHeader'
             },this.NS_XHTML);
             var txt = this.doc.createTextNode(content[i]);
             th.appendChild(txt);
@@ -548,7 +554,8 @@ a callback to each applicable node.
  */
 TreeDrawer.prototype.recursivePaint = function(node,marker,remove,func) {
     var i = 0;
-    if ( node.backbone_markers && node.backbone_markers[marker] ) {
+    var bbmarkers = node.getBackboneMarkers();
+    if ( bbmarkers && bbmarkers[marker] ) {
         if ( func ) {
             func(node);
         }
@@ -709,9 +716,9 @@ a section on fossil calibration points.
  */
 TreeDrawer.prototype.createFossilContent = function(node,content) {
     content.push('Fossil');
-    content.push({'name':node.fossil.name});
-    content.push({'minimum age' : node.fossil.min_age});
-    content.push({'maximum age' : node.fossil.max_age});
+    content.push({'name':node.getFossilName()});
+    content.push({'minimum age' : node.getFossilMinAge()});
+    content.push({'maximum age' : node.getFossilMaxAge()});
 };
 
 /*
@@ -723,33 +730,34 @@ TreeDrawer.prototype.createNodeContent = function(node) {
     var content = [];
 
     // add table section for fossils
-    if (node.fossil) {
+    if ( node.getFossil() ) {
         this.createFossilContent(node, content);
     }
 
     // add table section for markers
-    if (node.backbone_markers) {
-        this.createMarkerContent(node.backbone_markers, 'Backbone markers', content, this.markers, node);
+    if ( node.getBackboneMarkers() ) {
+        this.createMarkerContent(node.getBackboneMarkers(), 'Backbone markers', content, this.markers, node);
     }
-    if ( node.clade_markers) {
-        this.createMarkerContent(node.clade_markers, 'Clade markers', content, this.clades, node);
+    if ( node.getCladeMarkers() ) {
+        this.createMarkerContent(node.getCladeMarkers(), 'Clade markers', content, this.clades, node);
     }
 
     // add table section for NCBI taxon ID
-    if (node.guid) {
+    var taxonId = node.getId();
+    if (taxonId) {
         content.push('NCBI taxonomy');
-        content.push({'taxon id': node.guid, 'url': this.NCBI_TAXONOMY + node.guid });
+        content.push({'taxon id': taxonId, 'url': this.NCBI_TAXONOMY + taxonId });
     }
 
-    // add table section highest posterior density intervals
+    // add table section highest posterior density intervals, from TreeAnnotator
     content.push('95% HPD intervals');
     var params = [ 'height', 'length', 'dmv1', 'dmv2', 'dmt' ];
     for ( var i = 0; i < params.length; i++ ) {
         var min = 'fig:' + params[i] + '_95_HPD_min';
         var max = 'fig:' + params[i] + '_95_HPD_max';
-        if ( node[min] && node[max] ) {
+        if ( node.hasPredicate(min) && node.hasPredicate(max) ) {
             var key = params[i];
-            var val = parseFloat(node[min]).toFixed(2) + ' .. ' + parseFloat(node[max]).toFixed(2);
+            var val = node.getObject(min,2) + ' .. ' + node.getObject(max,2);
             var data = {};
             data[key] = val;
             content.push(data);
@@ -757,22 +765,23 @@ TreeDrawer.prototype.createNodeContent = function(node) {
     }
 
     // add support
-    if ( node['fig:bootstrap'] || node['fig:posterior'] ) {
+    if ( node.hasSupport() ) {
         content.push('Support');
-        if ( node['fig:bootstrap'] ) {
-            content.push({ 'bootstrap' : parseFloat(node['fig:bootstrap']).toFixed(2) });
+        if ( node.getBootstrap() ) {
+            content.push({ 'bootstrap' : node.getBootstrap(2) });
         }
-        else if ( node['fig:posterior'] ) {
-            content.push({ 'posterior' : parseFloat(node['fig:posterior']).toFixed(2) });
+        else if ( node.getPosterior() ) {
+            content.push({ 'posterior' : node.getPosterior(2) });
         }
     }
 
     // add clade name
-    if ( node['fig:clade'] ) {
+    var cladeName = node.getCladeName();
+    if ( cladeName ) {
         content.push('Backbone decomposition');
         content.push({
-            'clade ID' : node['fig:clade'],
-            'url' : node['fig:clade'] + '/' + node['fig:clade'] + '-beast-in.xml'
+            'clade ID' : cladeName,
+            'url' : cladeName + '/' + cladeName + '-beast-in.xml'
         });
     }
 
