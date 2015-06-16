@@ -1,3 +1,4 @@
+
 /**
 * Constructs a TreeDrawer object
 * @constructor
@@ -29,7 +30,61 @@ TreeDrawer.prototype.drawTree = function(tree) {
     this.markers = tree.getBackboneMarkers();
     this.clades = tree.getCladeMarkers();
     this.maxMarkers = Object.keys(this.markers).length;
+    this.makeCladeColors(tree);
     this.recursiveDraw(tree.getRoot(),null);
+};
+
+/**
+ * Applies distinct color for each clade
+ * @param {Tree} tree - an instance of the Tree class
+ */
+TreeDrawer.prototype.makeCladeColors = function(tree) {
+
+    // collect clade names
+    var clades = [];
+    tree.getRoot().visitDepthFirst({
+        pre : function(node) {
+            var name = node.getCladeName();
+            if (name)
+                clades.push(name);
+        }
+    });
+
+    // shuffle for more constrasting colors
+    function shuffle(o){
+        for(var j, x, i = o.length; i; j = Math.floor(Math.random() * i), x = o[--i], o[i] = o[j], o[j] = x);
+        return o;
+    }
+    shuffle(clades);
+
+    // make color lookup
+    var lookup = {};
+    var steps = clades.length;
+    for ( var i = 0; i < steps; i++ ) {
+        var R = Math.round( ( 255 / steps ) * i );
+        var G = Math.abs( R - 127 );
+        var B = 255 - R;
+        lookup[clades[i]] = [ R, G, B ];
+    }
+
+    // apply colors
+    var gray = [ 127, 127, 127 ];
+    var color = gray;
+    tree.getRoot().visitDepthFirst({
+        pre : function(node) {
+            node.setBranchColor(color);
+            var name = node.getCladeName();
+            if (name) {
+                color = lookup[name];
+                node.setNodeColor(color);
+            }
+        },
+        post : function(node) {
+            var name = node.getCladeName();
+            if (name)
+                color = gray;
+        }
+    });
 };
 
 /**
@@ -125,8 +180,8 @@ TreeDrawer.prototype.drawNode = function(node) {
     var td = this;
     var nx = node.getX();
     var ny = node.getY();
-    var strokeColor = node.getCladeName() ? 'lime' : 'black';
-    var nodeColor = node.getFossil() ? 'red' : 'white';
+    var nodeColor = node.getCladeName() ? node.getNodeColor(true) : 'white';
+    var strokeColor = node.getFossil() ? 'red' : 'black';
     var circleElt = this.drawCircle(nx, ny, node.getRadius(),{
         fill           : nodeColor,
         stroke         : strokeColor,
@@ -137,6 +192,18 @@ TreeDrawer.prototype.drawNode = function(node) {
     circleElt.onclick = function () {
         td.drawTable(nx, ny, content);
     };
+
+    // add support value on node
+    if ( node.hasSupport() ) {
+        var value;
+        if ( node.getBootstrap() ) {
+            value = Math.round( node.getBootstrap() * 100 );
+        }
+        else {
+            value = node.getPosterior(2);
+        }
+        this.drawText(nx - 28,ny - 8,value.toString(),null,null);
+    }
 
     // the element and the node object hold references to each other
     node['node'] = circleElt;
@@ -551,39 +618,41 @@ TreeDrawer.prototype.countSections = function(content){
 * @param {Function} func - optional callback to apply to the node
 */
 TreeDrawer.prototype.recursivePaint = function(node,marker,remove,func) {
-    var i = 0;
-    var bbmarkers = node.getBackboneMarkers();
-    if ( bbmarkers && bbmarkers[marker] ) {
-        if ( func ) {
-            func(node);
-        }
+    var td = this;
+    node.visitDepthFirst({
+        pre : function(n) {
+            var backboneMarkers = n.getBackboneMarkers();
+            if ( backboneMarkers && backboneMarkers[marker] ) {
 
-        // if boolean argument set to true, remove the paint
-        // from the branches by removing the 'painted' class
-        if ( remove ) {
+                // optionally used to activate/end the branch animator
+                if ( func ) {
+                    func(n);
+                }
 
-            // tips don't have a node object reference
-            if ( node['node'] ) {
-                this.removeClass(node['node'],'painted');
+                // if boolean argument set to true, remove the paint
+                // from the branches by removing the 'painted' class
+                if ( remove ) {
+
+                    // tips don't have a node object reference
+                    if ( n['node'] ) {
+                        td.removeClass(n['node'],'painted');
+                    }
+                    for ( i = 0; i < n['branch'].length; i++ ) {
+                        td.removeClass(n['branch'][i],'painted');
+                    }
+                }
+                else {
+                    if ( n['node'] ) {
+                        td.addClass(n['node'],'painted');
+                    }
+                    for ( i = 0; i < n['branch'].length; i++ ) {
+                        td.addClass(n['branch'][i],'painted');
+                    }
+                }
             }
-            for ( i = 0; i < node['branch'].length; i++ ) {
-                this.removeClass(node['branch'][i],'painted');
-            }
+
         }
-        else {
-            if ( node['node'] ) {
-                this.addClass(node['node'],'painted');
-            }
-            for ( i = 0; i < node['branch'].length; i++ ) {
-                this.addClass(node['branch'][i],'painted');
-            }
-        }
-    }
-    var children = node.getChildren();
-    var childCount = children.length;
-    for ( i = 0; i < childCount; i++ ) {
-        this.recursivePaint(children[i],marker,remove,func);
-    }
+    });
 };
 
 /**
@@ -614,8 +683,10 @@ TreeDrawer.prototype.branchAnimator = function(node) {
                     else {
                         oldVal = 0;
                     }
-                    var newVal = Number.toString( ( oldVal - 1 ) % 10 );
-                    myElt.style.setProperty('stroke-dashoffset',newVal,null);
+                    var dashArray = myElt.style.getPropertyValue('stroke-dasharray').split(' ');
+                    var newVal = ( oldVal - 1 ) % dashArray[1];
+                    var newValString = newVal.toString();
+                    myElt.style.setProperty('stroke-dashoffset',newValString,null);
                 };
             }(node['branch'][i])),100);
             node['branch'][i].setAttributeNS(null,'intervalId',intervalId);
@@ -667,7 +738,7 @@ TreeDrawer.prototype.createMarkerContent = function(markerSet,title,content,mark
     var td = this;
     for (var property in markerSet) {
         if (markerSet.hasOwnProperty(property)) {
-            var row = { 'marker' : property };
+            var row = { marker : property };
 
             // create row key: marker name(s)
             var concat = this.shorten(markerLookup[property].join(', '));
