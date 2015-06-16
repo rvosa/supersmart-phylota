@@ -671,14 +671,12 @@ sub get_sequences_for_cluster_object {
     
     # iterate over search results
     while(my $gi = $gis->next){
-	
+
 	# look up sequence by it's unique id
 	my $seq = $self->find_seq($gi->gi);
-	
 	# add sequence to results
 	push @sequences, $seq;
     }
-    
     # return results
     return @sequences;    
 }
@@ -927,7 +925,6 @@ sub filter_seq_set {
 	
 		# this fetches the NCBI taxon id
 		my $ti = $seq->ti;
-		
 		# create an anonymous hash first time we see this taxon id
 		if(not exists $sequences_for_taxon{$ti}){
 			$sequences_for_taxon{$ti}={};
@@ -936,10 +933,9 @@ sub filter_seq_set {
 		# assign the sequence object to raw sequence as key, this filters out duplicate sequences
 		$sequences_for_taxon{$ti}->{$seq->seq}=$seq;
     }
-    
     # iterate over taxon ids
     for my $ti(keys %sequences_for_taxon){
-	
+
 		# contains raw sequence strings after filtering by length
 		my $raw_seq;
 		
@@ -947,11 +943,11 @@ sub filter_seq_set {
 		my @taxon_seqs = keys %{ $sequences_for_taxon{$ti} };
 		
 		# only keep sequences of median length
-		my @median_length_seqs = grep { length($_) == $median_length } @taxon_seqs;
-		
+		my @median_length_seqs = sort { $a cmp $b } grep { length($_) == $median_length } @taxon_seqs;
+
 		# only keep sequences larger than median length
 		my @longer_seqs = sort { length($a) <=> length($b) } grep { length($_) > $median_length } @taxon_seqs;
-						
+
 		# tests if there were sequences of median length
 		if ( @median_length_seqs ) {
 			$raw_seq = $median_length_seqs[0];
@@ -971,7 +967,7 @@ sub filter_seq_set {
 		# map raw sequences back to sequence objects
 		push @filtered_seqs,$sequences_for_taxon{$ti}->{$raw_seq};
     }
-    
+
     # return results
     return @filtered_seqs;
 }
@@ -1022,7 +1018,8 @@ sub align_to_file {
         my $aligner = $self->_make_aligner;
         $log->info("Going to align " . scalar(@{$seqs}) . " sequences");
         my $aln = $aligner->align($seqs);
-        
+	$aln->sort_alphabetically;
+
         # write alignment to fasta file                     
         my $out = Bio::AlignIO->new(
             '-file'   => ">$filename",
