@@ -201,5 +201,9 @@ sub outputdir {
     $log->debug("directory to save alignments in : $dir");
     return $dir;
 }
+
+=back
+
+=cut
     
 1;
