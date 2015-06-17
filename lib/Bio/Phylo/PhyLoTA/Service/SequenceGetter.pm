@@ -934,13 +934,13 @@ sub filter_seq_set {
 		$sequences_for_taxon{$ti}->{$seq->seq}=$seq;
     }
     # iterate over taxon ids
-    for my $ti(keys %sequences_for_taxon){
+    for my $ti( sort (keys %sequences_for_taxon) ){
 
 		# contains raw sequence strings after filtering by length
 		my $raw_seq;
 		
 		# contains raw sequence strings before filtering by length
-		my @taxon_seqs = keys %{ $sequences_for_taxon{$ti} };
+		my @taxon_seqs = sort keys %{ $sequences_for_taxon{$ti} };
 		
 		# only keep sequences of median length
 		my @median_length_seqs = sort { $a cmp $b } grep { length($_) == $median_length } @taxon_seqs;

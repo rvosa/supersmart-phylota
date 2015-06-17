@@ -119,10 +119,10 @@ sub run {
         # a set down to $max haplotypes per taxon
         my @seqs = $sg->filter_seq_set($sg->get_sequences_for_cluster_object($cl));   
         $log->debug("fetched ".scalar(@seqs)." sequences for cluster $clinfo");
-    
+
         # filter out sequences that we have processed before or that are
         # of uninteresting taxa
-        my @matching = grep { $ti{$_->ti} } @seqs;
+        my @matching = sort {$a->gi <=> $b->gi} grep { $ti{$_->ti} } @seqs;
         @matching    = grep { ! $seen{$_->gi} } @matching;
         
         # let's not keep the ones we can't build alignments from
@@ -145,18 +145,23 @@ sub run {
     my @result = pmap {             
         my $clinfo = shift;
         
-        # align to file, log result
+        # align to file
         my $filename = File::Spec->catfile( $dir, $clinfo.'.fa' );      
         $sg->align_to_file( $seqs{$clinfo} => $filename );         
-        if ( -s $filename ) {
-            $log->info("Have alignment file: $filename");
-            open my $outfh, '>>', $outfile or die $!;
-            print $outfh $filename . "\n";
-            close $outfh;
-        }
+	$filename;
         
     } @clinfos;
     
+    # write aligned files to output list
+    for my $filename ( sort @result ) {
+	    if ( -s $filename ) {
+		    $log->info("Have alignment file: $filename");
+		    open my $outfh, '>>', $outfile or die $!;
+		    print $outfh $filename . "\n";
+		    close $outfh;
+	    }	    
+    }
+
     $log->info("DONE, results written to $outfile");    
     
     return 1;
