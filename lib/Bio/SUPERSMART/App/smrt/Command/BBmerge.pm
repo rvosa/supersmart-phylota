@@ -157,9 +157,9 @@ sub run {
 
     # valid ranks for taxa in supermatrix
     my @ranks = ( "species", "subspecies", "varietas", "forma" );
-
-	# remember species (or lower) for taxa that have to 
-	# be included in supermatrix, if given as argument
+    
+    # remember species (or lower) for taxa that have to 
+    # be included in supermatrix, if given as argument
     my %user_taxa;
     if ($include_taxa) {
         my @taxa = split( ',', $include_taxa );
@@ -219,19 +219,19 @@ sub run {
             delete $adjacency_matrix{$k}->{$t};
         }
     }
-
+    
     # get all independent subsets of species that are connected by at least
     # one marker and select the largest subset as candidates for exemplars
     my $sets = $self->_get_connected_subsets( \%adjacency_matrix );
     my %candidates = map { $_ => 1 } @{ ( sort { scalar(@$b) <=> scalar(@$a) } @$sets )[0] };
 
-	# now pick the exemplars:
-	# we first further narrow down the list of possible exemplars by the following criterion
-	#  * taxon must share at least one marker with a taxon in its own genus.
-	# If after that, we are still left with more than two candidates in a genus,
-	# we pick the taxa for which the sequences have the highest divergence.
+    # now pick the exemplars:
+    # we first further narrow down the list of possible exemplars by the following criterion:
+    #  A taxon must share at least one marker with a taxon in its own genus.
+    # If after that, we are still left with more than two candidates in a genus,
+    # we pick the taxa for which the sequences have the highest divergence.
     my @exemplars;
-    for my $genus ( keys %species_for_genus ) {
+    for my $genus ( sort keys %species_for_genus ) {
         $log->info("Looking for exemplars in genus $genus");
 
         # select  taxa that are in this genus and are in the candidate exemplars
@@ -239,7 +239,7 @@ sub run {
         my %genus_candidates = map { $_ => 1 } grep { exists( $candidates{$_} ) } keys %genus_taxa;
 
         # now only keep the ones that have connection within the genus
-        for my $can ( keys %genus_candidates ) {
+        for my $can ( sort keys %genus_candidates ) {
             my %adj = %{ $adjacency_matrix{$can} };
             my @connected_within = grep { exists $genus_taxa{$_} and $adj{$_} > 0 } keys %adj;
             if ( ( not scalar(@connected_within) ) ) {
@@ -272,10 +272,10 @@ sub run {
             $log->info("Found more than two exemplar candidates, choosing the most distant ones");
             my %distance;
             for my $aln ( sort @alignments ) {
-                if ( my $d = $self->_calc_aln_distances( $aln, [ keys %genus_candidates ] ) ) {
+		    if ( my $d = $self->_calc_aln_distances( $aln, [ sort keys %genus_candidates ] ) ) {
                     my %dist = %{$d};
 
-             		# pick the most distal pair, weight it by number of pairs minus one
+		    # pick the most distal pair, weight it by number of pairs minus one
                     my ($farthest) = sort { $dist{$b} <=> $dist{$a} } sort( keys %dist );
                     $distance{$farthest} += scalar( keys(%dist) ) - 1;
                 }
@@ -283,14 +283,14 @@ sub run {
             if ( scalar keys(%distance) ) {
                 my ( $sp1, $sp2 ) =
                   map { split( /\|/, $_ ) }
-                  sort { $distance{$b} <=> $distance{$a} } keys %distance;
+                  sort { $distance{$b} <=> $distance{$a} } sort keys %distance;
                 push @exemplars, $sp1, $sp2;
                 $log->info("Added taxa $sp1,$sp2 as exemplars");
             }
             else {
 
                 # if most distant pair cannot be found, add them all
-                # (not shure if this case can ever happen...)
+                # (not sure if this case can ever happen...)
                 push @exemplars, keys(%genus_candidates);
                 $log->info( "Could not retrieve distances, added all taxa "
                       . join( ',', keys %genus_candidates )
@@ -328,7 +328,7 @@ sub run {
         }
     }
 
-	# sort the taxa by increasing occurrence in alignments, so rarely sequenced species
+	# sort the exemplar taxa by increasing occurrence in alignments, so rarely sequenced species
 	# are treated preferentially by including their most speciose alignments first
     my @sorted_exemplars = sort {
         scalar( @{ $alns_for_taxa{$a} } ) <=> 
@@ -373,6 +373,16 @@ sub run {
     return 1;
 }
 
+## counts the number of characters in a file
+sub _file_nchar {
+	my $file = shift;
+	my $count = 0;
+	open my $fh, '<', $file or die $!;
+	$count += length($_) while <$fh>;
+	close $file;
+	return $count;
+}
+
 # given a set of alignment files and exemplar taxa, and a file format (default phylip),
 # writes out a supermstrix to file
 sub _write_supermatrix {
@@ -388,12 +398,15 @@ sub _write_supermatrix {
     my $mt  = Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa->new;
     my $mts = Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector->new;
 
+    # sort alignment files by number of characters to get reproducible column order in supermatrix
+    my @sorted_files = sort { _file_nchar($a) <=> _file_nchar($b) } @$alnfiles;
+
     # Retrieve sequences for all exemplar species and populate marker table
-    for my $alnfile (@$alnfiles) {
+    for my $alnfile (@sorted_files) {
         my %fasta = $mt->parse_fasta_file($alnfile);
         my $nchar = length $fasta{ ( keys(%fasta) )[0] };
         my %row;
-        for my $taxid (@$exemplars) {
+        for my $taxid (sort @$exemplars) {
             my @seqs = $mt->get_sequences_for_taxon( $taxid, %fasta );
             $log->warn("Found more than one sequence for taxon $taxid in alignment file $alnfile. Using first sequence.") if scalar(@seqs) > 1;
             my $seq;
@@ -452,6 +465,7 @@ sub _write_supermatrix {
             )
           )
     } keys %allseqs;
+    $aln->sort_alphabetically;
     my $stream = Bio::AlignIO->new(
         '-format'   => $format,
         '-file'     => ">$filename",
