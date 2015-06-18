@@ -298,7 +298,7 @@ sub make_blast_db {
 	
 	# write FASTA file
 	open my $sfh, '>', $dbname or die $!;
-	for my $gi ( @gis ) {
+	for my $gi ( sort @gis ) {
 		my $seq = $self->find_seq($gi);
 		print $sfh '>', $gi, "\n", $seq->seq, "\n";
 	}
@@ -378,7 +378,7 @@ sub cluster_blast_results {
 	
 	# make single linkage clusters
 	my $sets = [];
-	for my $gi ( keys %hits ) {
+	for my $gi ( sort keys %hits ) {
 		if ( $hits{$gi} ) {
 			$log->info("Going to cluster around seed $gi");
 			_cluster( $sets, delete $hits{$gi}, \%hits);
@@ -386,11 +386,14 @@ sub cluster_blast_results {
 	}
 
 	# now remove duplicates
-	@$sets = values %{ { map { join('|', sort { $a <=> $b } @{$_}) => $_ } @$sets } };
+	my %h =  map { join('|', sort { $a <=> $b } @{$_}) => $_ } @$sets;
+
 	
-	# assign ids to clusters
+	# assign ids to clusters	
 	my $clustid = 1;
-	return map { { 'id' => $clustid++, 'seq' => $_ } } @$sets;	
+	my @clusters = map { { 'id' => $clustid++, 'seq' => $h{$_} } } sort(keys %h);
+
+	return @clusters;
 }
 
 # Helper subroutines
