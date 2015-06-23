@@ -921,7 +921,6 @@ Given an input matrix, splices out all columns with only gaps
 
 =cut
 
-
 sub degap_matrix {
     my ( $self, $matrix ) = @_;
     
@@ -955,10 +954,95 @@ sub degap_matrix {
     }
 }
 
+
+=item generate_marker_adjacency_matrix
+
+Given a list of alignments represented as a hashs (keys: defline, values, sequence strings) and a list of taxa, 
+returns an adjacency matrix with the information of which taxa are connected by sharing 
+the markers given in the alignment. The matrix is represented as hash with keys being all taxon ids, 
+values are hashes given the connected taxa and the number of markers with overlap (0 for no overlap).
+
+=cut
+
+sub generate_marker_adjacency_matrix {
+	my ($self, $alignments, $taxa) = @_;
+	
+	my %adjacency_matrix = map {
+		$_ => { map { $_ => 0 } @$taxa }
+	} @$taxa;
+	my %alns_for_taxa;
+	my %taxa_for_alns;
+	
+	for my $aln (@{$alignments}) {
+		my %fasta = %{$aln};
+		my @aln_taxa = uniq map { $1 if $_ =~ m/taxon\|([0-9]+)/ } keys(%fasta);
+		$taxa_for_alns{$aln} = \@aln_taxa ;
+		for my $s1 (@aln_taxa) {
+			$alns_for_taxa{$s1} = [] if not $alns_for_taxa{$s1};
+			push @{ $alns_for_taxa{$s1} }, $aln;
+			for my $s2 (@aln_taxa) {
+				$adjacency_matrix{$s1}{$s2}++;
+			}
+		}
+	}
+	# do not keep the diagonal
+	for my $sp ( keys %adjacency_matrix ) {
+		delete $adjacency_matrix{$sp}->{$sp};
+	}
+	
+	return %adjacency_matrix;
+}
+
+=item get_connected_taxa_subsets
+
+given an adjacency matrix, does a BFS in the graph 
+and enumerates all connected subsets of taxa. Two taxa are connected
+if they share at least one marker. Returns an arrayref with the taxon IDs of 
+all subsets
+
+=cut
+
+sub get_connected_taxa_subsets {
+	my ( $self, $adjmatrix ) = @_;
+	my %adj = %{$adjmatrix};
+	
+	# do a BFS to get the unconnected subgraphs from the adjacency matrix
+	my @sets;
+	my @current_set;
+	my @queue = ( sort keys(%adj) )[0];
+	while (@queue) {
+		my $current_node = shift(@queue);
+		push @current_set, $current_node;
+		if ( exists $adj{$current_node} ) {
+		    my @neighbors = grep { $adj{$current_node}{$_} } keys %{ $adj{$current_node} };
+		    if (@neighbors) {
+			    foreach my $node (@neighbors) {
+				    if ( $node != $current_node ) {
+					    push @queue, $node;
+				    }
+			    }
+		    }
+		    delete $adj{$current_node};
+	    }
+		@current_set = uniq(@current_set);
+		@queue       = uniq(@queue);
+		if ( scalar(@queue) == 0 ) {
+			my @cs = @current_set;
+			push @sets, \@cs;
+			@current_set = ();
+			if ( keys %adj ) {
+			    my ($key) = sort keys %adj;
+			    push @queue, $key;
+			}
+		}
+	}
+	return \@sets;
+}
+
 =begin comment
-
-Private method to retrieve the contents of a URL
-
+    
+    Private method to retrieve the contents of a URL
+    
 =end comment
 
 =cut

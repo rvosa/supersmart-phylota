@@ -182,49 +182,42 @@ sub run {
     $log->info( "Read " . scalar( keys(%species_for_genus) ) . " genera" );
     my @all_species = map { @$_ } values(%species_for_genus);
 
-    # build an adjacency matrix connecting species if they share markers.
-    my %adjacency_matrix = map {
-        $_ => { map { $_ => 0 } @all_species }
-    } @all_species;
+    my @aln = map { {$mt->parse_fasta_file($_)} } @alignments;
+
     my %alns_for_taxa;
     my %taxa_for_alns;
-    for my $aln (@alignments) {
-        my %fasta = $mt->parse_fasta_file($aln);
-        my @taxa = uniq map { $1 if $_ =~ m/taxon\|([0-9]+)/ } keys(%fasta);
-        $taxa_for_alns{$aln} = \@taxa;
-        for my $s1 (@taxa) {
-            $alns_for_taxa{$s1} = [] if not $alns_for_taxa{$s1};
-            push @{ $alns_for_taxa{$s1} }, $aln;
-            for my $s2 (@taxa) {
-                $adjacency_matrix{$s1}{$s2}++;
-            }
-        }
+    for my $i (0..$#alignments) {
+	    my %h = %{$aln[$i]};
+	    my @taxa = uniq map { $1 if $_ =~ m/taxon\|([0-9]+)/ } keys(%h);
+	    $taxa_for_alns{$alignments[$i]} = \@taxa;
+	    for my $t (@taxa) {
+		    $alns_for_taxa{$t} = [] if not $alns_for_taxa{$t};
+		    push @{ $alns_for_taxa{$t} }, $alignments[$i];		    
+	    }
     }
-
-    # do not keep the diagonal
-    for my $sp ( keys %adjacency_matrix ) {
-        delete $adjacency_matrix{$sp}->{$sp};
-    }
-
+    
+    # get adjacency matrix with taxa connected by markers
+    my %adjacency_matrix = $mts->generate_marker_adjacency_matrix(\@aln, \@all_species);
+    
     # prune adjacency matrix: each taxon which has
     #  not sufficient coverage cannot possibly be an exemplar
     my @low_coverage_taxa = grep {
-        ( !$alns_for_taxa{$_} )
-          or
-          ( scalar( @{ $alns_for_taxa{$_} } ) < $config->BACKBONE_MIN_COVERAGE )
+	    ( !$alns_for_taxa{$_} )
+		or
+		( scalar( @{ $alns_for_taxa{$_} } ) < $config->BACKBONE_MIN_COVERAGE )
     } keys(%adjacency_matrix);
     for my $t (@low_coverage_taxa) {
-        delete( $adjacency_matrix{$t} );
+	    delete( $adjacency_matrix{$t} );
         for my $k ( keys %adjacency_matrix ) {
-            delete $adjacency_matrix{$k}->{$t};
+		delete $adjacency_matrix{$k}->{$t};
         }
     }
     
     # get all independent subsets of species that are connected by at least
     # one marker and select the largest subset as candidates for exemplars
-    my $sets = $self->_get_connected_subsets( \%adjacency_matrix );
+    my $sets = $mts->get_connected_taxa_subsets( \%adjacency_matrix );
     my %candidates = map { $_ => 1 } @{ ( sort { scalar(@$b) <=> scalar(@$a) } @$sets )[0] };
-
+    
     # now pick the exemplars:
     # we first further narrow down the list of possible exemplars by the following criterion:
     #  A taxon must share at least one marker with a taxon in its own genus.
@@ -373,16 +366,6 @@ sub run {
     return 1;
 }
 
-## counts the number of characters in a file
-sub _file_nchar {
-	my $file = shift;
-	my $count = 0;
-	open my $fh, '<', $file or die $!;
-	$count += length($_) while <$fh>;
-	close $file;
-	return $count;
-}
-
 # given a set of alignment files and exemplar taxa, and a file format (default phylip),
 # writes out a supermstrix to file
 sub _write_supermatrix {
@@ -399,8 +382,8 @@ sub _write_supermatrix {
     my $mts = Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector->new;
 
     # sort alignment files by number of characters to get reproducible column order in supermatrix
-    my @sorted_files = sort { _file_nchar($a) <=> _file_nchar($b) } @$alnfiles;
-
+    my @sorted_files = sort @$alnfiles;
+    
     # Retrieve sequences for all exemplar species and populate marker table
     for my $alnfile (@sorted_files) {
         my %fasta = $mt->parse_fasta_file($alnfile);
@@ -534,42 +517,4 @@ sub _calc_aln_distances {
     return \%dist;
 }
 
-# given an adjacency matrix, does a BFS in the graph 
-# and enumerates all connected subsets of taxa
-sub _get_connected_subsets {
-    my ( $self, $adjmatrix ) = @_;
-    my %adj = %{$adjmatrix};
-
-    # do a BFS to get the unconnected subgraphs from the adjacency matrix
-    my @sets;
-    my @current_set;
-    my @queue = ( sort keys(%adj) )[0];
-    while (@queue) {
-        my $current_node = shift(@queue);
-        push @current_set, $current_node;
-        if ( exists $adj{$current_node} ) {
-            my @neighbors = grep { $adj{$current_node}{$_} } keys %{ $adj{$current_node} };
-            if (@neighbors) {
-                foreach my $node (@neighbors) {
-                    if ( $node != $current_node ) {
-                        push @queue, $node;
-                    }
-                }
-            }
-            delete $adj{$current_node};
-        }
-        @current_set = uniq(@current_set);
-        @queue       = uniq(@queue);
-        if ( scalar(@queue) == 0 ) {
-            my @cs = @current_set;
-            push @sets, \@cs;
-            @current_set = ();
-            if ( keys %adj ) {
-                my ($key) = sort keys %adj;
-                push @queue, $key;
-            }
-        }
-    }
-    return \@sets;
-}
 1;
