@@ -156,7 +156,14 @@ sub _graft_single_tree {
 		close $ogfh;
 		$consensus->prune_tips(\@outgroup_taxa);
 	}
-
+	
+	# write remapped consensus in clade directory
+	my $remapped_consensus = parse_tree( '-format' => 'newick', '-string' => $consensus->to_newick );
+	my $fname    = "${workdir}/${clade}/${clade}-consensus.dnd";
+	open my $fh, '>',  $fname or die $!;
+	print $fh $ts->remap_to_name($consensus)->to_newick;
+	close $fh;
+ 
 	return $ts->graft_tree( $tree, $consensus, $opt->squish );
 }
 

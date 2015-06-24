@@ -102,6 +102,9 @@ sub run {
         
         # pick CLADE_MAX_MARKERS biggest alignments
         @matrices = sort { $b->get_ntax <=> $a->get_ntax } @matrices;
+		if ( scalar(@matrices) > $self->config->CLADE_MAX_MARKERS ) {
+			$log->info("Found more alignments in clade directory $dir than CLADE_MAX_MARKERS. Using the first " . $self->config->CLADE_MAX_MARKERS . " alignments.");
+		}
         for my $i ( 0 .. $self->config->CLADE_MAX_MARKERS - 1 ) {
             $project->insert($matrices[$i]) if $matrices[$i];
         }
