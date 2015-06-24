@@ -161,7 +161,7 @@ sub _graft_single_tree {
 	my $remapped_consensus = parse_tree( '-format' => 'newick', '-string' => $consensus->to_newick );
 	my $fname    = "${workdir}/${clade}/${clade}-consensus.dnd";
 	open my $fh, '>',  $fname or die $!;
-	print $fh $ts->remap_to_name($consensus)->to_newick;
+	print $fh $ts->remap_to_name($remapped_consensus)->to_newick;
 	close $fh;
  
 	return $ts->graft_tree( $tree, $consensus, $opt->squish );
