@@ -417,7 +417,7 @@ sub _write_supermatrix {
     }
 
     # write table listing all marker accessions for taxa
-    $mts->write_marker_summary( $markersfile, \@marker_table, $exemplars );
+    $mts->write_marker_table( $markersfile, \@marker_table, $exemplars );
 
     # Delete columns that only consist of gaps
     my $nchar = length $allseqs{ ( keys(%allseqs) )[0] };

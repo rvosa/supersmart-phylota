@@ -686,14 +686,14 @@ sub write_taxa_file {
     $log->info("Wrote taxa table to $outfile");
 }
 
-=item write_marker_summary
+=item write_marker_table
 
 Writes a table containing all species as rows and all chosen markers  as columns, 
 reports the genbank accession of a specific marker for a species.
 
 =cut
 
-sub write_marker_summary {
+sub write_marker_table {
     my ( $self, $file, $tab, $specs ) = @_;
 
     $self->logger->info("Writing marker summary table to $file");
@@ -724,7 +724,7 @@ sub write_marker_summary {
 	    my $marker;
 	    my $acc = $self->single_seq({gi=>$gi})->acc;
 	    my @mk = eval {$sg->get_markers_for_accession($acc)};
-	    
+	    $self->logger->debug("Found " . scalar(@mk) . " names for gi $gi");
 	    if ( ! scalar @mk ) {
 		    $marker = 'unknown';		    
 	    } 
@@ -745,13 +745,13 @@ sub write_marker_summary {
 	    
 	    my $colname = $markers{$gi};
 
-	    # append index if already present
+	    # append index if marker name already present
 	    if (my $cnt = $seen{$markers{$gi}}) {
 		    $colname .= ".$cnt";
 	    }
 	    print $outfh $colname ."\t";	    
 	    $seen{$markers{$gi}}++;	    
-    }
+   }
     print $outfh "\n";
     
     # Write the table rows
@@ -760,11 +760,11 @@ sub write_marker_summary {
         print $outfh $name . "\t";
         foreach my $column ( @table ) {
             my %h = %{$column};
-            if (  my $seqs = $h{$species} ) {
-                                my @accessions;
-                foreach my $seq ( @$seqs ) {
+            if (  my $deflines = $h{$species} ) {
+				my @accessions;
+                foreach my $def ( @$deflines ) {
                     # parse the GI from fasta descripion
-                    my ($gi) = $seq =~ /gi\|([0-9]+)\|/;
+                    my ($gi) = $def =~ /gi\|([0-9]+)\|/;
                     my $seqobj = $self->find_seq($gi);
                     push @accessions,  $seqobj->acc;
                 }
