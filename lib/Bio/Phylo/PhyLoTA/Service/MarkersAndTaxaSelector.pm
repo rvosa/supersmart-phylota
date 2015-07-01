@@ -718,7 +718,7 @@ sub write_marker_table {
     open my $outfh, '>', $file or die $!;
 
     # Get marker names for seed gis. Set to 'unknown' if information cannot be retrieved
-    my %markers = pmap {
+    my %markers = map {
 	    my $gi = $_;
 	    $self->logger->debug("Searching marker name for seed gi $gi");
 	    my $marker;
@@ -732,11 +732,14 @@ sub write_marker_table {
 		    #  when more than one name is found, pick the shortest one
 		    my @srt = sort { length $a <=> length $b } @mk;
 		    ( $marker = $srt[0] ) =~ s/\s/-/g;
-	    }	    
-	    return( $gi=>$marker );
-	    
+	    }
+		$self->logger->debug("Marker name for gi $gi : $marker");
+		($gi=>$marker);
+		
     } @seed_gis;
-
+	
+	$self->logger->debug("Collected marker names for " . scalar(@seed_gis) . " gis");
+	
     # Print table header consisting of marker names from the seed GIs.
     # In case a column name appears more than once, add an index to the marker name.
     print $outfh "taxon\t";
