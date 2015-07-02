@@ -223,7 +223,7 @@ sub run{
 	    }
 		
 	    # for the given set of taxa and alignments, get all subsets of taxa that share at least one marker
-		my @all_taxa = map {@$_} map {values($_)} @clades;
+		my @all_taxa = map {@$_} map {values(%$_)} @clades;
 	    my %adj = $mts->generate_marker_adjacency_matrix(\@clade_alignments, [keys %outgroup, keys %ingroup]);
 		my @subsets = @{$mts->get_connected_taxa_subsets(\%adj)};
 	
