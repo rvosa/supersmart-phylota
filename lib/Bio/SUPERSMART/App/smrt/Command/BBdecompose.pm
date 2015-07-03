@@ -222,9 +222,9 @@ sub run{
 		    push @clade_alignments, \%seqs_all;		   
 	    }
 		
-	    # for the given set of taxa and alignments, get all subsets of taxa that share at least one marker
+		# for the given set of taxa and alignments, get all subsets of taxa that share at least one marker
 		my @all_taxa = map {@$_} map {values(%$_)} @clades;
-	    my %adj = $mts->generate_marker_adjacency_matrix(\@clade_alignments, [keys %outgroup, keys %ingroup]);
+		my %adj = $mts->generate_marker_adjacency_matrix(\@clade_alignments, [keys %outgroup, keys %ingroup]);
 		my @subsets = @{$mts->get_connected_taxa_subsets(\%adj)};
 	
 		# sort subsets by size, decreasing
@@ -238,19 +238,21 @@ sub run{
 				last;
 			}
 		}
+		my @table_for_aln;
 		if ( ! scalar (@set) ) {
 			$logger->warn("Could not find sufficient data for exemplar species. Skipping clade with taxa " . join(',', keys(%ingroup)));
 		}
 		else {
-			my @table_for_aln = _write_clade_alignments( $i, \@clade_alignments, \@set, $self->workdir );
-			return @table_for_aln;
+			@table_for_aln = _write_clade_alignments( $i, \@clade_alignments, \@set, $self->workdir );
 		}
+
+		return @table_for_aln;
 		
 	}  ( 0..$#clades);
     
-    # get all species that were present in an alignment and write marker table
-    my @included_species = uniq map {keys(%$_)} @table;
-	@included_species = sort(@included_species);
+    # get all species that were present in an alignment and write marker table    
+    my @included_species = uniq map {keys(%$_)} @table;    
+    @included_species = sort(@included_species);
     $mts->write_marker_table( $outfile, \@table, \@included_species );
 
     $logger->info("DONE, results written into working directory $workdir");
