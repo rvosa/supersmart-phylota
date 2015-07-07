@@ -33,35 +33,49 @@ clade trees onto a backbone tree.
 
 Reads a tree in figtree-NEXUS format
 
+ -file   => filename with figtree tree
+ -string => tree in string representation
+
 =cut 
 
 sub read_figtree {
-	my ( $self, $filename ) = @_;
+	my ( $self, %args ) = @_;
+
 	my $logger = $self->logger;
+
+	my %parse_args = ( '-format' => 'figtree' ); 
+	if ( my $file    = $args{'-file'} ) {
+		# parse tree from fiel
+		$logger->debug("going to read $file as figtree/NEXUS");
+		$parse_args{ '-file' } = $file;
+	}
+	elsif ( my $string    = $args{'-string'}) {
+		$logger->debug("going to read tree $string");
+		$parse_args{ '-string' } = $string;
+	}
+	else {
+		$logger->warn('Could not read figtree tree, need -string or -file argument');
+	}
 	
-	# parse backbone tree
-	$logger->debug("going to read $filename as figtree/NEXUS");
-	my $backbone_tree = parse_tree(
-		'-file'   => $filename,
-		'-format' => 'figtree',
-	);
+	my $tree = parse_tree( %parse_args );
 
 	# map backbone names to taxon IDs
-	$logger->debug("going to map names to taxon IDs on $backbone_tree");
-	$self->remap_to_ti($backbone_tree);	
-	return $backbone_tree;
+	$logger->debug("going to map names to taxon IDs on $tree");
+	$self->remap_to_ti($tree); 	
+
+	return $tree;
 }
 
-=item write_figtree
+=item to_figtree
 
-Writes a tree in figtree-NEXUS format
+Given a tree object, returns a string in figtree-NEXUS format
 
-=cut 
+=cut
 
-sub write_figtree {
-	my ( $self, $tree, $outfile ) = @_;
+sub to_figtree {
+	my ( $self, $tree ) = @_;
 	$self->remap_to_name($tree); 	
-    
+	
 	# create output 
 	my $project = $fac->create_project;
 	my $forest  = $fac->create_forest;
@@ -72,8 +86,22 @@ sub write_figtree {
 	my $string = unparse(
 		'-format' => 'figtree',
 		'-phylo'  => $project,
-	    );
-	
+	    );		
+	return $string;
+}
+
+
+=item write_figtree
+
+Writes a tree in figtree-NEXUS format
+
+=cut 
+
+sub write_figtree {
+	my ( $self, $tree, $outfile ) = @_;
+
+	my $string = $self->to_figtree( $tree );
+
 	# write to file
 	open my $outfh, '>', $outfile or die $!;        
 	print $outfh $string; 
