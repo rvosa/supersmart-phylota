@@ -95,6 +95,7 @@ sub run {
 	my $ts      = Bio::Phylo::PhyLoTA::Service::TreeService->new;
 	my $logger  = $self->logger;	
 	my $grafted = $ts->read_figtree( '-file' => $backbone );
+	$ts->remap_to_ti( $grafted );
 	$logger->info("Read backbone $backbone");
 	
 	# graft single clade tree 
@@ -142,7 +143,12 @@ sub _graft_single_tree {
 	$consensus->set_namespaces( "fig" => _NS_FIGTREE_ );
 	$consensus->get_root->set_meta_object( "fig:clade" => $clade );
 
-	print $consensus->to_newick;
+	# write remapped consensus in clade directory
+	my $clone = $ts->read_figtree( '-string' => $ts->to_figtree($consensus));
+	$ts->remap_to_name( $clone );	
+	my $fname    = "${workdir}/${clade}/${clade}-consensus.dnd";
+ 	$ts->write_figtree( $clone, $fname );
+
 	# prune outgroup from consensus tree (if exists)
 	if ( -e $ogfile ) {
 		
@@ -157,11 +163,6 @@ sub _graft_single_tree {
 		close $ogfh;
 		$consensus->prune_tips(\@outgroup_taxa);
 	}
-	
-	# write remapped consensus in clade directory
-	my $clone = $ts->read_figtree( '-string' => $ts->to_figtree($consensus));
-	my $fname    = "${workdir}/${clade}/${clade}-consensus.dnd";
- 	$ts->write_figtree( $clone, $fname );
 
 	return $ts->graft_tree( $tree, $consensus, $opt->squish );
 }

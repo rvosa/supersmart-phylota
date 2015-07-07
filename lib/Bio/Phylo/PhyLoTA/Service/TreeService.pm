@@ -61,7 +61,6 @@ sub read_figtree {
 
 	# map backbone names to taxon IDs
 	$logger->debug("going to map names to taxon IDs on $tree");
-	$self->remap_to_ti($tree); 	
 
 	return $tree;
 }
@@ -74,7 +73,6 @@ Given a tree object, returns a string in figtree-NEXUS format
 
 sub to_figtree {
 	my ( $self, $tree ) = @_;
-	$self->remap_to_name($tree); 	
 	
 	# create output 
 	my $project = $fac->create_project;
