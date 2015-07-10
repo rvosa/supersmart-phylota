@@ -131,8 +131,8 @@ sub _graft_single_tree {
 	my $file    = "${workdir}/${clade}/${clade}.nex";
 	my $ogfile  = "${workdir}/${clade}/outgroup.txt";
 	if ( ! -e $file ) {
-		$logger->warn("could not find file $file for clade $clade");
-		return;
+		$logger->warn("could not find file $file for clade $clade, skip grafting");
+		return $tree;
 	}
 	
 	# make consensus from BEAST clade output
