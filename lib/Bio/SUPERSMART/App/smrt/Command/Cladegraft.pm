@@ -118,6 +118,7 @@ sub run {
 	}
 	
 	# map taxon IDs back to names and write to file
+	$ts->remap_to_name( $grafted );
 	$ts->write_figtree( $grafted, $outfile );
 	$logger->info("DONE, results written to $outfile");	    
 }

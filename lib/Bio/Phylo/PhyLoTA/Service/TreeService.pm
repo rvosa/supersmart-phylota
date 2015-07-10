@@ -42,7 +42,7 @@ sub read_figtree {
 	my ( $self, %args ) = @_;
 
 	my $logger = $self->logger;
-
+	
 	my %parse_args = ( '-format' => 'figtree' ); 
 	if ( my $file    = $args{'-file'} ) {
 		# parse tree from fiel
@@ -58,10 +58,7 @@ sub read_figtree {
 	}
 	
 	my $tree = parse_tree( %parse_args );
-
-	# map backbone names to taxon IDs
-	$logger->debug("going to map names to taxon IDs on $tree");
-
+	
 	return $tree;
 }
 
@@ -574,16 +571,16 @@ sub consense_trees {
 	# execute command
 	my $tmpl = '%s -burnin %i -heights %s -limit %f %s %s';
 	my $command = sprintf $tmpl, $config->TREEANNOTATOR_BIN, $babs, $heights, $limit, $infile, $outfile;
-    $log->debug("running command $command");
-    system($command) and die "Error building consensus: $?";
+	$log->debug("running command $command");
+	system($command) and die "Error building consensus: $?";
 	
-    # parse result
-    my $tree = parse_tree(
-    	'-format' => 'figtree',
-    	'-file'   => $outfile,    	
-    );
-    unlink $outfile;
-    return $tree;
+	# parse result
+	my $tree = parse_tree(
+		'-format' => 'figtree',
+		'-file'   => $outfile,    	
+	    );
+	unlink $outfile;
+	return $tree;
 }
 
 =item parse_newick_from_nexus
