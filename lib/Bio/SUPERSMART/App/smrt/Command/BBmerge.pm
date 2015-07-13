@@ -1,6 +1,7 @@
 package Bio::SUPERSMART::App::smrt::Command::BBmerge;
 use strict;
 use warnings;
+use Bio::Phylo::Factory;
 use Bio::Phylo::Matrices::Datum;
 use Bio::Phylo::PhyLoTA::Config;
 use Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa;
@@ -367,45 +368,60 @@ sub run {
 }
 
 # given a set of alignment files and exemplar taxa, and a file format (default phylip),
-# writes out a supermstrix to file
+# writes out a supermatrix to file
 sub _write_supermatrix {
     my ( $self, $alnfiles, $exemplars, $user_taxa, $filename, $format, $markersfile ) = @_;
     my $log       = $self->logger;
     my %user_taxa = %{$user_taxa};
+    my $factory = Bio::Phylo::Factory->new;
 
     # make has with concatenated sequences per exemplar
     my %allseqs = map { $_ => "" } @{$exemplars};
 
-    # also store which markers have been chosen for each exemplar
-    my @marker_table;
     my $mt  = Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa->new;
     my $mts = Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector->new;
 
     # sort alignment files by number of characters to get reproducible column order in supermatrix
     my @sorted_files = sort @$alnfiles;
     
+    # container objects for parsing matrix from fasta
+    my $ns      = 'http://www.supersmart-project.org/terms#';
+    my $project = $factory->create_project( '-namespaces' => { 'smrt' => $ns } );
+    my $taxa    = $factory->create_taxa;
+    $project->insert($taxa);        
+    
     # Retrieve sequences for all exemplar species and populate marker table
+    # TODO: we don't need to parse the FASTA hash anymore, should use Matrix objects instead!!! This needs cleaning up!!
+    my @matrices;
     for my $alnfile (@sorted_files) {
         my %fasta = $mt->parse_fasta_file($alnfile);
+		
+	my $matrix = $mt->parse_fasta_as_matrix(
+		'-name' => $alnfile,
+		'-file' => $alnfile,
+		'-taxa' => $taxa,
+	    );
+	push @matrices, $matrix;
+	
         my $nchar = length $fasta{ ( keys(%fasta) )[0] };
-        my %row;
+        my %col;
         for my $taxid (sort @$exemplars) {
             my @seqs = $mt->get_sequences_for_taxon( $taxid, %fasta );
             $log->warn("Found more than one sequence for taxon $taxid in alignment file $alnfile. Using first sequence.") if scalar(@seqs) > 1;
             my $seq;
             if ( $seq = $seqs[0] ) {
                 my ($header) = grep { /$taxid/ } sort keys(%fasta);
-                $row{$taxid} = [] if not $row{$taxid};
-                push @{ $row{$taxid} }, $header;
+                $col{$taxid} = [] if not $col{$taxid};
+                push @{ $col{$taxid} }, $header;
             }
             else {
                 $seq = '?' x $nchar;
             }
             $allseqs{$taxid} .= $seq;
         }
-        push @marker_table, \%row;
     }
-
+    my @marker_table = $mts->get_marker_table( @matrices );
+    
     # remove rejected exemplars from marker table
     my %valid_exemplars = map { $_ => 1 } @{$exemplars};
     foreach my $m (@marker_table) {

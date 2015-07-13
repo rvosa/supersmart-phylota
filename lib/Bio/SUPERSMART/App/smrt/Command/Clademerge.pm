@@ -94,7 +94,7 @@ sub run {
                     '-name' => $id,
                     '-file' => "${workdir}/${dir}/${file}",
                     '-taxa' => $taxa,
-                );
+		    );
                 $mts->enrich_matrix($matrix) if $opt->enrich;
                 $matrix = $mts->degap_matrix($matrix);
                 push @matrices, $matrix if $matrix;
@@ -103,66 +103,70 @@ sub run {
         return undef if not @matrices;
         
         # pick CLADE_MAX_MARKERS biggest alignments
-		@matrices = sort { $b->get_ntax <=> $a->get_ntax } @matrices;
-		if ( scalar(@matrices) > $self->config->CLADE_MAX_MARKERS ) {
-			$log->info("Found more alignments in clade directory $dir than CLADE_MAX_MARKERS. Using the first " . $self->config->CLADE_MAX_MARKERS . " alignments.");
-		}
-
-		# keep track of taxon ids, the number of markers for each taxid,
-		# because some markers might not be selected and taxa have to be removed
-		my %markers_for_taxon;
+	@matrices = sort { $b->get_ntax <=> $a->get_ntax } @matrices;
+	if ( scalar(@matrices) > $self->config->CLADE_MAX_MARKERS ) {
+		$log->info("Found more alignments in clade directory $dir than CLADE_MAX_MARKERS. Using the first " . $self->config->CLADE_MAX_MARKERS . " largest alignments.");
+	}
+	
+	# keep track of taxon ids, the number of markers for each taxid,
+	# because some markers might not be selected and taxa have to be removed
+	my %markers_for_taxon;
         for my $i ( 0 .. $self->config->CLADE_MAX_MARKERS - 1 ) {
-			if ( my $mat = $matrices[$i] ) {
-				my @ids_for_mat;
-				for ( @{ $mat->get_entities } ) {
-					my $taxid = $_->get_name;
-					$taxid =~ s/_.$//g;
-					push @ids_for_mat, $taxid;
-				}
-				$markers_for_taxon{$_}++ for uniq (@ids_for_mat);
-				$project->insert($mat);
+		if ( my $mat = $matrices[$i] ) {
+			my @ids_for_mat;
+			for ( @{ $mat->get_entities } ) {
+				my $taxid = $_->get_name;
+				$taxid =~ s/_.$//g;
+				push @ids_for_mat, $taxid;
 			}
+			$markers_for_taxon{$_}++ for uniq (@ids_for_mat);
+			$project->insert($mat);
+		}
         }
-
-		# remove a taxon from matrix if it has none or less markers than given in CLADE_TAXON_MIN_MARKERS
-		# also remove all rows in the matrices where this taxon appears
-		my ($tax) = @{ $project->get_items(_TAXA_) } ;
-		for my $t ( @ {$tax->get_entities} ) {
-			my $taxname = $t->get_name;
-			my $marker_cnt = $markers_for_taxon{$taxname};
-			if ( ! $marker_cnt || $marker_cnt < $self->config->CLADE_TAXON_MIN_MARKERS ) {
-				$log->info("Removing taxon " . $taxname . " from $dir");
-				$tax->delete($t);
-				
-				# remove rows from matrix containing the taxon
-				for my $mat ( @matrices ) {
-					for my $row ( @{$mat->get_entities} ) {
-						if ( my $taxid = $row->get_name =~ /$taxname/ ) {
-							$log->info("Removing row for taxon " . $taxname . " from matrix");
-							$mat->delete($row);
-						}
+	
+	# remove a taxon from matrix if it has none or less markers than given in CLADE_TAXON_MIN_MARKERS
+	# also remove all rows in the matrices where this taxon appears
+	my ($tax) = @{ $project->get_items(_TAXA_) } ;
+	for my $t ( @ {$tax->get_entities} ) {
+		my $taxname = $t->get_name;
+		my $marker_cnt = $markers_for_taxon{$taxname};
+		if ( ! $marker_cnt || $marker_cnt < $self->config->CLADE_TAXON_MIN_MARKERS ) {
+			$log->info("Removing taxon " . $taxname . " from $dir");
+			$tax->delete($t);
+			
+			# remove rows from matrix containing the taxon
+			for my $mat ( @matrices ) {
+				for my $row ( @{$mat->get_entities} ) {
+					if ( my $taxid = $row->get_name =~ /$taxname/ ) {
+						$log->info("Removing row for taxon " . $taxname . " from matrix");
+						$mat->delete($row);
 					}
 				}
 			}
 		}
-
+	}
+	       
+	# write table listing all marker accessions for taxa
+	my @marker_table = $mts->get_marker_table( @{ $project->get_items(_MATRIX_) } );
+	$mts->write_marker_table( "${workdir}/${dir}/${dir}-markers.tsv", \@marker_table );
+	
         # write the merged nexml
         if ( lc $outformat eq 'nexml' ) {
-            my $outfile = "${workdir}/${dir}/${dir}.xml";
-            $log->info("Going to write file $outfile");
-            open my $outfh, '>', $outfile or die $!;
-            print $outfh $project->to_xml( '-compact' => 1 );
-            return $outfile;
+		my $outfile = "${workdir}/${dir}/${dir}.xml";
+		$log->info("Going to write file $outfile");
+		open my $outfh, '>', $outfile or die $!;
+		print $outfh $project->to_xml( '-compact' => 1 );
+		return $outfile;
         }
         
         # write supermatrix phylip
         elsif ( lc $outformat eq 'phylip' ) {
-            my $outfile = "${workdir}/${dir}/${dir}.phy";
-            my @matrices = @{ $project->get_items(_MATRIX_) };
-            my ($taxa) = @{$project->get_items(_TAXA_)} ;
-            $log->info("Going to write file $outfile");
-            $service->make_phylip_from_matrix($taxa, $outfile, @matrices);
-            return $outfile;
+		my $outfile = "${workdir}/${dir}/${dir}.phy";
+		my @matrices = @{ $project->get_items(_MATRIX_) };
+		my ($taxa) = @{ $project->get_items(_TAXA_) };
+		$log->info("Going to write file $outfile");
+		$service->make_phylip_from_matrix($taxa, $outfile, @matrices);
+		return $outfile;
         }
     } @dirs;
     

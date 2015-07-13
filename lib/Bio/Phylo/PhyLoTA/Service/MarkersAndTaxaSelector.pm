@@ -686,6 +686,50 @@ sub write_taxa_file {
     $log->info("Wrote taxa table to $outfile");
 }
 
+=item get_marker_table
+
+Given an array of of Bio::Phylo::Matrices::Matrix objects, creates a marker table, which is 
+in turn an array of hashes, one for each distinct markers (columns) in the table.
+Each hash has keys representing taxa and values representing the sequences for the taxa
+for this specific marker. Example:
+
+[
+          {
+            '67771' => [
+                         '4321210'
+                           ],
+            '67772' => [
+                         '4321191',
+                         '4321192'
+                       ]
+          },
+          {
+            '67771' => [
+                         '4321213',
+                         '4321210',
+                         '4321207'
+		]
+	  }
+]
+
+=cut
+
+sub get_marker_table {
+	my ( $self, @matrices ) = @_;
+	my @marker_table;
+	for my $m ( @matrices ) {
+		my %row;
+		for my $seq ( @{$m->get_entities} ) {
+			my $defline = $seq->get_generic('fasta_def_line');
+			my $taxid = $seq->get_taxon->get_meta_object("smrt:tid");
+			my $gi = $seq->get_meta_object("smrt:gi");
+			$row{$taxid} = [] if not $row{$taxid};
+			push @{ $row{$taxid} }, $gi;
+			}
+		push @marker_table, \%row;
+	}
+	return @marker_table
+}
 =item write_marker_table
 
 Writes a table containing all species as rows and all chosen markers  as columns, 
@@ -699,22 +743,27 @@ sub write_marker_table {
     $self->logger->info("Writing marker summary table to $file");
 
     my @table = @$tab;
-    my @all_species = @$specs;
+    my @all_species;
+    if ( $specs ) {
+	    @all_species = @$specs;
+    }
+    else {
+	@all_species = uniq map { keys %{$_} } @table;	    
+    }
 
     my $sg = Bio::Phylo::PhyLoTA::Service::SequenceGetter->new;
 
     # remove empty columns (for markers that are never included)
     @table = grep {keys %{$_}} @table;
 
-    my @seed_gis;
-    
-    # parse seed gis from fasta defline
-    for my $col (@table) {
-        # all entries in one row have the same seed GIs
-        my $k = (keys(%$col))[0];
-        my $defline = $col->{$k}[0];
-        push @seed_gis, $1 if $defline =~ /seed_gi\|([0-9]+)\|/;
+    # collect one gi per markger (column in table) to construct table header
+    my @marker_gis;
+    for my $col ( @table ) {
+	    my ($v) = values(%$col);
+	    my $gi = $v->[0];
+	    push @marker_gis, $gi;
     }
+
     open my $outfh, '>', $file or die $!;
 
     # Get marker names for seed gis. Set to 'unknown' if information cannot be retrieved
@@ -736,15 +785,15 @@ sub write_marker_table {
 		$self->logger->debug("Marker name for gi $gi : $marker");
 		($gi=>$marker);
 		
-    } @seed_gis;
-	
-	$self->logger->debug("Collected marker names for " . scalar(@seed_gis) . " gis");
+    } @marker_gis;
+    
+    $self->logger->debug("Collected marker names for " . scalar(@marker_gis) . " gis");
 	
     # Print table header consisting of marker names from the seed GIs.
     # In case a column name appears more than once, add an index to the marker name.
     print $outfh "taxon\t";
     my %seen;    
-    for my $gi ( @seed_gis ) {	  
+    for my $gi ( @marker_gis ) {	  
 	    
 	    my $colname = $markers{$gi};
 
@@ -754,21 +803,19 @@ sub write_marker_table {
 	    }
 	    print $outfh $colname ."\t";	    
 	    $seen{$markers{$gi}}++;	    
-   }
+    }
     print $outfh "\n";
     
     # Write the table rows
     foreach my $species ( @all_species ) {
-        my $name = $self->find_node($species)->taxon_name;
+	my $name = $self->find_node($species)->taxon_name;
         print $outfh $name . "\t";
         foreach my $column ( @table ) {
-            my %h = %{$column};
-            if (  my $deflines = $h{$species} ) {
-				my @accessions;
-                foreach my $def ( @$deflines ) {
-                    # parse the GI from fasta descripion
-                    my ($gi) = $def =~ /gi\|([0-9]+)\|/;
-                    my $seqobj = $self->find_seq($gi);
+		my %h = %{$column};
+            if (  my $gis = $h{$species} ) {
+		    my @accessions;
+		    foreach my $gi ( @$gis ) {
+		    my $seqobj = $self->find_seq($gi);
                     push @accessions,  $seqobj->acc;
                 }
                 print $outfh join (',', @accessions) . "\t";
