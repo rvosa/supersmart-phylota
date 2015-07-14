@@ -513,6 +513,23 @@ sub keep_taxa {
     return %result;
 }
 
+=item to_phylip
+
+Writes matrix objects from a project to phylip
+
+=cut
+
+sub to_phylip {
+	my ( $class, $project ) = @_;
+	
+
+}
+
+
+sub _concatenate_matrices {
+	
+}
+
 =item to_fasta_string
 
 Returns the provided fasta hash as a concatenated string.

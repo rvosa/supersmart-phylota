@@ -151,7 +151,10 @@ sub run{
         my $counter = 0;
         for my $clade ( @clades ){
             my $ingroup = $clade->{'ingroup'};
-            my @og = $mts->get_outgroup_taxa( $classtree, $ingroup );
+
+			# TODO: Should extra_depth for more distant outgroup species be given as argument?
+			my $extra_depth = 1;
+            my @og = $mts->get_outgroup_taxa( $classtree, $ingroup, $extra_depth );
             
             # get the two species which occur in the most number of alignments
             my %aln_for_sp;
@@ -193,7 +196,7 @@ sub run{
 		    
 		    # make subset: take only the sequences that are in the clade (or outgroup, if given)
 		    my %fasta = $mt->parse_fasta_file($aln);             
-		    $logger->info("Checking whether alignment $aln can be included");
+		    $logger->debug("Checking whether alignment $aln can be included");
 		   
 		    my %seqs_ingroup = $mt->get_alignment_subset(\%fasta, {'taxon'=>[keys %ingroup]});            
 		    my %seqs_all = $mt->get_alignment_subset(\%fasta, {'taxon'=>[keys %outgroup, keys %ingroup]});            
@@ -206,14 +209,14 @@ sub run{
 		    my $distinct = scalar keys %seqs_ingroup;		    
 		    if ( ($distinct/scalar keys %ingroup) < $mindens ) {
 			    my $dens = sprintf "%.2f", $distinct / scalar keys %ingroup;
-			    $logger->info("$aln is not  dense enough (density " . $dens . " < $mindens) for clade # $i");
+			    $logger->debug("$aln is not  dense enough (density " . $dens . " < $mindens) for clade # $i");
 			    next ALN;
 		    }
 		    
 		    # check if distance is not too high
 		    my $dist = $mt->calc_mean_distance($mt->to_fasta_string(%seqs_ingroup));
 		    if ( $dist > $maxdist ) {
-			    $logger->info("$aln is too divergent (distance $dist > $maxdist) for clade # $i");
+			    $logger->debug("$aln is too divergent (distance $dist > $maxdist) for clade # $i");
 			    next ALN;
 		    }
 		    
@@ -232,7 +235,7 @@ sub run{
 		# select the largest subset with exemplars present
 		my @set;
 		for my $s (@subsets) {
-			if ( scalar grep( $exemplars{$_}, @$s)  == 2) {
+			if ( scalar grep( $exemplars{$_}, @$s)  >= 2) {
 				@set = @$s;
 				last;
 			}
