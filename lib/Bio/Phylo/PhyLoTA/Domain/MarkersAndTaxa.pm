@@ -92,10 +92,12 @@ Reads FASTA file as Bio::Phylo::Matrices::Matrix. Arguments:
 
 sub parse_fasta_as_matrix {
     my ( $class, %args ) = @_;
-    my $taxa = $args{'-taxa'} or throw 'BadArgs' => "Need -taxa argument";
+
     my $file = $args{'-file'} or throw 'BadArgs' => "Need -file argument";
+	my $taxa = $args{'-taxa'} or throw 'BadArgs' => "Need -taxa argument";
+
     my $factory = Bio::Phylo::Factory->new;
-    
+	    
     # read fasta data
     my $matrix = parse_matrix(
         '-type'       => 'dna',
@@ -103,6 +105,7 @@ sub parse_fasta_as_matrix {
         '-file'       => $file,
         '-as_project' => 1,
     );
+
     $matrix->set_name($args{'-name'}) if $args{'-name'};
     
     # create taxon lookup

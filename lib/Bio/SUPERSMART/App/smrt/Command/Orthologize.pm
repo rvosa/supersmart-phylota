@@ -6,7 +6,6 @@ use warnings;
 use File::Copy qw(copy);
 use File::Spec;
 
-use Bio::SearchIO;
 use Bio::Phylo::PhyLoTA::Config;
 use Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa;
 use Bio::Phylo::PhyLoTA::Service::SequenceGetter;
@@ -77,7 +76,7 @@ sub run {
 	my $config  = Bio::Phylo::PhyLoTA::Config->new;
 	my $log     = $self->logger;
 	
-	# parse seed GIs of aligned clusters
+	# parse seed GIs of aligned files
 	$log->info("Going to read seed GIs from $infile");
 	open my $fh, '<', $infile or die $!;
 	my @gis;
@@ -91,33 +90,8 @@ sub run {
 	}
 	close $fh;
 	
-	# blast and cluster the seed GIs
-	$log->info("Going to cluster ".scalar(@gis)." seed GIs");
-	my $dbpath   = File::Spec->catfile($workdir,'seeds.fa');
-	my $dbname   = $service->make_blast_db($dbpath,@gis);	
-	my $report   = $service->run_blast_all($dbname);
-	my @clusters = $service->cluster_blast_results($report);
+	$service->merge_alignments( $config->BACKBONE_MAX_DISTANCE, $workdir, $outfile, @gis );
 	
-	# merge and align
-	my @cres = pmap {
-		my ($clref) = @_; 
-		my $id      = $clref->{'id'};
-		my @gis     = @{ $clref->{'seq'} };
-		my $merged  = File::Spec->catfile( $workdir, "cluster${id}.fa" );
-		my $maxdist = $config->BACKBONE_MAX_DISTANCE;
-					
-		# turn GIs into file names 
-		my @files = map { glob ( "$workdir/" .  $_ . "*.fa" ) } @gis;
-		
-		# profile align files to merge as many as possible
-		$service->profile_align_all( $merged, $maxdist, @files );
-		if ( -s $merged ) {	
-			open my $outfh, '>>', $outfile or die $!;
-			print $outfh $merged, "\n";
-			close $outfh;
-		}
-	} @clusters;
-
 	$log->info("DONE, results written to $outfile");
 	return 1;
 }

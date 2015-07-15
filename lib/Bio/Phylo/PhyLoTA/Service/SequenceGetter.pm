@@ -1214,7 +1214,7 @@ sub profile_align_all {
 			copy $files[0], $merged;			
 		}
 		else {
-			$log->debug("rejecting singleton cluster (too small), @files not written");
+			$log->debug("rejecting singleton cluster (too small), $merged not written");
 		}
 	}
 	else {
@@ -1269,6 +1269,47 @@ sub profile_align_all {
 			}
 		}
 		$log->info("Done merging $merged");
+	}
+}
+
+sub merge_alignments {
+	my ( $self, $maxdist, $workdir, $outfile, @seed_gis) = @_;
+	
+	my $log = $self->logger;	
+	
+	# blast and cluster the seed GIs
+	$log->info("Going to cluster ".scalar(@seed_gis)." seed GIs");
+	my $dbpath   = File::Spec->catfile($workdir,'seeds.fa');
+	my $dbname   = $self->make_blast_db($dbpath,@seed_gis);	
+	my $report   = $self->run_blast_all($dbname);
+	my @clusters = $self->cluster_blast_results($report);
+	
+	# merge and align
+	my @merged_files = pmap {
+		my ($clref) = @_; 
+		my $id      = $clref->{'id'};
+		my @seed_gis     = @{ $clref->{'seq'} };
+		my $merged  = File::Spec->catfile( $workdir, "cluster${id}.fa" );
+		
+		# turn GIs into file names 
+		my @files = map { glob ( "$workdir/" .  $_ . "*.fa" ) } @seed_gis;
+		
+		# profile align files to merge as many as possible
+		$self->profile_align_all( $merged, $maxdist, @files );
+
+		return $merged;
+	} @clusters;
+	
+	$log->info("Listing merged files in $outfile");
+
+	# remove previous outfile, if exists
+	rm $outfile if -e $outfile;
+	for my $merged ( @merged_files ) {
+		if ( -s $merged ) {	
+			open my $outfh, '>>', $outfile or die $!;
+			print $outfh $merged, "\n";
+			close $outfh;
+		}
 	}
 }
 

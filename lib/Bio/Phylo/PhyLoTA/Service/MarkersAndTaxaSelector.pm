@@ -374,8 +374,10 @@ terminal nodes
 =cut
 
 sub get_outgroup_taxa {
-    my ( $self, $tree, $ingroup ) = @_;
+    my ( $self, $tree, $ingroup, $extra_depth ) = @_;
     
+	$extra_depth = 0 if not $extra_depth;
+
     # get node object for taxon ids (or names) 
     my @ids = @{$ingroup};
     my @nodes;
@@ -388,9 +390,14 @@ sub get_outgroup_taxa {
             }
         }
     );
-    
+    	
     my $mrca = $tree->get_mrca(\@nodes);
-        
+	
+	# if specified, select deeper split
+	for my $i ( 0..$extra_depth ) {
+		$mrca = $mrca->get_parent;
+	}
+
     my @terminals;
     while ( (scalar (@terminals)) == 0 and (! $mrca->is_root) ){
         my $sister = $mrca->get_next_sister || $mrca->get_previous_sister;

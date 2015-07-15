@@ -153,7 +153,7 @@ sub run{
             my $ingroup = $clade->{'ingroup'};
 
 			# TODO: Should extra_depth for more distant outgroup species be given as argument?
-			my $extra_depth = 1;
+			my $extra_depth = 0;
             my @og = $mts->get_outgroup_taxa( $classtree, $ingroup, $extra_depth );
             
             # get the two species which occur in the most number of alignments
@@ -176,7 +176,7 @@ sub run{
     }
 	
 	# collect alignments for clades and write them into respective clade directories
-	my @table = pmap {
+	pmap {
 		
 		my $i = $_;
 
@@ -240,10 +240,11 @@ sub run{
 				last;
 			}
 		}
-		if ( ! scalar (@set) ) {
-			$logger->warn("Could not find sufficient data for exemplar species. Skipping clade with taxa " . join(',', keys(%ingroup)));
+		# skip if there are not enough species for clade tree
+		if ( scalar (@set) < 3 ) {
+			$logger->warn("Could not find sufficient data for species in clade $i. Skipping clade with taxa " . join(',', keys(%ingroup)));
 		}
-		else {
+		else {			
 			_write_clade_alignments( $i, \@clade_alignments, \@set, $self->workdir );
 			# write outgroup to file (skipped if already exists)
 			_write_outgroup($i,[keys %outgroup],$workdir) if $add_outgroup;			
@@ -268,8 +269,12 @@ sub _write_clade_alignments {
 	my @alignments = @$alns;
 	for my $i (0..$#alignments) {
 		my %aln = %{$alignments[$i]};
-		my $idx = $i+1;
-		open my $fh, '>', "$workdir/clade$clade/clade$clade-aln$idx.fa" or die $!;
+
+		my $def = (keys %aln)[0];
+		my $seed_gi = $1 if $def =~ /seed_gi\|([0-9]+)/;
+
+		# file name e.g. 12345-clade0.fa
+		open my $fh, '>', "$workdir/clade$clade/$seed_gi-clade$clade.fa" or die $!;
 
 		for my $defline( keys %aln ) {
 			my $species = $1 if $defline =~ /taxon\|([0-9]+)/;
@@ -295,6 +300,5 @@ sub _write_outgroup {
         close $fh;
     }
 }
-
 
 1;
