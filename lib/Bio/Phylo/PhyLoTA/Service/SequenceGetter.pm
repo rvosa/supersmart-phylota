@@ -1272,6 +1272,14 @@ sub profile_align_all {
 	}
 }
 
+=item merge_alignments
+
+Given a list of seed gis, creates merged clusters of alignments that 
+are not further apart as specified by the parameter max_dist. Clustering is done by
+all-versus-all blast searching with subsequent profile alignment.
+
+=cut
+
 sub merge_alignments {
 	my ( $self, $maxdist, $workdir, $outfile, @seed_gis) = @_;
 	
