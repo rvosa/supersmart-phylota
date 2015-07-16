@@ -233,30 +233,44 @@ sub run {
         $logger->info("Starting inference for single clade tree");
         $beast->outfile_name( "${stem}.nex${suffix}" );
         $beast->logfile_name( "${stem}.log${suffix}" );
-        
+
+		# set outgroup, if present
+		if ( -e "${stem}-outgroup.txt") {
+			$logger->info("Setting outgroup");
+			open my $fh, '<', "${stem}-outgroup.txt";
+			my @outgroup;
+			while ( <$fh> ) {
+				chomp;
+				push @outgroup, $_;
+			}
+			close $fh;
+			$beast->outgroup( \@outgroup );
+		}
         # set input file
         $logger->info("Setting beast input file name to ${stem}-beast-in.xml");
         $beast->beastfile_name( "${stem}-beast-in.xml" );
-        $beast->run( $file );
+        
+		# run BEAST
+		$beast->run( $file );
         $logger->info("Done. Trees are in ${file}.nex, BEAST log in ${file}.log");
         
-	# concatenate 
-	if ( $opt->append ) {
-		$self->append_logs(
-			'trees'  => [ "${stem}.nex${suffix}" => "${stem}.nex" ],
-			'params' => [ "${stem}.log${suffix}" => "${stem}.log" ],
-			'burnin' => $opt->burnin,
-		);
-	}        
+		# concatenate 
+		if ( $opt->append ) {
+			$self->append_logs(
+				'trees'  => [ "${stem}.nex${suffix}" => "${stem}.nex" ],
+				'params' => [ "${stem}.log${suffix}" => "${stem}.log" ],
+				'burnin' => $opt->burnin,
+				);
+		}        	
     }
     
     else {
-      
+		
         # iterate over entries in work dir
         my @cladedirs;
         opendir my $dh, $workdir or die $!;
         while( my $entry = readdir $dh ) {
-        
+			
             # peruse directories named cladeXXX
             if ( $entry =~ /clade\d+/ && -d "${workdir}/${entry}" ) {
                 push @cladedirs, $entry;
@@ -267,7 +281,7 @@ sub run {
         # infer clades in parallel mode
         pmap {
             my ($clade) = @_;
-
+			
             # this should be a nexml file with one taxa block and
             # multiple matrices
             my $stem = "${workdir}/${clade}/${clade}";
@@ -298,9 +312,6 @@ sub run {
             }
         } @cladedirs;
     }
- #   open my $fh, '>', $outfile;
- #   print $fh "Cladeinfer done\n";
- #   close $fh;
     
     $logger->info("DONE."); 
 }

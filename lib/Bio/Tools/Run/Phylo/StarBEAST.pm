@@ -217,6 +217,18 @@ sub chain_length {
 	return $self->{'_chain_length'};
 }
 
+=item outgroup
+
+Getter/Setter for outgroup
+
+=cut
+
+sub outgroup {
+	my $self = shift;
+	$self->{'_outgroup'} = shift if @_;
+	return $self->{'_outgroup'};
+}
+
 =item sample_freq
 
 Returns the number determining how often the Markov Chain is sampled.
@@ -312,16 +324,24 @@ sub run {
 
 		# create BEAST xml
 		if ( my $template = $self->template ) {
-
 			# interpolate BEAST xml template
 			my $tt = Template->new({ 'ABSOLUTE' => 1 });
-			$tt->process( $template, {
-				'data'         => $self->_alignment,
-				'chain_length' => $self->chain_length,
-				'sample_freq'  => $self->sample_freq,
-				'outfile_name' => $self->outfile_name,
-				'logfile_name' => $self->logfile_name,
-			}, $filename ) or throw 'API' => $tt->error();
+			
+			
+			my $args = { 'data'         => $self->_alignment,
+						 'chain_length' => $self->chain_length,
+						 'sample_freq'  => $self->sample_freq,
+						 'outfile_name' => $self->outfile_name,
+						 'logfile_name' => $self->logfile_name,
+			};
+			
+			# set outgroup if given to constrain monophyly of ingroup
+			if ( $self->outgroup ) {
+				my %og = map { $_=>1 } @{$self->outgroup};
+				$args->{'outgroup'} = \%og;
+			}
+
+			$tt->process( $template, $args, $filename ) or throw 'API' => $tt->error();
 		}
 		else {
 			# nope, need a template

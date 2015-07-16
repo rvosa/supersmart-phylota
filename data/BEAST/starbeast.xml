@@ -1,18 +1,43 @@
 <beast>
 
-  <!-- the names of all distinct rows across alignments as a flat list -->
+  <!-- the names of all distinct rows across alignments as a flat list, distinguish between in and outgroup -->
+[% rows=[] -%]
+[% ingrouprows=[] -%]
+[% outgrouprows=[] -%]
+[% FOREACH matrix IN data.get_matrices -%]
+[% FOREACH row IN matrix.get_entities -%]
+[% name=row.get_name -%]
+[% rows.push(name) -%]
+[% tid=name.split('_').0 -%]
+[% IF outgroup.defined(tid) -%]
+[% outgrouprows.push(name) -%]
+[% ELSE -%]
+[% ingrouprows.push(name) -%]
+[% END -%]
+[% END -%]
+[% END -%]
+[% rows=rows.sort -%]
+[% outgrouprows=outgrouprows.sort -%]
+[% ingrouprows=ingrouprows.sort -%]
+
   <taxa id="taxa">
-  [% rows = [] -%]  
-  [% FOREACH matrix IN data.get_matrices -%]
-    [% FOREACH row IN matrix.get_entities -%]
-      [% rows.push(row.get_name) -%]
-    [% END -%] 
-  [% END -%]
-  [% rows = rows.sort -%]
-  [% FOREACH row IN rows.unique %]
-    <taxon id="taxon_[% row %]"/>
-  [% END %]
+	[% FOREACH row IN rows.unique -%]
+	<taxon id="taxon_[% row %]"/>
+	[% END -%]
+  </taxa>  
+  <taxa id="ingroup">
+	[% FOREACH row IN ingrouprows.unique -%]
+	<taxon idref="taxon_[% row %]"/>
+	[% END -%]
   </taxa>
+  
+  [% IF outgrouprows.size > 0 -%]
+  <taxa id="outgroup">
+	[% FOREACH row IN outgrouprows.unique -%]
+    <taxon idref="taxon_[% row %]"/>
+	[% END -%]
+  </taxa>
+  [% END -%]
   
   <!-- coalescent process with constant population size -->
   <constantSize id="constant" units="substitutions">
@@ -48,10 +73,15 @@
     
     <!-- coalescent starting tree -->
     <coalescentTree id="[% id %].startingTree" rootHeight="0.02">
-      <taxa idref="taxa"/>
+      <constrainedTaxa>
+		<taxa idref="taxa"/>
+ 		<tmrca monophyletic="true"> 
+		  <taxa idref="ingroup"/> 
+		</tmrca>
+	  </constrainedTaxa>
       <constantSize idref="constant"/>
     </coalescentTree> 
-
+    
     <!-- tree model -->
     <treeModel id="[% id %].treeModel">
       <coalescentTree idref="[% id %].startingTree"/>
@@ -65,6 +95,7 @@
         <parameter id="[% id %].treeModel.allInternalNodeHeights"/>
       </nodeHeights>
     </treeModel>
+
 
     <!-- coalescent likelihood -->
     <coalescentLikelihood id="[% id %].coalescent">
@@ -197,6 +228,20 @@
     <species idref="species"/>
     <speciesTree idref="sptree"/>
   </speciesCoalescent>
+
+  <!-- constrain ingroup to be monophyletic -->   
+  <tmrcaStatistic id="tmrca(ingroup)" includeStem="false"> 
+    <mrca>
+      <taxa idref="ingroup"/>   
+    </mrca>                                                   
+    <treeModel idref="[% id %].treeModel"/>
+  </tmrcaStatistic>
+  <monophylyStatistic id="monophyly(ingroup)">
+    <mrca>
+      <taxa idref="ingroup"/>
+    </mrca>
+    <treeModel idref="[% id %].treeModel"/>
+  </monophylyStatistic>
 
   <!-- species tree: gamma2 + gamma4 -->  
   <mixedDistributionLikelihood id="species.popSize">
@@ -353,6 +398,10 @@
         <betaPrior shape="1.0" shapeB="1.0">
           <parameter idref="species.birthDeath.relativeDeathRate"/>
         </betaPrior>
+
+		<booleanLikelihood>
+		  <monophylyStatistic idref="monophyly(ingroup)"/>
+		</booleanLikelihood>
       </prior>
       
       <!-- likelihood -->
