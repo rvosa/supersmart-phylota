@@ -56,7 +56,6 @@ sub options {
         [ "sfreq|s=i", "sampling frequency, defaults to 1000", { arg => "value", default => 1000 } ],
         [ "lfreq|l=i", "logging frequency, defaults to 1000", { arg => "value", default => 1000 } ],
         [ "file|f=s", "file (nexml format) to start a single inference from", { arg=>"file" } ],
- #       [ "outfile|o=s", "location of output directory", { arg => "location", default => "cladeinfer_out.txt"} ],
         [ "rebuild|x", "rebuild existing *BEAST XML files", {}],
         [ "append|a", "append trees to existing tree file", {}],
         [ "burnin|b=f", "burnin to omit when appending trees", { arg => "value", default => $config->BURNIN } ],
@@ -100,6 +99,30 @@ sub make_suffix {
 		$suffix = '.' . $i;
 	}
 	return $suffix;	
+}
+
+=item set_outgroup
+
+checks if an outgroup is present in the clade directory and 
+passes it t o BEAST
+
+=cut
+
+sub set_outgroup {
+	my ($self, $beast, $stem) = @_;
+
+		# set outgroup, if present
+		if ( -e "${stem}-outgroup.txt") {
+			$self->logger->info("Setting outgroup");
+			open my $fh, '<', "${stem}-outgroup.txt";
+			my @outgroup;
+			while ( <$fh> ) {
+				chomp;
+				push @outgroup, $_;
+			}
+			close $fh;
+			$beast->outgroup( \@outgroup );
+	}	   
 }
 
 =item append_logs
@@ -234,18 +257,9 @@ sub run {
         $beast->outfile_name( "${stem}.nex${suffix}" );
         $beast->logfile_name( "${stem}.log${suffix}" );
 
-		# set outgroup, if present
-		if ( -e "${stem}-outgroup.txt") {
-			$logger->info("Setting outgroup");
-			open my $fh, '<', "${stem}-outgroup.txt";
-			my @outgroup;
-			while ( <$fh> ) {
-				chomp;
-				push @outgroup, $_;
-			}
-			close $fh;
-			$beast->outgroup( \@outgroup );
-		}
+		# set outgroup if present 
+		$self->set_outgroup( $beast, $stem);
+
         # set input file
         $logger->info("Setting beast input file name to ${stem}-beast-in.xml");
         $beast->beastfile_name( "${stem}-beast-in.xml" );
@@ -291,8 +305,10 @@ sub run {
                 # nexml file exists
                 my $suffix = $self->make_suffix( $stem, $opt->append );
                 $beast->outfile_name( "${stem}.nex${suffix}" );
-                $beast->logfile_name( "${stem}.log${suffix}" );
+                $beast->logfile_name( "${stem}.log${suffix}" );				
                 $beast->beastfile_name( "${stem}-beast-in.xml" );
+				# set outgroup if present 
+				$self->set_outgroup( $beast, $stem );				
                 $beast->run( $file );
                 
                 # concatenate 
@@ -302,7 +318,7 @@ sub run {
 						'params' => [ "${stem}.log${suffix}" => "${stem}.log" ],
 						'burnin' => $opt->burnin,
 					);
-                }
+                }				
                 
                 my $tmpl = 'done with %s. trees are in %s.nex, log is in %s.log';
                 $logger->info(sprintf $tmpl, $clade, $stem, $stem);             
