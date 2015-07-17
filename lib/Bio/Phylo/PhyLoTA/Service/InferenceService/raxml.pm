@@ -29,6 +29,7 @@ sub create {
     
     # configure raxml runner           
     $tool->w( abs_path($self->workdir) );
+
     return $tool;
 }
 
@@ -52,6 +53,13 @@ sub configure {
     $tool->N($config->RAXML_RUNS);
     $tool->p($config->RANDOM_SEED);
     $tool->T($config->NODES);
+
+	# set starting tree if given
+	if ( my $tree = $self->usertree ) {
+		$self->logger->info("Setting starting tree $tree");
+		$tool->t($tree);
+	}
+
 }
 
 =item run

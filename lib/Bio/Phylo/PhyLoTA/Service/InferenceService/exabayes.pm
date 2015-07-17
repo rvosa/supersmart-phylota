@@ -69,6 +69,18 @@ sub configure {
     # set burnin fraction
     $logger->info("setting burnin fraction to ".$config->BURNIN);
     $tool->burnin_fraction($config->BURNIN); 
+
+	# set starting tree
+	if ( my $tree = $self->usertree ) {
+		# user defined
+		$logger->info("Setting starting tree $tree");
+		$tool->treeFile($tree);
+	}
+	else {
+		# parsimony start
+		$logger->info("setting ExaBayes to start from parsimony tree");
+		$tool->parsimonyStart('true');
+	}	
 }
 
 =item create
@@ -88,11 +100,7 @@ sub create {
     # set working directory
     $logger->info("going to use working directory $workdir");
     $tool->work_dir($workdir);        
-        
-    # set parsimony start
-    $logger->info("setting ExaBayes to start from parsimony tree");
-    $tool->parsimonyStart('true');
-        
+	
     # set run id to current process id
     $tool->run_id("infer_backbone_".$$);
         

@@ -41,14 +41,13 @@ sub options {
     my $outfile_default = "backbone.dnd";
     my $tool_default    = "ExaML";
     my $matrix_default  = "supermatrix.phy";
-    my $tree_default    = "classification-tree.dnd";
     my $boot_default    = 1;
     return (
         ["supermatrix|s=s", "matrix of concatenated multiple sequece alignments as produced by 'smrt bbmerge'", { arg => "file", default => $matrix_default }],  
-        ["starttree|t=s", "starting tree for ExaML tree inference. If not given, a random starting tree is generated", { arg => "file", default => $tree_default}],
-        ["inferencetool|i=s", "software tool for backbone inference (RAxML, ExaML or ExaBayes), defaults to $tool_default", {default => $tool_default, arg => "tool"}],         
+        ["starttree|t=s", "starting tree for tree inference (as produced by smrt classify), mandatory for ExaML inference.", { arg => "file"}],
+        ["inferencetool|i=s", "software tool for backbone inference (RAxML, ExaML or ExaBayes), defaults to $tool_default", {default => $tool_default, arg => "tool"}],
         ["bootstrap|b=i", "number of bootstrap replicates. Will add the support values to the backbone tree. Not applicable to Bayesian methods.", { default => $boot_default }],
-        ["ids|n", "return tree with NCBI identifiers instead of taxon names", {}],      
+        ["ids|n", "return tree with NCBI identifiers instead of taxon names", {}],
         ["outfile|o=s", "name of the output tree file (in newick format), defaults to '$outfile_default'", {default => $outfile_default, arg => "file"}],
         ["cleanup|x", "if set, cleans up all intermediate files", {}],
     );  
@@ -65,6 +64,7 @@ sub validate {
     $self->usage_error("Need supermatrix") if not $sm;
     $self->usage_error("File $sm does not exist") unless -e $sm;
     $self->usage_error("File $sm is empty") unless -s $sm;
+    $self->usage_error("Need starttree for ExaML inference") if lc $tool eq 'examl' and not $opt->starttree;
 }
 
 # run the analysis
@@ -73,7 +73,6 @@ sub run {
         
     # collect command-line arguments
     my $supermatrix = $opt->supermatrix;
-    my $starttree   = $opt->starttree;
     my $bootstrap   = $opt->bootstrap;
                 
     # instantiate and configure helper objects
@@ -81,13 +80,13 @@ sub run {
     my $ss = Bio::Phylo::PhyLoTA::Service::SequenceGetter->new;   
     my $is = Bio::Phylo::PhyLoTA::Service::InferenceService->new(
         'tool'     => lc( $opt->inferencetool ),
-        'workdir'  => $opt->workdir,
-        'usertree' => $ts->make_usertree(
-            $supermatrix,
-            $starttree,
-            $self->workdir.'/user.dnd'
-        )
+        'workdir'  => $opt->workdir
     );
+
+	if ( my $starttree = $opt->starttree ) {
+		my $usertree = $ts->make_usertree( $supermatrix, $starttree, $self->workdir.'/user.dnd'); 
+		$is->usertree( $usertree );
+	}
     
     # run the analysis, process results
     my $base = $self->outfile;
