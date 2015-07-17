@@ -32,16 +32,12 @@ sub configure {
     $tool->outfile_name($outfile);    
 
     # set mpirun location
-#    $logger->info("going to use mpirun executable ".$config->MPIRUN_BIN);
- #   $tool->mpirun($config->MPIRUN_BIN);
+    $logger->info("going to use mpirun executable ".$config->MPIRUN_BIN);
+	$tool->mpirun($config->MPIRUN_BIN);
     
-#    # set number of nodes
- #   $logger->info("setting number of MPI nodes ".$config->NODES);
-  #  $tool->nodes($config->NODES);
-
     # set number of nodes
 	$logger->info("setting number of MPI nodes ".$config->NODES);
-	$tool->threads($config->NODES);
+	$tool->nodes($config->NODES);
 
     # set exabayes location
     $logger->info("going to use executable ".$config->EXABAYES_BIN);
