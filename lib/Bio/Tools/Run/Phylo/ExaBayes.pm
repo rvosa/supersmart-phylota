@@ -31,7 +31,8 @@ our @ExaBayes_PARAMS = (
         'w',        # dir:        working directory for output files
         'R',        # num:        number of runs (i.e., independent chains) to be executed in parallel
         'C',        # num:        number of chains (i.e., coupled chains) to be executed in parallel
-        'M'         # mode:       memory versus runtime trade-off, value 0 (fastest) to 3 (most memory efficient)        
+        'M',        # mode:       memory versus runtime trade-off, value 0 (fastest) to 3 (most memory efficient)        
+	    'T',        # x           start x threads per MPI process. If you do not use MPI, simply start x threads. 
     );
 
 our @ExaBayes_CONFIGFILE_PARAMS = (
@@ -147,6 +148,14 @@ Getter/setter for file with starting tree
 
 *treeFile = *t;
 
+=item threads
+
+Getter/setter for number of threads
+
+=cut
+
+*threads = *T;
+
 =item dryRun
 
 Getter/setter for whether or not just a dry run should be performed
@@ -240,40 +249,40 @@ Returns the file location of the consense tree.
 
 sub run {
 	my $self = shift;
-        my $ret;
-        my %args = @_;
-        my $phylip  = $args{'-phylip'} || die "Need -phylip arg";
-        
-        my $binary = $self->run_id . '-dat' ;
-        $binary = $treeservice->make_phylip_binary( $phylip, $binary, $self->parser, $self->work_dir );
-        $binary = File::Spec->catfile($self->work_dir, $binary);
-        
-        $self->alnFile($binary);
-
-        # compose argument string: add MPI commands, if any
-        my $string;
-        if ( $self->mpirun && $self->nodes ) {
+	my $ret;
+	my %args = @_;
+	my $phylip  = $args{'-phylip'} || die "Need -phylip arg";
+	
+	my $binary = $self->run_id . '-dat' ;
+	$binary = $treeservice->make_phylip_binary( $phylip, $binary, $self->parser, $self->work_dir );
+	$binary = File::Spec->catfile($self->work_dir, $binary);
+	
+	$self->alnFile($binary);
+	
+	# compose argument string: add MPI commands, if any
+	my $string;
+	if ( $self->mpirun && $self->nodes ) {
 		$string = sprintf '%s -np %i ', $self->mpirun, $self->nodes;
 	}
-        
-        $string .= $self->executable . $self->_setparams;       
-        
+	
+	$string .= $self->executable . $self->_setparams;       
+	
 	my $current_dir = getcwd; 
-        if ( $self->work_dir ) {
+	if ( $self->work_dir ) {
 		chdir($self->work_dir);
 	}
 	
-        # run exabayes
-        $log->info("going to run '$string'");        
-        system($string) and $self->warn("Couldn't execute '$string': $! (errno: $?)");
-        
-        $ret = $self->_run_consense;
-        
+	# run exabayes
+	$log->info("going to run '$string'");        
+	system($string) and $self->warn("Couldn't execute '$string': $! (errno: $?)");
+	
+	$ret = $self->_run_consense;
+	
 	chdir $current_dir;
-
-        #return $self->_cleanup;
-        # return outfile name or 1 if it was a dry run
-        return $ret || $self->dryRun;
+	
+	#return $self->_cleanup;
+	# return outfile name or 1 if it was a dry run
+	return $ret || $self->dryRun;
 }
 
 sub _run_consense {
