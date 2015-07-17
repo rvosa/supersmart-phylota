@@ -96,7 +96,20 @@
       </nodeHeights>
     </treeModel>
 
-
+	<!-- constrain ingroup to be monophyletic -->   
+	<tmrcaStatistic id="tmrca.ingroup.[% id %]" includeStem="false"> 
+      <mrca>
+		<taxa idref="ingroup"/>   
+      </mrca>                                                   
+      <treeModel idref="[% id %].treeModel"/>
+	</tmrcaStatistic>
+	<monophylyStatistic id="monophyly.ingroup.[% id %]">
+      <mrca>
+		<taxa idref="ingroup"/>
+      </mrca>
+      <treeModel idref="[% id %].treeModel"/>
+	</monophylyStatistic>
+	
     <!-- coalescent likelihood -->
     <coalescentLikelihood id="[% id %].coalescent">
       <model><constantSize idref="constant"/></model>
@@ -228,20 +241,6 @@
     <species idref="species"/>
     <speciesTree idref="sptree"/>
   </speciesCoalescent>
-
-  <!-- constrain ingroup to be monophyletic -->   
-  <tmrcaStatistic id="tmrca(ingroup)" includeStem="false"> 
-    <mrca>
-      <taxa idref="ingroup"/>   
-    </mrca>                                                   
-    <treeModel idref="[% id %].treeModel"/>
-  </tmrcaStatistic>
-  <monophylyStatistic id="monophyly(ingroup)">
-    <mrca>
-      <taxa idref="ingroup"/>
-    </mrca>
-    <treeModel idref="[% id %].treeModel"/>
-  </monophylyStatistic>
 
   <!-- species tree: gamma2 + gamma4 -->  
   <mixedDistributionLikelihood id="species.popSize">
@@ -387,7 +386,11 @@
             <parameter idref="[% id %].alpha"/>
           </exponentialPrior>
           <coalescentLikelihood idref="[% id %].coalescent"/>
+		  <booleanLikelihood>
+			<monophylyStatistic idref="monophyly.ingroup.[% id %]"/>
+		  </booleanLikelihood>
         [% END %]
+
         <!-- diversification priors -->
         <logNormalPrior mean="-7.0" stdev="2.0">
           <parameter idref="species.popMean"/>
@@ -399,9 +402,6 @@
           <parameter idref="species.birthDeath.relativeDeathRate"/>
         </betaPrior>
 
-		<booleanLikelihood>
-		  <monophylyStatistic idref="monophyly(ingroup)"/>
-		</booleanLikelihood>
       </prior>
       
       <!-- likelihood -->
