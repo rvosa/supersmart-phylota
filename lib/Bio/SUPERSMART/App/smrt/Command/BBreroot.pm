@@ -3,11 +3,14 @@ package Bio::SUPERSMART::App::smrt::Command::BBreroot;
 use strict;
 use warnings;
 use List::Util 'sum';
+use File::Temp 'tempfile';
 
 use Bio::Phylo::Factory;
 use Bio::Phylo::PhyLoTA::Service::TreeService;
 use Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector;
 use Bio::Phylo::IO qw(parse parse_tree);
+
+use Bio::Phylo::PhyLoTA::Service::ParallelService;
 
 use base 'Bio::SUPERSMART::App::SubCommand';
 use Bio::SUPERSMART::App::smrt qw(-command);
@@ -93,15 +96,19 @@ sub run {
 	# prepare taxa data
 	my @records = $mt->parse_taxa_file($taxafile);
 	my @ranks = ('forma', 'varietas', 'subspecies', 'species');	
-	
-	# open output file	
-	open my $out, '>', $outfile or die $!;			
-	
+		
 	# iterate over trees
-	my $counter = 1;
 	open my $in, '<', $backbone or die $!;
-	while(<$in>) {
-		my $tree = parse_tree( '-format' => 'newick', '-string' => $_ );	
+	chomp(my @backbone_trees = <$in>);
+	close $in;
+	@backbone_trees = @backbone_trees;
+
+	# reroot input trees in parallel
+	my @rerooted_trees = pmap{	
+		my $treestr = $_;
+
+		# read tree
+		my $tree = parse_tree( '-format' => 'newick', '-string' => $treestr );	
 	
 		# use taxon IDs instead of names
 		$ts->remap_to_ti($tree);
@@ -115,7 +122,7 @@ sub run {
 				'-records'  => \@records,
 			);		
 		} 
-	
+		
 		# Try to minimize paraphyly if no outgroup given
 		else {	
 			my $level = $mt->get_highest_informative_level(@records);	
@@ -125,17 +132,27 @@ sub run {
 		}
 		
 		# smooth the basal branch, if requested
-        	if ( $smooth ) {
-            		$log->debug("smoothing out diff between left and right tip heights");
+		if ( $smooth ) {
+			$log->debug("smoothing out diff between left and right tip heights");
 			$ts->smooth_basal_split($tree);
-        	}
+		}
 		
 		# clean up labels and write to file
 		$tree = $ts->remap_to_name($tree);
 		$ts->remove_internal_names($tree);
-		print $out $tree->to_newick( 'nodelabels' => 1 ), "\n";
-        $log->info("Rerooted backbone tree ".$counter++);		
-	}
+        $log->info("Rerooted backbone tree");
+		
+		return( $tree->to_newick )
+
+	} @backbone_trees;
+	
+	$log->warn("Number of rerooted trees different than number of input trees") if scalar(@backbone_trees) != scalar(@rerooted_trees);
+	
+	# write output file
+	open my $out, '>', $outfile or die $!;			
+	print $out $_  . '\n' for @rerooted_trees;
+	close $out;
+
 	$log->info("DONE, results written to $outfile");		
 }
 
