@@ -2,7 +2,6 @@ package Bio::SUPERSMART::App::smrt::Command::BBreroot;
 
 use strict;
 use warnings;
-use List::Util 'sum';
 use File::Temp 'tempfile';
 
 use Bio::Phylo::Factory;
@@ -95,32 +94,41 @@ sub run {
 	
 	# prepare taxa data
 	my @records = $mt->parse_taxa_file($taxafile);
-	my @ranks = ('forma', 'varietas', 'subspecies', 'species');	
 		
 	# iterate over trees
 	open my $in, '<', $backbone or die $!;
 	chomp(my @backbone_trees = <$in>);
 	close $in;
-	@backbone_trees = @backbone_trees;
+	
+	# mapping tables for faster id and taxon name lookup
+	my %ti_to_name;
+	my %name_to_ti;
 
 	# reroot input trees in parallel
 	my @rerooted_trees = pmap{	
 		my $treestr = $_;
 
 		# read tree
-		my $tree = parse_tree( '-format' => 'newick', '-string' => $treestr );	
-	
-		# use taxon IDs instead of names
-		$ts->remap_to_ti($tree);
+		my $tree = parse_tree( '-string' => $treestr, 
 		
+		# create id mapping table
+		if ( ! scalar(%ti_to_name) ) {
+			%ti_to_name = $self->_make_mapping_table($tree);
+			%name_to_ti = reverse(%ti_to_name);
+		}
+		
+		# map identifiers
+		$tree = $self->_remap($tree, %name_to_ti);
+
 		# Perform rerooting at outgroup, if given		
 		if ( $outgroup ) {			
+			my @ranks = ('forma', 'varietas', 'subspecies', 'species');	
 			$ts->outgroup_root(
 				'-tree'     => $tree,
 				'-ids'      => $outgroup,
 				'-ranks'    => \@ranks,
 				'-records'  => \@records,
-			);		
+				);		
 		} 
 		
 		# Try to minimize paraphyly if no outgroup given
@@ -137,8 +145,8 @@ sub run {
 			$ts->smooth_basal_split($tree);
 		}
 		
-		# clean up labels and write to file
-		$tree = $ts->remap_to_name($tree);
+		# clean up labels and map to taxon names
+		$tree = $self->_remap($tree, %ti_to_name);
 		$ts->remove_internal_names($tree);
         $log->info("Rerooted backbone tree");
 		
@@ -150,10 +158,43 @@ sub run {
 	
 	# write output file
 	open my $out, '>', $outfile or die $!;			
-	print $out $_  . '\n' for @rerooted_trees;
+	print $out $_  . "\n" for @rerooted_trees;
 	close $out;
 
 	$log->info("DONE, results written to $outfile");		
+}
+
+# create maping table from tree with taxon names: taxon id => taxon name
+sub _make_mapping_table {
+	my ( $self, $tree ) = @_;
+
+	my $mts = Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector->new;
+	my %mapping;
+	
+	for my $t ( @{$tree->get_terminals} ) {
+		my $name = $t->get_name;
+		$self->logger->debug("remapping taxon name $name");
+		$name = $mts->decode_taxon_name($name);
+		$self->logger->debug("decoded name: $name");		
+		my $dbnode = $mts->find_node({taxon_name=>$name});                     			
+		die "could not find database entry for taxon name $name " if not $dbnode;						
+		my $ti = $dbnode->ti;
+		$mapping{$ti} = $t->get_name;
+	}
+
+	return %mapping;
+}
+
+
+# remap using mapping table
+sub _remap {
+	my ( $self, $tree, %mapping ) = @_;
+	
+	for my $t ( @{$tree->get_terminals} ) {
+		my $mapped = $mapping{$t->get_name};
+		$t->set_name($mapped);
+	}
+	return $tree;
 }
 
 1;
