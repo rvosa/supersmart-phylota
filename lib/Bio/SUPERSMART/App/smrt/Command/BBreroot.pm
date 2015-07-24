@@ -110,6 +110,7 @@ sub run {
 
 		# read tree
 		my $tree = parse_tree( '-string' => $treestr, 
+							   '-format' => 'newick' );	
 		
 		# create id mapping table
 		if ( ! scalar(%ti_to_name) ) {
