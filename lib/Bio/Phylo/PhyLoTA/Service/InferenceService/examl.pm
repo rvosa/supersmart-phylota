@@ -33,14 +33,20 @@ sub configure {
     $logger->info("going to create output file $outfile");
     $tool->outfile_name($outfile);    
 
-    # set mpirun location
-    $logger->info("going to use mpirun executable ".$config->MPIRUN_BIN);
-    $tool->mpirun($config->MPIRUN_BIN);
-    
-    # set number of nodes
-    $logger->info("setting number of MPI nodes ".$config->NODES);
-    $tool->nodes($config->NODES);
-    
+	# set to parallel inference only if we have more nodes than 
+	# desired replicates; otherwise do all inferences without mpi in parallel
+	if ( $config->NODES > $self->bootstrap ) {
+
+		# set mpirun location
+		$logger->info("going to use mpirun executable ".$config->MPIRUN_BIN);
+		$tool->mpirun($config->MPIRUN_BIN);
+		
+		# set number of available nodes
+		my $nodes = int( $config->NODES / $self->bootstrap );
+		$logger->info("setting number of MPI nodes ".$nodes);
+		$tool->nodes($nodes);
+    }
+	
     # set executable location
     $logger->info("going to use executable ".$config->EXAML_BIN);
     $tool->executable($config->EXAML_BIN);
