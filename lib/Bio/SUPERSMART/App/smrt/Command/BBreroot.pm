@@ -114,12 +114,12 @@ sub run {
 		
 		# create id mapping table
 		if ( ! scalar(%ti_to_name) ) {
-			%ti_to_name = $self->_make_mapping_table($tree);
+			%ti_to_name = $ts->make_mapping_table($tree);
 			%name_to_ti = reverse(%ti_to_name);
 		}
 		
 		# map identifiers
-		$tree = $self->_remap($tree, %name_to_ti);
+		$tree = $ts->remap($tree, %name_to_ti);
 
 		# Perform rerooting at outgroup, if given		
 		if ( $outgroup ) {			
@@ -147,7 +147,7 @@ sub run {
 		}
 		
 		# clean up labels and map to taxon names
-		$tree = $self->_remap($tree, %ti_to_name);
+		$tree = $ts->remap($tree, %ti_to_name);
 		$ts->remove_internal_names($tree);
         $log->info("Rerooted backbone tree");
 		
@@ -163,39 +163,6 @@ sub run {
 	close $out;
 
 	$log->info("DONE, results written to $outfile");		
-}
-
-# create maping table from tree with taxon names: taxon id => taxon name
-sub _make_mapping_table {
-	my ( $self, $tree ) = @_;
-
-	my $mts = Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector->new;
-	my %mapping;
-	
-	for my $t ( @{$tree->get_terminals} ) {
-		my $name = $t->get_name;
-		$self->logger->debug("remapping taxon name $name");
-		$name = $mts->decode_taxon_name($name);
-		$self->logger->debug("decoded name: $name");		
-		my $dbnode = $mts->find_node({taxon_name=>$name});                     			
-		die "could not find database entry for taxon name $name " if not $dbnode;						
-		my $ti = $dbnode->ti;
-		$mapping{$ti} = $t->get_name;
-	}
-
-	return %mapping;
-}
-
-
-# remap using mapping table
-sub _remap {
-	my ( $self, $tree, %mapping ) = @_;
-	
-	for my $t ( @{$tree->get_terminals} ) {
-		my $mapped = $mapping{$t->get_name};
-		$t->set_name($mapped);
-	}
-	return $tree;
 }
 
 1;

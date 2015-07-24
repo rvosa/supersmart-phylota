@@ -7,6 +7,7 @@ use Bio::Phylo::PhyLoTA::Service::CalibrationService;
 use Bio::Phylo::PhyLoTA::Service::TreeService;
 use Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa;
 use Bio::Phylo::PhyLoTA::Config;
+use Bio::Phylo::PhyLoTA::Service::ParallelService;
 
 use Bio::Phylo::IO qw(parse_tree);
 
@@ -45,7 +46,7 @@ sub options {
 	my $tree_default    = "backbone-rerooted.dnd";
 	my $matrix_default  = "supermatrix.phy";
 	return (
-                ["fossiltable|f=s", "tsv (tab-separated value) file containing fossil table with at least 5 columns (id, name, crown/stem, taxon, age)", { arg => "file", mandatory => 1}],
+		["fossiltable|f=s", "tsv (tab-separated value) file containing fossil table with at least 5 columns (id, name, crown/stem, taxon, age)", { arg => "file", mandatory => 1}],
 		["tree|t=s", "backbone tree to calibrate as produced by 'smrt bbreroot'", { arg => "file", default => $tree_default}],
 		["supermatrix|s=s", "matrix of concatenated multiple sequece alignments which was used to generate the tree", { arg => "file", default => $matrix_default}],	
 		["outfile|o=s", "name of the output tree file (in newick format), defaults to '$outfile_default'", {default => $outfile_default, arg => "file"}],			
@@ -80,50 +81,72 @@ sub run {
 	my $cs = Bio::Phylo::PhyLoTA::Service::CalibrationService->new;
 	my $ts = Bio::Phylo::PhyLoTA::Service::TreeService->new;
 	my $mt = Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa->new;
-
-        # prepare reusable variables
-        $logger->info( "Reading fossils from file $fossiltable" );
-        my @fossils = $cs->read_fossil_table($fossiltable);
-        my @points = map { $cs->find_calibration_point($_) } @fossils;
-        my $numsites = $mt->get_supermatrix_numsites($supermatrix);
-
+	
+	# prepare reusable variables
+	$logger->info( "Reading fossils from file $fossiltable" );
+	my @fossils = $cs->read_fossil_table($fossiltable);
+	my @points = map { $cs->find_calibration_point($_) } @fossils;
+	my $numsites = $mt->get_supermatrix_numsites($supermatrix);
+	
 	# read and write trees one by one
-	my $counter = 1;
-        open my $infh, '<', $treefile or die $!;
-        open my $outfh, '>', $outfile or die $!;
-        while(<$infh>) {
-		chomp;
-		if ( /(\(.+;)/ ) { 
-			
-    			# read the ML tree from newick
-			my $newick = $1;
-			$logger->info( "Reading tree $counter from file $treefile" );
-			my $tree = parse_tree( 
-            			'-format' => 'newick', 
-            			'-string' => $newick, 
-	        	);
-			$tree->resolve;
-			$tree = $ts->remap_to_ti($tree);
-	
-	      		# make calibration table from fossils
-        		$logger->info( "Going to make calibration table" );
-        		my $table = $cs->create_calibration_table( $tree, @points );
+	open my $in, '<', $treefile or die $!;
+	chomp(my @backbone_trees = <$in>);
+	close $in;
 
-			# calibrate the tree
-			my $chronogram = $cs->calibrate_tree (
-				'-numsites'          => $numsites, 
-				'-calibration_table' => $table, 
-				'-tree'              => $tree
+	# mapping tables for faster id and taxon name lookup
+	my %ti_to_name;
+	my %name_to_ti;
+
+	my @calibrated_trees = pmap {
+		my $newick = $_;
+		
+		$logger->debug( "Reading tree from string" );
+		my $tree = parse_tree( 
+			'-format' => 'newick', 
+			'-string' => $newick, 
 			);
-	
-			# translate from taxon id's to names and save to file
-			my $labelled_chronogram = $ts->remap_to_name($chronogram);
-			print $outfh $labelled_chronogram->to_newick( '-nodelabels' => 1 ), "\n";
-			$counter++;
+		$tree->resolve;
+
+		# create id mapping table
+		if ( ! scalar(%ti_to_name) ) {
+			%ti_to_name = $ts->make_mapping_table($tree);
+			%name_to_ti = reverse(%ti_to_name);
 		}
-        }
-	close $outfh;
-	close $infh;
+
+		# map identifiers
+		$tree = $ts->remap($tree, %name_to_ti);
+		
+		# make calibration table from fossils
+		$logger->info( "Going to make calibration table" );
+		my $table = $cs->create_calibration_table( $tree, @points );
+		
+		# calibrate the tree
+		my $nthreads = int($config->NODES/scalar(@backbone_trees)) || 1;
+	  
+		my $chronogram = eval { $cs->calibrate_tree (
+									'-numsites'          => $numsites, 
+									'-calibration_table' => $table, 
+									'-tree'              => $tree,
+									'-nthreads'          => $nthreads
+									);
+		};
+		if ( $@ ) {
+			$logger->warn("Could not calibrate tree " . $@ );
+			$logger->debug("Calibration failed for tree" . $tree->to_newick);
+			return 0;
+		}
+		
+		# translate from taxon id's to names
+		my $labelled_chronogram = $ts->remap($chronogram, %ti_to_name);
+
+		return $labelled_chronogram->to_newick;
+
+	} @backbone_trees;
+	
+	# write output file
+	open my $out, '>', $outfile or die $!;			
+	print $out $_  . "\n" for @calibrated_trees;
+	close $out;
 	
 	$logger->info("DONE, results written to $outfile");
 	
