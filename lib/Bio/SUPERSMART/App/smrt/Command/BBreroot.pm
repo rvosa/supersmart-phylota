@@ -2,12 +2,14 @@ package Bio::SUPERSMART::App::smrt::Command::BBreroot;
 
 use strict;
 use warnings;
-use List::Util 'sum';
+use File::Temp 'tempfile';
 
 use Bio::Phylo::Factory;
 use Bio::Phylo::PhyLoTA::Service::TreeService;
 use Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector;
 use Bio::Phylo::IO qw(parse parse_tree);
+
+use Bio::Phylo::PhyLoTA::Service::ParallelService;
 
 use base 'Bio::SUPERSMART::App::SubCommand';
 use Bio::SUPERSMART::App::smrt qw(-command);
@@ -92,30 +94,44 @@ sub run {
 	
 	# prepare taxa data
 	my @records = $mt->parse_taxa_file($taxafile);
-	my @ranks = ('forma', 'varietas', 'subspecies', 'species');	
-	
-	# open output file	
-	open my $out, '>', $outfile or die $!;			
-	
-	# iterate over trees
-	my $counter = 1;
-	open my $in, '<', $backbone or die $!;
-	while(<$in>) {
-		my $tree = parse_tree( '-format' => 'newick', '-string' => $_ );	
-	
-		# use taxon IDs instead of names
-		$ts->remap_to_ti($tree);
 		
+	# iterate over trees
+	open my $in, '<', $backbone or die $!;
+	chomp(my @backbone_trees = <$in>);
+	close $in;
+	
+	# mapping tables for faster id and taxon name lookup
+	my %ti_to_name;
+	my %name_to_ti;
+
+	# reroot input trees in parallel
+	my @rerooted_trees = pmap{	
+		my $treestr = $_;
+
+		# read tree
+		my $tree = parse_tree( '-string' => $treestr, 
+							   '-format' => 'newick' );	
+		
+		# create id mapping table
+		if ( ! scalar(%ti_to_name) ) {
+			%ti_to_name = $ts->make_mapping_table($tree);
+			%name_to_ti = reverse(%ti_to_name);
+		}
+		
+		# map identifiers
+		$tree = $ts->remap($tree, %name_to_ti);
+
 		# Perform rerooting at outgroup, if given		
 		if ( $outgroup ) {			
+			my @ranks = ('forma', 'varietas', 'subspecies', 'species');	
 			$ts->outgroup_root(
 				'-tree'     => $tree,
 				'-ids'      => $outgroup,
 				'-ranks'    => \@ranks,
 				'-records'  => \@records,
-			);		
+				);		
 		} 
-	
+		
 		# Try to minimize paraphyly if no outgroup given
 		else {	
 			my $level = $mt->get_highest_informative_level(@records);	
@@ -125,17 +141,27 @@ sub run {
 		}
 		
 		# smooth the basal branch, if requested
-        	if ( $smooth ) {
-            		$log->debug("smoothing out diff between left and right tip heights");
+		if ( $smooth ) {
+			$log->debug("smoothing out diff between left and right tip heights");
 			$ts->smooth_basal_split($tree);
-        	}
+		}
 		
-		# clean up labels and write to file
-		$tree = $ts->remap_to_name($tree);
+		# clean up labels and map to taxon names
+		$tree = $ts->remap($tree, %ti_to_name);
 		$ts->remove_internal_names($tree);
-		print $out $tree->to_newick( 'nodelabels' => 1 ), "\n";
-        $log->info("Rerooted backbone tree ".$counter++);		
-	}
+        $log->info("Rerooted backbone tree");
+		
+		return( $tree->to_newick )
+
+	} @backbone_trees;
+	
+	$log->warn("Number of rerooted trees different than number of input trees") if scalar(@backbone_trees) != scalar(@rerooted_trees);
+	
+	# write output file
+	open my $out, '>', $outfile or die $!;			
+	print $out $_  . "\n" for @rerooted_trees;
+	close $out;
+
 	$log->info("DONE, results written to $outfile");		
 }
 

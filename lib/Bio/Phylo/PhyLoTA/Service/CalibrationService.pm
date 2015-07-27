@@ -78,6 +78,7 @@ Arguments:
  -tree     => A Bio::Phylo::Forest::Tree object
  -calibration_table => A Bio::Phylo::PhyLoTA::Domain::CalibrationTable object
  -treepl_smooth     => (Optional) TreePL smoothing factor
+ -nthreads             => (Optional) Number of threads
 
 =cut
 
@@ -88,7 +89,8 @@ sub calibrate_tree {
 	my $numsites  = $args{'-numsites'}          || die "Need -numsites argument";
 	my $ct        = $args{'-calibration_table'} || die "Need -calibration_table argument";
 	my $tree      = $args{'-tree'}              || die "Need -tree argument";
-	my $nthreads  = $config->NODES;
+	my $nthreads     = $args{'-nodes'}             || 1;
+	
 	my $seed = $config->RANDOM_SEED;
 	my ( $ifh, $writetree ) = tempfile();
 	my ( $ofh, $readtree )  = tempfile();

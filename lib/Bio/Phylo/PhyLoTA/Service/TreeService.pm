@@ -490,6 +490,52 @@ sub remap_to_ti {
     return $tree;       
 }
 
+
+=item make_mapping_table
+
+Given a tree with taxon names, creates a hash mapping taxon ids
+to taxon names
+
+=cut
+
+sub make_mapping_table {
+	my ( $self, $tree ) = @_;
+
+	my $mts = Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector->new;
+	my %mapping;
+	
+	for my $t ( @{$tree->get_terminals} ) {
+		my $name = $t->get_name;
+		$self->logger->debug("remapping taxon name $name");
+		$name = $mts->decode_taxon_name($name);
+		$self->logger->debug("decoded name: $name");		
+		my $dbnode = $mts->find_node({taxon_name=>$name});                     			
+		die "could not find database entry for taxon name $name " if not $dbnode;						
+		my $ti = $dbnode->ti;
+		$mapping{$ti} = $t->get_name;
+	}
+
+	return %mapping;
+}
+
+
+=item remap
+
+Given a hash with an identifier/taxonname mapping,
+and a tree, remaps the leave names of the tree
+
+=cut
+
+sub remap {
+	my ( $self, $tree, %mapping ) = @_;
+	
+	for my $t ( @{$tree->get_terminals} ) {
+		my $mapped = $mapping{$t->get_name};
+		$t->set_name($mapped);
+	}
+	return $tree;
+}
+
 =item newick2nexus
 
 Given an input newick file and an output nexus file name, writes trees

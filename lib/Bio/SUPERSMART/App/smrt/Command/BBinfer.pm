@@ -11,6 +11,7 @@ use Bio::Phylo::PhyLoTA::Service::TreeService;
 use Bio::Phylo::PhyLoTA::Service::SequenceGetter;
 use Bio::Phylo::PhyLoTA::Service::InferenceService;
 use Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector;
+use Bio::Phylo::PhyLoTA::Service::ParallelService;
 use Bio::Phylo::Util::Exceptions 'throw';
 use base 'Bio::SUPERSMART::App::SubCommand';
 use Bio::SUPERSMART::App::smrt qw(-command);
@@ -79,8 +80,9 @@ sub run {
     my $ts = Bio::Phylo::PhyLoTA::Service::TreeService->new;     
     my $ss = Bio::Phylo::PhyLoTA::Service::SequenceGetter->new;   
     my $is = Bio::Phylo::PhyLoTA::Service::InferenceService->new(
-        'tool'     => lc( $opt->inferencetool ),
-        'workdir'  => $opt->workdir
+        'tool'      => lc( $opt->inferencetool ),
+        'workdir'   => $opt->workdir,
+		'bootstrap' => $opt->bootstrap
     );
 
 	if ( my $starttree = $opt->starttree ) {
@@ -90,7 +92,9 @@ sub run {
     
     # run the analysis, process results
     my $base = $self->outfile;
-    for my $i ( 1 .. $bootstrap ) {
+    
+	pmap {
+		my $i = $_;
     
         # assign input matrix
         my $matrix;
@@ -109,7 +113,7 @@ sub run {
 		# run
 		my $backbone = $is->run( 'matrix' => $matrix );  
 		$self->_append( $backbone, $base . '.trees' );
-
+		
 		# cleanup, if requested
 		if ( $opt->cleanup ) {
 			unlink $backbone;
@@ -118,7 +122,7 @@ sub run {
 				unlink $matrix;
 			}
 		}
-    }
+    } ( 1 .. $bootstrap );
     
     # finalize
     $self->_process_result( 

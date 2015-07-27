@@ -23,6 +23,7 @@ Object constructor. Returns the appropriate subclass. Arguments:
 	'tool'    => tool name, e.g. examl, raxml, exabayes
 	'workdir' => directory name for temp files
 	'outfile' => (optional) name for output file
+	'boostrap'=> (optional) number of boostrap replicates
 
 =cut
 
@@ -149,6 +150,21 @@ sub workdir {
 	}
 	return $self->{'workdir'} || '.';
 }
+
+=item workdir
+
+Getter/setter, is used to store the number of bootstrap replicates
+
+=cut
+
+sub bootstrap {
+	my ( $self, $bootstrap ) = @_;
+   	if ( $bootstrap ) {
+		$self->{'bootstrap'} = $bootstrap;
+	}
+	return $self->{'bootstrap'} || 1;
+}
+
 
 =item wrapper
 
