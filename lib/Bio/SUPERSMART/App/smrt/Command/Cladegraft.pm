@@ -130,7 +130,7 @@ sub _graft_single_tree {
 	# make file names
 	my $workdir = $self->workdir;
 	my $file    = "${workdir}/${clade}/${clade}.nex";
-	my $ogfile  = "${workdir}/${clade}/outgroup.txt";
+	my $ogfile  = "${workdir}/${clade}/${clade}-outgroup.txt";
 	if ( ! -e $file ) {
 		$logger->warn("could not find file $file for clade $clade, skip grafting");
 		return $tree;
@@ -163,6 +163,9 @@ sub _graft_single_tree {
 		}
 		close $ogfh;
 		$consensus->prune_tips(\@outgroup_taxa);
+	} 
+	else {
+		$logger->info("No outgroup file found for clade $clade");
 	}
 
 	return $ts->graft_tree( $tree, $consensus, $opt->squish );
