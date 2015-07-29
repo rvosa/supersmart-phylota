@@ -56,13 +56,15 @@ isa_ok( $cladetree,'Bio::Phylo::Forest::Tree' );
 
 # parse the backbone tree
 my $bbfile = "$Bin/testdata/backbone-consensus.nex";
-my $bbtree = $ts->read_figtree( $bbfile );
+my $bbtree = $ts->read_figtree( '-file' => $bbfile );
 
 # graft clade onto backbone tree
-my $bbstr = $bbtree->to_newick;
+my $nof_terminals = scalar(@{$bbtree->get_terminals});
+$bbtree = $ts->remap_to_ti($bbtree);
 my $grafted = $ts->graft_tree( $bbtree, $cladetree );
+
 isa_ok($grafted,'Bio::Phylo::Forest::Tree');
-ok (length $grafted->to_newick > length $bbstr, "tree is larger after grafting");
+ok (scalar(@{$grafted->get_terminals}) > $nof_terminals, "tree has more terminals after grafting");
 
 # test remapping a tree back to taxon identifiers 
 my $newick = "((('Echinochloa_crus-galli',Echinochloa_colona),Echinochloa_stagnina),(Panicum_turgidum, \"x_Brassolaeliocattleya_'Sung_Ya_Green'\"));";

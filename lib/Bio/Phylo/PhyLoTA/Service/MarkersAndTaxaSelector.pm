@@ -393,9 +393,10 @@ sub get_outgroup_taxa {
     	
     my $mrca = $tree->get_mrca(\@nodes);
 	
-	# if specified, select deeper split
-	for my $i ( 0..$extra_depth ) {
+	# if specified, select deeper split 
+	for my $i ( 0..$extra_depth-1 ) {
 		$mrca = $mrca->get_parent;
+		print "HIER\n";
 	}
 
     my @terminals;
@@ -737,6 +738,7 @@ sub get_marker_table {
 	}
 	return @marker_table
 }
+
 =item write_marker_table
 
 Writes a table containing all species as rows and all chosen markers  as columns, 

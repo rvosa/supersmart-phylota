@@ -110,5 +110,6 @@ my $tree = parse_tree(
 	'-as_project' => 1,
     );
 my @outgroup = $mts->get_outgroup_taxa($tree, \@ingroup);
+
 cmp_ok ( scalar @outgroup, ">", 0, "found outgroup species for list of taxon ids");
 
