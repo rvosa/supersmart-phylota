@@ -396,7 +396,6 @@ sub get_outgroup_taxa {
 	# if specified, select deeper split 
 	for my $i ( 0..$extra_depth-1 ) {
 		$mrca = $mrca->get_parent;
-		print "HIER\n";
 	}
 
     my @terminals;
