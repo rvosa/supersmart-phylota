@@ -100,7 +100,6 @@ sub run {
 	my @calibrated_trees = pmap {
 		my $newick = $_;
 		
-		$logger->debug( "Reading tree from string" );
 		my $tree = parse_tree( 
 			'-format' => 'newick', 
 			'-string' => $newick, 
@@ -115,26 +114,27 @@ sub run {
 
 		# map identifiers
 		$tree = $ts->remap($tree, %name_to_ti);
-		
+		my $treestr = $tree->to_newick;
+
 		# make calibration table from fossils
 		$logger->info( "Going to make calibration table" );
 		my $table = $cs->create_calibration_table( $tree, @points );
-		
+
 		# calibrate the tree
 		my $nthreads = int($config->NODES/scalar(@backbone_trees)) || 1;
-	  
-		my $chronogram = eval { $cs->calibrate_tree (
+		
+		# refresh tree, it can happen that it gets damaged. This is a workaround
+		$tree = parse_tree( 
+			'-format' => 'newick', 
+			'-string' => $treestr, 
+			);
+
+		my $chronogram = $cs->calibrate_tree (
 									'-numsites'          => $numsites, 
 									'-calibration_table' => $table, 
 									'-tree'              => $tree,
 									'-nthreads'          => $nthreads
 									);
-		};
-		if ( $@ ) {
-			$logger->warn("Could not calibrate tree " . $@ );
-			$logger->debug("Calibration failed for tree" . $tree->to_newick);
-			return 0;
-		}
 		
 		# translate from taxon id's to names
 		my $labelled_chronogram = $ts->remap($chronogram, %ti_to_name);

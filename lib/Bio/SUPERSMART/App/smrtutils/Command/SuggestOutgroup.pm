@@ -107,7 +107,7 @@ sub run {
 		$log->debug( "Possible outgroup  : " . $og_node->taxon_name . "( $outgroup_rank )");
 		
 		# get all terminals for outgroup
-		my @terminal_ids = @{$og_node->get_terminal_ids};
+		my @terminal_ids =map {$_->ti} @{$og_node->get_terminals};
 		next if not scalar (@terminal_ids);
 
 		my @terminal_nodes = map { $mts->find_node({ti=>$_}) } @terminal_ids;

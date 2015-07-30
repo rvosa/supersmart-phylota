@@ -114,7 +114,7 @@ HEADER
 	print $tfh $ct->to_string;
 	# run treePL
 	close $tfh;
-        $self->logger->info("Wrote treePL config file to  $tplfile");
+	$self->logger->info("Wrote treePL config file to  $tplfile");
 	system( $config->TREEPL_BIN, $tplfile ) && die $?;
 	if ( -e $writetree and -s $writetree ) {        
         	my $result = parse_tree(
@@ -184,6 +184,7 @@ approximation to the stem age.
 
 sub create_calibration_table {
 	my ( $self, $tree, @fossildata ) = @_;
+	
 	my $config = $self->config;
 	my $logger = $self->logger;        
 	my $table  = Bio::Phylo::PhyLoTA::Domain::CalibrationTable->new;
@@ -194,58 +195,60 @@ sub create_calibration_table {
 	
 	# find all descendants of all calibrated higher taxa that are present in the tree
 	FOSSIL: for my $fd ( @fossildata ) {
+		
 		my @nodes = $fd->calibration_points; # returns higher taxa
 		my $score = $fd->best_practice_score || 0;
 		if ( $score < $cutoff ) {
 			$logger->warn("Quality score of fossil for calibrated taxon " .  $fd->{"Calibrated_taxon"} .  " too low. Skipping.");
 			next FOSSIL;
 		}
-			
 		# expand to all terminal taxa cf. the taxonomy
-		my @terminals = map { @{ $_->get_terminal_ids } } @nodes;
+		my $treestr = $tree->to_newick;
 
-		# only consider terminals that are present in our tree
-		@terminals = grep { $taxa_in_tree{$_} } @terminals;
-		if ( ! scalar(@terminals) ) {
-			$logger->warn("Could not calibrate fossil # " . $fd->nfos . " (" . $fd->fossil_name . "). Could not find tips for calibrated taxon " . $fd->calibrated_taxon . "in tree!");
+		# get all descendants of the calibrated nodes that are also in our tree
+		my @descendant_ids = sort map {$_->ti} map {@{$_->get_descendants}} @nodes;
+		
+		# in some cases somehow the tree gets damaged by the operation above. This is a workaround...
+		if ( ! $tree ) { 
+			$logger->warn("Tree got lost, reloading");
+			$tree = parse_tree( 
+				'-format' => 'newick', 
+				'-string' => $treestr, 
+				);
+			$tree->set_namespaces( 'fig' => _NS_FIGTREE_ );
+		}
+
+		my @tree_nodes = map {$tree->get_by_name($_)} @descendant_ids;
+		
+		if ( ! scalar(@tree_nodes) ) {
+			$logger->warn("Could not calibrate fossil # " . $fd->nfos . " (" . $fd->fossil_name . "). Could not find tree nodes for calibrated taxon " . $fd->calibrated_taxon . "in tree!");
 			next FOSSIL;
 		}
-
+		
+		my $mrca  = $tree->get_mrca(\@tree_nodes);
+		
 		# for stem fossils, take the parent of the mrca
-		if ( lc $fd->{"CrownvsStem"} eq "stem" ) { 
+		$mrca = $mrca->get_parent if ( lc $fd->{"CrownvsStem"} eq "stem" );
 
-			my %t = map {$_=>1} @terminals;
-			my @tree_nodes =  grep { exists($t{$_->get_name})  }  @{$tree->get_terminals};					
-			my $mrca = $tree->get_mrca(\@tree_nodes);
-			my $parent = $mrca->get_parent;
-			if ( ! $parent ) {
-				$logger->warn("Could not calibrate stem fossil # " . $fd->nfos . " (" . $fd->fossil_name . ") because the mrca of all calibrated taxa has no parent node. Skipping.");
-				next FOSSIL;
-			}
-			@terminals = map{ $_->get_name } @{$parent->get_terminals};
-			@terminals =  grep { exists($taxa_in_tree{$_}) } @terminals;																							
-			$mrca->set_name( $fd->fossil_name );
-			$mrca->set_meta_object( 'fig:fossil_age_min' => $fd->min_age );
-			$mrca->set_meta_object( 'fig:fossil_age_max' => $fd->max_age );
+		if ( ! $mrca ) {
+			$logger->warn("Could not calibrate fossil # " . $fd->nfos . " (" . $fd->fossil_name . "), no mrca found!");
+			next FOSSIL;
 		}
-		else {
-                        # get the MRCA of the terminals, and then the tips subtended by it
-                        my @tips = map { $tree->get_by_name($_) } @terminals;
-                        my $mrca = $tree->get_mrca(\@tips);
-                        @terminals = map { $_->get_name } @{ $mrca->get_terminals };
-			$mrca->set_meta_object( 'fig:fossil_age_min' => $fd->min_age );
-			$mrca->set_meta_object( 'fig:fossil_age_max' => $fd->max_age );
-		}
+		
+		my @ids = map {$_->get_name} @{$mrca->get_terminals};
+		
+		$mrca->set_meta_object( 'fig:fossil_age_min' => $fd->min_age );
+		$mrca->set_meta_object( 'fig:fossil_age_max' => $fd->max_age );
+		
 		$table->add_row(
-			'taxa'    => [ sort { $a cmp $b } @terminals ],
+			'taxa'    => [ sort { $a cmp $b } @ids ],
 			'min_age' => $fd->min_age,
 			'max_age' => $fd->max_age,
-			'name'    => $fd->nfos,	    
-	                'nfos'    => $fd->nfos,	    
+			'name'    => $fd->fossil_name,	    
+			'nfos'    => $fd->nfos,	    
 	        );  
-			
 	}	
-		
+	
 	$table->sort_by_min_age;
 	return $table;	
 }
