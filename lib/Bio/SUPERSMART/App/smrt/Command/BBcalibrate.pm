@@ -154,7 +154,7 @@ sub run {
 	if ( my $cnt = scalar @calibrated_trees ) {
 		$logger->info("Writing $cnt calibrated trees to $outfile");
 		open my $out, '>', $outfile or die $!;			
-		print $out $_  . "\n" for @calibrated_trees;
+		print $out "$_\n" for @calibrated_trees;
 		close $out;
 	}  
 	else {
