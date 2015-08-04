@@ -96,7 +96,7 @@ sub import {
 		# get number of processes from config file
 		require Bio::Phylo::PhyLoTA::Config;
 		my $config  = Bio::Phylo::PhyLoTA::Config->new;
-		$num_workers = $config->NODES -1 || 1; 
+		$num_workers = $config->NODES || 1; 
 	} 
 	else {
 		$num_workers = 1;
@@ -129,34 +129,43 @@ sub pmap_pthreads (&@) {
 	my @threads;
 	my @result;
 	my $inc = ceil( $size / $num_workers );
-	$logger->debug("pmap pthreads has $num_workers nodes available");
+	$logger->info("pmap pthreads has $num_workers nodes available");
 	my $thread = 0;
 
 	for ( my $i = 0 ; $i < $size ; $i += $inc ) {
 		++$thread;
 		my $max = ( $i + $inc - 1 ) >= $size ? $size - 1 : $i + $inc - 1;
 		my @subset = @data[ $i .. $max ];
-		$logger->debug("Detaching " . scalar(@subset) . " items to thread # " . $thread );
+		$logger->info("Detaching " . scalar(@subset) . " items to thread # " . $thread );
 		eval {
 			push @threads, threads->create(
 				sub {
 					map {
 						$counter++;
-						$logger->debug(
+						$logger->info(
 							"Thread $thread is processing item # $counter / "
-							  . scalar(@subset) );
+							. scalar(@subset) );
 
 						# execute code block given in $func with argument
-						$func->($_);
+						my $ret = $func->($_);
+						$logger->info("Thread $thread finished processing item # $counter / "
+									  . scalar(@subset) );
+						$ret;
 					} @subset;
 				}
-			);
+				);
 		};
 		if ( $@ ) {
+			$logger->warn("Error in thread $thread");
 			throw 'API' => $@;
 		}
 	}
-	push @result, $_->join for @threads;
+	for my $i ( 1..scalar(@threads) ) {
+		my $thread = $threads[$i-1];
+		my @thread_results = $thread->join;
+		$logger->info("Collecting " . scalar(@thread_results) . " results for thread $i");
+		push @result, @thread_results;
+	}
 	return @result;
 }
 

@@ -96,10 +96,11 @@ sub run {
 	# mapping tables for faster id and taxon name lookup
 	my %ti_to_name;
 	my %name_to_ti;
-
+	
 	my @calibrated_trees = pmap {
 		my $newick = $_;
 		
+		$logger->debug("Attempting to calibrate tree: $newick");
 		my $tree = parse_tree( 
 			'-format' => 'newick', 
 			'-string' => $newick, 
@@ -115,13 +116,14 @@ sub run {
 		# map identifiers
 		$tree = $ts->remap($tree, %name_to_ti);
 		my $treestr = $tree->to_newick;
-
+		
 		# make calibration table from fossils
 		$logger->info( "Going to make calibration table" );
 		my $table = $cs->create_calibration_table( $tree, @points );
-
-		# calibrate the tree
-		my $nthreads = int($config->NODES/scalar(@backbone_trees)) || 1;
+		if (! $table ) {
+			$logger->warn("Could not create calibration table");
+			return;
+		}
 		
 		# refresh tree, it can happen that it gets damaged. This is a workaround
 		$tree = parse_tree( 
@@ -129,24 +131,35 @@ sub run {
 			'-string' => $treestr, 
 			);
 
+		# calibrate the tree
+		my $nthreads = int($config->NODES/scalar(@backbone_trees)) || 1;
 		my $chronogram = $cs->calibrate_tree (
-									'-numsites'          => $numsites, 
-									'-calibration_table' => $table, 
-									'-tree'              => $tree,
-									'-nthreads'          => $nthreads
-									);
+			'-numsites'          => $numsites, 
+			'-calibration_table' => $table, 
+			'-tree'              => $tree,
+			'-nthreads'          => $nthreads
+			);
 		
 		# translate from taxon id's to names
 		my $labelled_chronogram = $ts->remap($chronogram, %ti_to_name);
 
+		$logger->info("Finished calibrating single tree");
+		#	return $labelled_chronogram->to_newick;
 		return $labelled_chronogram->to_newick;
-
 	} @backbone_trees;
 	
+	$logger->warn("Number of calibrated trees different than number of input trees") if scalar(@backbone_trees) != scalar(@calibrated_trees);
+	
 	# write output file
-	open my $out, '>', $outfile or die $!;			
-	print $out $_  . "\n" for @calibrated_trees;
-	close $out;
+	if ( my $cnt = scalar @calibrated_trees ) {
+		$logger->info("Writing $cnt calibrated trees to $outfile");
+		open my $out, '>', $outfile or die $!;			
+		print $out $_  . "\n" for @calibrated_trees;
+		close $out;
+	}  
+	else {
+		$logger->warn("No calibrated trees to write!");
+	}
 	
 	$logger->info("DONE, results written to $outfile");
 	

@@ -109,6 +109,7 @@ sub run {
 		my $treestr = $_;
 
 		# read tree
+		$log->debug("Reading tree from string");
 		my $tree = parse_tree( '-string' => $treestr, 
 							   '-format' => 'newick' );	
 		
@@ -119,11 +120,13 @@ sub run {
 		}
 		
 		# map identifiers
+		$log->debug("Mapping taxon names to taxon IDs");
 		$tree = $ts->remap($tree, %name_to_ti);
 
 		# Perform rerooting at outgroup, if given		
 		if ( $outgroup ) {			
 			my @ranks = ('forma', 'varietas', 'subspecies', 'species');	
+			$log->debug("Rerooting at outgroup $outgroup");
 			$ts->outgroup_root(
 				'-tree'     => $tree,
 				'-ids'      => $outgroup,

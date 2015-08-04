@@ -109,7 +109,7 @@ nthreads = $nthreads
 seed = $seed
 HEADER
 
-        $ct->remove_orphan_taxa;
+    $ct->remove_orphan_taxa;
 	# print MRCA statements
 	print $tfh $ct->to_string;
 	# run treePL
@@ -191,19 +191,23 @@ sub create_calibration_table {
 	my $cutoff = $config->FOSSIL_BEST_PRACTICE_CUTOFF;
 	$tree->set_namespaces( 'fig' => _NS_FIGTREE_ );
 
+	# expand to all terminal taxa cf. the taxonomy
+	my $treestr = $tree->to_newick;
+	$logger->debug("Calibrating tree $treestr");
+
 	my %taxa_in_tree = map { $_->get_name => 1 } @{$tree->get_terminals};
 	
-	# find all descendants of all calibrated higher taxa that are present in the tree
+	my @all_mrcas; 
 	FOSSIL: for my $fd ( @fossildata ) {
-		
+
+		# find all descendants of all calibrated higher taxa that are present in the tree
+		$logger->debug("Processing fossil " . $fd->fossil_name);
 		my @nodes = $fd->calibration_points; # returns higher taxa
 		my $score = $fd->best_practice_score || 0;
 		if ( $score < $cutoff ) {
 			$logger->warn("Quality score of fossil for calibrated taxon " .  $fd->{"Calibrated_taxon"} .  " too low. Skipping.");
 			next FOSSIL;
 		}
-		# expand to all terminal taxa cf. the taxonomy
-		my $treestr = $tree->to_newick;
 
 		# get all descendants of the calibrated nodes that are also in our tree
 		my @descendant_ids = sort map {$_->ti} map {@{$_->get_descendants}} @nodes;
@@ -217,11 +221,11 @@ sub create_calibration_table {
 				);
 			$tree->set_namespaces( 'fig' => _NS_FIGTREE_ );
 		}
-
+		
 		my @tree_nodes = map {$tree->get_by_name($_)} @descendant_ids;
 		
 		if ( ! scalar(@tree_nodes) ) {
-			$logger->warn("Could not calibrate fossil # " . $fd->nfos . " (" . $fd->fossil_name . "). Could not find tree nodes for calibrated taxon " . $fd->calibrated_taxon . "in tree!");
+			$logger->warn("Could not calibrate fossil # " . $fd->nfos . " (" . $fd->fossil_name . "). Could not find tree nodes for calibrated taxa " . join(', ', @{$fd->calibrated_taxon}) . "in tree!");
 			next FOSSIL;
 		}
 		
@@ -234,18 +238,53 @@ sub create_calibration_table {
 			$logger->warn("Could not calibrate fossil # " . $fd->nfos . " (" . $fd->fossil_name . "), no mrca found!");
 			next FOSSIL;
 		}
-		
-		my @ids = map {$_->get_name} @{$mrca->get_terminals};
-		
 		$mrca->set_meta_object( 'fig:fossil_age_min' => $fd->min_age );
 		$mrca->set_meta_object( 'fig:fossil_age_max' => $fd->max_age );
-		
+		$mrca->set_meta_object( 'fig:fossil_name' => $fd->fossil_name);
+		$mrca->set_meta_object( 'fig:fossil_id' => $fd->nfos);
+
+		push @all_mrcas, $mrca;
+	}
+	
+	# check for nested calibrated mrcas: Do not attempt to calibrate if ancestor mrca has a younger date than a possible descendant mrca
+	$logger->info("Checking fossil calibration point consistancy in tree");
+	for my $i ( 0..$#all_mrcas ) {
+		for my $j ( 0..$#all_mrcas ) {
+			my $mrca1 = $all_mrcas[$i];
+			my $mrca2 = $all_mrcas[$j];
+			if (  ! ($mrca1->get_meta_object( 'fig:fossil_id' ) eq $mrca2->get_meta_object ('fig:fossil_id')) ) {
+				if ( $mrca1->is_ancestor_of($mrca2) ) {
+					if ( my $ancestor_max =  $mrca1->get_meta_object( 'fig:fossil_age_max') and
+						 my $descendant_min = $mrca2->get_meta_object( 'fig:fossil_age_min') ) {
+						if ( $ancestor_max <= $descendant_min) {
+							$logger->warn("Calibrated node for fossil " 
+										  . $mrca1->get_meta_object( 'fig:fossil_id') 
+										  . " (" 
+										  . $mrca1->get_meta_object( 'fig:fossil_name') 
+										  . ") is ancestor of calibrated node for fossil "
+										  . $mrca2->get_meta_object( 'fig:fossil_id') 
+										  . " (" 
+										  . $mrca2->get_meta_object( 'fig:fossil_name') 
+										  . ") although the fossil for the latter is older! Cannot create calibration table.");							
+							return(0);
+						}
+					}			   
+				}
+			}
+		}
+	}
+	
+	# create row in taxa table with all leaf descendants of mrca
+	for my $mrca ( @all_mrcas ) {
+
+		my @ids = grep {/^\d+$/} map {$_->get_name} @{$mrca->get_terminals};
+	
 		$table->add_row(
 			'taxa'    => [ sort { $a cmp $b } @ids ],
-			'min_age' => $fd->min_age,
-			'max_age' => $fd->max_age,
-			'name'    => $fd->fossil_name,	    
-			'nfos'    => $fd->nfos,	    
+			'min_age' => $mrca->get_meta_object( 'fig:fossil_age_min'),#$fd->min_age,
+			'max_age' => $mrca->get_meta_object( 'fig:fossil_age_max'),#$fd->max_age,
+			'name'    => $mrca->get_meta_object( 'fig:fossil_name'),#$fd->fossil_name,	    
+			'nfos'    => $mrca->get_meta_object( 'fig:fossil_id'),#$fd->nfos,	    
 	        );  
 	}	
 	
