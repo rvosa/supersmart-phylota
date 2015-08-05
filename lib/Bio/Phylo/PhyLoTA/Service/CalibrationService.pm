@@ -210,9 +210,13 @@ sub create_calibration_table {
 		}
 
 		# get all descendants of the calibrated nodes that are also in our tree
-		my @descendant_ids = sort map {$_->ti} map {@{$_->get_descendants}} @nodes;
+		my @subtree_nodes = map { (@{$_->get_terminals}, @{$_->get_internals}) } @nodes;
+		my @descendant_ids = sort map {$_->ti} @subtree_nodes; 
+
+        # the tree seemed to get damaged sometimes by get_descendants, so below is a workaround		
+        # my @descendant_ids = sort map {$_->ti} map {@{$_->get_descendants}} @nodes;		
 		
-		# in some cases somehow the tree gets damaged by the operation above. This is a workaround...
+		# in some cases somehow the tree gets damaged by the operation above. 
 		if ( ! $tree ) { 
 			$logger->warn("Tree got lost, reloading");
 			$tree = parse_tree( 
