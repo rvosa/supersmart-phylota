@@ -544,9 +544,11 @@ sub _process_matches {
     Encodes a taxon name such that it can be used within SUPERSMART without ambiguity.
     At the moment, we encode by subtituting the following strings/characters:
 
-    '_' is changed to '|', because Bio::Phylo internally converts spaces to '_', which 
+    '_' is ecnoded, because Bio::Phylo internally converts spaces to '_', which 
     gives trouble with taxon names containing a '_'
-    
+  
+	opening and closing parentheses are encoded, because they will make trouble in newick strings
+  
     ' ' is changed to '_'
 
 =cut
@@ -554,18 +556,20 @@ sub _process_matches {
 sub encode_taxon_name {
     my ($self, $name) = @_;
     
-    # substitute '_' to '|'
-    $name =~ s/_/\|/g;
+	$name =~ s/_/\|smrt:underscore\|/g;
+	$name =~ s/\(/\|smrt:parenthesisopen\|/g;
+	$name =~ s/\)/\|smrt:parenthesisclose\|/g;
+	
     # substitute ' ' to '_'
     $name =~ s/ /_/g;
-    
+
 
     return $name;
 }
 
 =item decode_taxon_name
 
-    Decodes a taxon name back that was encoded with enceode_taxon_name,
+    Decodes a taxon name back that was encoded with encode_taxon_name,
     decoded taxon names can be searched in the database.
 
 =cut
@@ -573,12 +577,18 @@ sub encode_taxon_name {
 sub decode_taxon_name {
     my ($self, $name) = @_;
 
+	# remove quotes
     $name =~ s/^'(.*)'$/$1/g;
     $name =~ s/^"(.*)"$/$1/g;                        
-
+	
+	# change underscore back to space 
     $name =~ s/_/ /g;
-    $name =~ s/\|/\_/g;
-
+	
+	# change back to spacial characters
+	$name =~ s/\|smrt:underscore\|/_/g;
+	$name =~ s/\|smrt:parenthesisopen\|/\(/g;
+	$name =~ s/\|smrt:parenthesisclose\|/\)/g;
+	
     return $name;
 }
 
@@ -589,13 +599,24 @@ the taxonomic classifications for each name (if found in database), for all
 taxonomic ranks. Returns an array of hashes with keys being ranks (and taxon name), 
 values are the taxon IDs at each rank.
 
+If argument binomals is given, filters out taxon names that are not binomials
 =cut
 
 sub make_taxa_table {
-    my ($self, @names) = @_;
+    my ($self, $taxon_names, $binomial) = @_;
+
+	my @names = @{$taxon_names};
 
     # get all possible taxonomic ranks
     my %levels = map{ $_=>1 } $self->get_taxonomic_ranks;
+
+	# filter binomials
+	if ( $binomial ) {
+		my $cnt = scalar(@names);
+		@names = grep {/^\w+\s+\w+\z/} @names;
+		my $diff = $cnt - scalar(@names);
+		$log->info("Removed $diff taxon names that are not binomials");
+	}
     
     # this will take some time to do the taxonomic name resolution in the
     # database and with webservices. The below code runs in parallel
@@ -616,12 +637,12 @@ sub make_taxa_table {
             
             # for each node, fetch the IDs of all taxonomic levels of interest
             for my $node (@nodes) {
-                
+				
                 # walk up the  taxonomy tree and get tids for levels of interest,
                 # store all ids and taxon name in hash
                 my %taxinfo;                
                 $taxinfo{'name'} = $node->taxon_name;
-
+				
                 # traverse up the tree
                 while ( $node ) {
                     my $ti   = $node->ti;

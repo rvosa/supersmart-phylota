@@ -54,6 +54,11 @@ sub options {
 			"rank to which root taxa are expanded",
 			{ default => 0, arg => "rank" }
 		],
+		[
+			"binomials_only|b",
+			"rank to which root taxa are expanded",
+			{ default => 0 }
+		],
 	);
 }
 
@@ -110,7 +115,7 @@ sub run {
 		@names = $mts->expand_taxa( \@names, $expand_rank || "species" );
 	}
 	
-	my @taxa_table = $mts->make_taxa_table( @names );	
+	my @taxa_table = $mts->make_taxa_table( \@names, $opt->binomials_only );	
 	$mts->write_taxa_file( $opt->outfile, @taxa_table );
 
 	$log->info("DONE, results written to " . $opt->outfile);
