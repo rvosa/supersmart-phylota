@@ -97,7 +97,7 @@ sub run {
 	my %ti_to_name;
 	my %name_to_ti;
 	
-	my @calibrated_trees = pmap {
+	my @calibrated_trees = grep $_, pmap {
 		my $newick = $_;
 		
 		$logger->debug("Attempting to calibrate tree: $newick");
@@ -122,7 +122,7 @@ sub run {
 		my $table = $cs->create_calibration_table( $tree, @points );
 		if (! $table ) {
 			$logger->warn("Could not create calibration table");
-			return;
+			return 0;
 		}
 		
 		# refresh tree, it can happen that it gets damaged. This is a workaround
