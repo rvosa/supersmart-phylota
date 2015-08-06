@@ -39,10 +39,10 @@ sub options {
 	return (
 		["infile|i=s", "newick input tree(s) file", { arg => "file", default => $intree_default}],
 		["outfile|o=s", "name of the output file, defaults to '$outfile_default'", {default => $outfile_default, arg => "file"}],
-                ["burnin|b=f", "fraction of burnin to omit", {default => $ts->config->BURNIN, arg => "fraction" }],
-                ["heights|e=s", "how to summarize heights (keep, median, mean, ca), defaults to $heights_default", {default => $heights_default, arg => "keep|median|mean|ca"}],
-                ["limit|l=f", "the minimum support for a node to be annotated",{default => 0.0, arg => "value"}],
-                ["fossils|s=s","fossil table (if re-applying calibration points)", {default => $fossils_default, arg => "file" }],
+		["burnin|b=s", "fraction of burnin to omit, defaults to " . $ts->config->BURNIN . "; set to 0.0 for no burnin", {default => $ts->config->BURNIN, arg => "fraction" }],
+		["heights|e=s", "how to summarize heights (keep, median, mean, ca), defaults to $heights_default", {default => $heights_default, arg => "keep|median|mean|ca"}],
+		["limit|l=f", "the minimum support for a node to be annotated",{default => 0.0, arg => "value"}],
+		["fossils|s=s","fossil table (if re-applying calibration points)", {default => $fossils_default, arg => "file" }],
 		["format|f=s", "format of consensus tree file, (nexus, newick) defaults to 'nexus'", {default => 'nexus', arg => "format" }],
 		["prob|p","write node support as probabilities (otherwise fractions)",{}],
 	);
