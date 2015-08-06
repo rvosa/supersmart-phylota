@@ -696,7 +696,7 @@ sub write_taxa_file {
     my @valid_ranks = ("species", "subspecies", "varietas", "forma");
     
     # loop over table and write each entry, if no id at a taxonomic level exists, write "NA"
-    for my $row ( @table ) {
+	for my $row ( @table ) {
         my %h = %$row;
 
         # set cell to NA if no taxon ID for rank        
@@ -705,7 +705,7 @@ sub write_taxa_file {
         
         # omit taxa higher than species
         if ( ! grep /[0-9]+/, @h{@valid_ranks} ) {
-            $log->info("Omitting higher level taxon " . $h{'name'});
+            $log->debug("Omitting higher level taxon " . $h{'name'});
             next;
         }
         print $out join( "\t", $self->encode_taxon_name($h{'name'}),  @h{@levels} ) . "\n";
