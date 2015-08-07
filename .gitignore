@@ -11,6 +11,10 @@ examples/*/clade*
 examples/*/seeds.fa.*
 examples/*/aligned.txt
 examples/*/merged.txt
+examples/*/ExaML_*
+examples/ExaBayes_*
+examples/RAxML_*
+examples/supermatrix.phy.*
 Makefile
 *.komodoproject
 data/GBIF/taxonomy-search-*
