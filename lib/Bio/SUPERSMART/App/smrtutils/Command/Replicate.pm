@@ -89,7 +89,6 @@ sub run {
 	close $fh;
 	$logger->info("wrote replicated tree to $tree_outfile");
 
-	$logger->info('going to write taxa file');
 	$self->_write_taxafile($tree_replicated, $taxa_outfile);
 	
 	my @records = $mt->parse_taxa_file( $taxa_outfile );
@@ -149,10 +148,12 @@ sub _write_taxafile {
 	# identify terminals with artificial names and 
 	my %artificial = map {$_=>1} grep {! $mts->find_node({taxon_name=>$_})} @names; 	
 	@names = grep {! $artificial{$_}} @names;
-		
+	
 	# write initial taxa table to file
-	my @taxa_table = $mts->make_taxa_table( @names );
-	$mts->write_taxa_file( $filename, \@taxa_table );
+	$logger->info("Going to make taxa table");
+	my @taxa_table = $mts->make_taxa_table( \@names );
+	$logger->info("Writing taxa table to $filename");
+	$mts->write_taxa_file( $filename, @taxa_table );
 	
 	# for the species with artificial taxon names, do as follows: first: assign an artificial
 	# ti to the species. Then iteratively select the children of the father of the focal node, and
