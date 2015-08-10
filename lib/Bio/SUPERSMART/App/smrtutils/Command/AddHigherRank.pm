@@ -33,10 +33,12 @@ the new tip name will be 'Phasianidae-Coturnix coturnix'.
 sub options {
     
 	my ($self, $opt, $args) = @_;		
-	my $outfile_default = 'tree-higher.dnd';
+	my $outfile_default = 'tree-higher.nex';
 	my $rank_default = 'family';
+	my $format_default = 'figtree';
 	return (
 		['tree|t=s', 'file name of input tree (newick format)', { arg => 'file', mandatory => 1}],
+		["informat|i=s", "format of input tree file, (nexus, newick, figtree) defaults to $format_default", {default => $format_default, arg => "format" }],
 		['outfile|o=s', "name of the output file, defaults to '$outfile_default'", {default => $outfile_default, arg => 'file'}],	
 		['rank|r=s', "higher level rank to be added to tip labels, default: $rank_default", {default => $rank_default} ],		    
 	    );	
@@ -61,11 +63,17 @@ sub run {
 	my $logger = $self->logger;
 	
 	my $ts = Bio::Phylo::PhyLoTA::Service::TreeService->new;
-	
-	my $tree = parse(
-		'-file'   => $treefile,
-		'-format' => 'newick',
+
+	my $tree;
+	if ( lc $opt->informat  eq "figtree" ) {
+		$tree = $ts->read_figtree( '-file'=> $treefile );
+	} 
+	else {
+		$tree = parse(
+			'-file'   => $treefile,
+			'-format' => $opt->informat,
 	    )->first;
+	}
 	
 	$tree->visit( sub{
 		my $n = shift;
@@ -93,9 +101,7 @@ sub run {
 		}			
 		      });
 
-	open my $out, '>', $outfile or die $!;	
-	print $out $tree->to_newick(nodelabels=>1);
-	close $out;
+	$ts->write_figtree( $tree, $outfile);
 	
 	$logger->info("DONE. Outfile written to $outfile");
 	return 1;
