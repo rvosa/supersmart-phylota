@@ -45,7 +45,7 @@ sub options {
     my $boot_default    = 1;
     return (
         ["supermatrix|s=s", "matrix of concatenated multiple sequece alignments as produced by 'smrt bbmerge'", { arg => "file", default => $matrix_default }],  
-        ["starttree|t=s", "starting tree for tree inference (as produced by smrt classify), mandatory for ExaML inference.", { arg => "file"}],
+        ["taxafile|t=s", "file with taxa table (as produced by smrt taxize), mandatory for ExaML inference.", { arg => "file"}],
         ["inferencetool|i=s", "software tool for backbone inference (RAxML, ExaML or ExaBayes), defaults to $tool_default", {default => $tool_default, arg => "tool"}],
         ["bootstrap|b=i", "number of bootstrap replicates. Will add the support values to the backbone tree. Not applicable to Bayesian methods.", { default => $boot_default }],
         ["ids|n", "return tree with NCBI identifiers instead of taxon names", {}],
@@ -59,13 +59,12 @@ sub validate {
     my ($self, $opt, $args) = @_;
 
     my $sm = $opt->supermatrix;
-    my $st = $opt->starttree;
     my $tool = $opt->inferencetool;
     
     $self->usage_error("Need supermatrix") if not $sm;
     $self->usage_error("File $sm does not exist") unless -e $sm;
     $self->usage_error("File $sm is empty") unless -s $sm;
-    $self->usage_error("Need starttree for ExaML inference") if lc $tool eq 'examl' and not $opt->starttree;
+    $self->usage_error("Need taxa file for ExaML inference") if lc $tool eq 'examl' and not $opt->taxafile;
 }
 
 # run the analysis
@@ -85,8 +84,13 @@ sub run {
 		'bootstrap' => $opt->bootstrap
     );
 
-	if ( my $starttree = $opt->starttree ) {
-		my $usertree = $ts->make_usertree( $supermatrix, $starttree, $self->workdir.'/user.dnd'); 
+	# need starting tree for examl inference
+	if ( lc $opt->inferencetool eq 'examl' ) {
+		# parse the taxa file 
+		my $mt = Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa->new;
+		my @taxatable = $mt->parse_taxa_file($opt->taxafile);
+		my $classification_tree = $ts->make_classification_tree( @taxatable );
+		my $usertree = $ts->make_usertree( $supermatrix, $classification_tree, $self->workdir.'/user.dnd'); 
 		$is->usertree( $usertree );
 	}
     

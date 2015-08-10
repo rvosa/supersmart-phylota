@@ -58,7 +58,6 @@ sub options {
     return (
         ["backbone|b=s", "backbone tree as produced by e.g. 'smart bbinfer' and 'smrt consense', defaults to $tree_default", { arg => "file", default => $tree_default}],
         ["format|f=s", "file format of the backbone tree as produced by 'smrt consense', defaults to $format_default", { default => $format_default, arg => "format" }],
-        ["classtree|c=s", "classification tree as produced by 'smrt classify', only needed with '-g' option", { arg => "file"}],
         ["alnfile|a=s", "list of file locations of merged alignments as produced by 'smrt aln'", { arg => "file", default => $aln_default}],    
         ["taxafile|t=s", "tsv (tab-seperated value) taxa file as produced by 'smrt taxize'", { arg => "file", default => $taxa_default}],
         ["add_outgroups|g", "attempt to automatically add outgroup from sister genus for each clade, if sufficient marker overlap between clades", { default=> 0 } ],
@@ -75,12 +74,7 @@ sub validate {
         $self->usage_error("file $file does not exist") unless (-e $file);
         $self->usage_error("file $file is empty") unless (-s $file);            
     }
-    if ( $opt->add_outgroups ) {
-        my $file = $opt->classtree;
-        $self->usage_error("need classification tree if --add_outgroups option is set") if not $file;
-        $self->usage_error("file $file does not exist") unless (-e $file);
-        $self->usage_error("file $file is empty") unless (-s $file);            
-    }
+	
     if ( $opt->format !~ /^(?:newick|nexus)$/i ) {
         $self->usage_error("only newick and nexus format are supported");
     }   
@@ -94,7 +88,6 @@ sub run{
     my $taxafile     = $opt->taxafile;
     my $backbone     = $opt->backbone;
     my $add_outgroup = $opt->add_outgroups;
-    my $common       = $opt->classtree;
     my $workdir      = $self->workdir;
 
     # instantiate helper objects
@@ -137,13 +130,8 @@ sub run{
     # get one outgroup species for each clade and append to species sets
     if ( $add_outgroup ) {
         
-        # read the classification tree, source of candidate outgroups
-        $logger->info("Going to read classification tree $common");
-        my $classtree = parse_tree(
-            '-format'     => 'newick',
-            '-file'       => $common,
-            '-as_project' => 1,
-        );      
+        # make a classification tree, source of candidate outgroups
+		my $classtree = $ts->make_classification_tree( @taxa );
         $ts->remap_to_ti( $classtree, @taxa );
         
         # iterate over hashes, with key 'ingroup', value is an

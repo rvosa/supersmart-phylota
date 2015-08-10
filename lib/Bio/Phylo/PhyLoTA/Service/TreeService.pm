@@ -713,39 +713,36 @@ for usage (remove unbranched internal nodes, randomly resolve polytomies, deroot
 
 sub process_commontree {
     my ( $self, $commontree, @tipnames ) = @_;
-
-    # read the common tree, map names to IDs, 
+	
+    # map names to IDs, 
     # only retain tips in supermatrix
-    my $tree = parse_tree(
-        '-format' => 'newick',
-        '-file'   => $commontree,
-    );
-    $self->remap_to_ti( $tree );
-    $tree->keep_tips( \@tipnames );
+
+    $self->remap_to_ti( $commontree );
+    $commontree->keep_tips( \@tipnames );
             
     # it can occur that a taxon that has been chosen as an exemplar is
     # not in the classification tree. For example, if a species has one subspecies,
     # but the species and not the subspecies is an exemplar. Then this node
     # is an unbranched internal and not in the classification tree. We therefore
     # add these node(s) to the starting tree
-    my @terminals = @{ $tree->get_terminals };
+    my @terminals = @{ $commontree->get_terminals };
     if ( @terminals != @tipnames ) {
         $log->warn("Tips mismatch: ".scalar(@tipnames)."!=".scalar(@terminals));
 
         # insert unseen nodes into starting tree        
         my %seen = map { $_->get_name => 1 } @terminals;        
-        my ($p)  = @{ $tree->get_internals };
+        my ($p)  = @{ $commontree->get_internals };
         for my $d ( grep { ! $seen{$_} } @tipnames ) {
             $log->warn("Adding node $d (" . $self->find_node($d)->get_name . ") to starting tree");
             my $node = $fac->create_node( '-name' => $d );
             $node->set_parent($p);
-            $tree->insert($node);
+            $commontree->insert($node);
         }
     }
         
     # finalize the tree
-    $tree->resolve->remove_unbranched_internals->deroot;
-    return $tree;
+    $commontree->resolve->remove_unbranched_internals->deroot;
+    return $commontree;
 }
 
 =item make_random_starttree
@@ -771,6 +768,35 @@ sub make_random_starttree {
     return $tree;
 }
 
+=item make_classification_tree
+
+Given a taxa table, creates a tree with classifications according
+to the NCBI taxonomy database
+
+=cut
+
+sub make_classification_tree {
+	my ( $self, @taxatable) = @_;
+	
+	my $mts = Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector->new;
+	
+    # instantiate nodes from infile
+	my @nodes = $mts->get_nodes_for_table( @taxatable );
+	
+	# compute classification tree
+	my $tree = $mts->get_tree_for_nodes(@nodes);
+	
+	# create node labels with taxon names
+	$tree->visit(sub{
+		my $node = shift;		
+		my $label = $node->get_name;
+		$label =~ s/_/\|/g;		
+		$node->set_name( $label );
+	});
+	$tree->remove_unbranched_internals;
+	return ($tree);
+}
+
 =item make_usertree
 
 Given a supermatrix and (optionally) a classification tree, makes a starting tree either 
@@ -788,7 +814,7 @@ sub make_usertree {
     # process the common tree to the right set of tips, resolve it,
     # remove unbranched internals (due to taxonomy) and remove the root
     if ( $commontree ) {
-        $log->info("Going to prepare starttree $commontree for usage");
+        $log->info("Going to prepare starttree for usage");
         $tree = $self->process_commontree($commontree,@tipnames);
     }
     
