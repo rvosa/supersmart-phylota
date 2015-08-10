@@ -120,7 +120,8 @@ sub run {
 		# make calibration table from fossils
 		$logger->info( "Going to make calibration table" );
 		my $table = $cs->create_calibration_table( $tree, @points );
-		if (! $table ) {
+
+		if (! scalar $table->get_rows ) {
 			$logger->warn("Could not create calibration table");
 			return 0;
 		}
