@@ -11,10 +11,6 @@ OUTGROUP=Strepsirrhini
 # creates a table of NCBI taxonomy identifiers (the taxa table).
 smrt taxize -i $NAMES
 
-# extract the common classification tree for the species in the
-# taxa table. produces a newick file with unbranched internal nodes.
-smrt classify
-
 # align all phylota clusters for the species in the taxa table.
 # produces many aligned fasta files and a file listing these
 smrt align

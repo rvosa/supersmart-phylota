@@ -30,14 +30,7 @@ smrt taxize --infile=$NAMES
 # - type:       the type of cluster, usually a 'subtree' from the NCBI taxonomy
 smrt align
 
-# Step 3: write the NCBI taxonomy as a classification tree. This creates a newick tree
-# file ('classification-tree.dnd') with additional, unbranched interior nodes for all
-# applicable taxonomic levels. The tree will likely be highly polytomous, so in steps
-# where we use it as a starting tree we randomly resolve it, and collapse all the
-# unbranched interior nodes.
-smrt classify
-
-# Step 4: assess orthology among PhyLoTA alignments. This step is needed because PhyLoTA
+# Step 3: assess orthology among PhyLoTA alignments. This step is needed because PhyLoTA
 # is unable to perform all-vs-all BLASTing across the entire GenBank (consider the
 # combinatorics here) so instead we do this on the fly just for the alignments that were
 # created in step 2. This step will create numerous aligned FASTA files, each called
@@ -45,7 +38,7 @@ smrt classify
 # will contain a listing of these alignments.
 smrt orthologize
 
-# Step 5: build a supermatrix. This is done by concatenating selected orthologous clusters
+# Step 4: build a supermatrix. This is done by concatenating selected orthologous clusters
 # from Step 4. The clusters are selected by a number of interacting criteria, which can
 # be altered in the configuration file 'supersmart.ini'
 # - BACKBONE_MAX_DISTANCE: the maximum average pairwise distance below which we still
@@ -60,7 +53,7 @@ export SUPERSMART_BACKBONE_MAX_DISTANCE="0.05"
 export SUPERSMART_BACKBONE_MIN_COVERAGE="7"
 smrt bbmerge
 
-# Step 6: build a backbone tree. There are multiple inference tools that can be used for
+# Step 5: build a backbone tree. There are multiple inference tools that can be used for
 # this (raxml, exabayes, examl). Here we use exabayes. The inference is done on the
 # supermatrix constructed in step 5, using the classification tree from step 3 as a
 # starting tree. In this example we follow EXABAYES defaults from supersmart.ini. As a
@@ -71,23 +64,23 @@ smrt bbmerge
 export SUPERSMART_EXABAYES_NUMGENS="100000"
 smrt bbinfer --inferencetool=exabayes --cleanup
 
-# Step 7: reroot the backbone trees. The trees resulting from step 6 are unrooted. There
+# Step 6: reroot the backbone trees. The trees resulting from step 6 are unrooted. There
 # are different ways to root these (using outgroups or by picking the rooting that best
 # fits the taxonomy). Here we fit to the taxonomy: we have two genera so this amounts to
 # the same thing as considering either of these the outgroup with respect to the other.
 # By default produces a file 'backbone-rerooted.dnd'
 smrt bbreroot --smooth
 
-# Step 8: calibrate the backbone trees from step 7. This step uses treePL to create
+# Step 7: calibrate the backbone trees from step 7. This step uses treePL to create
 # ultrametric trees ('chronogram.dnd') using a penalized likelihood approach with
 # age constraints as extracted from the fossils file.
 smrt bbcalibrate --fossiltable=$FOSSILS
 
-# Step 9: build a consensus tree. As we ran exabayes in step 6 we will want to discard
+# Step 8: build a consensus tree. As we ran exabayes in step 6 we will want to discard
 # a burnin. This would be different had we done a bootstrapping analysis in step 6.
 smrt consense --burnin=0.20 --prob
 
-# Step 10: decompose the backbone into clades. This step traverses the consensus tree from
+# Step 9: decompose the backbone into clades. This step traverses the consensus tree from
 # step 9 and breaks it up into monophyletic clades (in principle, genera, unless these are
 # not monophyletic, in which case the decomposition happens at the nearest ancestor that
 # subtends a monophyletic group of genera). For each clade, alignments (produced in step
@@ -98,11 +91,11 @@ export SUPERSMART_CLADE_MAX_DISTANCE="0.1"
 export SUPERSMART_CLADE_MIN_DENSITY="0.3"
 smrt bbdecompose
 
-# Step 11: for each clade, merge the separate clade alignments from step 10 into a single
+# Step 10: for each clade, merge the separate clade alignments from step 10 into a single
 # input NeXML file for *BEAST.
 smrt clademerge --enrich
 
-# Step 12: for each clade, run *BEAST. By default this uses a very small number of
+# Step 11: for each clade, run *BEAST. By default this uses a very small number of
 # generations (100,000), which is strictly intended for testing. It is not possible to
 # make any general recommendations for what the right number is because this depends on a
 # lot of different variables (number of taxa, signal in the data, mixing of the chains)
@@ -110,7 +103,7 @@ smrt clademerge --enrich
 # For this specific example, 20,000,000 generations for each clade appears to work.
 smrt cladeinfer --ngens=20_000_000 --sfreq=1000 --lfreq=1000
 
-# Step 13: graft the clade trees onto the backbone.
+# Step 12: graft the clade trees onto the backbone.
 # We need some general solutions for negative branch lengths. These can happen for
 # example when a pair of exemplars actually doesn't cross the root of the clade they
 # represent. Scaling on their MRCA very often results in the actual root of the clade
@@ -121,5 +114,5 @@ smrt cladeinfer --ngens=20_000_000 --sfreq=1000 --lfreq=1000
 # 3. push the parent deeper (might just move the problem)
 smrt cladegraft
 
-# Step 14: plot the final result
+# Step 13: plot the final result
 smrt-utils plot

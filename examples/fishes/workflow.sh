@@ -1,21 +1,53 @@
-app/smrt taxize -w examples/fishes/ -i examples/fishes/names.txt
+#!/bin/bash
 
-app/smrt classify -w examples/fishes/ -i examples/fishes/species.tsv
+# this shell script demonstrates the steps of the SUPERSMART pipeline
+# from start to finish, as applied to the phylogeny of the primates.
 
-app/smrt align -w examples/fishes/ -i examples/fishes/species.tsv
+NAMES=names.txt
+FOSSILS=fossils.tsv
 
-app/smrt orthologize -w examples/fishes/ -i examples/fishes/aligned.txt
+# perform taxonomic name reconciliation on an input list of names.
+# creates a table of NCBI taxonomy identifiers (the taxa table).
+smrt taxize -i $NAMES
 
-app/smrt bbmerge -w examples/fishes/ -a examples/fishes/merged.txt -t examples/fishes/species.tsv
+# align all phylota clusters for the species in the taxa table.
+# produces many aligned fasta files and a file listing these
+smrt align
 
-app/smrt bbinfer -w examples/fishes/ -s examples/fishes/supermatrix.phy -t examples/fishes/classification-tree.dnd -i raxml
+# assign orthology among the aligned clusters by reciprocal BLAST
+smrt orthologize
 
-app/smrt bbreroot -w examples/fishes/ -b examples/fishes/backbone.dnd -t examples/fishes/species.tsv
+# merge the orthologous clusters into a supermatrix with exemplar
+# species, two per genus
+export SUPERSMART_BACKBONE_MAX_DISTANCE="0.05"
+export SUPERSMART_BACKBONE_MIN_COVERAGE="3"
+smrt bbmerge
 
-app/smrt bbdecompose -w examples/fishes/ -b examples/fishes/backbone-rerooted.dnd -c examples/fishes/classification-tree.dnd -a examples/fishes/merged.txt -t examples/fishes/species.tsv
+# run an exabayes search on the supermatrix, resulting in a backbone
+# posterior sample
+export SUPERSMART_EXABAYES_NUMGENS="100000"
+smrt bbinfer --inferencetool=exabayes --cleanup
 
-app/smrt clademerge -w examples/fishes/ 
+# root the backbone sample  on the outgroup
+smrt bbreroot --smooth
 
-app/smrt cladeinfer -w examples/fishes
+# calibrate the re-rooted backbone tree using treePL
+smrt bbcalibrate -f $FOSSILS
 
-app/smrt cladegraft -w examples/fishes/ -b examples/fishes/backbone-rerooted.dnd 
+# build a consensus
+smrt consense -b 0.2 --prob
+
+# decompose the backbone tree into monophyletic clades. writes a directory
+# with suitable alignments for each clade
+export SUPERSMART_CLADE_MAX_DISTANCE="0.1"
+export SUPERSMART_CLADE_MIN_DENSITY="0.5"
+smrt bbdecompose
+
+# merge all the alignments for each clades into a nexml file
+smrt clademerge --enrich
+
+# run *BEAST for each clade
+smrt cladeinfer --ngens=15_000_000 --sfreq=1000 --lfreq=1000
+
+# graft the *BEAST results on the backbone
+smrt cladegraft

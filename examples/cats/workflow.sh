@@ -17,12 +17,6 @@ FOSSILS=fossils.tsv
  
 smrt taxize --root_taxa $FAMILY,$OUTGROUP --binomials_only 
 
-exit 0
-
-# extract the common classification tree for the species in the
-# taxa table. produces a newick file with unbranched internal nodes.
-smrt classify
-
 # align all phylota clusters for the species in the taxa table.
 # produces many aligned fasta files and a file listing these
 smrt align
@@ -32,7 +26,7 @@ smrt orthologize
 
 # merge the orthologous clusters into a supermatrix with exemplar
 # species, two per genus
-export SUPERSMART_BACKBONE_MAX_DISTANCE="0.05"
+export SUPERSMART_BACKBONE_MAX_DISTANCE="0.1"
 export SUPERSMART_BACKBONE_MIN_COVERAGE="3"
 smrt bbmerge
 
