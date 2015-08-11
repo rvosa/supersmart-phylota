@@ -14,7 +14,6 @@ use Bio::SUPERSMART::App::smrt;
 BEGIN { 
 	use_ok('Bio::SUPERSMART::App::smrt::Command::Taxize'); 
 	use_ok('Bio::SUPERSMART::App::smrt::Command::Align');
-	use_ok('Bio::SUPERSMART::App::smrt::Command::Classify');
 	use_ok('Bio::SUPERSMART::App::smrt::Command::Orthologize');
 	use_ok('Bio::SUPERSMART::App::smrt::Command::BBreroot');
 	use_ok('Bio::SUPERSMART::App::smrt::Command::BBmerge');
@@ -33,7 +32,6 @@ my $log = Bio::Phylo::Util::Logger->new( '-level' => INFO, '-class' => 'main' );
 
 my $workdir = tempdir( CLEANUP => 0, 'DIR' => $ENV{HOME} );
 my $taxafile = "taxa.tsv";
-my $classfile = "classtree.dnd";
 my $alnfile = "aln.txt";
 my $mergefile = "merged.txt";
 my $smfile = "supermatrix.phy";
@@ -62,9 +60,6 @@ sub _output_ok {
 my $result = test_app( Bio::SUPERSMART::App::smrt=> [ "taxize",  "-i", $namesfile, "-o", $taxafile, "-e", "Species", "-w", $workdir, "-l", "taxize.log" ]);
 _output_ok ( "taxize", $result, $taxafile );
 
-$result = test_app( Bio::SUPERSMART::App::smrt=> [ "classify",  "-i", $taxafile, "-o", $classfile , "-w", $workdir, "-v", "-l", "classify.log" ]);
-_output_ok ( "classify", $result, $classfile );
-
 $result = test_app( Bio::SUPERSMART::App::smrt=> [ "align",  "-i", $taxafile, "-o", $alnfile , "-w", $workdir , "-l", "align.log" ]);
 _output_ok ( "align", $result, $alnfile );
 
@@ -74,7 +69,7 @@ _output_ok ( "orthologize", $result, $mergefile );
 $result = test_app( Bio::SUPERSMART::App::smrt=> [ "bbmerge",  "-a",   $mergefile, "-o", $smfile, "-t", $taxafile , "-w", $workdir , "-l", "bbmerge.log" ]);
 _output_ok ( "bbmerge", $result, $smfile );
 
-$result = test_app( Bio::SUPERSMART::App::smrt=> [ "bbinfer",  "-s",   $smfile, "-o", $bbfile, "-t", $classfile , "-w", $workdir , "-i", "examl", "-l", "bbinfer.log" ]);
+$result = test_app( Bio::SUPERSMART::App::smrt=> [ "bbinfer",  "-s",   $smfile, "-o", $bbfile, "-t", $taxafile, "-w", $workdir , "-i", "examl", "-l", "bbinfer.log" ]);
 _output_ok ( "bbinfer", $result, $bbfile );
 
 $result = test_app( Bio::SUPERSMART::App::smrt=> [ "bbreroot",  "-b",  $bbfile, "-o", $bbrefile, "-t", $taxafile , "-w", $workdir , "-l", "bbreroot.log" ]);
@@ -83,7 +78,7 @@ _output_ok ( "bbreroot", $result, $bbrefile );
 $result = test_app( Bio::SUPERSMART::App::smrt=> [ "bbcalibrate",  "-s",   $smfile, "-f", $fossilfile, "-t", $bbrefile, "-o", $chrofile , "-w", $workdir , "-l", "bbcalibrate.log" ]);
 _output_ok ( "bbcalibrate", $result, $chrofile );
 
-$result = test_app( Bio::SUPERSMART::App::smrt=> [ "bbdecompose",  "-b",  $chrofile, "-o", $summfile, "-t", $taxafile, "-c", $classfile, "-a", $alnfile , "-w", $workdir , "-l", "bbdecompose.log" ]);
+$result = test_app( Bio::SUPERSMART::App::smrt=> [ "bbdecompose",  "-b",  $chrofile, "-o", $summfile, "-t", $taxafile, "-a", $alnfile , "-w", $workdir , "-l", "bbdecompose.log" ]);
 _output_ok ( "bbdecompose", $result, $summfile );
 
 $result = test_app( Bio::SUPERSMART::App::smrt=> [ "clademerge" , "-w", $workdir , "-l", "clademerge.log" ]);
