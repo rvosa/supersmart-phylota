@@ -17,7 +17,7 @@ Installation depends on vagrant and Virtualbox, see INSTALL.md, the installation
 COMMANDS
 --------
 The functionality of the pipeline is exposed via the 'smrt' command located in script/.
-The 'smrt' command offers thirteen subcommands, representing each step of the pipeline. 
+The 'smrt' command offers twelve subcommands, representing each step of the pipeline. 
 
 CONFIGURATION
 -------------
