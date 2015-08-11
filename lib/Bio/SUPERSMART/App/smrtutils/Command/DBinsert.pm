@@ -14,7 +14,7 @@ use Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa;
 use base 'Bio::SUPERSMART::App::SubCommand';
 use Bio::SUPERSMART::App::smrtutils qw(-command);
 
-# ABSTRACT: Inserts sequences and taxa into the database
+# ABSTRACT: inserts custom sequences and taxa into the database
 
 =head1 NAME
 
