@@ -9,6 +9,7 @@ use Bio::Phylo::PhyLoTA::Service::TreeService;
 use Bio::SUPERSMART::App::SubCommand;
 use List::MoreUtils qw(uniq);
 use List::Util qw(max);
+use Data::Dumper;
 use base 'Bio::SUPERSMART::App::SubCommand';
 use Bio::SUPERSMART::App::smrt qw(-command);
 
@@ -226,11 +227,13 @@ sub run {
     # we pick the taxa for which the sequences have the highest divergence.
     my @exemplars;
     for my $genus ( sort keys %species_for_genus ) {
-        $log->info("Looking for exemplars in genus $genus");
+		my $gname = $mts->find_node($genus)->taxon_name;
+        $log->info("Looking for exemplars in genus $gname ($genus)");
 
         # select  taxa that are in this genus and are in the candidate exemplars
         my %genus_taxa = map { $_ => 1 } @{ $species_for_genus{$genus} };
         my %genus_candidates = map { $_ => 1 } grep { exists( $candidates{$_} ) } keys %genus_taxa;
+		$log->debug("Initial exemplar candidates : " . Dumper(\%genus_candidates));
 
         # now only keep the ones that have connection within the genus
         for my $can ( sort keys %genus_candidates ) {
@@ -250,6 +253,9 @@ sub run {
                 push @exemplars, $valid_taxa[0];
                 $log->info("Added taxon $valid_taxa[0] as (monotypic) exemplar");
             }
+			else {
+				$log->warn("No exemplars found for genus $gname ($genus) ");
+			}
         }
 
         # if at this point we have two candidates, these are our exemplars
