@@ -129,26 +129,26 @@ sub pmap_pthreads (&@) {
 	my @threads;
 	my @result;
 	my $inc = ceil( $size / $num_workers );
-	$logger->info("pmap pthreads has $num_workers nodes available");
+	$logger->debug("pmap pthreads has $num_workers nodes available");
 	my $thread = 0;
 
 	for ( my $i = 0 ; $i < $size ; $i += $inc ) {
 		++$thread;
 		my $max = ( $i + $inc - 1 ) >= $size ? $size - 1 : $i + $inc - 1;
 		my @subset = @data[ $i .. $max ];
-		$logger->info("Detaching " . scalar(@subset) . " items to thread # " . $thread );
+		$logger->debug("Detaching " . scalar(@subset) . " items to thread # " . $thread );
 		eval {
 			push @threads, threads->create(
 				sub {
 					map {
 						$counter++;
-						$logger->info(
+						$logger->debug(
 							"Thread $thread is processing item # $counter / "
 							. scalar(@subset) );
 
 						# execute code block given in $func with argument
 						my $ret = $func->($_);
-						$logger->info("Thread $thread finished processing item # $counter / "
+						$logger->debug("Thread $thread finished processing item # $counter / "
 									  . scalar(@subset) );
 						$ret;
 					} @subset;
@@ -163,7 +163,7 @@ sub pmap_pthreads (&@) {
 	for my $i ( 1..scalar(@threads) ) {
 		my $thread = $threads[$i-1];
 		my @thread_results = $thread->join;
-		$logger->info("Collecting " . scalar(@thread_results) . " results for thread $i");
+		$logger->debug("Collecting " . scalar(@thread_results) . " results for thread $i");
 		push @result, @thread_results;
 	}
 	return @result;
