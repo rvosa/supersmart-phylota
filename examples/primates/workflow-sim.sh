@@ -36,7 +36,8 @@ cd $SIMDIR
 # Replicate the dataset (final tree, taxa table and alignments)
 smrt-utils replicate -t final.nex -f nexus -a aligned.txt -l replicate.log -v
 # insert simulated sequences and possible artificial taxa into the database
-smrt-utils dbinsert -s aligned-replicated.txt -t taxa-replicated.tsv -v
+# prefix for sequence accessions is the simulation directory
+smrt-utils dbinsert -s aligned-replicated.txt -t taxa-replicated.tsv -p $SIMDIR -v
 
 # Rerun the supersmart pipeline in the directory of the replicated dataset
 smrt orthologize -i aligned-smrt-inserted.txt
@@ -49,3 +50,7 @@ smrt bbdecompose -b consensus.nex -a aligned-smrt-inserted.txt -t taxa-replicate
 smrt clademerge --enrich
 smrt cladeinfer --ngens=15_000_000 --sfreq=1000 --lfreq=1000
 smrt cladegraft
+
+# clean database from artificial sequences
+sqlite3 $SUPERSMART_HOME/data/phylota.sqlite 'delete from seqs where acc like "$SIMDIR%"'
+sqlite3 $SUPERSMART_HOME/data/phylota.sqlite 'delete from nodes_194 where common_name like "$SIMDIR%"'
