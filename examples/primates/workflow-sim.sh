@@ -39,7 +39,6 @@ smrt-utils replicate -t final.nex -f nexus -a aligned.txt -l replicate.log -v
 smrt-utils dbinsert -s aligned-replicated.txt -t taxa-replicated.tsv -v
 
 # Rerun the supersmart pipeline in the directory of the replicated dataset
-smrt classify -i taxa-replicated.tsv
 smrt orthologize -i aligned-smrt-inserted.txt
 smrt bbmerge -t taxa-replicated.tsv -a merged.txt
 smrt bbinfer -i exabayes -s supermatrix.phy
