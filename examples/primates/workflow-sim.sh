@@ -19,13 +19,16 @@
 # as an argument, if not given it defaults to 'simulations/' within the 
 # current workind directory
 
-# parse command-line arguments, if any
+# parse command-line arguments for simulation directory name
 if [ -z "$1" ]
 	then
 	SIMDIR='simulations'
 else
 	SIMDIR=$1
 fi
+
+# make directory to store all files for simulation analysis
+mkdir $SIMDIR
 
 # copy files from previous SUPERSMART run necessary to replicate tree and data
 cp final.nex $SIMDIR
