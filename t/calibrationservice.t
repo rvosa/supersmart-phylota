@@ -49,5 +49,5 @@ my $chronogram = $cs->calibrate_tree(
 );
 ok( $chronogram->to_newick );
 
-my @fossils = $cs->fetch_fossil_dates('Primates');
-isa_ok( $_, 'Bio::Phylo::PhyLoTA::Domain::FossilData' ) for @fossils;
+my @web_fossils = $cs->fetch_fossil_dates('Primates');
+isa_ok( $_, 'Bio::Phylo::PhyLoTA::Domain::FossilData' ) for @web_fossils;
