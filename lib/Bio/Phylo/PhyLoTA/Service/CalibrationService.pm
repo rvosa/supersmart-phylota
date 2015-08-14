@@ -1,7 +1,9 @@
 package Bio::Phylo::PhyLoTA::Service::CalibrationService;
 use strict;
 use warnings;
+use JSON;
 use File::Temp 'tempfile';
+use LWP::UserAgent;
 use Bio::Phylo::IO 'parse_tree';
 use Bio::Phylo::PhyLoTA::Service;
 use Bio::Phylo::PhyLoTA::Domain::FossilData;
@@ -330,6 +332,77 @@ sub read_fossil_table {
     }
 
     return @records;
+}
+
+=item fetch_fossil_dates
+
+Fetches an array of L<Bio::Phylo::PhyLoTA::Domain::FossilData> from
+L<http://fossilcalibrations.org>. Note that this requires a taxon name
+as an argument. "Primates" appears to work. 
+
+XXX: Note that the CalibratedTaxon field that is returned may sometimes
+create difficulties for any subsequent TNRS. For example, for Primates
+we get the following names:
+
+- Primates
+- Strepsirhini
+- Anthropoidea
+- Catarrhini
+- Hominoidea
+- Hominidae
+- Chimpanzee-Human (!!!)
+- Humanity (!!!)
+
+=cut
+
+sub fetch_fossil_dates {
+	my ( $self, $taxon ) = @_;
+	my $url = 'http://fossilcalibrations.org/api/v1/calibrations?clade=' . $taxon;
+	my $ua  = LWP::UserAgent->new;
+	my $res = $ua->get($url);
+	if ( $res->is_success ) {
+		my @records;
+		my $data = decode_json $res->decoded_content;
+		
+		# these are the magic numbers that FC.org uses to 
+		# distinguish CrownvsStem 
+		my %lookup = (
+			'1' => 'stem',
+			'2' => 'crown',
+			'3' => 'unknown',
+		);
+		
+		# check to see if there are any results at all
+		if ( ref $data->{'calibrations'} eq 'ARRAY' ) {
+		
+			# iterate over results
+			for my $c ( @{ $data->{'calibrations'} } ) {
+				delete $c->{'publicationImages'};
+				delete $c->{'treeImages'};
+				my $fossils = delete $c->{'fossils'};
+				my $f = $fossils->[0];
+				
+				# here we rename keys in the hash so that they 
+				# match Bio::Phylo::PhyLoTA::Domain::FossilData				
+				$c->{'CalibratedTaxon'} = delete $c->{'nodeName'};
+				$c->{'MinAge'} = delete $c->{'nodeMinAge'};
+				$c->{'MaxAge'} = delete $c->{'nodeMaxAge'};
+				$c->{'NFos'} = delete $c->{'id'};
+				$c->{'CrownvsStem'} = $lookup{$f->{'locationRelativeToNode'}};
+				
+				# Alarm! We're parsing a literature reference.
+				my $ref = delete $c->{'calibrationReference'};
+				if ( $ref =~ /([^0-9]+?)\s*([0-9]{4})/ ) {
+					( $c->{'NUsrcrFos'}, $c->{'DcrFos'} ) = ( $1, $2 );
+				}
+				push @records, Bio::Phylo::PhyLoTA::Domain::FossilData->new($c);
+			}
+		}
+		return @records;
+	}
+	else {
+		$self->logger->error("Couldn't fetch from fossilcalibrations.org: ".$res->status_line);
+	}
 }
 
 =back
