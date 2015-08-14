@@ -14,6 +14,7 @@ BEGIN {
 my $cs = new_ok('Bio::Phylo::PhyLoTA::Service::CalibrationService');
 my $ts = Bio::Phylo::PhyLoTA::Service::TreeService->new;
 
+
 # read a PROTEUS compatible tab-separated spreadsheet with fossils,
 # returns an array of Bio::Phylo::PhyLoTA::Domain::FossilData objects
 my @fossils = $cs->read_fossil_table("$Bin/testdata/testfossils.tsv");
@@ -47,3 +48,6 @@ my $chronogram = $cs->calibrate_tree(
  	'-calibration_table' => $ct,
 );
 ok( $chronogram->to_newick );
+
+my @fossils = $cs->fetch_fossil_dates('Primates');
+isa_ok( $_, 'Bio::Phylo::PhyLoTA::Domain::FossilData' ) for @fossils;
