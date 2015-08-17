@@ -8,7 +8,7 @@ use Bio::Phylo::IO qw(parse);
 use base 'Bio::SUPERSMART::App::SubCommand';
 use Bio::SUPERSMART::App::smrtutils qw(-command);
 
-# ABSTRACT: Calculates the distance between two phylogenetic trees
+# ABSTRACT: calculates the distance between two phylogenetic trees
 
 =head1 NAME
 
@@ -29,8 +29,8 @@ sub options {
 	my $format_default = 'newick';
 	my $measure_default = 'rf';
 	return (
-		['tree1|t=s', "alignment file(s) to insert into database, multiple files should be separatet by commata", { arg => 'file' }],		
-		['tree2|u=s', "alignment file(s) to insert into database, multiple files should be separatet by commata", { arg => 'file' }],		
+		['tree1|t=s', "tree file", { arg => 'file' }],		
+		['tree2|u=s', "tree file to compare to", { arg => 'file' }],		
 		['treeformat|f=s', "file format of both input trees, defaults to $format_default", { default => $format_default, arg => "format" }],
 		['distance_measure|d=s', "distance measure, currntly supported: rf (Robinson Foulds), defaults to $measure_default", { default => $measure_default}]
 	);	

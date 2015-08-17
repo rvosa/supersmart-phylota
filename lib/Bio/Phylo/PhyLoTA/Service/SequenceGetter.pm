@@ -1311,7 +1311,7 @@ sub merge_alignments {
 	$log->info("Listing merged files in $outfile");
 
 	# remove previous outfile, if exists
-	rm $outfile if -e $outfile;
+	unlink $outfile if -e $outfile;
 	for my $merged ( @merged_files ) {
 		if ( -s $merged ) {	
 			open my $outfh, '>>', $outfile or die $!;
