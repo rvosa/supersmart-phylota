@@ -285,7 +285,9 @@ sub pmap_pfm {
 			alarm( 0 );
 		};
 		if ( $@ ) {
-			$logger->warn("Timeout for item # $counter exceeded!");			
+			if ($@ =~ m/TimeOut/) {
+				$logger->warn("Timeout for item # $counter exceeded!");
+			}
 			$logger->warn($@);
 		}
 
