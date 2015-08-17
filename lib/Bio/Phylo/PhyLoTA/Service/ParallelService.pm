@@ -8,6 +8,7 @@ use Bio::Phylo::Util::Exceptions 'throw';
 
 my $mode;
 my $num_workers;
+my $timeout=-1;
 my $logger = Bio::Phylo::Util::Logger->new;
 
 
@@ -91,6 +92,7 @@ sub import {
 		# load fork manager
 		else {
 			require Parallel::ForkManager;
+			timeout();
 		}
 
 		# get number of processes from config file
@@ -267,13 +269,27 @@ sub pmap_pfm {
 		}
 	);
 
-	foreach my $data (@all_data) {
+	foreach my $data (@all_data) {		
 		$counter++;
+		
 		my $pid = $pm->start and next;
+		my @res = ();
 
-		$logger->info( "Processing item $counter of $total");
-		my @res = &$func($data);
-		$pm->finish( 0, \@res );    # Terminates the child process
+		# wrap execution of function in eval block to catch possible timeouts
+		eval {
+			$SIG{ALRM} = sub { die("TimeOut"); };
+			$logger->debug("Setting timeout to $timeout s") if $timeout > 0;
+			alarm ( $timeout );
+			$logger->info( "Processing item $counter of $total");			
+			@res = &$func( $data );
+			alarm( 0 );
+		};
+		if ( $@ ) {
+			$logger->warn("Timeout for item # $counter exceeded!");			
+			$logger->warn($@);
+		}
+
+		$pm->finish( 0, \@res );    # Terminates the child process		
 	}
 
 	$pm->wait_all_children;
@@ -353,6 +369,19 @@ Getter/setter for the number of worker nodes.
 sub num_workers {
 	$num_workers = shift if @_;
 	return $num_workers;
+}
+
+=item timeout
+
+Getter/setter for the timeout of a function executed in parallel mode.
+Unit is seconds. If not set, -1 (no timeout) is returned. 
+Works only if using mode 'pfm'.
+
+=cut
+
+sub timeout {
+	$timeout = shift || -1;
+	return $timeout;		
 }
 
 =item mode

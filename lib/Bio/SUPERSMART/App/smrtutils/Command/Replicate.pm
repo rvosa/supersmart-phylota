@@ -13,7 +13,7 @@ use Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector;
 use Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa;
 use Bio::Phylo::PhyLoTA::Config;
 use Bio::Phylo::PhyLoTA::Service::TreeService;
-use Bio::Phylo::PhyLoTA::Service::ParallelService;
+use Bio::Phylo::PhyLoTA::Service::ParallelService 'pfm';
 use base 'Bio::SUPERSMART::App::SubCommand';
 use Bio::SUPERSMART::App::smrtutils qw(-command);
 
@@ -105,14 +105,21 @@ sub run {
 		chomp @alnfiles; 
 		close $fh;
 
+		# some replications of alignments can take a very long time or even stall
+		#  (this usually happens when replicating the binary matrix or when using phangorn's modeltest)
+		#  Therefore, a timeout is set and alignments that take too long to simulate are discarded.
+		my $timeout = 7200;  # set timeout to 2h
+		Bio::Phylo::PhyLoTA::Service::ParallelService::timeout( $timeout );
+
 		# replicate all alignments fiven in input align file,
 		# write alignments to file and also create a list with all
 		# newly written alignments
-		open my $outfh, '>>', $aln_outfile or die $!;		
-		pmap {
+		open my $outfh, '>>', $aln_outfile or die $!; 
+		
+		my @replicated = pmap {			
+			my ($aln) = @_; 			
 			
-			my ($aln) = @_; 
-			my $rep_aln = $self->_replicate_alignment($aln, $tree, $tree_replicated );
+			my $rep_aln = $self->_replicate_alignment( $aln, $tree, $tree_replicated );
 			
 			if ( $rep_aln ) {
 				# simulated alignment will have the same file name plus added '-simulated'
@@ -122,15 +129,17 @@ sub run {
 				$logger->info("Writing alignment to $filename");
 				unparse ( -phylo => $rep_aln, -file => $filename, -format=>'fasta' );
 				print $outfh "$filename\n";
+				return $filename;
 			} 
 			else {
 				$logger->warn("Could not write replicated alignment to file; no alignment given");
 			}
-			
 		} @alnfiles;
 		
 		close $outfh;
+		$logger->info("Replicated " . scalar(@replicated) . " of " . scalar(@alnfiles) . " alignments from $aln");
 	}
+
 	$logger->info("DONE. Tree written to $tree_outfile, alignment list written to $aln_outfile, taxa table written to $taxa_outfile" );
 	return 1;
 }
@@ -281,6 +290,10 @@ sub _replicate_alignment {
 	# marker for artificial species
 	$logger->info("simulating binary occurence matrix for alignment $fasta");
 	my $binary_rep = $binary_matrix->replicate('-tree'=>$tree_replicated, '-seed'=>$config->RANDOM_SEED);	
+	if ( ! $binary_rep ) {
+		$logger->warn("Cannot replicate alignment $fasta, replication of marker occurrence matrix failed");
+		return 0;
+	}
 	$logger->debug("simulated binary matrix");
 	# get taxa from replicate that have a simulated marker presence 
 	my %rep_taxa =  map {$_->[0]=>1} grep {$_->[1] == 1} @{$binary_rep->get_raw};
@@ -310,7 +323,7 @@ sub _replicate_alignment {
 	# replicate dna data: estimate model with the original tree and replicate sequences along the replicated tree
 	$logger->info("Determining substitution model for alignment $fasta");
 	my $model = 'Bio::Phylo::Models::Substitution::Dna'->modeltest($matrix);
-
+	
 	$logger->debug("Pruned replicated tree for sequence simulation: " . $pruned->to_newick);
 	$logger->info("Simulating sequences for alignment $fasta");
 	my $rep = $matrix->replicate('-tree'=>$pruned, '-seed'=>$config->RANDOM_SEED, '-model'=>$model);
