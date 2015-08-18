@@ -56,6 +56,7 @@ sub options {
                  ."which the tree is rerooted. Outgroup must be enclosed in quotes.", { arg => "taxon,taxon,..." } ],
 		["outfile|o=s", "name of the output tree file (in newick format), defaults to '$outfile_default'", {default => $outfile_default, arg => "file"}],
 		["smooth|s", "smooth tip heights left and right of root (i.e. midpointify)",{}],
+		["ultrametricize|u", "adjust terminal branch lengths to yield an ultrametric tree",{}],
 	);	
 }
 
@@ -154,6 +155,8 @@ sub run {
 		$ts->remove_internal_names($tree);
         $log->info("Rerooted backbone tree");
 		
+		$tree->ultrametricize if $opt->ultrametricize;
+
 		return( $tree->to_newick )
 
 	} @backbone_trees;
