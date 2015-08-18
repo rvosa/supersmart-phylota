@@ -122,6 +122,7 @@ sub run {
 		# map identifiers
 		$log->debug("Mapping taxon names to taxon IDs");
 		$tree = $ts->remap($tree, %name_to_ti);
+		$tree->resolve;
 
 		# Perform rerooting at outgroup, if given		
 		if ( $outgroup ) {			
@@ -139,7 +140,6 @@ sub run {
 		else {	
 			my $level = $mt->get_highest_informative_level(@records);	
 			$log->debug("highest informative taxon level : $level");		
-			$tree->resolve;	
 			$tree = $ts->reroot_tree($tree, \@records, [$level]);
 		}
 		
