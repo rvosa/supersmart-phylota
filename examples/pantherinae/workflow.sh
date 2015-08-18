@@ -1,12 +1,12 @@
 #!/bin/bash
 
 # This shell script demonstrates the steps of the SUPERSMART pipeline
-# from start to finish, as applied to the phylogeny of the cats using 
-# Hyenas as an outgroup. Below we define the names of in- and outgroup and
+# from start to finish, as applied to the phylogeny of the large cats using 
+# Lynx as an outgroup. Below we define the names of in- and outgroup and
 # a file with a calibration point for the age of the family Felidae
 
-FAMILY=Felidae
-OUTGROUP=Hyaenidae
+SUBFAMILY=Pantherinae
+OUTGROUP=Lynx
 FOSSILS=fossils.tsv
 
 # Perform taxonomic name reconciliation on an input list of names.
@@ -15,7 +15,7 @@ FOSSILS=fossils.tsv
 # are not bonomials, e.g. 'Felis sp. NG192'. The command will by
 # default produce a file 'species.tsv' which contains the taxa table.
  
-smrt taxize --root_taxa $FAMILY,$OUTGROUP --binomials_only 
+smrt taxize --root_taxa $SUBFAMILY,$OUTGROUP --binomials_only 
 
 # align all phylota clusters for the species in the taxa table.
 # produces many aligned fasta files and a file listing these
@@ -33,7 +33,7 @@ smrt bbmerge
 # run an exabayes search on the supermatrix, resulting in a backbone
 # posterior sample
 export SUPERSMART_EXABAYES_NUMGENS="100000"
-smrt bbinfer --inferencetool=exabayes --cleanup
+smrt bbinfer --inferencetool=exabayes --cleanup -t species.tsv
 
 # root the backbone sample  on the outgroup
 smrt bbreroot -g $OUTGROUP --smooth
