@@ -94,7 +94,7 @@ sub run {
 	
     # process in parallel
     my @result = grep { defined $_ and -e $_ } pmap {
-        my $dir = $_;#( $dir ) = @_;
+        my ( $dir ) = @_;
         
         # initialize the container objects
         my $project = $factory->create_project( '-namespaces' => { 'smrt' => $ns } );
