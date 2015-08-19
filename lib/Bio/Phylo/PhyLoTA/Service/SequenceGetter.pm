@@ -828,19 +828,19 @@ sub get_aligned_locus_indices {
 	return @indices;
 }
 
-=item get_markers_for_accession
+=item get_markers_for_gi
 
-Given an accession number, returns a comma-separated list of the short marker name(s)
+Given a GI number, returns a comma-separated list of the short marker name(s)
 with which the sequence was annotated.
 
 =cut
 
 my %marker_cache;
-sub get_markers_for_accession {
-	my ( $self, $acc ) = @_;
-	return @{ $marker_cache{$acc} } if $marker_cache{$acc};
+sub get_markers_for_gi {
+	my ( $self, $gi ) = @_;
+	return @{ $marker_cache{$gi} } if $marker_cache{$gi};
 	my $gb = Bio::DB::GenBank->new();
-	my $seq = $gb->get_Seq_by_acc($acc);
+	my $seq = $gb->get_Seq_by_id($gi);
 
 	# features and subfeatures to query for marker names
 	my %feat = (
@@ -894,7 +894,7 @@ sub get_markers_for_accession {
 		my ($shortest) = sort { length($a) <=> length($b) } @{ $result{$m} };
 		push @markers, $shortest;
 	}
-	$marker_cache{$acc} = [ @markers ];
+	$marker_cache{$gi} = [ @markers ];
 	return @markers;
 }
 

@@ -800,8 +800,13 @@ sub write_marker_table {
 	    my $gi = $_;
 	    $self->logger->debug("Searching marker name for seed gi $gi");
 	    my $marker;
-	    my $acc = $self->single_seq({gi=>$gi})->acc;
-	    my @mk = eval {$sg->get_markers_for_accession($acc)};
+		
+		# retreive marker names from NCBI servers
+	    my @mk = eval { $sg->get_markers_for_gi($gi) };
+		if ($@) {
+			$log->warn("Problems retreiving marker name for gi $gi, $@");
+		}
+		
 	    $self->logger->debug("Found " . scalar(@mk) . " names for gi $gi");
 	    if ( ! scalar @mk ) {
 		    $marker = 'unknown';		    
