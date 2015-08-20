@@ -104,20 +104,25 @@ sub run {
 	#  of by RaXML
 	if ( $opt->rapid_boot ) {
 
-		# do only one iteration, RaXML does the bootstrapping
 		$is->outfile( $base ) ;
+		
+		# do only one iteration, RaXML does the bootstrapping
+		$is->bootstrap(1);
 		$is->configure;
 		my $backbone = $is->run( 'matrix' => $supermatrix, 'rapid_boot' => $bootstrap );  
 
+		# set bootstrap values as figtree annotations to tree
 		my $tree = parse_tree(
 			'-format' => 'newick',
 			'-file'   => $backbone,    	
 			);
 
-		# set bootstrap values as annotations
 		$tree->set_namespaces( 'fig' => _NS_FIGTREE_ );
 		for my $node ( @{$tree->get_internals} ) {
-			$node->set_meta_object('fig:bootstrap', $node->id) if $node->id=~m/[0-9]+/;
+			if ( $node->id=~m/[0-9]+/ ) {
+				$node->set_meta_object('fig:bootstrap', $node->id);
+				$node->id('');
+			}
 		}
 		$ts->remap_to_name( $tree );		
 		$ts->write_figtree( $tree, $self->outfile );

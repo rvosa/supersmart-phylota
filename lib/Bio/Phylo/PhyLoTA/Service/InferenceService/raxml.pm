@@ -45,14 +45,16 @@ sub configure {
     my $tool   = $self->wrapper;
     my $config = $self->config;
 
-    # create run ID
-    my ($volume,$directories,$id) = File::Spec->splitpath( $self->outfile );
-
+	# determine if we can run with multiple threads
+	if ( $config->NODES > $self->bootstrap ) {
+		$tool->T($config->NODES);
+	}
+	
+	my ($volume,$directories,$id) = File::Spec->splitpath( $self->outfile );
     $tool->outfile_name($id);      
     $tool->m($config->RAXML_MODEL);
     $tool->N($config->RAXML_RUNS);
     $tool->p($config->RANDOM_SEED);
-    $tool->T($config->NODES);
 
 	# set starting tree if given
 	if ( my $tree = $self->usertree ) {
@@ -72,9 +74,9 @@ sub run {
     my ( $self, %args ) = @_;
     my $t      = $self->wrapper;
     my $logger = $self->logger;
-    
+
     # create run ID
-    my ($volume,$directories,$id) = File::Spec->splitpath( $t->outfile_name );
+    my $id = $t->outfile_name;
 
     # create output file name
     my $treefile = File::Spec->catfile( $t->w, 'RAxML_bestTree.' . $id );
