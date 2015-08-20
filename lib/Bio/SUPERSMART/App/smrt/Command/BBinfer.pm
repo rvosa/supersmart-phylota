@@ -1,10 +1,11 @@
 package Bio::SUPERSMART::App::smrt::Command::BBinfer;
 use strict;
 use warnings;
-use File::Copy 'move';
+use File::Copy qw(copy move);
 use File::Temp 'tempfile';
 use Bio::Phylo::IO qw(parse parse_tree);
 use Bio::Phylo::Factory;
+use Bio::Phylo::Util::CONSTANT ':namespaces';
 use Bio::Phylo::PhyLoTA::Config;
 use Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa;
 use Bio::Phylo::PhyLoTA::Service::TreeService;
@@ -48,6 +49,7 @@ sub options {
         ["taxafile|t=s", "file with taxa table (as produced by smrt taxize), mandatory for ExaML inference.", { arg => "file"}],
         ["inferencetool|i=s", "software tool for backbone inference (RAxML, ExaML or ExaBayes), defaults to $tool_default", {default => $tool_default, arg => "tool"}],
         ["bootstrap|b=i", "number of bootstrap replicates. Will add the support values to the backbone tree. Not applicable to Bayesian methods.", { default => $boot_default }],
+		["rapid_boot|r", "use RaXML's rapid bootstrap algorithm. Only supported when 'inferencetool' argument is RaXML. Returns single tree with bootstrap values in fgtree/nexus format", {}],
         ["ids|n", "return tree with NCBI identifiers instead of taxon names", {}],
         ["outfile|o=s", "name of the output tree file (in newick format), defaults to '$outfile_default'", {default => $outfile_default, arg => "file"}],
         ["cleanup|x", "if set, cleans up all intermediate files", {}],
@@ -65,6 +67,7 @@ sub validate {
     $self->usage_error("File $sm does not exist") unless -e $sm;
     $self->usage_error("File $sm is empty") unless -s $sm;
     $self->usage_error("Need taxa file for ExaML inference") if lc $tool eq 'examl' and not $opt->taxafile;
+	$self->usage_error("Rapid boostrap only supported when 'inferencetool' argument is RaXML.") if ! (lc $tool eq 'raxml') and $opt->rapid_boot;
 }
 
 # run the analysis
@@ -74,7 +77,7 @@ sub run {
     # collect command-line arguments
     my $supermatrix = $opt->supermatrix;
     my $bootstrap   = $opt->bootstrap;
-                
+    	           
     # instantiate and configure helper objects
     my $ts = Bio::Phylo::PhyLoTA::Service::TreeService->new;     
     my $ss = Bio::Phylo::PhyLoTA::Service::SequenceGetter->new;   
@@ -93,49 +96,78 @@ sub run {
 		my $usertree = $ts->make_usertree( $supermatrix, $classification_tree, $self->workdir.'/user.dnd'); 
 		$is->usertree( $usertree );
 	}
-    
+       
     # run the analysis, process results
     my $base = $self->outfile;
-    
-	pmap {
-		my $i = $_;
-    
-        # assign input matrix
-        my $matrix;
-        if ( $is->is_bayesian or $bootstrap == 1 ) {
-            $matrix = $supermatrix;
-        }
-        else {
-            $matrix = $ss->bootstrap( $supermatrix, $i );
-        }
-        
-        # create replicate settings
-		$is->outfile( "${base}.${i}" );
-		$is->replicate( $i );
+
+	# For RaXML's rapid bootstrap, do not create bootstrap matrices since it's taken care
+	#  of by RaXML
+	if ( $opt->rapid_boot ) {
+
+		# do only one iteration, RaXML does the bootstrapping
+		$is->outfile( $base ) ;
 		$is->configure;
-        
-		# run
-		my $backbone = $is->run( 'matrix' => $matrix );  
-		$self->_append( $backbone, $base . '.trees' );
-		
-		# cleanup, if requested
-		if ( $opt->cleanup ) {
-			unlink $backbone;
-			$is->cleanup;
-			if ( not $is->is_bayesian and $bootstrap != 1 ) {
-				unlink $matrix;
-			}
+		my $backbone = $is->run( 'matrix' => $supermatrix, 'rapid_boot' => $bootstrap );  
+
+		my $tree = parse_tree(
+			'-format' => 'newick',
+			'-file'   => $backbone,    	
+			);
+
+		# set bootstrap values as annotations
+		$tree->set_namespaces( 'fig' => _NS_FIGTREE_ );
+		for my $node ( @{$tree->get_internals} ) {
+			$node->set_meta_object('fig:bootstrap', $node->id) if $node->id=~m/[0-9]+/;
 		}
-    } ( 1 .. $bootstrap );
-    
-    # finalize
-    $self->_process_result( 
-    	$base . '.trees',                       # the set of trees (file)
-    	!$opt->ids,                             # whether to remap
-    	( $bootstrap - 1 || $is->is_bayesian ), # whether to consense
-    	$supermatrix,                           # the supermatrix (file)
-    	$is,                                    # inference service
-    );
+		$ts->remap_to_name( $tree );		
+		$ts->write_figtree( $tree, $self->outfile );
+				
+		if ( $opt->cleanup ) {
+			$is->cleanup;
+			unlink $backbone;
+		}		
+	}
+    else {
+		pmap {
+			my $i = $_;
+			
+			# assign input matrix
+			my $matrix;
+			if ( $is->is_bayesian or $bootstrap == 1 ) {
+				$matrix = $supermatrix;
+			}
+			else {
+				$matrix = $ss->bootstrap( $supermatrix, $i );
+			}
+			
+			# create replicate settings
+			$is->outfile( "${base}.${i}" );
+			$is->replicate( $i );
+			$is->configure;
+			
+			# run
+			my $backbone = $is->run( 'matrix' => $matrix );  
+			$self->_append( $backbone, $base . '.trees' );
+			
+			# cleanup, if requested
+			if ( $opt->cleanup ) {
+				unlink $backbone;
+				$is->cleanup;
+				if ( not $is->is_bayesian and $bootstrap != 1 ) {
+					unlink $matrix;
+				}
+			}
+		} ( 1 .. $bootstrap );
+
+		# finalize
+		$self->_process_result( 
+			$base . '.trees',                       # the set of trees (file)
+			!$opt->ids,                             # whether to remap
+			( $bootstrap - 1 || $is->is_bayesian ), # whether to consense
+			$supermatrix,                           # the supermatrix (file)
+			$is,                                    # inference service
+			);		
+    }
     unlink $self->workdir . '/user.dnd' if $opt->cleanup;
     return 1;
 }
@@ -159,19 +191,21 @@ sub _append {
 # process the inferred tree, e.g. by mapping identifiers
 sub _process_result {
     my ( $self, $backbone, $remap, $consense, $matrix, $service ) = @_;
+
     my $ts = Bio::Phylo::PhyLoTA::Service::TreeService->new;
     my $outfile = $self->outfile;
-    
+
     # map ID to name
     if ( $remap ) {
-	my $ms  = Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector->new;
-	my $mt  = Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa->new;		
-	my %map = map { $_ => $ms->find_node($_)->taxon_name } $mt->get_supermatrix_taxa($matrix);
+		my $ms  = Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector->new;
+		my $mt  = Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa->new;		
+
+		my %map = map { $_ => $ms->find_node($_)->taxon_name } $mt->get_supermatrix_taxa($matrix);
         $map{$_} =~ s/ /_/g for keys %map;		
-	my ( $fh, $filename ) = tempfile();
-	close $fh;
-	$ts->remap_newick( $backbone => $filename, %map );
-	move( $filename => $outfile );
+		my ( $fh, $filename ) = tempfile();
+		close $fh;
+		$ts->remap_newick( $backbone => $filename, %map );
+		move( $filename => $outfile );
         unlink $backbone;
     }
     

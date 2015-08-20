@@ -79,19 +79,25 @@ sub run {
     # create output file name
     my $treefile = File::Spec->catfile( $t->w, 'RAxML_bestTree.' . $id );
 
-    # configure bootstrap options   
-    if ( $args{'boot'} ) {
+    # configure rapid bootstrap options   
+    if ( $args{'rapid_boot'} ) {
         
-        # set rapid bootstrap analysis
-        $t->f('a');     
-        
+		# Do ML search and boostrapping in one go
+		$t->f('a');
+
         # bootstrap random seed 
         $t->x($self->config->RANDOM_SEED);            
-        $treefile = File::Spec->catfile( $t->w, 'RAxML_bipartitions.' . $id );     
-    }   
 
+		# we will return the best ML tree annotated with bootstrap values as node labels
+        $treefile = File::Spec->catfile( $t->w, 'RAxML_bipartitions.' . $id );
+
+		# set number of rapid boostrap replicates; override number of runs
+		$t->N($args{'rapid_boot'});
+		
+    }   
     # run raxml, returns bioperl tree
     my $bptree = $t->run($args{'matrix'});          
+	
     $logger->fatal('RAxML inference failed; outfile not present') if not -e $treefile; 
     return $treefile;
 }
@@ -107,6 +113,11 @@ sub cleanup {
     my $dir = $self->wrapper->w;
     my $outstem = $self->wrapper->outfile_name;
     unlink $dir . '/RAxML_info.' . $outstem;
+    unlink $dir . '/RAxML_bipartitionsBranchLabels.' . $outstem;
+    unlink $dir . '/RAxML_bipartitions' . $outstem;
+	unlink $dir . '/RAxML_bestTree.' . $outstem;
+	unlink $dir . '/RAxML_bootstrap.' . $outstem;
+	
     opendir my $dh, $dir or die $!;
     while ( my $entry = readdir $dh ) {
         for my $prefix ( qw(parsimonyTree log result) ) {
