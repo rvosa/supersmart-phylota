@@ -25,15 +25,16 @@ BBinfer.pm - inference of genus-level backbone tree
 
 =head1 SYNOPSIS
 
-smrt bbinfer [-h ] [-v ] [-w <dir>] -s <file> -t <file> [-i <tool>] [-o <file>] 
+smrt bbinfer [-h ] [-v ] [-w <dir>] -s <file> -t <file> [-i <tool>] [-o <file>] [-r ]
 
 =head1 DESCRIPTION
 
 Given an input supermatrix (in interleaved PHYLIP format), infers a backbone tree or set
 of trees. In the case of maximum likelihood inference, the set of trees are bootstrapped
-replicates (this applies to the tools ExaML and RAxML, currently). For ExaBayes, this
-is sample of the posterior distribution of trees. The tree(s) resulting from this command 
-are written to file.
+replicates (this applies to the tools ExaML and RAxML, currently). For large amounts of data, 
+RAxML's fast bootstrap option provides a feasible way to obtain abackbone phylogeny. For ExaBayes, this
+the set is a sample of the posterior distribution of trees. The tree(s) resulting from this command 
+are written to the specified output file.
 
 =cut
 
@@ -49,7 +50,7 @@ sub options {
         ["taxafile|t=s", "file with taxa table (as produced by smrt taxize), mandatory for ExaML inference.", { arg => "file"}],
         ["inferencetool|i=s", "software tool for backbone inference (RAxML, ExaML or ExaBayes), defaults to $tool_default", {default => $tool_default, arg => "tool"}],
         ["bootstrap|b=i", "number of bootstrap replicates. Will add the support values to the backbone tree. Not applicable to Bayesian methods.", { default => $boot_default }],
-		["rapid_boot|r", "use RAxML's rapid bootstrap algorithm. Only supported when 'inferencetool' argument is RAxML. Returns single tree with bootstrap values in fgtree/nexus format", {}],
+		["rapid_boot|r", "use RAxML's rapid bootstrap algorithm. Only supported when 'inferencetool' argument is RAxML. Returns single consensus tree with bootstrap values in fgtree/nexus format", {}],
         ["ids|n", "return tree with NCBI identifiers instead of taxon names", {}],
         ["outfile|o=s", "name of the output tree file (in newick format), defaults to '$outfile_default'", {default => $outfile_default, arg => "file"}],
         ["cleanup|x", "if set, cleans up all intermediate files", {}],
