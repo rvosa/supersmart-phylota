@@ -59,7 +59,7 @@ sub run {
 	my ($self, $opt, $args) = @_;    
 	my $treefile = $opt->tree;
 	my $outfile = $opt->outfile;
-	my $rank = $opt->rank;
+	my $rank = lc $opt->rank;
 	my $logger = $self->logger;
 	
 	my $ts = Bio::Phylo::PhyLoTA::Service::TreeService->new;
