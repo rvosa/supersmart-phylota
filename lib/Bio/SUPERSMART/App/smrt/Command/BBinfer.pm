@@ -50,7 +50,7 @@ sub options {
         ["taxafile|t=s", "file with taxa table (as produced by smrt taxize), mandatory for ExaML inference.", { arg => "file"}],
         ["inferencetool|i=s", "software tool for backbone inference (RAxML, ExaML or ExaBayes), defaults to $tool_default", {default => $tool_default, arg => "tool"}],
         ["bootstrap|b=i", "number of bootstrap replicates. Will add the support values to the backbone tree. Not applicable to Bayesian methods.", { default => $boot_default }],
-		["rapid_boot|r", "use RAxML's rapid bootstrap algorithm. Only supported when 'inferencetool' argument is RAxML. Returns single consensus tree with bootstrap values in fgtree/nexus format", {}],
+		["rapid_boot|r", "use RAxML's rapid bootstrap algorithm. Only supported when 'inferencetool' argument is RAxML. Returns single consensus tree with bootstrap values in figtree/nexus format", {}],
         ["ids|n", "return tree with NCBI identifiers instead of taxon names", {}],
         ["outfile|o=s", "name of the output tree file (in newick format), defaults to '$outfile_default'", {default => $outfile_default, arg => "file"}],
         ["cleanup|x", "if set, cleans up all intermediate files", {}],

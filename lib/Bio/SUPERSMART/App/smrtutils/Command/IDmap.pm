@@ -36,7 +36,7 @@ sub options {
 		['treefile|t=s', "tree files", { arg => 'file' }],		
 		['format|f=s', "file format of both input trees, defaults to $format_default. Supported formats: newick, nexus, figtree (nexus)", { default => $format_default, arg => "format" }],
 		["outfile|o=s", "name of the output tree file (newick format) defaults to $outfile_default", { default=> $outfile_default, arg => "file"}],    	    
-		['outformat|u=s', "file format of output tree, defaults to 'format'. Supported formats: newick, nexus, figtree (nexus)", { arg => "format" }],
+		['outformat|u=s', "file format of output tree, defaults to the value of the 'format' argument. Supported formats: newick, nexus, figtree (nexus)", { arg => "format" }],
 	    );	
 }
 
