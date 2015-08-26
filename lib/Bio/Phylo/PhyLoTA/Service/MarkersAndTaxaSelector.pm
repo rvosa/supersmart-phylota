@@ -46,12 +46,14 @@ my $fac = Bio::Phylo::Factory->new;
 my $log = Bio::Phylo::Util::Logger->new;
 
 # these are all ranks in NCBI taxonomy which are considered in SUPERSMART. 
-my @taxonomic_ranks = ('superkingdom', 'kingdom', 'subkingdom', 'superphylum', 'phylum',
-                               'subphylum', 'superclass', 'class', 'subclass', 'infraclass', 'superorder',
-                               'order', 'suborder', 'infraorder', 'parvorder', 'superfamily', 'family',
-                               'subfamily', 'tribe', 'subtribe', 'genus', 'subgenus', 'species group',
-                               'species subgroup', 'species', 'subspecies','varietas', 'forma');
+my @TAXONOMIC_RANKS = ('superkingdom', 'kingdom', 'subkingdom', 'superphylum', 'phylum',
+					   'subphylum', 'superclass', 'class', 'subclass', 'infraclass', 'superorder',
+					   'order', 'suborder', 'infraorder', 'parvorder', 'superfamily', 'family',
+					   'subfamily', 'tribe', 'subtribe', 'genus', 'subgenus', 'species group',
+					   'species subgroup', 'species', 'subspecies','varietas', 'forma');
 
+# ignore taxa with these names
+my @IGNORE_PATTERNS = ('unidentified', 'environmental_sample');
 
 =over
 
@@ -301,12 +303,12 @@ sub expand_taxa {
 
         my @result = ();
 
-        my ($index) = grep { uc $taxonomic_ranks[$_] eq uc $lowest_rank } 0..$#taxonomic_ranks;
+        my ($index) = grep { uc $TAXONOMIC_RANKS[$_] eq uc $lowest_rank } 0..$#TAXONOMIC_RANKS;
         if (! $index){
                 $log->warn("invalid lowest taxon rank '$lowest_rank', considering all ranks for taxa expansion");
         }
         # make subset of ranks that are considered, add 'no rank'
-        my @valid_ranks = @taxonomic_ranks[ 0 .. $index ];
+        my @valid_ranks = @TAXONOMIC_RANKS[ 0 .. $index ];
         push @valid_ranks, 'no rank';
                 
         my @nodes = $self->get_nodes_for_names( @root_taxa );
@@ -361,7 +363,7 @@ Getter for all taxonomic ranks which are considered
 
 sub get_taxonomic_ranks {
     my $self = shift;
-    return @taxonomic_ranks;
+    return @TAXONOMIC_RANKS;
 }
 
 =item get_outgroup_taxa
@@ -616,8 +618,18 @@ sub make_taxa_table {
 		@names = grep {/^\w+\s+\w+\z/} @names;
 		my $diff = $cnt - scalar(@names);
 		$log->info("Removed $diff taxon names that are not binomials");
+		
 	}
-    
+
+    # filter further undesired taxon names such as 'unidentified'
+	for my $pattern ( @IGNORE_PATTERNS ) {
+		my @unwanted = grep { /$pattern/ } @names;
+		if ( scalar (@unwanted) ) {
+			$log->info("Removing taxa with names: " . join(", ", @unwanted));
+			@names = grep { ! /$pattern/ } @names;
+		}
+	}
+	
     # this will take some time to do the taxonomic name resolution in the
     # database and with webservices. The below code runs in parallel
     my @result = pmap {

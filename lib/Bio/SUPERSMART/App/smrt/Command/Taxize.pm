@@ -25,7 +25,10 @@ $ smrt taxize [-v ] [-w <dir>] -i <file> [-o <file>] [-e <rank>]
 Performs taxonomic name resolution by mapping a provided list of input names onto the 
 NCBI taxonomy. Optionally expands the higher input taxa to the specified lower taxon, 
 e.g. to expand a named Order to its constituent species. Produces a table that lists 
-all resolved (and expanded) taxa and their higher classification.
+all resolved (and expanded) taxa and their higher classification. Optionally, non-binomial 
+species names can be filtered out. By default, taxize also filters out taxon names containing
+the keywords 'unidentified' and 'environmental_sample'.
+
 
 =cut
 
