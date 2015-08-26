@@ -53,7 +53,7 @@ my @TAXONOMIC_RANKS = ('superkingdom', 'kingdom', 'subkingdom', 'superphylum', '
 					   'species subgroup', 'species', 'subspecies','varietas', 'forma');
 
 # ignore taxa with these names
-my @IGNORE_PATTERNS = ('unidentified', 'environmental_sample');
+my @IGNORE_PATTERNS = ('unidentified', 'environmental*.sample');
 
 =over
 
