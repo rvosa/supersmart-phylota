@@ -215,6 +215,8 @@ sub run{
 		# for the given set of taxa and alignments, get all subsets of taxa that share at least one marker
 		my @all_taxa = map {@$_} map {values(%$_)} @clades;
 		my %adj = $mts->generate_marker_adjacency_matrix(\@clade_alignments, [keys %outgroup, keys %ingroup]);
+
+		# get all subsets of taxa that share at least one marker
 		my @subsets = @{$mts->get_connected_taxa_subsets(\%adj)};
 	
 		# sort subsets by size, decreasing
@@ -235,7 +237,12 @@ sub run{
 		else {			
 			_write_clade_alignments( $i, \@clade_alignments, \@set, $self->workdir );
 			# write outgroup to file (skipped if already exists)
-			_write_outgroup($i,[keys %outgroup],$workdir) if $add_outgroup;			
+			_write_outgroup($i,[keys %outgroup],$workdir) if $add_outgroup;
+			# write taxa file to clade directory
+			my @names = map { $mts->find_node($_)->taxon_name } @set;
+			my @taxa_table = $mts->make_taxa_table( \@names );
+			my $taxafile = "clade$i/species.tsv";
+			$mts->write_taxa_file( $taxafile, @taxa_table );
 		}		
 		
 	}  ( 0..$#clades);
