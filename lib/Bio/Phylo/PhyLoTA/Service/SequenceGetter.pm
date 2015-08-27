@@ -839,8 +839,20 @@ my %marker_cache;
 sub get_markers_for_gi {
 	my ( $self, $gi ) = @_;
 	return @{ $marker_cache{$gi} } if $marker_cache{$gi};
-	my $gb = Bio::DB::GenBank->new( '-retrieval_type' => 'io_string' );
-	my $seq = $gb->get_Seq_by_id($gi);
+	my $log = $self->logger;
+	my $gb = Bio::DB::GenBank->new();
+
+        # see Bio::DB::WebDBSeqI, this needs to be set to string because otherwise
+        # we fork a new process, and these forked children aren't being cleaned up so
+        # they accumulate over time
+        $gb->retrieval_type('io_string');
+	my $seq;
+	eval { $seq = $gb->get_Seq_by_id($gi) };
+	if ( $@ ) {
+		$log->warn("Unable to fetch $gi");
+		$log->debug($@);
+		return ();
+	}
 
 	# features and subfeatures to query for marker names
 	my %feat = (
