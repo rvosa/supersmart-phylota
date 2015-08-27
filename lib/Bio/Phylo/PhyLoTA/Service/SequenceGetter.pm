@@ -839,7 +839,7 @@ my %marker_cache;
 sub get_markers_for_gi {
 	my ( $self, $gi ) = @_;
 	return @{ $marker_cache{$gi} } if $marker_cache{$gi};
-	my $gb = Bio::DB::GenBank->new();
+	my $gb = Bio::DB::GenBank->new( '-retrieval_type' => 'io_string' );
 	my $seq = $gb->get_Seq_by_id($gi);
 
 	# features and subfeatures to query for marker names
