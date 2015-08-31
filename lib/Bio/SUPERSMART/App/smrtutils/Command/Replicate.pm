@@ -4,6 +4,7 @@ use strict;
 use warnings;
 
 use File::Spec;
+use Data::Dumper;
 
 use Bio::Phylo::IO qw(parse parse_tree unparse);
 use Bio::Phylo::Util::CONSTANT ':objecttypes';
@@ -84,6 +85,7 @@ sub run {
 
 	# replicate tree and write to file
 	my $tree_replicated = $self->_replicate_tree($tree)->first;
+	
 	open my $fh, '>', $tree_outfile or die $!;	
 	print $fh $tree_replicated->to_newick( nodelabels => 1 );
 	close $fh;
@@ -118,9 +120,9 @@ sub run {
 		
 		my @replicated = pmap {			
 			my ($aln) = @_; 			
-			
+
 			my $rep_aln = $self->_replicate_alignment( $aln, $tree, $tree_replicated );
-			
+						      		  
 			if ( $rep_aln ) {
 				# simulated alignment will have the same file name plus added '-simulated'
 				my ( $volume, $directories, $filename ) = File::Spec->splitpath( $aln );				
@@ -178,7 +180,7 @@ sub _write_taxafile {
 	# iterate over all artificial species, assign taxon id and append entry to taxa table
 	for my $an ( keys %artificial ) {				
 		(my $name = $an) =~ s/ /_/g; 
-		$logger->debug("Looking for closest non-artificial relative of atrificial species $name");
+		$logger->debug("Looking for closest non-artificial relative of artificial species $name");
 		my ($node)  = grep {$_->get_name eq $name} @{$tree->get_terminals};
 		my $relative;
 		
@@ -236,6 +238,12 @@ sub _replicate_alignment {
 	my $logger = $self->logger;
 	my $config = Bio::Phylo::PhyLoTA::Config->new;
 	
+	if ( ! ( -e $fasta and -s $fasta ) ) {
+		$logger->warn("Alignment file $fasta does not exist, skipping");
+		return 0;
+	}
+				
+
 	$logger->info("Going to replicate alignment $fasta");
 	
 	my $project = parse(
@@ -276,9 +284,23 @@ sub _replicate_alignment {
 	# We will therefore prune set of sequences. This is done by simulating a binary matrix (character is the 
 	# presence/absensce of marker) using a birth-death process
 	
+	# collect all taxa from alignments that are present in replicated tree
+	my %aln_taxa = map{ $_->get_name=>1 }  @{ $matrix->get_entities };
+	my $orig_taxa_cnt =  scalar(keys(%aln_taxa));
+	%aln_taxa = map {$_=>1} grep { exists $tree_taxa {$_} } keys(%aln_taxa);
+		
+	# it can occur that a taxon from the alignment did not end up in the final and thus also in the replicated tree.
+	#  in this case, add taxa from the replicated tree to match the original number of taxa in the alignment
+	while ( scalar(keys %aln_taxa) < $orig_taxa_cnt ) {
+		my @terminal_ids = keys %tree_taxa;
+		my $id = $terminal_ids[rand @terminal_ids];
+		$logger->warn("not all taxa from alignment in replicated tree, adding random taxon $id");
+		$aln_taxa{$id} = 1;
+	}
+	
 	# make binary matrix from current alignment
 	my $binary = [];
-	my %aln_taxa = map{ $_->get_name=>1 } @{ $matrix->get_entities };
+	
 	for my $tax ( keys %tree_taxa ) {
 		my $present = $aln_taxa{$tax} ? '1':'0';
 		push @$binary, [$tax=>$present];			
@@ -295,17 +317,17 @@ sub _replicate_alignment {
 		return 0;
 	}
 	$logger->debug("simulated binary matrix");
+
 	# get taxa from replicate that have a simulated marker presence 
 	my %rep_taxa =  map {$_->[0]=>1} grep {$_->[1] == 1} @{$binary_rep->get_raw};
+	    	
+	$logger->info(scalar(keys %aln_taxa) . " taxa in original alignment, " . scalar(keys %rep_taxa) . " taxa simulated to have marker");
 	
-	$logger->info("Number of taxa in alignment to replicate : " . scalar(keys %aln_taxa));
-	$logger->info("Number of taxa estimated from binary simulation : " . scalar(keys %rep_taxa));	
-	
-	# it can happen that no taxon is predicted to have the alignment,
-	# in this case, take the original taxa from the alignment
+	# it can happen that too few taxa are predicted to have the alignment,
+	# in this case, randomly add taxa until the alignment will be of size 3
 	if ( scalar(keys %rep_taxa) < 3 ) {
-		$logger->warn("setting taxa for replicating $fasta to original alignment taxa, binary simulation yielded < 3 taxa");
-		%rep_taxa = %aln_taxa;
+		$logger->warn("Binary simulation yielded < 3 taxa, skipping");
+		return 0;
 	}	
 
 	# Lets not simulate all tips, that would take too long. Instead, 
@@ -316,7 +338,7 @@ sub _replicate_alignment {
 	$pruned->keep_tips( [keys %aln_taxa, keys %rep_taxa] );
 	
 	if ( scalar(@{$pruned->get_terminals}) < 3 ) {
-		$logger->warn("Less than three taxa in pruned replicated tree. Binary simulation probably yielded too few taxa. Cannot replicate alignment.");
+		$logger->warn("Less than three taxa in pruned replicated tree. Binary simulation probably yielded too few taxa. Cannot replicate alignment $fasta.");
 		return 0;
 	}
 
@@ -331,6 +353,7 @@ sub _replicate_alignment {
 	# throw out sequences that are not for our desired taxa
 	for my $seq ( @{ $rep->get_entities }) {
 		if ( ! $rep_taxa{$seq->get_name} ){
+			$logger->debug("Removing seq for taxon " . $seq->get_name . " from replicated alignment");
 			$rep->delete($seq);
 			next;
 		}
@@ -339,9 +362,11 @@ sub _replicate_alignment {
 		$defline =~ s/>//g;
 		$seq->set_generic('fasta_def_line', $defline);		
 	}	
-       	$logger->info('Number of sequences in replicated alignment : ' . scalar(@{$rep->get_entities}));
-	
-	return $rep;
+	$logger->info(scalar(@{$matrix->get_entities}) . ' seqs in original, ' . scalar(@{$rep->get_entities}) . ' in replicated alignmnent');
+	my @orig_names = map { $_->get_name } @{ $matrix->get_entities };
+	my @rep_names = map { $_->get_name } @{ $rep->get_entities };
+
+    return $rep;
 }
 
 1;
