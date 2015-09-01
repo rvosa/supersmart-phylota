@@ -815,8 +815,10 @@ sub write_marker_table {
 		
 		# retreive marker names from NCBI servers
 	    my @mk = eval { $sg->get_markers_for_gi($gi) };
-		if ($@) {
-			$log->warn("Problems retreiving marker name for gi $gi, $@");
+		if ($@) {			
+			my $msg = $@;
+			$log->warn("Could not retrieve marker name for gi $gi");
+			$log->debug($msg);
 		}
 		
 	    $self->logger->debug("Found " . scalar(@mk) . " names for gi $gi");

@@ -105,8 +105,10 @@ sub run {
         $log->info("Going to enrich alignments in $workdir/$dir");
         my @matrices;
 
-		# read list of merged alignment files
+		# read list of merged alignment files		
 		my $mergedfile = "${workdir}/${dir}/merged.txt";
+		return undef unless -e $mergedfile and -s $mergedfile; 
+
 		$log->debug("Trying to open merged file $mergedfile");
 		open my $fh, '<', $mergedfile or die $!;
 		my @files;
