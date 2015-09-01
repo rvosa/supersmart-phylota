@@ -16,11 +16,11 @@ smrt taxize -i $NAMES
 smrt align
 
 # assign orthology among the aligned clusters by reciprocal BLAST
+export SUPERSMART_BACKBONE_MAX_DISTANCE="0.05"
 smrt orthologize
 
 # merge the orthologous clusters into a supermatrix with exemplar
 # species, two per genus
-export SUPERSMART_BACKBONE_MAX_DISTANCE="0.05"
 export SUPERSMART_BACKBONE_MIN_COVERAGE="3"
 smrt bbmerge
 
