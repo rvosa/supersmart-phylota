@@ -291,7 +291,9 @@ sub _replicate_alignment {
 		
 	# it can occur that a taxon from the alignment did not end up in the final and thus also in the replicated tree.
 	#  in this case, add taxa from the replicated tree to match the original number of taxa in the alignment
-	while ( scalar(keys %aln_taxa) < $orig_taxa_cnt ) {
+	while ( scalar(keys %aln_taxa) < $orig_taxa_cnt and scalar(keys %aln_taxa) < scalar(keys(%tree_taxa)) ) {
+		print "Number of orig. taxa : $orig_taxa_cnt \n";
+		print "Number of tree taxa : " . scalar(keys(%tree_taxa)) . "\n";
 		my @terminal_ids = keys %tree_taxa;
 		my $id = $terminal_ids[rand @terminal_ids];
 		$logger->warn("not all taxa from alignment in replicated tree, adding random taxon $id");
