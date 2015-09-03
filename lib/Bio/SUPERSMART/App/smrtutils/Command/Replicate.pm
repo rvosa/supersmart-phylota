@@ -107,16 +107,10 @@ sub run {
 		chomp @alnfiles; 
 		close $fh;
 
-		# some replications of alignments can take a very long time or even stall
-		#  (this usually happens when replicating the binary matrix or when using phangorn's modeltest)
-		#  Therefore, a timeout is set and alignments that take too long to simulate are discarded.
-		my $timeout = 7200;  # set timeout to 2h
-		Bio::Phylo::PhyLoTA::Service::ParallelService::timeout( $timeout );
-
 		# replicate all alignments fiven in input align file,
 		# write alignments to file and also create a list with all
 		# newly written alignments
-		open my $outfh, '>>', $aln_outfile or die $!; 
+		open my $outfh, '>>', $aln_outfile or die $!;
 		
 		my @replicated = pmap {			
 			my ($aln) = @_; 			
@@ -292,8 +286,6 @@ sub _replicate_alignment {
 	# it can occur that a taxon from the alignment did not end up in the final and thus also in the replicated tree.
 	#  in this case, add taxa from the replicated tree to match the original number of taxa in the alignment
 	while ( scalar(keys %aln_taxa) < $orig_taxa_cnt and scalar(keys %aln_taxa) < scalar(keys(%tree_taxa)) ) {
-		print "Number of orig. taxa : $orig_taxa_cnt \n";
-		print "Number of tree taxa : " . scalar(keys(%tree_taxa)) . "\n";
 		my @terminal_ids = keys %tree_taxa;
 		my $id = $terminal_ids[rand @terminal_ids];
 		$logger->warn("not all taxa from alignment in replicated tree, adding random taxon $id");
@@ -346,7 +338,13 @@ sub _replicate_alignment {
 
 	# replicate dna data: estimate model with the original tree and replicate sequences along the replicated tree
 	$logger->info("Determining substitution model for alignment $fasta");
-	my $model = 'Bio::Phylo::Models::Substitution::Dna'->modeltest($matrix);
+
+	# set timeout to 2h
+	my $timeout = 7200;
+	my $model = 'Bio::Phylo::Models::Substitution::Dna'->modeltest( '-matrix' => $matrix, '-timeout' => $timeout);
+	if ( ! $model ) {
+		$logger->warn("")
+	}
 	
 	$logger->debug("Pruned replicated tree for sequence simulation: " . $pruned->to_newick);
 	$logger->info("Simulating sequences for alignment $fasta");
