@@ -80,7 +80,7 @@ Arguments:
  -tree     => A Bio::Phylo::Forest::Tree object
  -calibration_table => A Bio::Phylo::PhyLoTA::Domain::CalibrationTable object
  -treepl_smooth     => (Optional) TreePL smoothing factor
- -nthreads             => (Optional) Number of threads
+ -nthreads          => (Optional) Number of threads
 
 =cut
 
@@ -91,7 +91,7 @@ sub calibrate_tree {
 	my $numsites  = $args{'-numsites'}          || die "Need -numsites argument";
 	my $ct        = $args{'-calibration_table'} || die "Need -calibration_table argument";
 	my $tree      = $args{'-tree'}              || die "Need -tree argument";
-	my $nthreads     = $args{'-nodes'}             || 1;
+	my $nthreads  = $args{'-nodes'}             || 1;
 	
 	my $seed = $config->RANDOM_SEED;
 	my ( $ifh, $writetree ) = tempfile();
@@ -111,7 +111,6 @@ nthreads = $nthreads
 seed = $seed
 HEADER
 
-    $ct->remove_orphan_taxa;
 	# print MRCA statements
 	print $tfh $ct->to_string;
 	# run treePL
@@ -235,6 +234,12 @@ sub create_calibration_table {
 			next FOSSIL;
 		}
 		
+		if ( scalar(@tree_nodes) == 1 ) {
+			my $node = $tree_nodes[0];
+			$logger->info("Fossil " . $fd->fossil_name . " has only terminal " . $node->get_name . " to calibrate. Adding sister nodes to place on crown/stem node of terminal");
+			push @tree_nodes, @{ $node->get_sisters };
+		}
+		
 		my $mrca  = $tree->get_mrca(\@tree_nodes);
 		
 		# for stem fossils, take the parent of the mrca
@@ -244,8 +249,8 @@ sub create_calibration_table {
 			$logger->warn("Could not calibrate fossil # " . $fd->nfos . " (" . $fd->fossil_name . "), no mrca found!");
 			next FOSSIL;
 		}
-		$mrca->set_meta_object( 'fig:fossil_age_min' => $fd->min_age );
-		$mrca->set_meta_object( 'fig:fossil_age_max' => $fd->max_age );
+		$mrca->set_meta_object( 'fig:fossil_age_min' => $fd->min_age ) if $fd->min_age;
+		$mrca->set_meta_object( 'fig:fossil_age_max' => $fd->max_age ) if $fd->max_age;
 		$mrca->set_meta_object( 'fig:fossil_name' => $fd->fossil_name);
 		$mrca->set_meta_object( 'fig:fossil_id' => $fd->nfos);
 
@@ -292,9 +297,9 @@ sub create_calibration_table {
 			'name'    => $mrca->get_meta_object( 'fig:fossil_name'),#$fd->fossil_name,	    
 			'nfos'    => $mrca->get_meta_object( 'fig:fossil_id'),#$fd->nfos,	    
 	        );  
-	}	
-	
+	}		
 	$table->sort_by_min_age;
+
 	return $table;	
 }
 
