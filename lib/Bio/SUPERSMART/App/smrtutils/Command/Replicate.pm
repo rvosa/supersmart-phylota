@@ -341,9 +341,11 @@ sub _replicate_alignment {
 
 	# set timeout to 2h
 	my $timeout = 7200;
+	$logger->debug("Setting timeout for modeltest to $timeout seconds");
 	my $model = 'Bio::Phylo::Models::Substitution::Dna'->modeltest( '-matrix' => $matrix, '-timeout' => $timeout);
 	if ( ! $model ) {
-		$logger->warn("")
+		$logger->warn("Could not determine substitution model for alignment $fasta, possibly due to timeout in phangorn's modeltest");
+		return 0;
 	}
 	
 	$logger->debug("Pruned replicated tree for sequence simulation: " . $pruned->to_newick);
