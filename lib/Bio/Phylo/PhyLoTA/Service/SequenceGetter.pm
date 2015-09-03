@@ -1294,16 +1294,16 @@ all-versus-all blast searching with subsequent profile alignment.
 
 sub merge_alignments {
 	my ( $self, $maxdist, $workdir, $outfile, @seed_gis) = @_;
-	
+
 	my $log = $self->logger;	
 	
 	# blast and cluster the seed GIs
-	$log->info("Going to cluster ".scalar(@seed_gis)." seed GIs");
+	$log->info("Going to cluster ".scalar(@seed_gis)." seed GIs, max distance : $maxdist");
 	my $dbpath   = File::Spec->catfile($workdir,'seeds.fa');
 	my $dbname   = $self->make_blast_db($dbpath,@seed_gis);	
 	my $report   = $self->run_blast_all($dbname);
 	my @clusters = $self->cluster_blast_results($report);
-	
+
 	# merge and align
 	my @merged_files = pmap {
 		my ($clref) = @_; 
@@ -1313,7 +1313,7 @@ sub merge_alignments {
 		
 		# turn GIs into file names 
 		my @files = map { glob ( "$workdir/" .  $_ . "*.fa" ) } @seed_gis;
-		
+
 		# profile align files to merge as many as possible
 		$self->profile_align_all( $merged, $maxdist, @files );
 
