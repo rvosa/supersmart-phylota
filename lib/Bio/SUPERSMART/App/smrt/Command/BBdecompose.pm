@@ -231,20 +231,22 @@ sub run{
 			}
 		}
 		# skip if there are not enough species for clade tree
+		my @names;
 		if ( scalar (@set) < 3 ) {
 			$logger->warn("Could not find sufficient data for species in clade $i. Skipping clade with taxa " . join(',', keys(%ingroup)));
+			
 		}
 		else {			
 			_write_clade_alignments( $i, \@clade_alignments, \@set, $self->workdir );
 			# write outgroup to file (skipped if already exists)
 			_write_outgroup($i,[keys %outgroup],$workdir) if $add_outgroup;
 			# write taxa file to clade directory
-			my @names = map { $mts->find_node($_)->taxon_name } @set;
+			@names = map { $mts->find_node($_)->taxon_name } @set;
 			my @taxa_table = $mts->make_taxa_table( \@names );
 			my $taxafile = "clade$i/species.tsv";
 			$mts->write_taxa_file( $taxafile, @taxa_table );
-			return ( {"clade$i"=> \@names});
 		}		
+		return ( {"clade$i"=> \@names});
 		
 	}  ( 0..$#clades);
 	    
