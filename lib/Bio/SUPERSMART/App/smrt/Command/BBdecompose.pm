@@ -162,9 +162,9 @@ sub run{
             $counter++;
         }
     }
-	
+
 	# collect alignments for clades and write them into respective clade directories
-	pmap {
+	my @species_for_clades = pmap {
 		
 		my $i = $_;
 
@@ -243,10 +243,16 @@ sub run{
 			my @taxa_table = $mts->make_taxa_table( \@names );
 			my $taxafile = "clade$i/species.tsv";
 			$mts->write_taxa_file( $taxafile, @taxa_table );
+			return ( {"clade$i"=> \@names});
 		}		
 		
 	}  ( 0..$#clades);
-    
+	    
+	for ( @species_for_clades )  {
+		my ($clade) = keys %$_;
+		my @names = @{$_->{$clade}};
+		$logger->info("Species in $clade: " . join(', ', @names));
+	}
 
     $logger->info("DONE, results written into working directory $workdir");
 
