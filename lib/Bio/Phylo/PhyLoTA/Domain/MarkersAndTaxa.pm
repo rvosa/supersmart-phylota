@@ -171,8 +171,15 @@ Calculates the average pairwise distance within the alignment.
 sub calc_mean_distance {
     my ( $class, $fastastr ) = @_;
     my $stream = Bio::AlignIO->new(-string=>$fastastr, -format=>"fasta");  
-    my $aln = $stream->next_aln;  
-    return (1 - $aln->average_percentage_identity/100)
+    my $aln = $stream->next_aln;
+	
+	# return 0 if only one sequence provided
+	if ( $aln->num_sequences ==1 ) {
+		return 0;
+	}
+	else {
+		return (1 - $aln->average_percentage_identity/100)
+	}
 }
 
 =item dedup
