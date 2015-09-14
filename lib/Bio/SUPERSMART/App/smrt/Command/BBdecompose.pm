@@ -119,10 +119,18 @@ sub run{
     }
     
     # decompose tree into clades and get the sets of species
+    # extract_clades() returns a list of array references. the map operation results
+    # therefore in a list of hash references with a single key, whose value is an array
+    # reference, which should contain taxon IDs. XXX however, this is not the case, the
+    # value is not an array reference with scalar taxon IDs, there is a deeper nesting
+    # of arrays inside.
     my @clades = map { { 'ingroup' => $_ } } $ts->extract_clades($tree, @taxa);
     
     # get the exemplars
     for my $c ( @clades ) {
+    	
+    	# dereferencing on the key 'ingroup' should give us a list of taxon IDs.
+    	# XXX it doesn't.
         my @ex = grep { defined $_ } map { $tree->get_by_name($_) } @{ $c->{'ingroup'} };
         $c->{'exemplars'} = [ keys %{{ map { $_->get_name => 1 } @ex }} ];
     }
