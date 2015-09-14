@@ -123,7 +123,7 @@ sub run{
     
     # get the exemplars
     for my $c ( @clades ) {
-        my @ex = grep { defined $_ } map { $tree->get_by_name($_) } map { @$_ } @{ $c->{'ingroup'} };
+        my @ex = grep { defined $_ } map { $tree->get_by_name($_) } @{ $c->{'ingroup'} };
         $c->{'exemplars'} = [ keys %{{ map { $_->get_name => 1 } @ex }} ];
     }
  
