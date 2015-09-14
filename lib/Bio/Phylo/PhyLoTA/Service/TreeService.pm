@@ -1162,7 +1162,11 @@ sub extract_clades {
 	#  put together into one clade!
 	my @num_elems = uniq map{scalar(@$_)} @sets;
 	if ( scalar(@num_elems) == 1 and $num_elems[0] == 1 ) {
-		@sets = [ map{ $_ } @sets ];
+		
+		# XXX assuming that all species do need to go into one clade, this presumably
+		# means that the lists need to be flattened, i.e. inside the map {} block
+		# the arrays need to be dereferenced. That wasn't the case, but now it is.
+		@sets = [ map{ @$_ } @sets ];
 	}
 	else {
 		# remove monotypic genera from clades and sets that have <3 species and thus cannot be resolved
