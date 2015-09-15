@@ -384,8 +384,8 @@ sub fetch_fossil_dates {
 			for my $c ( @{ $data->{'calibrations'} } ) {
 				delete $c->{'publicationImages'};
 				delete $c->{'treeImages'};
-				#my $fossils = delete $c->{'fossils'};
-				#my $f = $fossils->[0];
+				my $fossils = $c->{'fossils'};
+				my $f = $fossils->[0];
 				
 				# here we rename keys in the hash so that they 
 				# match Bio::Phylo::PhyLoTA::Domain::FossilData				
