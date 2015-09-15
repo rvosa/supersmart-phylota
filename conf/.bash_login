@@ -12,6 +12,6 @@ if [ ! -f $SUPERSMART_HOME/data/phylota.sqlite ]; then
 	if [ -f $HOME/SUPERSMART/data/phylota.sqlite ]; then
 		mv $HOME/SUPERSMART/data/phylota.sqlite $SUPERSMART_HOME/data/phylota.sqlite
 	else
-		perl -MBio::Phylo::Util::Loggger -e 'Bio::Phylo::Util::Loggger::ERROR("PhyLoTA data not found!")'
+		perl -MBio::Phylo::Util::Logger -e 'Bio::Phylo::Util::Logger::ERROR("PhyLoTA data not found!")'
 	fi
 fi
