@@ -230,7 +230,7 @@ sub create_calibration_table {
 		my @tree_nodes = map {$tree->get_by_name($_)} @descendant_ids;
 		
 		if ( ! scalar(@tree_nodes) ) {
-			$logger->warn("Could not calibrate fossil # " . $fd->nfos . " (" . $fd->fossil_name . "). Could not find tree nodes for calibrated taxa " . join(', ', @{$fd->calibrated_taxon}) . "in tree!");
+			$logger->warn("Could not calibrate fossil # " . $fd->nfos . " (" . $fd->fossil_name . "). Could not find tree nodes for calibrated taxa " . join(', ', @{$fd->calibrated_taxon}) . " in tree!");
 			next FOSSIL;
 		}
 		
