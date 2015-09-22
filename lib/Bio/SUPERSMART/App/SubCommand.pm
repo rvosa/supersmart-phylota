@@ -168,6 +168,7 @@ sub init {
 			'Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector',
 			'Bio::Phylo::PhyLoTA::Service::DecorationService',
 			'Bio::Tools::Run::Phylo::ExaML',
+			'Bio::Tools::Run::Phylo::ExaBayes',
 		],		
     ));
     

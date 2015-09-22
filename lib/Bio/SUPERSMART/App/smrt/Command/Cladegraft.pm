@@ -41,7 +41,7 @@ sub options {
 	my $heights_default = $conf->NODE_HEIGHTS;
 	my $squish_default  = 'none';
 	return (                               	
-  		["backbone|b=s", "backbone tree as produced by 'smrt consense'", { arg => "file", default => $tree_default }],
+  		["backbone|b=s", "backbone tree as produced by 'smrt consense', defaults to $tree_default", { arg => "file", default => $tree_default }],
 		["outfile|o=s", "name of the output tree file (newick format) defaults to $outfile_default", { default=> $outfile_default, arg => "file"}],    	    
 		["cladetree|c=s", "name of tree file for single clade (newick format) if only a single cladetree should be grafted", { arg => "file"}],
 		["heights|e=s", "node heights (ca, keep, median, mean)", { default => $heights_default, arg => 'keep|median|mean|ca' } ],
