@@ -10,7 +10,9 @@ FOSSILS=fossils.tsv
 
 # Step 1: match the names to the NCBI taxonomy. This is needed because ultimately all
 # sequences that the pipeline uses are annotated with NCBI taxonomy identifiers.
-smrt taxize --infile=$NAMES
+if [ ! -e "species.tsv" ]; then
+	smrt taxize --infile=$NAMES
+fi
 
 # Step 2: write PhyLoTA alignments that cover the species we have matched in step 1. This
 # creates numerous aligned FASTA files and a text file ('aligned.txt') that contains a
@@ -20,7 +22,9 @@ smrt taxize --infile=$NAMES
 # - seed taxon: the identifier of the taxon to which <seed gi> belongs
 # - cluster id: the internal identifier assigned by PhyLoTA to this cluster
 # - type:       the type of cluster, usually a 'subtree' from the NCBI taxonomy
-smrt align
+if [ ! -e "aligned.txt" ]; then
+	smrt align
+fi
 
 # Step 3: assess orthology among PhyLoTA alignments. This step is needed because PhyLoTA
 # is unable to perform all-vs-all BLASTing across the entire GenBank (consider the
@@ -28,7 +32,9 @@ smrt align
 # created in step 2. This step will create numerous aligned FASTA files, each called
 # clusterXXX.fa, where XXX is an integer. In addition, a simple text file ('merged.txt')
 # will contain a listing of these alignments.
-smrt orthologize
+if [ ! -e "merged.txt" ]; then
+	smrt orthologize
+fi
 
 # Step 4: build a supermatrix. This is done by concatenating selected orthologous clusters
 # from Step 4. The clusters are selected by a number of interacting criteria, which can
@@ -39,9 +45,20 @@ smrt orthologize
 # - BACKBONE_MIN_COVERAGE: the minimum number of times a taxon must participate in loci
 #                          in the supermatrix in order to include it.
 # We can override these config values from the environment, like so:
-export SUPERSMART_BACKBONE_MAX_DISTANCE="0.20"
-export SUPERSMART_BACKBONE_MIN_COVERAGE="3"
-smrt bbmerge
+if [ ! -e "supermatrix.phy" ]; then
+
+	# we have found, empirically, that we should be able to accept alignments whose
+	# average uncorrected pairwise distance is below 20%. Choosing very low values
+	# causes us to reject alignments that would otherwise still contribute to high
+	# posterior probabilities, hence high values (such as this) are good.
+	export SUPERSMART_BACKBONE_MAX_DISTANCE="0.20"
+
+	# ideally we would have more markers, but the butterflies have not been sequenced
+	# so densely: the number of taxa still included in the backbone drops off steeply
+	# if we increase this.
+	export SUPERSMART_BACKBONE_MIN_COVERAGE="2"
+	smrt bbmerge
+fi
 
 # Step 5: build a backbone tree. There are multiple inference tools that can be used for
 # this (raxml, exabayes, examl). Here we use exabayes. The inference is done on the
@@ -51,23 +68,31 @@ smrt bbmerge
 # posterior distribution in it. This step normally creates very many intermediate files
 # (bootstrapped matrices, various log and checkpoint files produced by the inference tool,
 # separate output tree files), which we clean up by providing the '--cleanup' flag.
-smrt bbinfer --inferencetool=exabayes --cleanup
+if [ ! -e "backbone.dnd" ]; then
+	smrt bbinfer --inferencetool=exabayes --cleanup
+fi
 
 # Step 6: reroot the backbone trees. The trees resulting from step 6 are unrooted. There
 # are different ways to root these (using outgroups or by picking the rooting that best
 # fits the taxonomy). Here we fit to the taxonomy: we have two genera so this amounts to
 # the same thing as considering either of these the outgroup with respect to the other.
 # By default produces a file 'backbone-rerooted.dnd'
-smrt bbreroot --smooth
+if [ ! -e "backbone-rerooted.dnd" ]; then
+	smrt bbreroot --smooth
+fi
 
 # Step 7: calibrate the backbone trees from step 7. This step uses treePL to create
 # ultrametric trees ('chronogram.dnd') using a penalized likelihood approach with
 # age constraints as extracted from the fossils file.
-smrt bbcalibrate --fossiltable=$FOSSILS
+if [ ! -e "chronogram.dnd" ]; then
+	smrt bbcalibrate --fossiltable=$FOSSILS
+fi
 
 # Step 8: build a consensus tree. As we ran exabayes in step 6 we will want to discard
 # a burnin. This would be different had we done a bootstrapping analysis in step 6.
-smrt consense --burnin=0.10 --prob
+if [ ! -e "consensus.nex" ]; then
+	smrt consense --burnin=0.10 --prob
+fi
 
 # Step 9: decompose the backbone into clades. This step traverses the consensus tree from
 # step 9 and breaks it up into monophyletic clades (in principle, genera, unless these are
