@@ -95,6 +95,7 @@ Cupido decoloratus
 Cupido lorquinii
 Cupido minimus
 Cupido osiris
+Cyaniris semiargus
 Danaus chrysippus
 Danaus plexippus
 Erebia aethiopella
@@ -247,13 +248,14 @@ Melitaea phoebe
 Melitaea trivia
 Melitaea varia
 Minois dryas
+Muschampia cribrellum
+Muschampia proto
+Muschampia tessellum
 Neptis rivularis
 Neptis sappho
 Nymphalis antiopa
-Polygonia c-album
-Polygonia egea
-Nymphalis vaualbum
 Nymphalis polychloros
+Nymphalis vaualbum
 Nymphalis xanthomelas
 Ochlodes sylvanus
 Oeneis bore
@@ -296,6 +298,8 @@ Plebejus pylaon
 Plebejus pyrenaicus
 Plebejus trappi
 Plebejus zullichi
+Polygonia c-album
+Polygonia egea
 Polyommatus admetus
 Polyommatus albicans
 Polyommatus amandus
@@ -319,7 +323,6 @@ Polyommatus iphigenia
 Polyommatus nivescens
 Polyommatus orphicus
 Polyommatus ripartii
-Cyaniris semiargus
 Polyommatus thersites
 Polyommatus violetae
 Pontia callidice
@@ -330,9 +333,15 @@ Pseudochazara anthelea
 Pseudochazara cingovskii
 Pseudochazara geyeri
 Pseudochazara graeca
+Pseudochazara hippolyte
 Pseudochazara mniszechii
 Pseudochazara orestes
-Pseudochazara hippolyte
+Pseudophilotes abencerragus
+Pseudophilotes barbagiae
+Pseudophilotes baton
+Pseudophilotes bavius
+Pseudophilotes panoptes
+Pseudophilotes vicrama
 Pyrgus alveus
 Pyrgus andromedae
 Pyrgus armoricanus
@@ -360,20 +369,11 @@ Satyrium spini
 Satyrium w-album
 Satyrus actaea
 Satyrus ferula
-Pseudophilotes abencerragus
-Pseudophilotes barbagiae
-Pseudophilotes baton
-Pseudophilotes bavius
 Scolitantides orion
-Pseudophilotes panoptes
-Pseudophilotes vicrama
 Spialia orbifer
 Spialia phlomidis
 Spialia sertorius
 Spialia therapne
-Muschampia cribrellum
-Muschampia proto
-Muschampia tessellum
 Tarucus balkanicus
 Tarucus theophrastus
 Thecla betulae
@@ -395,3 +395,4 @@ Zerynthia cretica
 Zerynthia polyxena
 Zerynthia rumina
 Zizeeria knysna
+

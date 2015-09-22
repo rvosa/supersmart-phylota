@@ -39,7 +39,7 @@ smrt orthologize
 # - BACKBONE_MIN_COVERAGE: the minimum number of times a taxon must participate in loci
 #                          in the supermatrix in order to include it.
 # We can override these config values from the environment, like so:
-export SUPERSMART_BACKBONE_MAX_DISTANCE="0.05"
+export SUPERSMART_BACKBONE_MAX_DISTANCE="0.20"
 export SUPERSMART_BACKBONE_MIN_COVERAGE="3"
 smrt bbmerge
 
@@ -67,7 +67,7 @@ smrt bbcalibrate --fossiltable=$FOSSILS
 
 # Step 8: build a consensus tree. As we ran exabayes in step 6 we will want to discard
 # a burnin. This would be different had we done a bootstrapping analysis in step 6.
-smrt consense --burnin=0.20 --prob
+smrt consense --burnin=0.10 --prob
 
 # Step 9: decompose the backbone into clades. This step traverses the consensus tree from
 # step 9 and breaks it up into monophyletic clades (in principle, genera, unless these are
