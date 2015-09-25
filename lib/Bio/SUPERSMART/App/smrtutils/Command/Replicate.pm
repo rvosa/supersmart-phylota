@@ -37,6 +37,8 @@ parameters chosen for the initial run.
 
 =cut
 
+my $config = Bio::Phylo::PhyLoTA::Config->new;
+
 sub options {    
 	my ($self, $opt, $args) = @_;
 	my $aln_outfile_default = 'aligned-replicated.txt';
@@ -85,7 +87,7 @@ sub run {
 
 	# replicate tree and write to file
 	my $tree_replicated = $self->_replicate_tree($tree)->first;
-	
+
 	open my $fh, '>', $tree_outfile or die $!;	
 	print $fh $tree_replicated->to_newick( nodelabels => 1 );
 	close $fh;
@@ -110,12 +112,12 @@ sub run {
 		# replicate all alignments fiven in input align file,
 		# write alignments to file and also create a list with all
 		# newly written alignments
-		open my $outfh, '>>', $aln_outfile or die $!;
-		
+	    open my $outfh, '>', $aln_outfile or die $!;	
+
 		my @replicated = pmap {			
 			my ($aln) = @_; 			
 
-			my $rep_aln = $self->_replicate_alignment( $aln, $tree, $tree_replicated );
+			my $rep_aln = $self->_replicate_alignment( $aln, $tree_replicated, $tree );
 						      		  
 			if ( $rep_aln ) {
 				# simulated alignment will have the same file name plus added '-simulated'
@@ -129,11 +131,12 @@ sub run {
 			} 
 			else {
 				$logger->warn("Could not write replicated alignment to file; no alignment given");
+				return 0;
 			}
 		} @alnfiles;
 		
 		close $outfh;
-		$logger->info("Replicated " . scalar(@replicated) . " of " . scalar(@alnfiles) . " alignments from $aln");
+		$logger->info("Replicated " . scalar(grep {$_} @replicated) . " of " . scalar(@alnfiles) . " alignments from $aln");
 	}
 
 	$logger->info("DONE. Tree written to $tree_outfile, alignment list written to $aln_outfile, taxa table written to $taxa_outfile" );
@@ -164,7 +167,7 @@ sub _write_taxafile {
 	# ti to the species. Then iteratively select the children of the father of the focal node, and
 	# check if any of its children have a classification, until we found a (maybe far away) sister 
 	# node that is classified. Then copy the genus, family etc. and append the entries to the table	
-	my $new_ti = $mts->max_ti;
+	my $new_ti = $mts->max_ti + 1;
 	
 	my @levels = reverse $mts->get_taxonomic_ranks;
 
@@ -227,148 +230,132 @@ sub _replicate_tree {
 }
 
 sub _replicate_alignment {
-	my ($self, $fasta, $tree, $tree_replicated) = @_; 
+	my ($self, $fastafile, $tree, $original_tree) = @_; 
 
 	my $logger = $self->logger;
-	my $config = Bio::Phylo::PhyLoTA::Config->new;
 	
-	if ( ! ( -e $fasta and -s $fasta ) ) {
-		$logger->warn("Alignment file $fasta does not exist, skipping");
-		return 0;
-	}
-				
-
-	$logger->info("Going to replicate alignment $fasta");
+	# create matrix object from FASTA   
+	$logger->fatal("Alignment file $fastafile does not exist") if  ( ! ( -e $fastafile and -s $fastafile ) );	
 	
 	my $project = parse(
 		'-format'     => 'fasta',
 		'-type'       => 'dna',
-		'-file'     => $fasta,
+		'-file'     => $fastafile,
 		'-as_project' => 1,
 	    );
 	my ($matrix) = @{ $project->get_items(_MATRIX_) };
-
-	# modeltest needs at least 3 sequences to estimate the substitution model;
-	# the number of taxa in the alignment that are also present in the tree therefore
-	# has to be > 2
-	if ( scalar( @{$matrix->get_entities}) < 3 ) {
-		$logger->warn("Cannot replicate alignment $fasta, number of taxa < 3");
+	$matrix = $self->_clean_fasta_defline( $matrix );
+	
+	if ( scalar (@{$matrix->get_entities}) < 3 ) {
+		$logger->warn("Cannot replicate alignment $fastafile with less than three sequences. Skipping.");
 		return 0;
 	}
 	
-	$logger->info("Number of sequences in alignment $fasta : " . scalar(@{$matrix->get_entities}));
+	# determine for which taxa we want replicated sequences
+	my @rep_taxa = $self->_simulate_marker_presence( '-matrix'=>$matrix, '-tree'=>$tree, '-replace'=>1 );	
 
-	# we have to change the definition line from something like
-	# >gi|443268840|seed_gi|339036134|taxon|9534|mrca|314294/1-1140
-	# to only the taxon ID: 9534
-	my $matching_taxa = 0;
-	my %tree_taxa = map { $_->get_name=>1 } @{ $tree_replicated->get_terminals };
+	if ( scalar(@rep_taxa) < 3 ) {
+		$logger->info("Too few taxa from binary simulation; adding random taxa");
+		my %h = map{$_=>1} @rep_taxa;
+		@rep_taxa = keys { $self->_add_random_taxa( \%h , $tree, 3 ) };
+	}
+
+	# determine substitution model for given alignment
+	my $timeout = 7200; # set to 2h
+	my $model = 'Bio::Phylo::Models::Substitution::Dna'->modeltest( '-matrix' => $matrix, '-timeout' => $timeout );
+
+	# prune tree for faster sequence simulations
+	my $pruned = parse('-format'=>'newick', '-string'=>$tree->to_newick)->first;
+	$pruned->keep_tips( \@rep_taxa );
+	
+	# simulate sequences
+	my $rep = $matrix->replicate('-tree'=>$pruned, '-seed'=>$config->RANDOM_SEED, '-model'=>$model);
+	
+	$logger->info("Number of seqs in original alignment: " . scalar(@{$matrix->get_entities}) . ", number of seqs in replicated alignment: " . scalar(@{$rep->get_entities}));
+	# If we had less than two simulated marker presences, the replicated alignment is not an alignment, therefore skip
+	if ( @{ $rep->get_entities } < 2 ) {
+		$logger->warn("Replication produced alignment with less than 2 sequences, skipping");
+		return 0;
+	}
+
+	return $rep;
+}
+
+# Given an alignment as matrix object and a tree, simulates the presence in the alignment 
+# for each taxon in the tree using a birth-death simulation on a binary character
+sub _simulate_marker_presence {
+	my ($self,%args) = @_;
+	
+	my $matrix = $args{'-matrix'};
+	my $tree = $args{'-tree'};
+	
+	my $logger = $self->logger;
+
+	# collect all taxa from alignment that are also present in the tree
+	my %taxa_in_aln = map{ $_->get_name=>1 }  @{ $matrix->get_entities };
+	my %taxa_in_tree = map { $_->get_name=>1 } @{ $tree->get_terminals };
+	my %marker_taxa = map {$_=>1} grep { exists $taxa_in_tree {$_} } keys(%taxa_in_aln);
+
+	# if desired, taxa not present in the tree are substituted by random taxa that are in the tree   
+	if ( $args{'-replace'} ) {
+		if ( scalar(keys %marker_taxa) < scalar(keys %taxa_in_aln) ) {
+			$logger->info("Some taxa in alignment are not in the tree. Adding random taxa from tree to taxon set.");
+			%marker_taxa =  $self->_add_random_taxa( \%marker_taxa, $tree, scalar(keys %taxa_in_aln) );
+		}
+	} 
+
+	# make binary matrix with occurrences of taxa in the alignment
+	my $bin = [];	
+	for my $tax ( keys %taxa_in_tree ) {
+		my $present = $marker_taxa{$tax} ? '1':'0';
+		push @$bin, [$tax=>$present];			
+	}	
+	my $fac = Bio::Phylo::Factory->new;   
+	my $marker_matrix = $fac->create_matrix( '-matrix' => $bin);
+  
+	# run binary simulation to determine taxa that are simulated to be present
+	my $rep_marker_matrix = $marker_matrix->replicate('-tree'=>$tree, '-seed'=>$config->RANDOM_SEED);	
+
+	# get taxa from replicate that have a simulated marker presence 
+	my %simulated_taxa =  map {$_->[0]=>1} grep {$_->[1] == 1} @{$rep_marker_matrix->get_raw};
+	
+	return ( keys %simulated_taxa );
+}
+
+# given a set of taxon id's and a tree, randomly add taxa from the tree to the set until it
+# reaches user supplied size
+sub _add_random_taxa {
+	my ($self, $set, $tree, $size) = @_;
+	
+	my %taxa = %{$set};
+	my @tree_taxa = map { $_->get_name } @{ $tree->get_terminals };
+	
+	while ( scalar(@tree_taxa) > scalar(keys %taxa) and scalar(keys %taxa) < $size ) {
+		my $id = @tree_taxa[rand @tree_taxa];
+		$self->logger->debug("attempting to add taxon $id to set of taxa");
+		$taxa{$id} = 1;
+	}
+	
+	return %taxa;
+}
+
+# Change the FASTA definition line from the SUPERSMART style,
+# e.g. ">gi|443268840|seed_gi|339036134|taxon|9534|mrca|314294/1-1140"
+# to contain only the taxon ID, e.g. 9534
+sub _clean_fasta_defline {
+	my ($self, $matrix) = @_;
+
 	for my $seq ( @{ $matrix->get_entities } ) {
 		my $seqname = $seq->get_name;
 		if ( $seqname =~ m/taxon\|([0-9]+)/ ) {
 			$seqname = $1;
-			$logger->debug('Changing FASTA definition line from ' . $seq->get_name . " to $seqname");
+			$self->logger->debug('Changing FASTA definition line from ' . $seq->get_name . " to $seqname");
 			$seq->set_name($seqname);
-		    }	
-#		$matching_taxa++ if $tree_taxa{$seqname};
+		}	
 		$seq->set_generic('fasta_def_line'=>$seqname);
 	}	
 
-	# The alignment now contains as many sequences as the tree has tips.
-	# We will therefore prune set of sequences. This is done by simulating a binary matrix (character is the 
-	# presence/absensce of marker) using a birth-death process
-	
-	# collect all taxa from alignments that are present in replicated tree
-	my %aln_taxa = map{ $_->get_name=>1 }  @{ $matrix->get_entities };
-	my $orig_taxa_cnt =  scalar(keys(%aln_taxa));
-	%aln_taxa = map {$_=>1} grep { exists $tree_taxa {$_} } keys(%aln_taxa);
-		
-	# it can occur that a taxon from the alignment did not end up in the final and thus also in the replicated tree.
-	#  in this case, add taxa from the replicated tree to match the original number of taxa in the alignment
-	while ( scalar(keys %aln_taxa) < $orig_taxa_cnt and scalar(keys %aln_taxa) < scalar(keys(%tree_taxa)) ) {
-		my @terminal_ids = keys %tree_taxa;
-		my $id = $terminal_ids[rand @terminal_ids];
-		$logger->warn("not all taxa from alignment in replicated tree, adding random taxon $id");
-		$aln_taxa{$id} = 1;
-	}
-	
-	# make binary matrix from current alignment
-	my $binary = [];
-	
-	for my $tax ( keys %tree_taxa ) {
-		my $present = $aln_taxa{$tax} ? '1':'0';
-		push @$binary, [$tax=>$present];			
-	}	
-	my $fac = Bio::Phylo::Factory->new;
-	my $binary_matrix = $fac->create_matrix( '-matrix' => $binary);
-
-	# make binary replicate. Here we take the relicated tree, so it is possible to have a 
-	# marker for artificial species
-	$logger->info("simulating binary occurence matrix for alignment $fasta");
-	my $binary_rep = $binary_matrix->replicate('-tree'=>$tree_replicated, '-seed'=>$config->RANDOM_SEED);	
-	if ( ! $binary_rep ) {
-		$logger->warn("Cannot replicate alignment $fasta, replication of marker occurrence matrix failed");
-		return 0;
-	}
-	$logger->debug("simulated binary matrix");
-
-	# get taxa from replicate that have a simulated marker presence 
-	my %rep_taxa =  map {$_->[0]=>1} grep {$_->[1] == 1} @{$binary_rep->get_raw};
-	    	
-	$logger->info(scalar(keys %aln_taxa) . " taxa in original alignment, " . scalar(keys %rep_taxa) . " taxa simulated to have marker");
-	
-	# it can happen that too few taxa are predicted to have the alignment,
-	# in this case, randomly add taxa until the alignment will be of size 3
-	if ( scalar(keys %rep_taxa) < 3 ) {
-		$logger->warn("Binary simulation yielded < 3 taxa, skipping");
-		return 0;
-	}	
-
-	# Lets not simulate all tips, that would take too long. Instead, 
-	# prune the replicated tree to: 
-	# 1. The taxa we have data for and 
-	# 2. The taxa we want in our output alignment	
-	my $pruned = parse('-format'=>'newick', '-string'=>$tree_replicated->to_newick)->first;
-	$pruned->keep_tips( [keys %aln_taxa, keys %rep_taxa] );
-	
-	if ( scalar(@{$pruned->get_terminals}) < 3 ) {
-		$logger->warn("Less than three taxa in pruned replicated tree. Binary simulation probably yielded too few taxa. Cannot replicate alignment $fasta.");
-		return 0;
-	}
-
-	# replicate dna data: estimate model with the original tree and replicate sequences along the replicated tree
-	$logger->info("Determining substitution model for alignment $fasta");
-
-	# set timeout to 2h
-	my $timeout = 7200;
-	$logger->debug("Setting timeout for modeltest to $timeout seconds");
-	my $model = 'Bio::Phylo::Models::Substitution::Dna'->modeltest( '-matrix' => $matrix, '-timeout' => $timeout);
-	if ( ! $model ) {
-		$logger->warn("Could not determine substitution model for alignment $fasta, possibly due to timeout in phangorn's modeltest");
-		return 0;
-	}
-	
-	$logger->debug("Pruned replicated tree for sequence simulation: " . $pruned->to_newick);
-	$logger->info("Simulating sequences for alignment $fasta");
-	my $rep = $matrix->replicate('-tree'=>$pruned, '-seed'=>$config->RANDOM_SEED, '-model'=>$model);
-
-	# throw out sequences that are not for our desired taxa
-	for my $seq ( @{ $rep->get_entities }) {
-		if ( ! $rep_taxa{$seq->get_name} ){
-			$logger->debug("Removing seq for taxon " . $seq->get_name . " from replicated alignment");
-			$rep->delete($seq);
-			next;
-		}
-		# need to fix definition line to prevent a ">>" in FASTA definition line (issue #21 in Bio::Phylo)
-		my $defline = $seq->get_generic('fasta_def_line');
-		$defline =~ s/>//g;
-		$seq->set_generic('fasta_def_line', $defline);		
-	}	
-	$logger->info(scalar(@{$matrix->get_entities}) . ' seqs in original, ' . scalar(@{$rep->get_entities}) . ' in replicated alignmnent');
-	my @orig_names = map { $_->get_name } @{ $matrix->get_entities };
-	my @rep_names = map { $_->get_name } @{ $rep->get_entities };
-
-    return $rep;
+	return $matrix;
 }
 
 1;
