@@ -734,22 +734,22 @@ Each hash has keys representing taxa and values representing the sequences for t
 for this specific marker. Example:
 
 [
-          {
-            '67771' => [
-                         '4321210'
-                           ],
-            '67772' => [
-                         '4321191',
-                         '4321192'
-                       ]
-          },
-          {
-            '67771' => [
-                         '4321213',
-                         '4321210',
-                         '4321207'
+	{
+		'67771' => [
+			'4321210'
+		],
+		'67772' => [
+			'4321191',
+			'4321192'
 		]
-	  }
+	},
+	{
+		'67771' => [
+			'4321213',
+			'4321210',
+			'4321207'
+		]
+	}
 ]
 
 =cut
@@ -765,7 +765,7 @@ sub get_marker_table {
 			my $gi = $seq->get_meta_object("smrt:gi");
 			$row{$taxid} = [] if not $row{$taxid};
 			push @{ $row{$taxid} }, $gi;
-			}
+		}
 		push @marker_table, \%row;
 	}
 	return @marker_table
