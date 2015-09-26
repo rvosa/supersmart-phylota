@@ -332,7 +332,7 @@ sub optimize_packing_order {
         my @alns = grep { !$aln{$_} } @{ $alns_for_taxa{$taxon} };
         $seen{$taxon} = 0 if not defined $seen{$taxon};
         
-        # XXX maybe this should be <=
+        # add alignments until seen enough
       ALN: while ( $seen{$taxon} < $config->BACKBONE_MIN_COVERAGE ) {
 
             # most speciose alignments first: we sorted aft already
