@@ -339,15 +339,17 @@ sub optimize_packing_order {
         # given the selected exemplars and alignments, which taxa are most
         # distant from each other in marker sharing, and try to select 
         # markers that shorten that distance.
-      ALN: while ( $seen{$taxon} < $config->BACKBONE_MIN_COVERAGE ) {
+        my $max = $config->BACKBONE_MAX_COVERAGE or $config->BACKBONE_MIN_COVERAGE;
+      ALN: while ( $seen{$taxon} < $max ) {
 
             # most speciose alignments first: we sorted aft already
             my $aln = shift @alns;
             if ( not $aln or not -e $aln ) {
 
-                # this should not happen, since we selected only
-                # exemplars for which there are sufficient alignments!
-                $log->fatal("No alignment available for exemplar $taxon");
+                # might happen, since we selected exemplars for which there 
+                # are sufficient minimum alignments, but not necessarily 
+                # BACKBONE_MAX_COVERAGE!
+                $log->info("No more alignments available for $taxon, now have: ".$seen{$taxon});
                 next TAXON;
             }
             $aln{$aln}++;
