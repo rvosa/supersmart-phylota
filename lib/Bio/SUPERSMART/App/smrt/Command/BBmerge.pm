@@ -146,9 +146,9 @@ sub run {
     my @exemplars = $mt->pick_exemplars( $taxafile, $include_taxa );
     $log->info( "Identified " . scalar(@exemplars) . " exemplars" );
 
-	# optimize the order in which taxa and alignments are added to the supermatrix.
-	# this means starting at the least-sequenced taxon and the most speciose alignment
-	my ($sorted_exemplars,$sorted_alignments) = $mt->optimize_packing_order(@exemplars);        
+    # optimize the order in which taxa and alignments are added to the supermatrix.
+    # this means starting at the least-sequenced taxon and the most speciose alignment
+    my ($sorted_exemplars,$sorted_alignments) = $mt->optimize_packing_order(@exemplars);        
     $log->info( "Using " . scalar(@$sorted_alignments) . " alignments for supermatrix" );
     $log->info( "Number of exemplars : " . scalar(@$sorted_exemplars) );
 
