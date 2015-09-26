@@ -332,7 +332,13 @@ sub optimize_packing_order {
         my @alns = grep { !$aln{$_} } @{ $alns_for_taxa{$taxon} };
         $seen{$taxon} = 0 if not defined $seen{$taxon};
         
-        # add alignments until seen enough
+        # add alignments until seen enough. XXX we may have a 
+        # BACKBONE_MAX_COVERAGE so that all our exemplars have at least
+        # a minimum which we, optionally, add to. Alternatively, we might
+        # implement some sort of iterative expand() function that computes,
+        # given the selected exemplars and alignments, which taxa are most
+        # distant from each other in marker sharing, and try to select 
+        # markers that shorten that distance.
       ALN: while ( $seen{$taxon} < $config->BACKBONE_MIN_COVERAGE ) {
 
             # most speciose alignments first: we sorted aft already
