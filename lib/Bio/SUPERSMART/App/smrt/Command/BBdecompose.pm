@@ -108,7 +108,7 @@ sub run{
     # parse taxon mapping
     $logger->info("Going to read taxa mapping $taxafile");
     my @taxa = $mt->parse_taxa_file($taxafile);
-        
+	
     # now read the list of alignments
     my @alignments;
     $logger->info("Going to read list of alignments $alnfile");
@@ -186,45 +186,14 @@ sub run{
 		my $mindens = $config->CLADE_MIN_DENSITY;
 		my $maxdist = $config->CLADE_MAX_DISTANCE;	    
 	    
-	    # loop over alignments and assess whether it is suitable for the clade
-	    my @clade_alignments;
-	    ALN: for my $aln (@alignments) {
-		    
-		    # make subset: take only the sequences that are in the clade (or outgroup, if given)
-		    my %fasta = $mt->parse_fasta_file($aln);             
-		    $logger->debug("Checking whether alignment $aln can be included");
-		   
-		    my %seqs_ingroup = $mt->get_alignment_subset(\%fasta, {'taxon'=>[keys %ingroup]});            
-		    my %seqs_all = $mt->get_alignment_subset(\%fasta, {'taxon'=>[keys %outgroup, keys %ingroup]});            
-		    		    
-		    #if ( $distinct < 3 ) {
-			    
-		    #}
-
-		    # check if density is high enough		    
-		    my $distinct = scalar keys %seqs_ingroup;		    
-		    if ( ($distinct/scalar keys %ingroup) < $mindens ) {
-			    my $dens = sprintf "%.2f", $distinct / scalar keys %ingroup;
-			    $logger->debug("$aln is not  dense enough (density " . $dens . " < $mindens) for clade # $i");
-			    next ALN;
-		    }
-		    
-		    # check if distance is not too high
-		    my $dist = $mt->calc_mean_distance($mt->to_fasta_string(%seqs_ingroup));
-		    if ( $dist > $maxdist ) {
-			    $logger->debug("$aln is too divergent (distance $dist > $maxdist) for clade # $i");
-			    next ALN;
-		    }
-		    
-		    # add alignment to set of clade alignments
-		    push @clade_alignments, \%seqs_all;		   
-	    }
+	    # check all alignments and assess whether they are suitable for the clade
+	    my @clade_alignments = $mts->filter_clade_alignments( '-ingroup'  => $clade->{'ingroup'}, 
+															  '-outgroup' => $clade->{'outgroup'}, 
+															  '-alnfiles' => \@alignments );
 		
 		# for the given set of taxa and alignments, get all subsets of taxa that share at least one marker
 		my @all_taxa = map {@$_} map {values(%$_)} @clades;
 		my %adj = $mts->generate_marker_adjacency_matrix(\@clade_alignments, [keys %outgroup, keys %ingroup]);
-
-		# get all subsets of taxa that share at least one marker
 		my @subsets = @{$mts->get_connected_taxa_subsets(\%adj)};
 	
 		# sort subsets by size, decreasing
