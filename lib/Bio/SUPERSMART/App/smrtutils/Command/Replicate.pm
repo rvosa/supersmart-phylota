@@ -125,6 +125,7 @@ sub run {
 				$filename =~ s/\.fa$/-replicated\.fa/g;
 				$filename = $self->workdir . '/' . $filename;
 				$logger->info("Writing alignment to $filename");
+				
 				unparse ( -phylo => $rep_aln, -file => $filename, -format=>'fasta' );
 				print $outfh "$filename\n";
 				return $filename;
@@ -277,7 +278,8 @@ sub _replicate_alignment {
 		$logger->warn("Replication produced alignment with less than 2 sequences, skipping");
 		return 0;
 	}
-
+	$rep = $self->_fix_fasta_defline( $rep );
+	
 	return $rep;
 }
 
@@ -337,6 +339,18 @@ sub _add_random_taxa {
 	}
 	
 	return %taxa;
+}
+
+# removes excess '>' from fasta def line
+sub _fix_fasta_defline {
+	my ($self, $mat) = @_;
+	for my $seq ( @{ $mat->get_entities }) {
+		# need to fix definition line to prevent a ">>" in FASTA definition line (issue #21 in Bio::Phylo)
+		my $defline = $seq->get_generic('fasta_def_line');
+		$defline =~ s/>//g;
+		$seq->set_generic('fasta_def_line', $defline);	
+	}
+	return $mat;
 }
 
 # Change the FASTA definition line from the SUPERSMART style,
