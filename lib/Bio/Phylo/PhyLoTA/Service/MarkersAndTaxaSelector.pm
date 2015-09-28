@@ -1156,10 +1156,12 @@ sub get_connected_taxa_subsets {
 sub filter_clade_alignments {
 	my ($self, %args) = @_;
 	
-	my @ingroup_taxa = @{ $args{'-ingroup'} } or throw 'BadArgs' => "Need -ingrup argument";;
-	my @outgroup_taxa = @{ $args{'-outgroup'} };
-	my @alignments = @{ $args{'-alnfiles'} } or throw 'BadArgs' => "Need -alnfiles argument";;
-	
+	my $in = $args{'-ingroup'} or throw 'BadArgs' => "Need -ingrup argument";;
+	my $alns =  $args{'-alnfiles'}  or throw 'BadArgs' => "Need -alnfiles argument";;
+	my $out = $args{'-outgroup'} if $args{'-outgroup'};
+
+	my @alignments = @$alns;
+
 	my $logger = $self->logger;
     my $mt     = Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa->new;
 	
@@ -1168,33 +1170,33 @@ sub filter_clade_alignments {
 		
 	$logger->info("Filtering clade alignments, min density : $mindens, max distance : $maxdist");
 	
-	my %ingroup = map {$_=>1} @ingroup_taxa;
-	my %outgroup = map {$_=>1} @outgroup_taxa;
-
+	my %ingroup = map {$_=>1} @$in;
+	my %outgroup = map {$_=>1} @$out;
 
 	my @clade_alignments;
-  ALN: for my $aln ( @alignments ) {
-	  
+	for my $aln ( @alignments ) {
+
+	  $logger->debug("Checking whether alignment $aln can be included");
+
 	  # make subset: take only the sequences that are in the clade (or outgroup, if given)
 	  my %fasta = $mt->parse_fasta_file($aln);             
-	  $logger->debug("Checking whether alignment $aln can be included");
 	  
 	  my %seqs_ingroup = $mt->get_alignment_subset(\%fasta, {'taxon'=>[keys %ingroup]});            
 	  my %seqs_all = $mt->get_alignment_subset(\%fasta, {'taxon'=>[keys %outgroup, keys %ingroup]});            
-	  
+
 	  # check if density is high enough		    
 	  my $distinct = scalar keys %seqs_ingroup;		    
 	  if ( ($distinct/scalar keys %ingroup) < $mindens ) {
 		  my $dens = sprintf "%.2f", $distinct / scalar keys %ingroup;
 		  $logger->debug("$aln is not  dense enough (density " . $dens . " < $mindens) for taxon set");
-		  next ALN;
+		  next;
 	  }
 	  
 	  # check if distance is not too high
 	  my $dist = $mt->calc_mean_distance($mt->to_fasta_string(%seqs_ingroup));
 	  if ( $dist > $maxdist ) {
 		  $logger->debug("$aln is too divergent (distance $dist > $maxdist) for taxon set");
-		  next ALN;
+		  next;
 	  }		    
 	  # add alignment to set of clade alignments
 	  $logger->info("Including alignment $aln in clade");
