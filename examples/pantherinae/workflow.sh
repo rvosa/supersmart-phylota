@@ -19,36 +19,32 @@ smrt taxize --root_taxa $SUBFAMILY,$OUTGROUP --binomials_only
 
 # align all phylota clusters for the species in the taxa table.
 # produces many aligned fasta files and a file listing these
-smrt align
+smrt align --infile species.tsv
 
 # assign orthology among the aligned clusters by reciprocal BLAST
-smrt orthologize
+smrt orthologize --infile aligned.txt
 
 # merge the orthologous clusters into a supermatrix with exemplar
 # species, two per genus
-export SUPERSMART_BACKBONE_MAX_DISTANCE="0.1"
-export SUPERSMART_BACKBONE_MIN_COVERAGE="3"
-smrt bbmerge
+smrt bbmerge --alnfile merged.txt --taxafile species.tsv
 
 # run an exabayes search on the supermatrix, resulting in a backbone
 # posterior sample
-export SUPERSMART_EXABAYES_NUMGENS="100000"
-smrt bbinfer --inferencetool=exabayes --cleanup -t species.tsv
+smrt bbinfer --supermatrix supermatrix.phy --inferencetool exabayes --cleanup
 
-# root the backbone sample  on the outgroup
-smrt bbreroot -g $OUTGROUP --smooth
+
+# root the backbone sample on the outgroup
+smrt bbreroot -g $OUTGROUP --backbone backbone.dnd --taxafile species.tsv --smooth
 
 # calibrate the re-rooted backbone tree using treePL
-smrt bbcalibrate -f $FOSSILS
+smrt bbcalibrate --tree backbone-rerooted.dnd --supermatrix supermatrix.phy -f $FOSSILS
 
 # build a consensus
-smrt consense -b 0.2 --prob
+smrt consense --infile chronogram.dnd --prob 
 
 # decompose the backbone tree into monophyletic clades. writes a directory
 # with suitable alignments for each clade
-export SUPERSMART_CLADE_MAX_DISTANCE="0.1"
-export SUPERSMART_CLADE_MIN_DENSITY="0.5"
-smrt bbdecompose
+smrt bbdecompose --backbone consensus.nex --alnfile aligned.txt --taxafile species.tsv
 
 # merge all the alignments for each clades into a nexml file
 smrt clademerge --enrich
