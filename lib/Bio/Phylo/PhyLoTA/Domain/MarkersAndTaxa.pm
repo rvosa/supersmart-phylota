@@ -1044,45 +1044,43 @@ sub write_supermatrix {
     my @marker_table;
     for my $aln ( sort { $a cmp $b } @alignments ) {
     	my $fasta = $self->alignments->{$aln};
-	my $nchar = length((values %$fasta)[0]);
-	my %marker;
+		my $nchar = length((values %$fasta)[0]);
+		my %marker;
 		
-	# iterate over taxa
-	for my $taxon ( sort { $a <=> $b } @exemplars ) {
-		
-    	    # iterate over sequences
-	    my @best;
-	    for my $defline ( keys %$fasta ) {
-	        my %def = grep { /\S/ } split /\|/, $defline;
-	        if ( $def{'taxon'} =~ /^$taxon[^\d]/ ) {
-		    my $seq = $fasta->{$defline};
-		    my $missing = ( $seq =~ tr/?/?/ );
-		    push @best, [ $missing, $def{'gi'}, $seq ];
-	        }
-	    }
-			
-	    # pick best sequence
-	    if ( @best ) {
-	        my ( $best ) = sort { $a->[0] <=> $b->[0] } @best;
-	        $marker{$taxon} = [ $best->[1] ]; # store GI				
-	        $allseqs{$taxon} .= $best->[2]; # grow matrix
-	    }
-	    else {
-	        $allseqs{$taxon} .= '?' x $nchar;
-	    }
-	}
-	push @marker_table, \%marker;	
+		# iterate over taxa
+		for my $taxon ( sort { $a <=> $b } @exemplars ) {
+			# iterate over sequences
+			my @best;
+			for my $defline ( keys %$fasta ) {
+				my %def = grep { /\S/ } split /\|/, $defline;
+				if ( $def{'taxon'} =~ /^$taxon\/?/ ) {
+					my $seq = $fasta->{$defline};
+					my $missing = ( $seq =~ tr/?/?/ );
+					push @best, [ $missing, $def{'gi'}, $seq ];
+				}
+			}
+			# pick best sequence
+			if ( @best ) {
+				my ( $best ) = sort { $a->[0] <=> $b->[0] } @best;
+				$marker{$taxon} = [ $best->[1] ]; # store GI				
+				$allseqs{$taxon} .= $best->[2]; # grow matrix
+			}
+			else {
+				$allseqs{$taxon} .= '?' x $nchar;
+			}
+		}
+		push @marker_table, \%marker;	
     }
-
+	
     # write table listing all marker accessions for taxa
     $mts->write_marker_table( $args{'markersfile'}, \@marker_table, $args{'exemplars'} );
-
+	
     # prune gap only columns
     $self->delete_empty_columns(\%allseqs);
-
+	
     # Write supermatrix to file
     my $aln = Bio::SimpleAlign->new();
-    map {
+	map {
         $aln->add_seq(Bio::LocatableSeq->new(
 	    '-id'   => $_,
 	    'seq'   => $allseqs{$_},
