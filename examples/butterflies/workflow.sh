@@ -57,6 +57,12 @@ if [ ! -e "supermatrix.phy" ]; then
 	# so densely: the number of taxa still included in the backbone drops off steeply
 	# if we increase this.
 	export SUPERSMART_BACKBONE_MIN_COVERAGE="2"
+
+	# however, for those taxa that have been sequenced more densely we will allow the
+	# inclusion of more markers, as this appears to improve overall marker graph
+	# density and to reduce modularity
+	export SUPERSMART_BACKBONE_MAX_COVERAGE="10"
+
 	smrt bbmerge
 fi
 
