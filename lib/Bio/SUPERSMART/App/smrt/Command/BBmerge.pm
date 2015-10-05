@@ -79,7 +79,9 @@ sub options {
     my $outformat_default    = "phylip";
     my $markerstable_default = "markers-backbone.tsv";
     my $taxa_default         = "species.tsv";
-    my $merged_default       = "merged.txt";
+    my $merged_default       = "merged.txt";	
+    my $config       = Bio::Phylo::PhyLoTA::Config->new;
+	my $exemplars_default = $config->BACKBONE_EXEMPLARS;
     return (
         [
             "alnfile|a=s",
@@ -111,6 +113,12 @@ sub options {
 			"name for summary table with included accessions, defaults to $markerstable_default",
             { default => $markerstable_default, arg => "file" }
         ],
+        [
+            "exemplars|e=s",
+			"number of exemplar species per genus, defaults to $exemplars_default, set to -1 to include all species",
+            { default => $exemplars_default }
+        ],
+
     );
 }
 
@@ -143,7 +151,7 @@ sub run {
     # criterion: A taxon must share at least one marker with a taxon in its own genus.
     # If after that we are still left with more than two candidates in a genus,
     # we pick the taxa for which the sequences have the highest divergence.
-    my @exemplars = $mt->pick_exemplars( $taxafile, $include_taxa );
+    my @exemplars = $mt->pick_exemplars( $taxafile, $include_taxa, $opt->exemplars );
     $log->info( "Identified " . scalar(@exemplars) . " exemplars" );
 
     # optimize the order in which taxa and alignments are added to the supermatrix.

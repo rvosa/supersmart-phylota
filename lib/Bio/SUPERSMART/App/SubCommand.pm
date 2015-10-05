@@ -161,6 +161,7 @@ sub init {
 		'-class' => [ 
 			ref( $self ), 
 			'Bio::SUPERSMART::App::SubCommand', 
+			'Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa', 
 			'Bio::Phylo::PhyLoTA::Service::ParallelService', 
 			'Bio::Phylo::PhyLoTA::Service::TreeService', 
 			'Bio::Phylo::PhyLoTA::Service::CalibrationService',

@@ -339,8 +339,10 @@ of exemplar species.
 =cut
 
 sub pick_exemplars {
-	my ( $self, $taxafile, $usertaxa ) = @_;
+	my ( $self, $taxafile, $usertaxa, $cnt_per_genus ) = @_;
 	
+	$cnt_per_genus = 9**9**9 if $cnt_per_genus == -1;
+
 	# instantiate helper objects
 	my $log = $self->logger;
 	my $mts = Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector->new;
@@ -386,17 +388,17 @@ sub pick_exemplars {
 				$log->warn("No exemplars found for genus $gname ($genus) ");
 			}
 		}	
-		
+				
 		# if at this point we have two candidates, these are our exemplars
-		elsif ( scalar keys(%genus_candidates) == 2 ) {
+		elsif ( scalar keys(%genus_candidates) <=  $cnt_per_genus ) {
 			push @exemplars, keys %genus_candidates;
 			$log->info( "Added taxa ".join(',',keys %genus_candidates)." as exemplars" );
 		}			
 	
 		# if we still have more than two candidates, take the one which are furthest
 		# apart within this genus with respect to the available sequences
-		elsif ( scalar keys(%genus_candidates) > 2 ) {
-			$log->info("Found more than two exemplar candidates, choosing the most distant ones");
+		elsif ( scalar keys(%genus_candidates) > $cnt_per_genus ) {
+			$log->info("Found more than $cnt_per_genus candidates, choosing the most distant ones");
 			my %distance;
 			for my $aln ( sort @alignments ) {
 				if ( my $d = $self->calc_aln_distances( $aln, [ sort keys %genus_candidates ] ) ) {
@@ -408,9 +410,9 @@ sub pick_exemplars {
 				}
 			}
 			if ( scalar keys %distance ) {
-				my ( $sp1, $sp2 ) = map { split( /\|/, $_ ) } sort { $distance{$b} <=> $distance{$a} } sort keys %distance;
-				push @exemplars, $sp1, $sp2;
-				$log->info("Added taxa $sp1,$sp2 as exemplars");
+				my  @specs  = map { split( /\|/, $_ ) } sort { $distance{$b} <=> $distance{$a} } sort keys %distance;
+				push @exemplars, @specs[ 0..$cnt_per_genus -1 ];
+				$log->info("Added taxa "  . join(',', @specs[ 0..$cnt_per_genus -1 ]) .  " as exemplars");
 			}
 			else {
 
