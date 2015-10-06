@@ -38,6 +38,10 @@ cd $SIMDIR
 
 # Replicate the dataset (final tree, taxa table and alignments)
 smrt-utils replicate -t final.nex -f nexus -a aligned.txt -l replicate.log -v
+
+# make plot with alignment summary
+Rscript ../plot-aln-summary.R aligned-replicated.txt
+
 # insert simulated sequences and possible artificial taxa into the database
 # prefix for sequence accessions is the simulation directory
 smrt-utils dbinsert -s aligned-replicated.txt -t taxa-replicated.tsv -p $SIMDIR -v
