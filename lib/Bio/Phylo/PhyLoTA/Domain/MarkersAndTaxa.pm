@@ -6,6 +6,7 @@ use strict;
 use warnings;
 
 use Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector;
+use List::Util 'min';
 use List::MoreUtils 'uniq';
 use Data::Dumper;
 use Bio::AlignIO;
@@ -32,6 +33,7 @@ has 'logger'        => ( is => 'ro', 'isa' => 'Str' );
 around BUILDARGS => sub {
 	my $orig = shift;
 	my $class = shift;
+
 	if ( @_ == 1 && ! ref $_[0] ) {
 
 		# here we prepare the constructor args. first we parse the alignment file list.
@@ -125,17 +127,17 @@ sub _index_alignments {
     for my $i ( 0 .. $#{ $args->{'alnfiles'} } ) {
     
         # dereference data
-	my %fasta = %{ $args->{'alignments'}->{$args->{'alnfiles'}->[$i]} };
+		my %fasta = %{ $args->{'alignments'}->{$args->{'alnfiles'}->[$i]} };
 	    
-	# grep distinct taxa, store under alignment file name
-	my @taxa = uniq $class->get_taxa_from_fasta(%fasta);
-	$taxa_for_alns{$args->{'alnfiles'}->[$i]} = \@taxa;
+		# grep distinct taxa, store under alignment file name
+		my @taxa = uniq $class->get_taxa_from_fasta(%fasta);
+		$taxa_for_alns{$args->{'alnfiles'}->[$i]} = \@taxa;
 	    
-	# store alignment file names for each taxon
-	for my $t (@taxa) {
-	    $alns_for_taxa{$t} = [] if not $alns_for_taxa{$t};
-		push @{ $alns_for_taxa{$t} }, $args->{'alnfiles'}->[$i];		    
-	}
+		# store alignment file names for each taxon
+		for my $t (@taxa) {
+			$alns_for_taxa{$t} = [] if not $alns_for_taxa{$t};
+			push @{ $alns_for_taxa{$t} }, $args->{'alnfiles'}->[$i];		    
+		}
     }
     $args->{'taxa_for_alns'} = \%taxa_for_alns;
     $args->{'alns_for_taxa'} = \%alns_for_taxa;
@@ -155,16 +157,16 @@ sub _index_alignments {
     
     	# taxon has zero alignments or fewer than coverage
     	# XXX modify this to allow for user taxa
-	if ( not $alns_for_taxa{$taxon} or scalar( @{ $alns_for_taxa{$taxon} } ) < $cover ) {
-	    push @low_coverage_taxa, $taxon;
-	}    
+		if ( not $alns_for_taxa{$taxon} or scalar( @{ $alns_for_taxa{$taxon} } ) < $cover ) {
+			push @low_coverage_taxa, $taxon;
+		}    
     }    
     for my $t ( @low_coverage_taxa ) {
-    
+		
     	# remove forward occurrence in AM
-	delete $adjacency_matrix{$t};
+		delete $adjacency_matrix{$t};
         for my $k ( keys %adjacency_matrix ) {
-        
+			
             # remove reverse occurrence
             delete $adjacency_matrix{$k}->{$t};
         }
@@ -410,9 +412,10 @@ sub pick_exemplars {
 				}
 			}
 			if ( scalar keys %distance ) {
-				my  @specs  = map { split( /\|/, $_ ) } sort { $distance{$b} <=> $distance{$a} } sort keys %distance;
-				my @added = @specs[ 0..$cnt_per_genus -1 ];
-									push @exemplars, @added;
+				my  @specs  = uniq map { split( /\|/, $_ ) } sort { $distance{$b} <=> $distance{$a} } sort keys %distance;
+				my $idx = min($cnt_per_genus, scalar(@specs)) - 1;
+				my @added = @specs[ 0..$idx];
+				push @exemplars, @added;
 				$log->info("Added taxa "  . join(',', @added) .  " as exemplars");
 			}
 			else {
@@ -557,18 +560,17 @@ sub delete_empty_columns {
     my $vals  = values %allseqs;
     my %ind;
     for my $v ( values %allseqs ) {
-
         # check if column only consists of gap characters
         $ind{ pos($v) - 1 }++ while $v =~ /[-Nn\?]/g;
     }
     my @to_remove = sort { $b <=> $a } grep { $ind{$_} == $vals } keys %ind;
-
     # remove columns at specified indices
     for my $v ( values %allseqs ) {
         substr( $v, $_, 1, "" ) for @to_remove;
-    }
+	}
     my $removed = $nchar - length $allseqs{ ( keys(%allseqs) )[0] };
     $log->info("Removed $removed gap-only columns from matrix");
+	return %allseqs;
 }
 
 =item keep_taxa
@@ -1184,9 +1186,9 @@ and file locations for marker table and supermatrix, writes out a supermatrix to
 
 sub write_supermatrix {
     my ( $self, %args ) = @_;
-    
+	    
     # instantiate helper objects
-    my $log    = $self->logger;
+    my $logger = $self->logger;
     my $mts    = Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector->new;
     my $config = Bio::Phylo::PhyLoTA::Config->new;
     my $cover  = $config->BACKBONE_MIN_COVERAGE;
@@ -1234,7 +1236,7 @@ sub write_supermatrix {
     $mts->write_marker_table( $args{'markersfile'}, \@marker_table, $args{'exemplars'} );
 	
     # prune gap only columns
-	$self->delete_empty_columns(\%allseqs);
+	%allseqs = $self->delete_empty_columns(\%allseqs);
 	
     # Write supermatrix to file
     my $aln = Bio::SimpleAlign->new();
@@ -1246,6 +1248,7 @@ sub write_supermatrix {
         ));
     } keys %allseqs;
     $aln->sort_alphabetically;
+
     my $filename = $args{'outfile'};
     my $stream = Bio::AlignIO->new(
         '-format'   => $args{'format'} || 'phylip',
