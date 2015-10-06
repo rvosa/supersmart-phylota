@@ -1231,10 +1231,10 @@ sub write_supermatrix {
     }
 	
     # write table listing all marker accessions for taxa
-#    $mts->write_marker_table( $args{'markersfile'}, \@marker_table, $args{'exemplars'} );
+    $mts->write_marker_table( $args{'markersfile'}, \@marker_table, $args{'exemplars'} );
 	
     # prune gap only columns
-#    $self->delete_empty_columns(\%allseqs);
+	$self->delete_empty_columns(\%allseqs);
 	
     # Write supermatrix to file
     my $aln = Bio::SimpleAlign->new();
