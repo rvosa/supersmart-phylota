@@ -333,10 +333,11 @@ sub write_clade_matrix {
 		return $outfile;
 	}
 }
+
 =item pick_exemplars
 
-Given a taxa table and a comma-separated list of user taxa, returns a list
-of exemplar species.
+Given a taxa table and a comma-separated list of user taxa and the amount of 
+exemplar species per genus, returns a list of exemplar species.
 
 =cut
 
