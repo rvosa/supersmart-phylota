@@ -411,8 +411,9 @@ sub pick_exemplars {
 			}
 			if ( scalar keys %distance ) {
 				my  @specs  = map { split( /\|/, $_ ) } sort { $distance{$b} <=> $distance{$a} } sort keys %distance;
-				push @exemplars, @specs[ 0..$cnt_per_genus -1 ];
-				$log->info("Added taxa "  . join(',', @specs[ 0..$cnt_per_genus -1 ]) .  " as exemplars");
+				my @added = @specs[ 0..$cnt_per_genus -1 ];
+									push @exemplars, @added;
+				$log->info("Added taxa "  . join(',', @added) .  " as exemplars");
 			}
 			else {
 
@@ -1230,10 +1231,10 @@ sub write_supermatrix {
     }
 	
     # write table listing all marker accessions for taxa
-    $mts->write_marker_table( $args{'markersfile'}, \@marker_table, $args{'exemplars'} );
+#    $mts->write_marker_table( $args{'markersfile'}, \@marker_table, $args{'exemplars'} );
 	
     # prune gap only columns
-    $self->delete_empty_columns(\%allseqs);
+#    $self->delete_empty_columns(\%allseqs);
 	
     # Write supermatrix to file
     my $aln = Bio::SimpleAlign->new();
