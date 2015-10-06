@@ -7,6 +7,7 @@
 # have good calibration points but hopefully that will change.
 NAMES=names.txt
 FOSSILS=fossils.tsv
+OUTGROUP=Hesperioidea
 
 # Step 1: match the names to the NCBI taxonomy. This is needed because ultimately all
 # sequences that the pipeline uses are annotated with NCBI taxonomy identifiers.
@@ -23,6 +24,11 @@ fi
 # - cluster id: the internal identifier assigned by PhyLoTA to this cluster
 # - type:       the type of cluster, usually a 'subtree' from the NCBI taxonomy
 if [ ! -e "aligned.txt" ]; then
+
+	# it turns out that the initial alignments are spectacularly better when using
+	# mafft instead of muscle. as a consequence, the orthologize step also works 
+	# better (more alignments are merged), which gives us a denser marker graph
+	export SUPERSMART_MSA_TOOL="mafft"
 	smrt align
 fi
 
@@ -84,7 +90,7 @@ fi
 # the same thing as considering either of these the outgroup with respect to the other.
 # By default produces a file 'backbone-rerooted.dnd'
 if [ ! -e "backbone-rerooted.dnd" ]; then
-	smrt bbreroot --smooth
+	smrt bbreroot --smooth --outgroup=$OUTGROUP
 fi
 
 # Step 7: calibrate the backbone trees from step 7. This step uses treePL to create
