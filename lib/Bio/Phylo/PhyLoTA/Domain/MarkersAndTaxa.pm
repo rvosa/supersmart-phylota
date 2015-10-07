@@ -40,7 +40,7 @@ around BUILDARGS => sub {
 		my %args = ( 'logger' => Bio::Phylo::Util::Logger->new );
 		my $alnfile = shift;
 		$args{'alnfiles'} = [ $class->parse_aln_file($alnfile) ];
-		
+
 		# then we parse the alignments
 		$args{'alignments'} = {};
 		my %taxa;
@@ -49,11 +49,11 @@ around BUILDARGS => sub {
 			$args{'alignments'}->{$f} = \%fasta;
 			%taxa = map { $_ => 1 } $class->get_taxa_from_fasta(%fasta);
 		}
-		$args{'species'} = [ keys %taxa ];		
-		
+		$args{'species'} = [ keys %taxa ];
+
 		# then we index the alignments
 		$class->_index_alignments(\%args);
-		
+
 		# now call the constructor
 		return $class->$orig(%args);
 	}
@@ -69,7 +69,7 @@ Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa - Markers and Taxa
 =head1 DESCRIPTION
 
 This package defines a domain-specific object that creates and manages optimal sets of
-markers and taxa to build supermatrices. It holds state, which is why it is not a 
+markers and taxa to build supermatrices. It holds state, which is why it is not a
 service class but a domain object. The following read-only properties (i.e. getters) are
 populated during object creation provided the constructor is passed an alignment list file
 and are therefore available as additional method calls:
@@ -116,67 +116,67 @@ Returns an array ref of all potential species to be added to the supermatrix
 
 sub _index_alignments {
     my ( $class, $args ) = @_;
-	
+
     # instantiate helper objects
     my $config = Bio::Phylo::PhyLoTA::Config->new;
-    my $mts    = Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector->new;	
-	
+    my $mts    = Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector->new;
+
     # make forward and reverse mappings between taxa and alignments
     my %taxa_for_alns;
     my %alns_for_taxa;
     for my $i ( 0 .. $#{ $args->{'alnfiles'} } ) {
-    
+
         # dereference data
 		my %fasta = %{ $args->{'alignments'}->{$args->{'alnfiles'}->[$i]} };
-	    
+
 		# grep distinct taxa, store under alignment file name
 		my @taxa = uniq $class->get_taxa_from_fasta(%fasta);
 		$taxa_for_alns{$args->{'alnfiles'}->[$i]} = \@taxa;
-	    
+
 		# store alignment file names for each taxon
 		for my $t (@taxa) {
 			$alns_for_taxa{$t} = [] if not $alns_for_taxa{$t};
-			push @{ $alns_for_taxa{$t} }, $args->{'alnfiles'}->[$i];		    
+			push @{ $alns_for_taxa{$t} }, $args->{'alnfiles'}->[$i];
 		}
     }
     $args->{'taxa_for_alns'} = \%taxa_for_alns;
     $args->{'alns_for_taxa'} = \%alns_for_taxa;
-    
+
     # get adjacency matrix with taxa connected by markers
     my %adjacency_matrix = $mts->generate_marker_adjacency_matrix(
-    	[ values %{ $args->{'alignments'} } ], 
+    	[ values %{ $args->{'alignments'} } ],
     	$args->{'species'},
     );
     $args->{'adjacencies'} = \%adjacency_matrix;
-    
+
     # prune adjacency matrix: each taxon which has
     #  not sufficient coverage cannot possibly be an exemplar
     my @low_coverage_taxa;
     my $cover = $config->BACKBONE_MIN_COVERAGE;
     for my $taxon ( keys %adjacency_matrix ) {
-    
+
     	# taxon has zero alignments or fewer than coverage
     	# XXX modify this to allow for user taxa
 		if ( not $alns_for_taxa{$taxon} or scalar( @{ $alns_for_taxa{$taxon} } ) < $cover ) {
 			push @low_coverage_taxa, $taxon;
-		}    
-    }    
+		}
+    }
     for my $t ( @low_coverage_taxa ) {
-		
+
     	# remove forward occurrence in AM
 		delete $adjacency_matrix{$t};
         for my $k ( keys %adjacency_matrix ) {
-			
+
             # remove reverse occurrence
             delete $adjacency_matrix{$k}->{$t};
         }
     }
-    
+
     # get all independent subsets of species that are connected by at least
     # one marker and select the largest subset as candidates for exemplars
     my $sets = $mts->get_connected_taxa_subsets( \%adjacency_matrix );
     my %candidates = map { $_ => 1 } @{ ( sort { scalar(@$b) <=> scalar(@$a) } @$sets )[0] };
-    $args->{'candidates'} = \%candidates;                	
+    $args->{'candidates'} = \%candidates;
 }
 
 =item orthologize_cladedir
@@ -197,15 +197,15 @@ sub orthologize_cladedir {
 	# collect seed gis from alignment file names
 	my @files =  <"${dir}/*.fa">;
 	my @gis =  grep { $_ ne '' } map {$1 if $_=~/\/([0-9]+)-clade[0-9]+\.fa/ } @files;
-		
-	$sg->merge_alignments( $maxdist, $dir, $outfile, @gis );	
+
+	$sg->merge_alignments( $maxdist, $dir, $outfile, @gis );
 }
 
 =item write_clade_matrix
 
 given a clade directory with merged alignments,
 enriches with additional haplotypes (if 'enrich' argument given)
-and writes a matrix of the merged clade alignments 
+and writes a matrix of the merged clade alignments
 in the specified format (phylip or nexml).
 
 =cut
@@ -220,29 +220,29 @@ sub write_clade_matrix {
 	my $outformat = $args{'format'};
 
 	my $clade;
-	if ( $cladedir =~ m/\/(clade[0-9+])/) {
+	if ( $cladedir =~ m/\/(clade[0-9]+)/) {
 		$clade = $1;
 	}
 
 	# initialize the container objects
 	my $log = Bio::Phylo::Util::Logger->new;
 	my $ns      = 'http://www.supersmart-project.org/terms#';
-    my $factory = Bio::Phylo::Factory->new;	
+    my $factory = Bio::Phylo::Factory->new;
     my $mts     = Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector->new;
     my $service = Bio::Phylo::PhyLoTA::Service::TreeService->new;
 	my $sg      = Bio::Phylo::PhyLoTA::Service::SequenceGetter->new;
-	
+
 	my $project = $factory->create_project( '-namespaces' => { 'smrt' => $ns } );
 	my $taxa    = $factory->create_taxa;
-	$project->insert($taxa);        
-	
+	$project->insert($taxa);
+
 	# start processing the directory
 	$log->info("Going to enrich alignments in $cladedir");
         my @matrices;
 
-		# read list of merged alignment files		
+		# read list of merged alignment files
 		my $mergedfile = "${cladedir}/merged.txt";
-		return undef unless -e $mergedfile and -s $mergedfile; 
+		return undef unless -e $mergedfile and -s $mergedfile;
 
 		$log->debug("Trying to open merged file $mergedfile");
 		open my $fh, '<', $mergedfile or die $!;
@@ -251,7 +251,7 @@ sub write_clade_matrix {
 		chomp (@files);
 
 		for my $file ( @files ) {
-        
+
 			# parse the file, enrich and degap it
 			$log->info("Adding alignment $file");
 			my $matrix = $self->parse_fasta_as_matrix(
@@ -262,16 +262,16 @@ sub write_clade_matrix {
 			$mts->enrich_matrix($matrix) if $enrich;
 			$matrix = $mts->degap_matrix($matrix);
 			push @matrices, $matrix if $matrix;
-            
+
         }
         return undef if not @matrices;
-        
+
         # pick CLADE_MAX_MARKERS biggest alignments
 		@matrices = sort { $b->get_ntax <=> $a->get_ntax } @matrices;
 		if ( scalar(@matrices) > $max_markers ) {
 			$log->info("Found more alignments in clade directory $cladedir than CLADE_MAX_MARKERS. Using the first $max_markers largest alignments.");
 		}
-	
+
 		# keep track of taxon ids, the number of markers for each taxid,
 		# because some markers might not be selected and taxa have to be removed
 		my %markers_for_taxon;
@@ -287,7 +287,7 @@ sub write_clade_matrix {
 				$project->insert($mat);
 			}
         }
-	
+
 		# remove a taxon from matrix if it has none or less markers than given in CLADE_TAXON_MIN_MARKERS
 		# also remove all rows in the matrices where this taxon appears
 		my ($tax) = @{ $project->get_items(_TAXA_) } ;
@@ -297,7 +297,7 @@ sub write_clade_matrix {
 			if ( ! $marker_cnt || $marker_cnt < $min_markers ) {
 				$log->info("Removing taxon " . $taxname . " from $cladedir");
 				$tax->delete($t);
-				
+
 				# remove rows from matrix containing the taxon
 				for my $mat ( @matrices ) {
 					for my $row ( @{$mat->get_entities} ) {
@@ -309,11 +309,11 @@ sub write_clade_matrix {
 				}
 			}
 		}
-		
+
 	# write table listing all marker accessions for taxa
 	my @marker_table = $mts->get_marker_table( @{ $project->get_items(_MATRIX_) } );
 	$mts->write_marker_table( "${cladedir}/${clade}-markers.tsv", \@marker_table );
-	
+
 	# write the merged nexml
 	if ( lc $outformat eq 'nexml' ) {
 		my $outfile = "${cladedir}/${clade}.xml";
@@ -322,7 +322,7 @@ sub write_clade_matrix {
 		print $outfh $project->to_xml( '-compact' => 1 );
 		return $outfile;
 	}
-	
+
 	# write supermatrix phylip
 	elsif ( lc $outformat eq 'phylip' ) {
 		my $outfile = "${cladedir}/${clade}.phy";
@@ -336,51 +336,51 @@ sub write_clade_matrix {
 
 =item pick_exemplars
 
-Given a taxa table and a comma-separated list of user taxa and the amount of 
+Given a taxa table and a comma-separated list of user taxa and the amount of
 exemplar species per genus, returns a list of exemplar species.
 
 =cut
 
 sub pick_exemplars {
 	my ( $self, $taxafile, $usertaxa, $cnt_per_genus ) = @_;
-	
+
 	$cnt_per_genus = 9**9**9 if $cnt_per_genus == -1;
 
 	# instantiate helper objects
 	my $log = $self->logger;
 	my $mts = Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector->new;
-	
+
 	# read and pre-process taxa
 	my @records = $self->parse_taxa_file($taxafile);
 	my %user_taxa = $self->parse_user_taxa( $usertaxa, @records );
 	my %species_for_genus = $self->get_species_for_genera( @records );
-	
+
 	# iterate over genera
 	my %candidates       = %{ $self->candidates };
 	my %adjacency_matrix = %{ $self->adjacencies };
 	my @alignments       = @{ $self->alnfiles };
 	my @exemplars;
 	for my $genus ( keys %species_for_genus ) {
-	
+
 		# lookup genus name
 		my $gname = $mts->find_node($genus)->taxon_name;
-		$log->info("Looking for exemplars in genus $gname ($genus)");	
-		
+		$log->info("Looking for exemplars in genus $gname ($genus)");
+
 		# select taxa that are in this genus and are in the candidate exemplars
 		my %genus_taxa       = map { $_ => 1 } @{ $species_for_genus{$genus} };
 		my %genus_candidates = map { $_ => 1 } grep { $candidates{$_} } keys %genus_taxa;
-		$log->debug("Initial exemplar candidates : " . Dumper(\%genus_candidates));	
-		
+		$log->debug("Initial exemplar candidates : " . Dumper(\%genus_candidates));
+
 		# now only keep the ones that have connection within the genus
 		for my $can ( sort keys %genus_candidates ) {
 			my %adj = %{ $adjacency_matrix{$can} };
 			my @connected_within = grep { $genus_taxa{$_} and $adj{$_} > 0 } keys %adj;
 			delete $genus_candidates{$can} unless @connected_within;
-		}			
-		
+		}
+
 		# at this point, we might have lost exemplars in monotypic genera and exemplars
 		# that do not share markers with other taxa in the genus; if the latter one
-		# is the case, we can only add one single taxon to the exemplars, since two taxa 
+		# is the case, we can only add one single taxon to the exemplars, since two taxa
 		# without marker overlap would most likely cause a paraphyly in the backbone
 		if ( scalar keys(%genus_candidates) < 2 ) {
 			if ( my @valid_taxa = grep { exists $candidates{$_} } keys %genus_taxa ) {
@@ -390,14 +390,14 @@ sub pick_exemplars {
 			else {
 				$log->warn("No exemplars found for genus $gname ($genus) ");
 			}
-		}	
-				
+		}
+
 		# if at this point we have two candidates, these are our exemplars
 		elsif ( scalar keys(%genus_candidates) <=  $cnt_per_genus ) {
 			push @exemplars, keys %genus_candidates;
 			$log->info( "Added taxa ".join(',',keys %genus_candidates)." as exemplars" );
-		}			
-	
+		}
+
 		# if we still have more than two candidates, take the one which are furthest
 		# apart within this genus with respect to the available sequences
 		elsif ( scalar keys(%genus_candidates) > $cnt_per_genus ) {
@@ -428,7 +428,7 @@ sub pick_exemplars {
 					  . join( ',', keys %genus_candidates )
 					  . " as exemplars" );
 			}
-		}	
+		}
 	}
 	return @exemplars;
 }
@@ -442,11 +442,11 @@ and an array ref of optimally sorted alignments
 
 sub optimize_packing_order {
     my ( $self, @exemplars ) = @_;
-	
+
     # instantiate helper objects
     my $log = $self->logger;
     my $config = Bio::Phylo::PhyLoTA::Config->new;
-	
+
     # dereference precomputed data
     my %alns_for_taxa = %{ $self->alns_for_taxa };
     my %taxa_for_alns = %{ $self->taxa_for_alns };
@@ -476,11 +476,11 @@ sub optimize_packing_order {
             $alns_for_taxa{$taxon} = \@sorted;
         }
     }
-    
-    # sort the exemplar taxa by increasing occurrence in alignments, so rarely sequenced 
+
+    # sort the exemplar taxa by increasing occurrence in alignments, so rarely sequenced
     # species are treated preferentially by including their most speciose alignments first
     my @sorted_exemplars = sort {
-        scalar( @{ $alns_for_taxa{$a} } ) <=> 
+        scalar( @{ $alns_for_taxa{$a} } ) <=>
         scalar( @{ $alns_for_taxa{$b} } )
     } grep { $alns_for_taxa{$_} } @exemplars;
 
@@ -493,13 +493,13 @@ sub optimize_packing_order {
         # take all its not-yet-seen alignments...
         my @alns = grep { !$aln{$_} } @{ $alns_for_taxa{$taxon} };
         $seen{$taxon} = 0 if not defined $seen{$taxon};
-        
-        # add alignments until seen enough. XXX we may have a 
+
+        # add alignments until seen enough. XXX we may have a
         # BACKBONE_MAX_COVERAGE so that all our exemplars have at least
         # a minimum which we, optionally, add to. Alternatively, we might
         # implement some sort of iterative expand() function that computes,
         # given the selected exemplars and alignments, which taxa are most
-        # distant from each other in marker sharing, and try to select 
+        # distant from each other in marker sharing, and try to select
         # markers that shorten that distance.
         my $max = $config->BACKBONE_MAX_COVERAGE or $config->BACKBONE_MIN_COVERAGE;
       ALN: while ( $seen{$taxon} < $max ) {
@@ -508,8 +508,8 @@ sub optimize_packing_order {
             my $aln = shift @alns;
             if ( not $aln or not -e $aln ) {
 
-                # might happen, since we selected exemplars for which there 
-                # are sufficient minimum alignments, but not necessarily 
+                # might happen, since we selected exemplars for which there
+                # are sufficient minimum alignments, but not necessarily
                 # BACKBONE_MAX_COVERAGE!
                 $log->info("No more alignments available for $taxon, now have: ".$seen{$taxon});
                 next TAXON;
@@ -521,7 +521,7 @@ sub optimize_packing_order {
             last ALN if not @alns;
         }
     }
-    my @sorted_alignments = sort keys %aln;    
+    my @sorted_alignments = sort keys %aln;
     return \@sorted_exemplars, \@sorted_alignments;
 }
 
@@ -538,7 +538,7 @@ sub dedup {
     for my $defline ( keys %fasta ) {
         if ( $defline =~ /gi\|(\d+)/ ) {
             my $gi = $1;
-            $result{$defline} = $fasta{$defline} unless $seen{$gi}++;           
+            $result{$defline} = $fasta{$defline} unless $seen{$gi}++;
         }
     }
     return %result;
@@ -576,7 +576,7 @@ sub delete_empty_columns {
 
 =item keep_taxa
 
-Retains the records for the provided taxon identifiers that occur in a hash such as is 
+Retains the records for the provided taxon identifiers that occur in a hash such as is
 produced by parse_fasta_string
 
 =cut
@@ -596,21 +596,21 @@ sub keep_taxa {
 
 =item query_taxa_table
 
-given a taxon id or a reference to a list of taxon identifiers, and a single taxonomic 
-rank or a reference to a list of ranks, returns all entries in the taxon table matching 
-the rank(s) that are associated with the input taxon ID(s). 
+given a taxon id or a reference to a list of taxon identifiers, and a single taxonomic
+rank or a reference to a list of ranks, returns all entries in the taxon table matching
+the rank(s) that are associated with the input taxon ID(s).
 
 =cut
 
 sub query_taxa_table {
     my ($self, $tids, $ranks, @records) = @_;
-    
+
     # input can either be scalars or array refs
     my %tids = ref($tids) ? map {$_=>1} @${tids} : ($tids=>1);
     my %ranks = ref($ranks) ? map {$_=>1} @${ranks} : ($ranks=>1);
-    
+
     my @matching = grep { my %h = %{$_}; grep{ exists($tids{$_}) } values%h } @records;
-    
+
     # XXX why would this be necessary?
     no warnings 'uninitialized';
     my @ids = uniq map { @{$_}{keys(%ranks)} } @matching;
@@ -621,7 +621,7 @@ sub query_taxa_table {
 
 =item parse_aln_file
 
-Reads the flat list of alignments, returns an array of validated file names 
+Reads the flat list of alignments, returns an array of validated file names
 (i.e. not empty strings, must be valid locations)
 
 =cut
@@ -634,7 +634,7 @@ sub parse_aln_file {
         chomp;
         push @alignments, $_ if /\S/ && -e $_;
     }
-    return @alignments;	
+    return @alignments;
 }
 
 =item parse_user_taxa
@@ -648,7 +648,7 @@ sub parse_user_taxa {
     my ( $self, $include_taxa, @records ) = @_;
     my $log = $self->logger;
     my $mts = Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector->new;
-    my @ranks = qw(species subspecies varietas forma);		
+    my @ranks = qw(species subspecies varietas forma);
     my %user_taxa;
     if ($include_taxa) {
     	$log->info("Going to parse list of user taxa");
@@ -660,7 +660,7 @@ sub parse_user_taxa {
         my @species = $self->query_taxa_table( \@ids, \@ranks, @records );
         %user_taxa = map { $_ => 1 } @species;
         $log->info("Identified ".scalar(keys(%user_taxa))." species to retain");
-    }	    
+    }
     return %user_taxa;
 }
 
@@ -700,9 +700,9 @@ sub parse_fasta_string {
         }
         else {
             $fasta{$current} .= $line;
-        }     
+        }
     }
-    return %fasta;    
+    return %fasta;
 }
 
 =item parse_fasta_as_matrix
@@ -720,7 +720,7 @@ sub parse_fasta_as_matrix {
     my $file = $args{'-file'} or throw 'BadArgs' => "Need -file argument";
     my $taxa = $args{'-taxa'} or throw 'BadArgs' => "Need -taxa argument";
     my $factory = Bio::Phylo::Factory->new;
-	    
+
     # read fasta data
     my $matrix = parse_matrix(
         '-type'       => 'dna',
@@ -729,10 +729,10 @@ sub parse_fasta_as_matrix {
         '-as_project' => 1,
     );
     $matrix->set_name($args{'-name'}) if $args{'-name'};
-    
+
     # create taxon lookup
     my %t = map { $_->get_name => $_ } @{ $taxa->get_entities };
-    
+
     # cleanup rows
     $matrix->visit(sub{
         my $row = shift;
@@ -740,26 +740,26 @@ sub parse_fasta_as_matrix {
         my %fields = split /\|/, $name;
         $fields{$_} =~ s/^(\d+).*$/$1/ for keys %fields;
         my $binomial = $fields{'taxon'};
-        
+
         # create new taxon object if none seen yet
         if ( not $t{$binomial} ) {
             $t{$binomial} = $factory->create_taxon( '-name' => $binomial );
             $t{$binomial}->set_meta_object( 'smrt:tid' => $fields{'taxon'} );
             $taxa->insert($t{$binomial});
         }
-        $row->set_taxon( $t{$binomial} );       
+        $row->set_taxon( $t{$binomial} );
         $row->set_name( $binomial );
         $row->set_meta_object( 'smrt:gi'      => $fields{'gi'} );
         $row->set_meta_object( 'smrt:mrca'    => $fields{'mrca'} );
         $row->set_meta_object( 'smrt:seed_gi' => $fields{'seed_gi'} );
     });
     $matrix->set_taxa($args{'-taxa'});
-    return $matrix; 
+    return $matrix;
 }
 
 =item parse_taxa_file
 
-Reads the provided taxa file, returns a list of records where each consists of a 
+Reads the provided taxa file, returns a list of records where each consists of a
 hash where keys are the headers in the taxa table.
 
 B<Note>: this method, and C<parse_taxa_string> are completely agnostic about the
@@ -772,12 +772,12 @@ sub parse_taxa_file {
     my ( $class, $file ) = @_;
     open my $fh, '<', $file or die $!;
     my $string = do { local $/; <$fh> };
-    return $class->parse_taxa_string($string);  
+    return $class->parse_taxa_string($string);
 }
 
 =item parse_taxa_string
 
-Reads the provided taxa string, returns a list of records where each consists of a 
+Reads the provided taxa string, returns a list of records where each consists of a
 hash where keys are the headers in the taxa table.
 
 =cut
@@ -788,24 +788,24 @@ sub parse_taxa_string {
     my @result;
     LINE: for my $line ( split /\n/, $string ) {
         chomp $line;
-        
+
         # skip comments and blank lines
         next LINE if $line =~ /^\s*#/;
         next LINE if $line =~ /^\s*$/;
-        
+
         # store header
         if ( not @header ) {
             @header = split /\t/, $line;
             next LINE;
         }
         my %record = ( 'keys' => [ @header ] );
-        
+
         # store fields
         my @fields = split /\t/, $line;
         for my $i ( 0 .. $#header ) {
             $record{$header[$i]} = $fields[$i];
         }
-        
+
         # store record
         push @result, \%record;
     }
@@ -813,19 +813,19 @@ sub parse_taxa_string {
 }
 
 =item calc_mean_distance
-    
+
 Calculates the average pairwise distance within the alignment.
-    
+
 =cut
 
 sub calc_mean_distance {
     my ( $class, $fastastr ) = @_;
     my $stream = Bio::AlignIO->new(
-    	'-string' => $fastastr, 
+    	'-string' => $fastastr,
     	'-format' => "fasta",
-    );  
+    );
     my $aln = $stream->next_aln;
-	
+
 	# return 0 if only one sequence provided
 	if ( $aln->num_sequences == 1 ) {
 		return 0;
@@ -907,20 +907,20 @@ to extract all entries for taxa 10, 20 and 30, respectively.
 
 sub get_alignment_subset {
     my ($self, $aln, $arg) = @_;
-    
+
     # determine for what type (gi, taxon, ..., given in fasta header) to chose
-    my ($type) = keys %$arg;       
+    my ($type) = keys %$arg;
     my @ids = @{$arg->{$type}};
-    
+
     my %result;
     for my $k ( keys %$aln ) {
         foreach my $id ( @ids ) {
             if ( $k =~ m/$type\|$id/ ) {
-                $result{$k} = $aln->{$k};           
+                $result{$k} = $aln->{$k};
             }
         }
     }
-    return %result; 
+    return %result;
 }
 
 =item get_supermatrix_numtaxa
@@ -971,7 +971,7 @@ sub get_supermatrix_taxa {
         chomp;
         if ( not $ntax and /^\s*(\d+)\s+\d+\s*$/ ) {
             $ntax = $1;
-            next LINE;  
+            next LINE;
         }
         if ( @taxa < $ntax and /^\s*(\S+)/ ) {
             my $taxon = $1;
@@ -999,7 +999,7 @@ sub get_distinct_taxa {
 
 =item get_species_for_genera
 
-Given a set of taxa table records, returns a hash where each key is a 
+Given a set of taxa table records, returns a hash where each key is a
 genus and the values are species in that genus
 
 =cut
@@ -1015,7 +1015,7 @@ sub get_species_for_genera {
         my @species = $self->query_taxa_table( $genus, \@ranks, @records );
         $species_for_genus{$genus} = \@species;
     }
-    $log->info( "Read " . scalar(keys(%species_for_genus)) . " genera" );	
+    $log->info( "Read " . scalar(keys(%species_for_genus)) . " genera" );
     return %species_for_genus;
 }
 
@@ -1023,34 +1023,34 @@ sub get_species_for_genera {
 
 Determines, for a given species table, which taxonomic level
 (column in the table) is the highest one that can give information about
-distinct taxa in this table. This will be the column which does not contain NA values and 
+distinct taxa in this table. This will be the column which does not contain NA values and
 which has at least two different taxon identifiers. This level forms a good basis to check
 for paraphyly in the branches spawning from there.
 
 =cut
 
 sub get_highest_informative_level{
-    my ( $class, @records) = @_;    
+    my ( $class, @records) = @_;
     my $mts = Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector->new;
     my $result;
-    
+
     # get all possible taxonomic ranks, ordered from highest to lowest
     my @all_ranks = $mts->get_taxonomic_ranks;
     my %ranks_in_table = map { $_=>1 } keys %{$records[0]};
-    
-    # iterate over all ranks; the first informative taxon level is the level that 
+
+    # iterate over all ranks; the first informative taxon level is the level that
     # does not contain NA values and that has distinct taxon IDs
-    foreach my $rank (@all_ranks){      
+    foreach my $rank (@all_ranks){
 
         # skip rank if not in our taxa table
         next if not exists $ranks_in_table{$rank};
-        
+
         # extract column for taxonomic level
         my @column = map {my %h=%$_; my $entry=$h{$rank}; $entry=~s/\s//g; $entry; } @records;
-    
+
         # omit columns that contain 'NA' values
         next if grep {$_ eq 'NA'} @column;
-    
+
         if (scalar (uniq @column) > 1){
             $result = $rank;
             last;
@@ -1067,24 +1067,24 @@ is the same for all entries in the species table.
 =cut
 
 sub get_root_taxon_level {
-    my ( $class, @records) = @_;    
+    my ( $class, @records) = @_;
     my $mts = Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector->new;
     my $result;
-    
+
     # get all possible taxonomic ranks, ordered from lowest to highest
     my @all_ranks = reverse $mts->get_taxonomic_ranks;
     my %ranks_in_table = map { $_=>1 } keys %{$records[0]};
-    
-    # iterate over all ranks; the root taxon level is the first rank for which all 
+
+    # iterate over all ranks; the root taxon level is the first rank for which all
     #  entries in the taxa table are the same!
-    for my $rank ( @all_ranks ){      
+    for my $rank ( @all_ranks ){
 
         # skip rank if not in our taxa table
         next if not exists $ranks_in_table{$rank};
-        
+
         # extract column for taxonomic level
         my @column = map {my %h=%$_; my $entry=$h{$rank}; $entry=~s/\s//g; $entry; } @records;
-    
+
         # omit columns that contain 'NA' values
         next if grep {$_ eq 'NA'} @column;
         if (scalar (uniq @column) == 1){
@@ -1187,27 +1187,27 @@ and file locations for marker table and supermatrix, writes out a supermatrix to
 
 sub write_supermatrix {
     my ( $self, %args ) = @_;
-	    
+
     # instantiate helper objects
     my $logger = $self->logger;
     my $mts    = Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector->new;
     my $config = Bio::Phylo::PhyLoTA::Config->new;
     my $cover  = $config->BACKBONE_MIN_COVERAGE;
-    
+
     # dereference argument data structures
     my @exemplars  = @{ $args{'exemplars'} };
     my @alignments = @{ $args{'alignments'} };
-    
+
     # make hash with concatenated sequences per exemplar
-    my %allseqs = map { $_ => "" } @exemplars;    
-        		
+    my %allseqs = map { $_ => "" } @exemplars;
+
     # iterate over alignments
     my @marker_table;
     for my $aln ( sort { $a cmp $b } @alignments ) {
     	my $fasta = $self->alignments->{$aln};
 		my $nchar = length((values %$fasta)[0]);
 		my %marker;
-		
+
 		# iterate over taxa
 		for my $taxon ( sort { $a <=> $b } @exemplars ) {
 			# iterate over sequences
@@ -1223,22 +1223,22 @@ sub write_supermatrix {
 			# pick best sequence
 			if ( @best ) {
 				my ( $best ) = sort { $a->[0] <=> $b->[0] } @best;
-				$marker{$taxon} = [ $best->[1] ]; # store GI				
+				$marker{$taxon} = [ $best->[1] ]; # store GI
 				$allseqs{$taxon} .= $best->[2]; # grow matrix
 			}
 			else {
 				$allseqs{$taxon} .= '?' x $nchar;
 			}
 		}
-		push @marker_table, \%marker;	
+		push @marker_table, \%marker;
     }
-	
+
     # write table listing all marker accessions for taxa
     $mts->write_marker_table( $args{'markersfile'}, \@marker_table, $args{'exemplars'} );
-	
+
     # prune gap only columns
 	%allseqs = $self->delete_empty_columns(\%allseqs);
-	
+
     # Write supermatrix to file
     my $aln = Bio::SimpleAlign->new();
 	map {
