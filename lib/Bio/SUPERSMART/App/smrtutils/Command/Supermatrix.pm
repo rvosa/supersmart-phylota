@@ -1,210 +1,116 @@
 package Bio::SUPERSMART::App::smrtutils::Command::Supermatrix;
-
 use strict;
 use warnings;
-
-use Bio::Phylo::PhyLoTA::Service::TreeService;
-use Bio::Phylo::PhyLoTA::Service::SequenceGetter;
-use Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa;
 use Bio::Phylo::Factory;
+use Bio::Phylo::Matrices::Datum;
 use Bio::Phylo::PhyLoTA::Config;
-
-use Bio::Phylo::IO qw(parse);
-use Bio::Phylo::Util::CONSTANT ':objecttypes';
-
+use Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa;
+use Bio::Phylo::PhyLoTA::Service::TreeService;
+use Bio::Phylo::PhyLoTA::Config;
+use Bio::SUPERSMART::App::SubCommand;
+use List::MoreUtils qw(uniq);
+use List::Util qw(max);
+use Data::Dumper;
 use base 'Bio::SUPERSMART::App::SubCommand';
-use Bio::SUPERSMART::App::smrtutils qw(-command);
+use Bio::SUPERSMART::App::smrt qw(-command);
 
-# ABSTRACT: Creates supermatrix for all taxa
+# ABSTRACT: 
 
 =head1 NAME
 
-Supermatrix.pm.pm - Compiles one supermatrix for all taxa containing all data
 
-=head1 SYNOPSYS
 
-smrt-utils 
+=head1 SYNOPSIS
+
+
 
 =head1 DESCRIPTION
 
+
 =cut
 
-sub options {    
-	my ($self, $opt, $args) = @_;
-	my $outfile_default = "supermatrix-alltaxa.phy";
-	my $alnfile_default = "aligned.txt";
-	my $taxafile_default = "species.tsv";
-	return (
-		['outfile|o=s', "output file, defaults to $outfile_default", { arg => 'file', default => $outfile_default }],    	    
-		['alnfile|a=s', "alignment file, defaults to $alnfile_default", { arg => 'file', default => $alnfile_default }],    	    		
-		['taxafile|t=s', "taxa file, defaults to $taxafile_default", { arg => 'file', default => $taxafile_default }],    	    		
-		);	
+sub options {
+    my ( $self, $opt, $args ) = @_;
+    my $outfile_default      = "supermatrix-all.phy";
+    my $outformat_default    = "phylip";
+    my $markerstable_default = "markers-supermatrix.tsv";
+    my $taxa_default         = "species.tsv";
+    my $merged_default       = "merged.txt";	
+    my $config       = Bio::Phylo::PhyLoTA::Config->new;
+	my $exemplars_default = $config->BACKBONE_EXEMPLARS;
+    return (
+        [
+            "alnfile|a=s",
+			"list of file locations of merged alignments  as produced by 'smrt orthologize'",
+            { arg => "file", default => $merged_default }
+        ],
+        [
+            "taxafile|t=s",
+            "tsv (tab-seperated value) taxa file as produced by 'smrt taxize'",
+            { arg => "file", default => $taxa_default }
+        ],
+        [
+            "outfile|o=s",
+            "name of the output file, defaults to '$outfile_default'",
+            { default => $outfile_default, arg => "file" }
+        ],
+        [
+            "format|f=s",
+			"format of supermatrix, defaults to '$outformat_default'; possible formats: phylip, nexml",
+            { default => $outformat_default }
+        ],
+        [
+            "markersfile|m=s",
+			"name for summary table with included accessions, defaults to $markerstable_default",
+            { default => $markerstable_default, arg => "file" }
+        ],
+        [
+		    "enrich|r",
+			"enrich the selected markers with additional haplotypes",
+		 {}
+        ],
+    );
 }
 
 sub validate {
-    my ($self, $opt, $args) = @_;
+    my ( $self, $opt, $args ) = @_;
+
+    # If alignment or taxa file is absent or empty, abort
+    my @files = ( $opt->alnfile, $opt->taxafile );
+    for my $file (@files) {
+        $self->usage_error("need alnfile and taxafile arguments") if not $file;
+        $self->usage_error("file $file does not exist") unless -e $file;
+        $self->usage_error("file $file is empty")       unless -s $file;
+    }
 }
 
 sub run {
-	my ($self, $opt, $args) = @_;    
-	my $logger = $self->logger;
+    my ( $self, $opt, $args ) = @_;
 
-	my $outfile = $opt->outfile;
-	my $alnfile = $opt->alnfile;
-	my $taxafile = $opt->taxafile;
-	my $workdir = $self->workdir;
+    # collect command-line arguments
+    my $taxafile     = $opt->taxafile;
+    my $outfile      = $self->outfile;
+	
+    # instantiate helper objects
+    my $mt  = Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa->new($opt->alnfile);
+    my $log = $self->logger;
+	my $config  = Bio::Phylo::PhyLoTA::Config->new;
 
-    my $mt = Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa->new;
-    my $factory = Bio::Phylo::Factory->new;
-	my $mts = Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector->new;
-	my $sg  = Bio::Phylo::PhyLoTA::Service::SequenceGetter->new;
-    my $config = Bio::Phylo::PhyLoTA::Config->new;
-    my $service = Bio::Phylo::PhyLoTA::Service::TreeService->new;
-    my $ns      = 'http://www.supersmart-project.org/terms#';
+    # Pick all species with sufficient data
+    my @species = $mt->pick_exemplars( $taxafile, 0, -1 );
+	$log->info( scalar(@species) . ' species have sufficient data for supermatrix');
 
-	# read taxa table and get taxon IDs
-	my @taxa = $mt->parse_taxa_file($taxafile);
-	my @taxids = map {$_->{'species'}} @taxa;
-
-	# read alignment list 
-	my @alignments;
-    open my $fh, '<', $alnfile or die $!;
-    while(<$fh>) {
-        chomp;
-        push @alignments, $_ if /\S/ and -e $_;
-    }
-	
-	# filter for density and distance 
-	my @filtered_alns = $mts->filter_clade_alignments( '-ingroup' => \@taxids, '-alnfiles' => \@alignments);
-	$logger->info("Filtered out " . scalar(@filtered_alns) . " alignments");
-
-	# determine the largest subset of species connected by markers
-	my %adj = $mts->generate_marker_adjacency_matrix(\@filtered_alns, \@taxids);
-	my @subsets = @{$mts->get_connected_taxa_subsets(\%adj)};
-	
-	# sort subsets by size, decreasing ans select largest one
-	@subsets = sort { scalar(@$b) <=> scalar(@$a)  } @subsets;	
-	my %aln_taxa = map {$_=>1} @{$subsets[0]};
-
-	# write filtered alignents in temporary directory
-	my $tmpdir = "${workdir}/tmp-supermatrix";
-	mkdir( $tmpdir );
-	my @to_merge;
-	for my $al ( @filtered_alns ) {		
-		my $seed_gi;
-		my $seqstr;
-		for my $k ( keys %$al ) {
-			$seed_gi = $1 if $k =~ /seed_gi\|([0-9]+)/;
-			my $ti = $1 if $k =~ /taxon\|([0-9]+)/;			
-			$seqstr .= "> $k\n" . $al->{$k} . "\n" if $aln_taxa{$ti};
-		}
-		my $r = int(rand(1000)); # there can be duplicate seed gis, add random number to filename
-		my $filename = "${tmpdir}/${seed_gi}-tmpaln-${r}.fa";
-		push @to_merge, $filename;
-		open my $fh, '>', $filename or die $!;
-		print $fh $seqstr;
-		close $fh;
-	}
-	
-    # merge alignments
-	my $mergedfile = "${tmpdir}/merged.txt";
-	
-	
-	# Below, copied code from Clademerge.pm. TODO: Declutter clademerge, put this code
-	# into service class
-	my @gis =  grep { $_ ne '' } map {$1 if $_=~/\/([0-9]+)-tmpaln-[0-9]+\.fa/ } @to_merge;
-	$sg->merge_alignments( $config->CLADE_MAX_DISTANCE, $tmpdir, $mergedfile, @gis );
-	
-	# initialize the container objects
-	my $project = $factory->create_project( '-namespaces' => { 'smrt' => $ns } );
-	my $taxa    = $factory->create_taxa;
-	$project->insert($taxa);        
-	
-	# start processing the directory
-	$logger->info("Going to enrich alignments in $tmpdir");
-	my @matrices;
-	
-	# read list of merged alignment files			
-	$logger->debug("Trying to open merged file $mergedfile");
-	open my $ffh, '<', $mergedfile or die $!;
-	my @files;
-	push @files, $_ while(<$ffh>);
-	chomp (@files);
-	
-	for my $file ( @files ) {
-        
-		# parse the file, enrich and degap it
-		$logger->info("Adding alignment $file");
-		my $matrix = $mt->parse_fasta_as_matrix(
-			'-name' => $file,
-			'-file' => $file,
-			'-taxa' => $taxa,
-			);
-		$mts->enrich_matrix($matrix) if $opt->enrich;
-		$matrix = $mts->degap_matrix($matrix);
-		push @matrices, $matrix if $matrix;
+	my $filename = $mt->write_clade_matrix( 
 		
-	}
-	return undef if not @matrices;
-	
-	# pick CLADE_MAX_MARKERS biggest alignments
-	@matrices = sort { $b->get_ntax <=> $a->get_ntax } @matrices;
-	if ( scalar(@matrices) > $self->config->CLADE_MAX_MARKERS ) {
-		$logger->info("Found more alignments in clade directory $tmpdir than CLADE_MAX_MARKERS. Using the first " . $self->config->CLADE_MAX_MARKERS . " largest alignments.");
-	}
-	
-	# keep track of taxon ids, the number of markers for each taxid,
-	# because some markers might not be selected and taxa have to be removed
-	my %markers_for_taxon;
-	for my $i ( 0 .. $self->config->CLADE_MAX_MARKERS - 1 ) {
-		if ( my $mat = $matrices[$i] ) {
-			my @ids_for_mat;
-			for ( @{ $mat->get_entities } ) {
-					my $taxid = $_->get_name;
-					$taxid =~ s/_.$//g;
-					push @ids_for_mat, $taxid;
-			}
-			$markers_for_taxon{$_}++ for uniq (@ids_for_mat);
-			$project->insert($mat);
-			}
-	}
-	
-	# remove a taxon from matrix if it has none or less markers than given in CLADE_TAXON_MIN_MARKERS
-	# also remove all rows in the matrices where this taxon appears
-	my ($tax) = @{ $project->get_items(_TAXA_) } ;
-	for my $t ( @ {$tax->get_entities} ) {
-		my $taxname = $t->get_name;
-		my $marker_cnt = $markers_for_taxon{$taxname};
-		if ( ! $marker_cnt || $marker_cnt < $self->config->CLADE_TAXON_MIN_MARKERS ) {
-			$logger->info("Removing taxon " . $taxname . " from $tmpdir");
-			$tax->delete($t);
-			
-			# remove rows from matrix containing the taxon
-			for my $mat ( @matrices ) {
-				for my $row ( @{$mat->get_entities} ) {
-					if ( my $taxid = $row->get_name =~ /$taxname/ ) {
-							$logger->info("Removing row for taxon " . $taxname . " from matrix");
-							$mat->delete($row);
-					}
-				}
-			}
-		}
-		}
-	
-	# write table listing all marker accessions for taxa
-	#my @marker_table = $mts->get_marker_table( @{ $project->get_items(_MATRIX_) } );
-	#$mts->write_marker_table( "${workdir}/${dir}/${dir}-markers.tsv", \@marker_table );
-		
-	# write supermatrix phylip
-	
-	#y $outfile = "${workdir}/${dir}/${dir}.phy";
-	#my @matrices = @{ $project->get_items(_MATRIX_) };
-	#my ($taxa) = @{ $project->get_items(_TAXA_) };
-	#$logger->info("Going to write file $outfile");
-	#$service->make_phylip_from_matrix($taxa, $outfile, @matrices);
-		
+		'outfile'     => $outfile,
+		'markersfile' => $opt->markersfile,
+		'min_markers' => $config->CLADE_TAXON_MIN_MARKERS,
+		'max_markers' => $config->CLADE_MAX_MARKERS,
+		'enrich' => $opt->enrich,
+		'format' => $opt->format);
 
-
+    $log->info("DONE, results written to $outfile");
+    return 1;
 }
 
 1;
