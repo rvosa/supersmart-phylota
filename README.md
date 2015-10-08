@@ -1,3 +1,4 @@
+[![Stories in Ready](https://badge.waffle.io/naturalis/supersmart.png?label=ready&title=Ready)](https://waffle.io/naturalis/supersmart)
 [![Build Status](https://travis-ci.org/naturalis/supersmart.svg?branch=master)](https://travis-ci.org/naturalis/supersmart)
 
 ![SUPERSMART](http://www.supersmart-project.org/images/logo200x480.png "SUPERSMART")
