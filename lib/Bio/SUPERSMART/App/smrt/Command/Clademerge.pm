@@ -56,6 +56,7 @@ sub run {
 	my $config  = Bio::Phylo::PhyLoTA::Config->new;
     my $log     = $self->logger;
 
+
     # collect candidate dirs
     $log->info("Going to look for clade data in $workdir");
     my @dirs;
@@ -66,24 +67,24 @@ sub run {
         }
     }
 
-	# merge alignments for each clade 
-	# This is done before the other steps, since SequenceGetter's merge_alignment
-	# uses pmap and otherwise pmap calls would be nested.
+	# merge alignments for each clade, don't include this in the pmap below since
+	# orthologize_cladedir also uses pmap, hence avoid nested pmap calls
 	for my $cladedir ( @dirs ) {
-		my $mergedfile = "${workdir}/${cladedir}/merged.txt";
+		my $mergedfile = "${workdir}/${cladedir}/merged.txt";		
 		$mt->orthologize_cladedir( 
 			'dir'=>$cladedir, 
 			'outfile'=>$mergedfile, 
 			'maxdist'=>$config->CLADE_MAX_DISTANCE );
 	}
-			
+	
     # enrich (if requested in argument) and write matrix to file
     my @result = grep { defined $_ and -e $_ } pmap {
 		(my $clade) = @_;
 		my $dir = "${workdir}/${clade}";
-
+		$mt = Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa->new("${dir}/merged.txt");
 		$mt->write_clade_matrix( 
-			'cladedir' => $dir,
+			'markersfile' => "${dir}/${clade}-markers.txt",
+			'outfile' => $opt->outformat eq 'phylip' ? "${dir}/${clade}.phy" : "${dir}/${clade}.xml",
 			'min_markers' => $config->CLADE_TAXON_MIN_MARKERS,
 			'max_markers' => $config->CLADE_MAX_MARKERS,
 			'enrich' => $opt->enrich,

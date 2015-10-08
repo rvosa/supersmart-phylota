@@ -212,17 +212,13 @@ in the specified format (phylip or nexml).
 
 sub write_clade_matrix {
 	my ($self, %args) = @_;
-
-	my $cladedir = $args{'cladedir'};
+	
+	my $markersfile = $args{'markersfile'};
+	my $outfile = $args{'outfile'};
 	my $enrich   = $args{'enrich'};
 	my $min_markers = $args{'min_markers'};
 	my $max_markers = $args{'max_markers'};
 	my $outformat = $args{'format'};
-
-	my $clade;
-	if ( $cladedir =~ m/\/(clade[0-9]+)/) {
-		$clade = $1;
-	}
 
 	# initialize the container objects
 	my $log = Bio::Phylo::Util::Logger->new;
@@ -236,46 +232,36 @@ sub write_clade_matrix {
 	my $taxa    = $factory->create_taxa;
 	$project->insert($taxa);
 
-	# start processing the directory
-	$log->info("Going to enrich alignments in $cladedir");
-        my @matrices;
-
-		# read list of merged alignment files
-		my $mergedfile = "${cladedir}/merged.txt";
-		return undef unless -e $mergedfile and -s $mergedfile;
-
-		$log->debug("Trying to open merged file $mergedfile");
-		open my $fh, '<', $mergedfile or die $!;
-		my @files;
-		push @files, $_ while(<$fh>);
-		chomp (@files);
-
-		for my $file ( @files ) {
-
-			# parse the file, enrich and degap it
-			$log->info("Adding alignment $file");
-			my $matrix = $self->parse_fasta_as_matrix(
-				'-name' => $file,
-				'-file' => $file,
-				'-taxa' => $taxa,
-				);
-			$mts->enrich_matrix($matrix) if $enrich;
-			$matrix = $mts->degap_matrix($matrix);
-			push @matrices, $matrix if $matrix;
-
-        }
-        return undef if not @matrices;
-
-        # pick CLADE_MAX_MARKERS biggest alignments
-		@matrices = sort { $b->get_ntax <=> $a->get_ntax } @matrices;
-		if ( scalar(@matrices) > $max_markers ) {
-			$log->info("Found more alignments in clade directory $cladedir than CLADE_MAX_MARKERS. Using the first $max_markers largest alignments.");
-		}
-
-		# keep track of taxon ids, the number of markers for each taxid,
-		# because some markers might not be selected and taxa have to be removed
-		my %markers_for_taxon;
-        for my $i ( 0 .. $max_markers - 1 ) {
+	my @matrices;
+	
+	# process all alignment files
+	
+	for my $file ( @{ $self->alnfiles } ) {
+		
+		# parse the file, enrich and degap it
+		$log->info("Adding alignment $file");
+		my $matrix = $self->parse_fasta_as_matrix(
+			'-name' => $file,
+			'-file' => $file,
+			'-taxa' => $taxa,
+			);
+		$mts->enrich_matrix($matrix) if $enrich;
+		$matrix = $mts->degap_matrix($matrix);
+		push @matrices, $matrix if $matrix;
+		
+	}
+	return undef if not @matrices;
+	
+	# pick CLADE_MAX_MARKERS biggest alignments
+	@matrices = sort { $b->get_ntax <=> $a->get_ntax } @matrices;
+	if ( scalar(@matrices) > $max_markers ) {
+		$log->info("Found more alignments for clade than CLADE_MAX_MARKERS. Using the first $max_markers largest alignments.");
+	}
+	
+	# keep track of taxon ids, the number of markers for each taxid,
+	# because some markers might not be selected and taxa have to be removed
+	my %markers_for_taxon;
+	for my $i ( 0 .. $max_markers - 1 ) {
 			if ( my $mat = $matrices[$i] ) {
 				my @ids_for_mat;
 				for ( @{ $mat->get_entities } ) {
@@ -286,52 +272,49 @@ sub write_clade_matrix {
 				$markers_for_taxon{$_}++ for uniq (@ids_for_mat);
 				$project->insert($mat);
 			}
-        }
-
-		# remove a taxon from matrix if it has none or less markers than given in CLADE_TAXON_MIN_MARKERS
-		# also remove all rows in the matrices where this taxon appears
-		my ($tax) = @{ $project->get_items(_TAXA_) } ;
-		for my $t ( @ {$tax->get_entities} ) {
-			my $taxname = $t->get_name;
-			my $marker_cnt = $markers_for_taxon{$taxname};
-			if ( ! $marker_cnt || $marker_cnt < $min_markers ) {
-				$log->info("Removing taxon " . $taxname . " from $cladedir");
-				$tax->delete($t);
-
-				# remove rows from matrix containing the taxon
-				for my $mat ( @matrices ) {
-					for my $row ( @{$mat->get_entities} ) {
-						if ( my $taxid = $row->get_name =~ /$taxname/ ) {
-							$log->info("Removing row for taxon " . $taxname . " from matrix");
+	}
+	
+	# remove a taxon from matrix if it has none or less markers than given in CLADE_TAXON_MIN_MARKERS
+	# also remove all rows in the matrices where this taxon appears
+	my ($tax) = @{ $project->get_items(_TAXA_) } ;
+	for my $t ( @ {$tax->get_entities} ) {
+		my $taxname = $t->get_name;
+		my $marker_cnt = $markers_for_taxon{$taxname};
+		if ( ! $marker_cnt || $marker_cnt < $min_markers ) {
+			$log->info("Removing taxon $taxname, not enough markers" );
+			$tax->delete($t);
+			
+			# remove rows from matrix containing the taxon
+			for my $mat ( @matrices ) {
+				for my $row ( @{$mat->get_entities} ) {
+					if ( my $taxid = $row->get_name =~ /$taxname/ ) {
+						$log->info("Removing row for taxon " . $taxname . " from matrix");
 							$mat->delete($row);
-						}
 					}
 				}
 			}
 		}
-
+	}
+	
 	# write table listing all marker accessions for taxa
 	my @marker_table = $mts->get_marker_table( @{ $project->get_items(_MATRIX_) } );
-	$mts->write_marker_table( "${cladedir}/${clade}-markers.tsv", \@marker_table );
+	$mts->write_marker_table( $markersfile, \@marker_table );
 
 	# write the merged nexml
 	if ( lc $outformat eq 'nexml' ) {
-		my $outfile = "${cladedir}/${clade}.xml";
 		$log->info("Going to write file $outfile");
 		open my $outfh, '>', $outfile or die $!;
 		print $outfh $project->to_xml( '-compact' => 1 );
-		return $outfile;
 	}
 
 	# write supermatrix phylip
 	elsif ( lc $outformat eq 'phylip' ) {
-		my $outfile = "${cladedir}/${clade}.phy";
 		my @matrices = @{ $project->get_items(_MATRIX_) };
 		my ($taxa) = @{ $project->get_items(_TAXA_) };
 		$log->info("Going to write file $outfile");
 		$service->make_phylip_from_matrix($taxa, $outfile, @matrices);
-		return $outfile;
 	}
+	return $outfile;
 }
 
 =item pick_exemplars
