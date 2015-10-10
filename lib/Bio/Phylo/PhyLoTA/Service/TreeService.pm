@@ -15,7 +15,7 @@ use List::MoreUtils 'uniq';
 use List::Util qw'min sum';
 
 my $config = Bio::Phylo::PhyLoTA::Config->new;
-my $log = Bio::Phylo::PhyLoTA::Service->logger->new;	
+my $log = Bio::Phylo::PhyLoTA::Service->logger->new;
 my $fac = Bio::Phylo::Factory->new;
 
 =head1 NAME
@@ -36,14 +36,14 @@ Reads a tree in figtree-NEXUS format
  -file   => filename with figtree tree
  -string => tree in string representation
 
-=cut 
+=cut
 
 sub read_figtree {
 	my ( $self, %args ) = @_;
 
 	my $logger = $self->logger;
-	
-	my %parse_args = ( '-format' => 'figtree' ); 
+
+	my %parse_args = ( '-format' => 'figtree' );
 	if ( my $file    = $args{'-file'} ) {
 		# parse tree from fiel
 		$logger->debug("going to read $file as figtree/NEXUS");
@@ -56,9 +56,9 @@ sub read_figtree {
 	else {
 		$logger->warn('Could not read figtree tree, need -string or -file argument');
 	}
-	
+
 	my $tree = parse_tree( %parse_args );
-	
+
 	return $tree;
 }
 
@@ -70,18 +70,18 @@ Given a tree object, returns a string in figtree-NEXUS format
 
 sub to_figtree {
 	my ( $self, $tree ) = @_;
-	
-	# create output 
+
+	# create output
 	my $project = $fac->create_project;
 	my $forest  = $fac->create_forest;
 	$forest->insert($tree);
 	my $taxa = $forest->make_taxa;
 	$project->insert($taxa);
-	$project->insert($forest);	
+	$project->insert($forest);
 	my $string = unparse(
 		'-format' => 'figtree',
 		'-phylo'  => $project,
-	    );		
+	    );
 	return $string;
 }
 
@@ -90,7 +90,7 @@ sub to_figtree {
 
 Writes a tree in figtree-NEXUS format
 
-=cut 
+=cut
 
 sub write_figtree {
 	my ( $self, $tree, $outfile ) = @_;
@@ -98,27 +98,27 @@ sub write_figtree {
 	my $string = $self->to_figtree( $tree );
 
 	# write to file
-	open my $outfh, '>', $outfile or die $!;        
-	print $outfh $string; 
-	close $outfh;		
+	open my $outfh, '>', $outfile or die $!;
+	print $outfh $string;
+	close $outfh;
 }
 
 =item reroot_tree
 
-Reroots a backbone tree. All possible rerootings are evaluated and the tree is returned 
+Reroots a backbone tree. All possible rerootings are evaluated and the tree is returned
 that minimizes the paraphyly with respect to the exemplar species of all genera.
 
 =cut
 
 sub reroot_tree {
 	my ( $self, $tree, $taxatable, $levels ) = @_;
-	
+
 	my @records = @{$taxatable};
-	
+
 	# taxonomic ranks to consider for determining paraphyly
 	my @levels = @{$levels};
-	
-	# store the scores (number of paraphyletic species per rerooting) for each level and 
+
+	# store the scores (number of paraphyletic species per rerooting) for each level and
 	# node index at which we reroot
 	my %scores = ();
 	@scores{ @levels } = ();
@@ -143,12 +143,12 @@ sub reroot_tree {
 		# reroot the tree
 		if ( my $node = $internals[$i] ) {
 			$log->debug("rerooting tree at internal node # " . ($i+1) . "/" . $num_internals);
-			
+
 			$node->set_root_below;
 
 			# store the tree for later
 			$rerooted_trees{$i} = $current_tree;
-					
+
 			# calculate the 'scores' : count the amount of paraphyly at each taxonomic level
 			foreach my $level (@levels) {
 				my $para_count =
@@ -174,7 +174,7 @@ sub reroot_tree {
 	# now we take the intersection of all indices for all the levels
 	my @best_indices =
 	  @{ $best_node_idx{ $levels[0] } };   #initialize with set from first level
-		
+
 	my $count = @levels;
 	for my $ii ( 1 .. $count - 1 ) {
 		@best_indices =
@@ -202,7 +202,7 @@ sub _count_paraphyletic_species {
 	my $para_count = 0;
 
 	for my $m (@members) {
-		
+
 	   # get the subset of terminals in the NCBI tree that belong to this family
 		my @ncbi_terminal_names =
 		  map { $_->{'species'} } grep { $_->{$level} eq $m } @records;
@@ -279,14 +279,14 @@ sub smooth_basal_split {
 	$log->debug("mean height right: $rm");
 	my $diff = abs($rm-$lm) / 2;
 	my $r_length = $right->get_branch_length;
-	my $l_length = $left->get_branch_length;	
-	
+	my $l_length = $left->get_branch_length;
+
 	if ( $lm < $rm ) {
-		
+
 		# don't want negative branches
 		if ( $r_length < $diff ) {
 			$diff = $r_length;
-		}		
+		}
 
 		# adjust branch lengths
 		$left->set_branch_length( $l_length + $diff );
@@ -294,7 +294,7 @@ sub smooth_basal_split {
 		$log->info("Stretched left, shrunk right, by $diff");
 	}
 	else {
-		
+
 		# don't want negative branches
 		if ( $l_length < $diff ) {
 			$diff = $l_length;
@@ -303,7 +303,7 @@ sub smooth_basal_split {
 		# adjust branch lengths
 		$left->set_branch_length( $l_length - $diff );
 		$right->set_branch_length($r_length + $diff );
-		$log->info("Stretched right, shrunk left, by $diff");		
+		$log->info("Stretched right, shrunk left, by $diff");
 	}
 	$root->set_branch_length(undef);
 }
@@ -324,12 +324,12 @@ sub outgroup_root {
 	my ( $self, %args ) = @_;
 	my $tree    = $args{'-tree'};
 	my @records = @{ $args{'-records'} };
-	my @ranks   = $args{'-ranks'} ? @{ $args{'-ranks'} } : qw[forma varietas subspecies species];	
+	my @ranks   = $args{'-ranks'} ? @{ $args{'-ranks'} } : qw[forma varietas subspecies species];
 	my @ids     = $args{'-ids'} ? @{ $args{'-ids'} } : ();
 	my @names   = $args{'-outgroup'} ? @{ $args{'-outgroup'} } : ();
 	my $mt = Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa->new;
 	my $mts = Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector->new;
-			
+
 	# remap outgroup species names to taxon identifiers
 	if ( not @ids ) {
 		$log->info("Resolving outgroup name(s): @names");
@@ -349,13 +349,13 @@ sub outgroup_root {
 	my $mrca = $tree->get_mrca(\@ognodes);
 	if ($mrca->is_root) {
 		my @ignodes = grep { ! $og{$_->get_name} } @{$tree->get_terminals};
-		$mrca = $tree->get_mrca(\@ignodes);		
+		$mrca = $tree->get_mrca(\@ignodes);
 		$log->info("Rooting below MRCA of ingroup");
 	}
 	else {
 		$log->info("Rooting below MRCA of outgroup");
 	}
-	
+
 	# set previous root edge to zero
 	$tree->get_root->set_branch_length(0.00);
 
@@ -363,7 +363,7 @@ sub outgroup_root {
 	$mrca->set_root_below;
 }
 
-=item remove_internal_names 
+=item remove_internal_names
 
 Removes non-numeric labels of internal nodes in a tree, e.g. "root" or
 "e1", which may have been introduced by rerooting or resolving the tree
@@ -371,7 +371,7 @@ Removes non-numeric labels of internal nodes in a tree, e.g. "root" or
 =cut
 
 sub remove_internal_names {
-	my ($self, $tree) = @_;	
+	my ($self, $tree) = @_;
 	$tree->visit(sub{
 		my $n = shift;
 		$n->set_name('') if $n->is_internal and $n->get_name =~ /[a-zA-Z]/;
@@ -381,8 +381,8 @@ sub remove_internal_names {
 
 =item remap_to_name
 
-Given an object of class L<Bio::Phylo::Forest::Tree>, 
-changes the names of the terminal nodes from NCBI taxonomy identifiers to their respective taxon names. 
+Given an object of class L<Bio::Phylo::Forest::Tree>,
+changes the names of the terminal nodes from NCBI taxonomy identifiers to their respective taxon names.
 
 =cut
 
@@ -403,13 +403,13 @@ sub remap_to_name {
                         $n->set_name( $name );
                 }
                      });
-        return $tree;        
+        return $tree;
 }
 
 =item remap_newick
 
-Given a newick input tree file, an output file name and a mapping hash, maps all tip names 
-to hash values. This method is intended for larger sets of trees that should not be read 
+Given a newick input tree file, an output file name and a mapping hash, maps all tip names
+to hash values. This method is intended for larger sets of trees that should not be read
 in memory. Each tree should be on a single line.
 
 =cut
@@ -429,7 +429,7 @@ sub remap_newick {
 				$pos{$key} = pos($newick) - ( 1 + length($key) );
 				$log->warn("Unknown label '$key' at position ".$pos{$key}) if !$map{$key};
 			}
-			$log->error("Didn't parse any identifiers from $infile") if not scalar keys %pos; 
+			$log->error("Didn't parse any identifiers from $infile") if not scalar keys %pos;
 			for my $key ( sort { $pos{$b} <=> $pos{$a} } keys %pos ) {
 				substr $newick, $pos{$key}, length($key), $map{$key};
 			}
@@ -440,25 +440,25 @@ sub remap_newick {
 
 =item remap_to_ti
 
-Given an object of class L<Bio::Phylo::Forest::Tree>, 
-changes the names of all terminal nodes from taxon names to their respective identifiers 
+Given an object of class L<Bio::Phylo::Forest::Tree>,
+changes the names of all terminal nodes from taxon names to their respective identifiers
 as given in the NCBI taxonomy database. The records argument is optional.
 
 =cut
 
-sub remap_to_ti { 
+sub remap_to_ti {
     my ($self, $tree, @records) = @_;
 
-        my $mts = Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector->new; 
+        my $mts = Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector->new;
 
 	# no taxa table given, we will query the database
 	$tree->visit(sub{
 		my $n = shift;
-		if ( $n->is_terminal and my $name = $n->get_name ) {      
+		if ( $n->is_terminal and my $name = $n->get_name ) {
 			$self->logger->debug("remapping taxon name $name");
 			my $ti;
 			$name = $mts->decode_taxon_name($name);
-			$self->logger->debug("decoded name: $name");		
+			$self->logger->debug("decoded name: $name");
 			# if taxa table is given, get ids from there
 			if (@records) {
 				# valid ranks for tip labels
@@ -470,24 +470,24 @@ sub remap_to_ti {
 							if ( $rec->{$rank} and $rec->{$rank} ne 'NA' ) {
 								$ti =  $rec->{$rank};
 								last RECORD;
-							}		
-						}				
+							}
+						}
 					}
 				}
 			}
 			# no taxa table given or taxon not found in table:  search in database
-			if ( ! $ti ) {				
-				my $dbnode = $self->find_node({taxon_name=>$name});                     			
-				die "could not find database entry for taxon name $name " if not $dbnode;						
+			if ( ! $ti ) {
+				my $dbnode = $self->find_node({taxon_name=>$name});
+				die "could not find database entry for taxon name $name " if not $dbnode;
 				$ti = $dbnode->ti;
 			}
 			# set taxon name
-			$n->set_name( $ti );	
+			$n->set_name( $ti );
 			$log->debug("Remapped name $name to $ti ");
 		}
 	});
-	
-    return $tree;       
+
+    return $tree;
 }
 
 
@@ -503,14 +503,14 @@ sub make_mapping_table {
 
 	my $mts = Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector->new;
 	my %mapping;
-	
+
 	for my $t ( @{$tree->get_terminals} ) {
 		my $name = $t->get_name;
 		$self->logger->debug("remapping taxon name $name");
 		$name = $mts->decode_taxon_name($name);
-		$self->logger->debug("decoded name: $name");		
-		my $dbnode = $mts->find_node({taxon_name=>$name});                     			
-		die "could not find database entry for taxon name $name " if not $dbnode;						
+		$self->logger->debug("decoded name: $name");
+		my $dbnode = $mts->find_node({taxon_name=>$name});
+		die "could not find database entry for taxon name $name " if not $dbnode;
 		my $ti = $dbnode->ti;
 		$mapping{$ti} = $t->get_name;
 	}
@@ -528,7 +528,7 @@ and a tree, remaps the leave names of the tree
 
 sub remap {
 	my ( $self, $tree, %mapping ) = @_;
-	
+
 	for my $t ( @{$tree->get_terminals} ) {
 		my $mapped = $mapping{$t->get_name};
 		$t->set_name($mapped);
@@ -568,8 +568,8 @@ HEADER
 
 =item consense_trees
 
-Given a file with multiple trees (in newick format), 
-creates a consensus tree using the tool specified by 
+Given a file with multiple trees (in newick format),
+creates a consensus tree using the tool specified by
 "TREEANOTATOR_BIN" in the configuration file.
 Returns a single newick tree as a string. Arguments:
 
@@ -577,7 +577,7 @@ Returns a single newick tree as a string. Arguments:
  -burnin (optional):  a number indicating the fraction of trees to discard,
                       default is provided by the BURNIN parameter in the
                       configuration file
- -heights (optional): how to process node heights, an option of 'keep', 
+ -heights (optional): how to process node heights, an option of 'keep',
                       'median', 'mean' or 'ca', default is provided by the
                       NODE_HEIGHTS parameter in the configuration file
  -limit (optional):   minimum support for a node to be retained
@@ -593,7 +593,7 @@ sub consense_trees {
 	my $heights = $args{'-heights'} || $config->NODE_HEIGHTS;
 	my $limit   = $args{'-limit'}   || 0.0;
 	my $format  = $args{'-format'}  || 'nexus';
-	
+
 	# do conversion if needed
 	if ( lc($format) eq 'newick' ) {
 		my ( $fh, $filename ) = tempfile();
@@ -607,23 +607,23 @@ sub consense_trees {
 	open my $fh, '<', $infile or die $!;
 	while(<$fh>) {
 		$counter++ if /^\s*tree\s/i; #*
-	}	
+	}
 	my $babs = int( $burnin * $counter );
-	
+
 	# create temporary outfile name
 	my ( $outfh, $outfile ) = tempfile();
 	close $outfh;
-	
+
 	# execute command
 	my $tmpl = '%s -burnin %i -heights %s -limit %f %s %s';
 	my $command = sprintf $tmpl, $config->TREEANNOTATOR_BIN, $babs, $heights, $limit, $infile, $outfile;
 	$log->debug("running command $command");
 	system($command) and die "Error building consensus: $?";
-	
+
 	# parse result
 	my $tree = parse_tree(
 		'-format' => 'figtree',
-		'-file'   => $outfile,    	
+		'-file'   => $outfile,
 	    );
 	unlink $outfile;
 	return $tree;
@@ -631,12 +631,12 @@ sub consense_trees {
 
 =item parse_newick_from_nexus
 
-Given the file name of a phylogenetic tree in Nexus format, creates a tree in newick 
-representation which is returned as a string. If information about the posterior value 
-of a node is given (as present in the Nexus output of *BEAST), the posterior value is 
+Given the file name of a phylogenetic tree in Nexus format, creates a tree in newick
+representation which is returned as a string. If information about the posterior value
+of a node is given (as present in the Nexus output of *BEAST), the posterior value is
 assigned to the respective inner nodes in the newick tree.
 
-=cut 
+=cut
 
 sub parse_newick_from_nexus {
         my ($self, $nexusfile, %args ) = @_;
@@ -645,7 +645,7 @@ sub parse_newick_from_nexus {
         my @lines = <$fh>;
         close $fh;
         my @rev = reverse @lines;
-	
+
         foreach ( @lines ) {
 		if ( /^\s*tree/i ) {
 			$newick = $_;
@@ -654,39 +654,39 @@ sub parse_newick_from_nexus {
 	}
 	die("no tree block found in nexus file $nexusfile") if not $newick;
 	$newick =~ s/^\s*tree.+\[\&R\]\s+//gi;
-        
+
         # get ids for taxon labels from 'Translate' section in nexus file
         my @sub;
         foreach (@lines) {
                 push(@sub, split) if (/Translate/ .. /\;/);
-        }    
+        }
         shift @sub;
         pop @sub;
         my %id_map = @sub;
-        
+
         # remove trailing commas from idenifiers, if any
         for ( values %id_map ) { s/,$//g };
-        
-        # parse comments [things between square brackets] to 
+
+        # parse comments [things between square brackets] to
         # set the posterior as node name
         my @comments = ( $newick =~ m/(\[.+?\])/g );
-  		
+
 	# iterate through comments and parse out posterior value, if given
         foreach my $c (@comments){
        	my @matches = ( $c =~ m/posterior=([0-9.]+)/g);
   			$log->warn("Found more than one posterior in comment tag") if scalar(@matches) > 1;
   			my $posterior = $matches[0] || "";
   			my $quoted = quotemeta $c;
-	                
-	                # round posterior value to two digits after the comma and append maximum value '/1'	                
-	                $posterior = sprintf("%.2f", $posterior) . '/1' if $posterior;  			
+
+	                # round posterior value to two digits after the comma and append maximum value '/1'
+	                $posterior = sprintf("%.2f", $posterior) . '/1' if $posterior;
   			# substitute in newick tree string. keep comments so that downstream
   			# parsers may be able to do something with them
   			$newick =~ s/$quoted/$posterior$quoted/g;
         }
-		
+
         # substitute nexus taxon ids with real taxon labels
-        # note that there is possible trouble if node names for posteriors (e.g. 1) 
+        # note that there is possible trouble if node names for posteriors (e.g. 1)
         # overlap with nexus identifier. However, BEAST seems to write all posteriors
         # as proper decimals
 	my $newicktree = parse(
@@ -697,11 +697,11 @@ sub parse_newick_from_nexus {
 
   	    $newicktree->visit( sub{
                 my $n = shift;
-                $n->set_name( $id_map{$n->get_name} ) if exists $id_map{$n->get_name};  
+                $n->set_name( $id_map{$n->get_name} ) if exists $id_map{$n->get_name};
 	});
-        
+
         return $args{'-id_map'} ? ( $newicktree, %id_map ) : $newicktree;
-        
+
 }
 
 =item process_commontree
@@ -713,13 +713,13 @@ for usage (remove unbranched internal nodes, randomly resolve polytomies, deroot
 
 sub process_commontree {
     my ( $self, $commontree, @tipnames ) = @_;
-	
-    # map names to IDs, 
+
+    # map names to IDs,
     # only retain tips in supermatrix
 
     $self->remap_to_ti( $commontree );
     $commontree->keep_tips( \@tipnames );
-            
+
     # it can occur that a taxon that has been chosen as an exemplar is
     # not in the classification tree. For example, if a species has one subspecies,
     # but the species and not the subspecies is an exemplar. Then this node
@@ -729,8 +729,8 @@ sub process_commontree {
     if ( @terminals != @tipnames ) {
         $log->warn("Tips mismatch: ".scalar(@tipnames)."!=".scalar(@terminals));
 
-        # insert unseen nodes into starting tree        
-        my %seen = map { $_->get_name => 1 } @terminals;        
+        # insert unseen nodes into starting tree
+        my %seen = map { $_->get_name => 1 } @terminals;
         my ($p)  = @{ $commontree->get_internals };
         for my $d ( grep { ! $seen{$_} } @tipnames ) {
             $log->warn("Adding node $d (" . $self->find_node($d)->get_name . ") to starting tree");
@@ -739,7 +739,7 @@ sub process_commontree {
             $commontree->insert($node);
         }
     }
-        
+
     # finalize the tree
     $commontree->resolve->remove_unbranched_internals->deroot;
     return $commontree;
@@ -777,20 +777,20 @@ to the NCBI taxonomy database
 
 sub make_classification_tree {
 	my ( $self, @taxatable) = @_;
-	
+
 	my $mts = Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector->new;
-	
+
     # instantiate nodes from infile
 	my @nodes = $mts->get_nodes_for_table( @taxatable );
-	
+
 	# compute classification tree
 	my $tree = $mts->get_tree_for_nodes(@nodes);
-	
+
 	# create node labels with taxon names
 	$tree->visit(sub{
-		my $node = shift;		
+		my $node = shift;
 		my $label = $node->get_name;
-		$label =~ s/_/\|/g;		
+		$label =~ s/_/\|/g;
 		$node->set_name( $label );
 	});
 	$tree->remove_unbranched_internals;
@@ -799,7 +799,7 @@ sub make_classification_tree {
 
 =item make_usertree
 
-Given a supermatrix and (optionally) a classification tree, makes a starting tree either 
+Given a supermatrix and (optionally) a classification tree, makes a starting tree either
 by simulation or from input tree. Requires name of output file to write.
 
 =cut
@@ -807,27 +807,27 @@ by simulation or from input tree. Requires name of output file to write.
 sub make_usertree {
     my ( $self, $supermatrix, $commontree, $outfile ) = @_;
     my @tipnames = $self->read_tipnames($supermatrix);
-    
-    # this will be the tree object to write to file         
+
+    # this will be the tree object to write to file
     my $tree;
-    
+
     # process the common tree to the right set of tips, resolve it,
     # remove unbranched internals (due to taxonomy) and remove the root
     if ( $commontree ) {
         $log->info("Going to prepare starttree for usage");
         $tree = $self->process_commontree($commontree,@tipnames);
     }
-    
+
     # simulate a random tree
     else {
-        $log->info("No starttree given as argument. Generating random starting tree.");  
-        $tree = $self->make_random_starttree(\@tipnames);  
+        $log->info("No starttree given as argument. Generating random starting tree.");
+        $tree = $self->make_random_starttree(\@tipnames);
     }
-    
+
     # write to file
     open my $fh, '>', $outfile or die $!;
     print $fh $tree->to_newick();
-    return $outfile; 
+    return $outfile;
 }
 
 =item graft_tree
@@ -838,8 +838,8 @@ Grafts a clade tree into a backbone tree, returns the altered backbone.
 
 sub graft_tree {
 	my ( $self, $backbone, $clade, $squish ) = @_;
- 
-	# retrieve the tips from the clade tree that also occur in the backbone, i.e. the 
+
+	# retrieve the tips from the clade tree that also occur in the backbone, i.e. the
 	# exemplars, and locate their MRCA on the backbone
 	my @ids = map { $_->get_name } @{ $clade->get_terminals };
 	my ( @exemplars, @clade_exemplars );
@@ -865,7 +865,7 @@ sub graft_tree {
 		$log->info("Found ".scalar(@exemplars). " backbone exemplars");
 		$log->info("Found ".scalar(@clade_exemplars). " clade exemplars")
 	}
-	
+
 	# find MRCA of exemplars on backbone and clade
 	my $bmrca = $backbone->get_mrca(\@exemplars);
 	my $cmrca = $clade->get_mrca(\@clade_exemplars);
@@ -877,7 +877,7 @@ sub graft_tree {
 		$log->info("Backbone MRCA is calibration point ($min..$max)");
 		$cmrca = $clade->get_root;
 	}
-	
+
 	# calculate the respective depths, scale the clade by the ratios of depths
 	my $cmrca_depth = $cmrca->calc_max_path_to_tips;
 	my $bmrca_depth = $bmrca->calc_max_path_to_tips;
@@ -885,7 +885,7 @@ sub graft_tree {
 	$log->info("Backbone MRCA depth: $bmrca_depth " . $bmrca->to_newick);
 	$self->_rescale( $clade, $bmrca_depth / $cmrca_depth );
 	$log->debug("multiplied clade tree by ". ($bmrca_depth/$cmrca_depth));
-	
+
 	# calculate the depth of the root in the clade, adjust backbone depth accordingly
 	my $crd  = $clade->get_root->calc_max_path_to_tips;
 	my $diff = $bmrca_depth - $crd;
@@ -907,7 +907,7 @@ sub graft_tree {
 		if ( my $p = $node->get_parent ) {
 			if ( $p->is_root ) {
 				$log->info("Grafted node $node onto backbone MRCA");
-				$node->set_parent($bmrca);								
+				$node->set_parent($bmrca);
 			}
 		}
 		if ( $node->is_root ) {
@@ -924,13 +924,13 @@ sub _rescale {
 	my ( $self, $tree, $ratio ) = @_;
 	$tree->visit(sub{
 		my $node  = shift;
-		
+
 		# select figtree annotations
 		my $re = qr/^fig:.*(?:height|length).*/;
-		my %annos = map { $_->get_predicate => $_ } 
-		           grep { $_->get_predicate =~ $re } 
+		my %annos = map { $_->get_predicate => $_ }
+		           grep { $_->get_predicate =~ $re }
 		               @{ $node->get_meta };
-		
+
 		# iterate over predicates
 		for my $predicate ( keys %annos ) {
 			my $val = $annos{$predicate}->get_object;
@@ -941,7 +941,7 @@ sub _rescale {
 				my $otherval = $annos{$other}->get_object;
 				my $mid = ( $val + $otherval ) / 2;
 				my $deviation = $mid > 0 ? $val / $mid : 0;
-				$newval = ( $mid * $ratio ) * $deviation;	
+				$newval = ( $mid * $ratio ) * $deviation;
 			}
 			else {
 				$newval = $val * $ratio;
@@ -949,7 +949,7 @@ sub _rescale {
 			$annos{$predicate}->set_triple( $predicate => $newval );
 			$self->logger->debug("$predicate: $val => $newval");
 		}
-		
+
 		# adjust branch length
 		my $length = $node->get_branch_length || 0;
 		$length *= $ratio;
@@ -982,31 +982,31 @@ sub heights_to_lengths {
 =item make_phylip_binary
 
 Given the location of a file in phylip format, creates a binary representation of
-the phylip file and writes it to the specified file. 
+the phylip file and writes it to the specified file.
 
 =cut
 
 sub make_phylip_binary {
 	my ( $self, $phylip, $binfilename, $parser, $work_dir) = @_;
-	$log->info("Going to make binary representation of $phylip => $binfilename");	
-	$log->debug("using parser $parser");	
+	$log->info("Going to make binary representation of $phylip => $binfilename");
+	$log->debug("using parser $parser");
 	my ( $phylipvolume, $phylipdirectories, $phylipbase ) = File::Spec->splitpath( $phylip );
 	my $curdir = getcwd;
-	chdir $work_dir;       
-        
+	chdir $work_dir;
+
         # check if filename exists in working directory, if not take the full path
         my $phylipfile = -e $phylipbase ? $phylipbase : $phylip;
-        
-        my @command = ( $parser, 
-		'-m' => 'DNA', 
-		'-s' => $phylipfile, 
+
+        my @command = ( $parser,
+		'-m' => 'DNA',
+		'-s' => $phylipfile,
 		'-n' => $binfilename,
-		'>'  => File::Spec->devnull,		
+		'>'  => File::Spec->devnull,
 		'2>' => File::Spec->devnull,
 	);
 	my $string = join ' ', @command;
 	$log->debug("going to run '$string' inside " . $work_dir );
-	system($string) and $log->warn("Couldn't execute command '$string': $! (errno: $?)");        
+	system($string) and $log->warn("Couldn't execute command '$string': $! (errno: $?)");
 	chdir $curdir;
 	return "${binfilename}.binary";
 }
@@ -1020,7 +1020,7 @@ file to the specified file name.
 
 sub make_phylip_from_matrix {
 	my ( $self, $taxa, $phylipfile, @matrix ) = @_;
-	
+
 	# create phylip file for parser
 	open my $phylipfh, '>', $phylipfile or die $!;
 	my %nchar_for_matrix;
@@ -1047,7 +1047,7 @@ sub make_phylip_from_matrix {
 			}
 		}
 		print $phylipfh "\n";
-	});	
+	});
 	return $phylipfile;
 }
 
@@ -1062,16 +1062,16 @@ sub read_tipnames {
 	my ($self, $supermatrix) = @_;
 	my $ntax = 0;
 	my $line = 0;
-	my @result;	
+	my @result;
         open my $fh, '<', $supermatrix or die $!;
 	LINE: while(<$fh>) {
 		chomp;
-		my $word;                     
-		if ( /^\s?(\S+)/ ) {                        
+		my $word;
+		if ( /^\s?(\S+)/ ) {
 			$word = $1;
         }
 		if ( not $ntax ) {
-			$ntax = $word;                        
+			$ntax = $word;
 			$log->debug("$supermatrix has $ntax taxa");
                         next LINE;
                 }
@@ -1086,11 +1086,11 @@ sub read_tipnames {
 
 =item extract_clades
 
-Given a backbone tree and a list with the taxa classifications, 
-decomposes the backbone tree into single clades, represented by lists of 
+Given a backbone tree and a list with the taxa classifications,
+decomposes the backbone tree into single clades, represented by lists of
 taxon ids. The decomposition identifies monophyletic genera which will form individual clades.
 If genera are paraphyletic in the tree (i.e. the the mrca of two exemplar species in one genus
-is not the direct parent of the two exemplars), we traverse up the tree and include all species 
+is not the direct parent of the two exemplars), we traverse up the tree and include all species
 from sister clades until the paraphyly is resolved.
 
 =cut
@@ -1099,34 +1099,34 @@ sub extract_clades {
 	my ($self, $tree, @records) = @_;
 	my %genera;
     my $mt = 'Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa';
-    
+
     # first get all taxa that will be included in the clades
     my @valid_ranks = ("species", "subspecies", "varietas", "forma");
     my $level = $mt->get_highest_informative_level(@records);
     my @highest_taxa = $mt->get_distinct_taxa($level, @records);
     my %all_taxa = map { $_ => 1 } $mt->query_taxa_table(\@highest_taxa, \@valid_ranks, @records);
-    	    
+
 	# get exemplars for genera
 	my %terminal_ids = map { $_ => 1 } map{$_->get_name} @{ $tree->get_terminals };
-    
+
 	foreach my $id ( keys(%terminal_ids) ) {
 		my ($genus) = $mt->query_taxa_table($id, "genus", @records);
-		push @{$genera{$genus}->{'exemplars'}}, $id;			
+		push @{$genera{$genus}->{'exemplars'}}, $id;
 	}
-	    
+
 	# get mrca and distance from root for all exemplars in each genus
-	foreach my $genus ( keys %genera ) {	
-		my %exemplar_ids = map {$_=>1} @{$genera{$genus}->{'exemplars'}};		
+	foreach my $genus ( keys %genera ) {
+		my %exemplar_ids = map {$_=>1} @{$genera{$genus}->{'exemplars'}};
 		my @nodes = grep { exists( $exemplar_ids{$_->get_name}) }  @{$tree->get_terminals};
 		my $mrca = $tree->get_mrca( \@nodes );
-		
+
 		$genera{$genus}->{'mrca'} = $mrca;
 		my $dist = $mrca->calc_nodes_to_root;
-		$genera{$genus}->{'dist_from_root'} = $dist;			
+		$genera{$genus}->{'dist_from_root'} = $dist;
 	}
 	# sort genera by depth of exemplar mrca
 	my @sorted_genera = sort { $genera{$a}->{'dist_from_root'} <=> $genera{$b}->{'dist_from_root'} } keys (%genera);
-	
+
 	# make sets of leaves that are in the subtree spanned from the respective mrca
 	my @sets;
 	for my $genus ( @sorted_genera ) {
@@ -1141,28 +1141,33 @@ sub extract_clades {
 		# get genera within the subtree:
 		my @mrca_terminal_ids = map{$_->get_name} @{$mrca->get_terminals};
 		my @mrca_genera =  $mt->query_taxa_table(\@mrca_terminal_ids, 'genus', @records);
-		
-				
-		# get all species that are contained in the genera of the mrca 
+
+
+		# get all species that are contained in the genera of the mrca
 		my @s = $mt->query_taxa_table(\@mrca_genera, \@valid_ranks, @records);
-		# only include taxa in a set if they are not already part of a clade spanned higher in the hierarchy 
+		# only include taxa in a set if they are not already part of a clade spanned higher in the hierarchy
 		my @remaining_terminals = keys(%all_taxa);
 
 		my @clade = _intersect(\@remaining_terminals, \@s);
-		delete @all_taxa{@clade}; 
-		
+		delete @all_taxa{@clade};
+
+		$log->info('Possible clade containing ' . scalar(@clade) . ' species');
+
+		if ( my $support = $mrca->get_meta_object('fig:posterior') || $mrca->get_meta_object('fig:bootstrap') ) {
+			$log->info("Support value of clade mrca: $support");
+		}
 		push @sets, \@clade;
 	}
-	
-	# All sets with only one taxon represent monotypic genera. Since we have resolved 
+
+	# All sets with only one taxon represent monotypic genera. Since we have resolved
 	#  paraphyly at this point, all monotypic genera nested in other clades are accounted for;
 	#  therefore it is safe to remove all non-nested monotypic genera.
-	
+
 	# There is one special case, however: All genera are monotypic, so all species will be
 	#  put together into one clade!
 	my @num_elems = uniq map{scalar(@$_)} @sets;
 	if ( scalar(@num_elems) == 1 and $num_elems[0] == 1 ) {
-		
+
 		# XXX assuming that all species do need to go into one clade, this presumably
 		# means that the lists need to be flattened, i.e. inside the map {} block
 		# the arrays need to be dereferenced. That wasn't the case, but now it is.
@@ -1173,10 +1178,10 @@ sub extract_clades {
 		@sets = grep { scalar(@$_) > 2 } @sets;
 	}
 	$log->info("Extracted " . scalar(@sets) . " clades");
-	return @sets;	
+	return @sets;
 }
 
-=back 
+=back
 
 =cut
 
