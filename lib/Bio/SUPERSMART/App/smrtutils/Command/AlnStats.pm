@@ -71,8 +71,12 @@ sub run {
 	# write stats to table
 	my @header = sort { lc ($a) cmp lc ($b) } keys %{$stats[0]};
 	open my $outfh, '>', $self->outfile or die $!;
-	print $outfh join("\t", @header);
-	print $outfh join("\t", values(%{$_})) for @stats;
+	print $outfh join("\t", @header) . "\n";
+	for my $s ( @stats ) {
+		my %h = %{$s};
+		print $outfh join("\t", @h{@header}) . "\n" for @stats;		
+	}
+
 
 	$self->logger->info("DONE. Alignment stats printed to " . $self->outfile);
 }
