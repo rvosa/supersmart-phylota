@@ -74,7 +74,7 @@ sub run {
 	print $outfh join("\t", @header) . "\n";
 	for my $s ( @stats ) {
 		my %h = %{$s};
-		print $outfh join("\t", @h{@header}) . "\n" for @stats;		
+		print $outfh join("\t", @h{@header}) . "\n";		
 	}
 
 
