@@ -253,13 +253,7 @@ sub _replicate_alignment {
 	}
 	
 	# determine for which taxa we want replicated sequences
-	my @rep_taxa = $self->_simulate_marker_presence( '-matrix'=>$matrix, '-tree'=>$tree, '-replace'=>1 );	
-
-	if ( scalar(@rep_taxa) < 3 ) {
-		$logger->info("Too few taxa from binary simulation; adding random taxa");
-		my %h = map{$_=>1} @rep_taxa;
-		@rep_taxa = keys { $self->_add_random_taxa( \%h , $tree, 3 ) };
-	}
+	my @rep_taxa = $self->_simulate_marker_presence( '-matrix'=>$matrix, '-tree'=>$tree, '-replace'=>0 );	
 
 	# determine substitution model for given alignment
 	my $timeout = 7200; # set to 2h
@@ -267,11 +261,19 @@ sub _replicate_alignment {
 
 	# prune tree for faster sequence simulations
 	my $pruned = parse('-format'=>'newick', '-string'=>$tree->to_newick)->first;
-	$pruned->keep_tips( \@rep_taxa );
+#	$pruned->keep_tips( \@rep_taxa );
 	
 	# simulate sequences
 	my $rep = $matrix->replicate('-tree'=>$pruned, '-seed'=>$config->RANDOM_SEED, '-model'=>$model);
 	
+	my %rp = map {$_=>1} @rep_taxa;
+	for my $r ( @{$rep->get_entities} ) {
+		if ( ! $rp{$r->get_name} ) {
+			$logger->info("Removing taxon " . $r->get_name . " from replicated matrix");
+			$rep->delete($r);
+		}
+	}
+
 	$logger->info("Number of seqs in original alignment: " . scalar(@{$matrix->get_entities}) . ", number of seqs in replicated alignment: " . scalar(@{$rep->get_entities}));
 	# If we had less than two simulated marker presences, the replicated alignment is not an alignment, therefore skip
 	if ( @{ $rep->get_entities } < 2 ) {
@@ -314,7 +316,7 @@ sub _simulate_marker_presence {
 	}	
 	my $fac = Bio::Phylo::Factory->new;   
 	my $marker_matrix = $fac->create_matrix( '-matrix' => $bin);
-  
+	
 	# run binary simulation to determine taxa that are simulated to be present
 	my $rep_marker_matrix = $marker_matrix->replicate('-tree'=>$tree, '-seed'=>$config->RANDOM_SEED);	
 
