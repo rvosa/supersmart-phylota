@@ -5,6 +5,7 @@ use warnings;
 
 use File::Spec;
 use Data::Dumper;
+use List::MoreUtils qw(uniq);
 
 use Bio::Phylo::IO qw(parse);
 use Bio::Phylo::Util::CONSTANT ':objecttypes';
@@ -26,7 +27,8 @@ smrt-utils alnstats -a <file> [-o <file>] [-h] [-v] \ [-w <dir>] [-l <file>] [-y
 
 =head1 DESCRIPTION
 
-The script produces a table (tsv format) listing following alignment properties:
+The script produces two tables (tsv format). The first one,
+giving sequence stats lists following alignment properties:
 
  - length of alignment
  - number of sequences in alignment
@@ -36,14 +38,19 @@ The script produces a table (tsv format) listing following alignment properties:
  - average size of indels per alignment
  - number of invariant columns in alignment
 
+The second one lists the alignments as columns and species as row. Species
+present in alignment is indicated with '1' in the corresponding cell 
+
 =cut
 
 sub options {
 	my ($self, $opt, $args) = @_;
-	my $outfile_default = 'alignment-stats.tsv';
+	my $statstable_default = 'alignment-stats.tsv';
+	my $markertable_default = 'marker-presence.tsv';
 	return (
 		['alignments|a=s', "list of alignment file locations", { arg => 'file', mandatory => 1 } ],
-		["outfile|o=s", "name of output file with alignment stats, defaults to '$outfile_default'", {default => $outfile_default, arg => "file"}],
+		["statstable|s=s", "name of output file with alignment stats, defaults to '$statstable_default'", {default => $statstable_default, arg => "file"}],
+		["markertable|m=s", "name of output file with marker presences, defaults to '$markertable_default'", {default => $markertable_default, arg => "file"}],
 	    );
 }
 
@@ -64,21 +71,71 @@ sub run {
 	close $fh;
 
 	# collect statistics for each matrix
-	my @stats = pmap {
-		$self->_get_aln_stats(@_);
-	} @alnfiles;
+	my @aln_stats;# = pmap {
+#		$self->_get_aln_stats(@_);
+#	} @alnfiles;
 
-	# write stats to table
-	my @header = sort { lc ($a) cmp lc ($b) } keys %{$stats[0]};
-	open my $outfh, '>', $self->outfile or die $!;
+	my %marker_stats = $self->_get_marker_presence(@alnfiles);
+	my @all_species = uniq map {keys(%{$_})} values( %marker_stats );
+	
+	
+	open my $mfh, '>', $opt->markertable or die $!;
+	print $mfh "species\t";
+	print $mfh join("\t", @alnfiles);
+	print $mfh "\n";
+	for my $sp( @all_species ) {
+		print $mfh $sp;
+		for my $aln( @alnfiles ) {
+			print $mfh "\t";
+			my %h = %{$marker_stats{$aln}};
+			print $mfh $h{$sp} ? 1: 0;
+
+		}
+		print $mfh "\n";
+	}
+   
+	# write aln stats to table
+	my @header = sort { lc ($a) cmp lc ($b) } keys %{$aln_stats[0]};
+	open my $outfh, '>', $opt->statstable or die $!;
 	print $outfh join("\t", @header) . "\n";
-	for my $s ( @stats ) {
+	for my $s ( @aln_stats ) {
 		my %h = %{$s};
 		print $outfh join("\t", @h{@header}) . "\n";		
 	}
 
 
-	$self->logger->info("DONE. Alignment stats printed to " . $self->outfile);
+	$self->logger->info("DONE. Stats written to  " . $opt->statstable .  " marker presences written to " . $opt->markertable);
+}
+
+sub _get_marker_presence {
+	my ($self, @alns) = @_;
+
+	my %stats;
+	for my $aln ( @alns ) {
+		
+		$stats{$aln} = {};
+		
+		# parse matrix
+		my $project = parse(
+			'-format'     => 'fasta',
+			'-type'       => 'dna',
+			'-file'     => $aln,
+			'-as_project' => 1,
+			);
+		my ($matrix) = @{ $project->get_items(_MATRIX_) };
+		
+		for my $m( @{$matrix->get_entities} ) {
+			my $species;
+			if ( $m->get_name=~m/taxon\|(\d+)\//) {
+				$species = $1;
+			}
+			else {
+				$species = $m->get_name;
+			}
+			$stats{$aln}->{$species} = 1;
+		}
+	}
+	return %stats;
 }
 
 # given a matrix, get properties of the alignment (gap count, indel count and sizes, etc)
