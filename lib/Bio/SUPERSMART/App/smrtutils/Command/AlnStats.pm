@@ -71,14 +71,13 @@ sub run {
 	close $fh;
 
 	# collect statistics for each matrix
-	my @aln_stats;# = pmap {
-#		$self->_get_aln_stats(@_);
-#	} @alnfiles;
-
+	my @aln_stats = pmap {
+		$self->_get_aln_stats(@_);
+	} @alnfiles;
+	
 	my %marker_stats = $self->_get_marker_presence(@alnfiles);
 	my @all_species = uniq map {keys(%{$_})} values( %marker_stats );
-	
-	
+		
 	open my $mfh, '>', $opt->markertable or die $!;
 	print $mfh "species\t";
 	print $mfh join("\t", @alnfiles);
@@ -112,6 +111,7 @@ sub _get_marker_presence {
 
 	my %stats;
 	for my $aln ( @alns ) {
+		$self->logger->info("Extracting taxa from  alignment $aln");
 		
 		$stats{$aln} = {};
 		
