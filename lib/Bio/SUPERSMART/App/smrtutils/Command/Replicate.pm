@@ -261,7 +261,16 @@ sub _replicate_alignment {
 
 	# prune tree for faster sequence simulations
 	my $pruned = parse('-format'=>'newick', '-string'=>$tree->to_newick)->first;
-#	$pruned->keep_tips( \@rep_taxa );
+	my %keep = map {$_=>1} @rep_taxa;
+
+	# prevent from simulating a tree with <3 tips
+	my @tree_taxa = map { $_->get_name } @{ $tree->get_terminals };
+	while ( scalar(keys %keep) < 3) {
+		my $id = @tree_taxa[rand @tree_taxa];
+		$self->logger->debug("Attempting to add taxon $id to tree taxa");
+		$keep{$id} = 1;		
+	}	
+	$pruned->keep_tips( [ keys %keep ] );
 	
 	# simulate sequences
 	my $rep = $matrix->replicate('-tree'=>$pruned, '-seed'=>$config->RANDOM_SEED, '-model'=>$model);
@@ -274,7 +283,7 @@ sub _replicate_alignment {
 		}
 	}
 
-	$logger->info("Number of seqs in original alignment: " . scalar(@{$matrix->get_entities}) . ", number of seqs in replicated alignment: " . scalar(@{$rep->get_entities}));
+	$logger->info("Number of seqs in original alignment: " . scalar(@{$matrix->get_entities}) . ", number of seqs in rep alignment: " . scalar(@{$rep->get_entities}));
 	# If we had less than two simulated marker presences, the replicated alignment is not an alignment, therefore skip
 	if ( @{ $rep->get_entities } < 2 ) {
 		$logger->warn("Replication produced alignment with less than 2 sequences, skipping");
