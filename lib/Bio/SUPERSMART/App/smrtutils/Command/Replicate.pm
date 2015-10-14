@@ -116,24 +116,35 @@ sub run {
 
 		my @replicated = pmap {			
 			my ($aln) = @_; 			
-
-			my $rep_aln = $self->_replicate_alignment( $aln, $tree_replicated, $tree );
-						      		  
-			if ( $rep_aln ) {
-				# simulated alignment will have the same file name plus added '-simulated'
-				my ( $volume, $directories, $filename ) = File::Spec->splitpath( $aln );				
-				$filename =~ s/\.fa$/-replicated\.fa/g;
-				$filename = $self->workdir . '/' . $filename;
-				$logger->info("Writing alignment to $filename");
-				
-				unparse ( -phylo => $rep_aln, -file => $filename, -format=>'fasta' );
-				print $outfh "$filename\n";
-				return $filename;
-			} 
-			else {
-				$logger->warn("Could not write replicated alignment to file; no alignment given");
-				return 0;
+			
+			# file name for replicated alignment
+			my ( $volume, $directories, $filename ) = File::Spec->splitpath( $aln );				
+			$filename =~ s/\.fa$/-replicated\.fa/g;
+			$filename = $self->workdir . '/' . $filename;
+			$logger->debug("Checking whether replicated alignment $filename already exists");
+			
+			# replicate if not done so previously
+			if ( ! -e $filename or ! -s $filename ) {
+				my $rep_aln = $self->_replicate_alignment( $aln, $tree_replicated, $tree );
+			
+				if ( $rep_aln ) {
+					# simulated alignment will have the same file name plus added '-simulated'
+					$logger->info("Writing alignment $filename");
+					unparse ( -phylo => $rep_aln, -file => $filename, -format=>'fasta' );
+				} 
+				else {
+					$logger->warn("Could not write replicated alignment to file: alignment not replicated ");
+					return 0;
+				}
 			}
+			else {
+				$logger->info("Replicated alignment $filename already exists. Skipping replication.")
+			}
+			# write filename to alignment list
+			print $outfh "$filename\n";
+
+			return $filename;
+
 		} @alnfiles;
 		
 		close $outfh;
@@ -271,7 +282,7 @@ sub _replicate_alignment {
 		$keep{$id} = 1;		
 	}	
 	$pruned->keep_tips( [ keys %keep ] );
-	
+
 	# simulate sequences
 	my $rep = $matrix->replicate('-tree'=>$pruned, '-seed'=>$config->RANDOM_SEED, '-model'=>$model);
 	
