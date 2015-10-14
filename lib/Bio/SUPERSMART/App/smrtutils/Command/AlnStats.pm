@@ -46,11 +46,9 @@ present in alignment is indicated with '1' in the corresponding cell
 sub options {
 	my ($self, $opt, $args) = @_;
 	my $statstable_default = 'alignment-stats.tsv';
-	my $markertable_default = 'marker-presence.tsv';
 	return (
 		['alignments|a=s', "list of alignment file locations", { arg => 'file', mandatory => 1 } ],
 		["statstable|s=s", "name of output file with alignment stats, defaults to '$statstable_default'", {default => $statstable_default, arg => "file"}],
-		["markertable|m=s", "name of output file with marker presences, defaults to '$markertable_default'", {default => $markertable_default, arg => "file"}],
 	    );
 }
 
@@ -64,96 +62,47 @@ sub validate {
 sub run {
 	my ($self, $opt, $args) = @_;
 
-	# get all alignment files
+	# get alignment files
 	open my $fh, '<', $opt->alignments or die $!;
 	my @alnfiles = <$fh>;
 	chomp @alnfiles;
 	close $fh;
-
+	
 	# collect statistics for each matrix
 	my @aln_stats = pmap {
 		$self->_get_aln_stats(@_);
 	} @alnfiles;
 	
-	my %marker_stats = $self->_get_marker_presence(@alnfiles);
-	my @all_species = uniq map {keys(%{$_})} values( %marker_stats );
-		
-	open my $mfh, '>', $opt->markertable or die $!;
-	print $mfh "species\t";
-	print $mfh join("\t", @alnfiles);
-	print $mfh "\n";
-	for my $sp( @all_species ) {
-		print $mfh $sp;
-		for my $aln( @alnfiles ) {
-			print $mfh "\t";
-			my %h = %{$marker_stats{$aln}};
-			print $mfh $h{$sp} ? 1: 0;
-
-		}
-		print $mfh "\n";
-	}
-   
-	# write aln stats to table
-	my @header = sort { lc ($a) cmp lc ($b) } keys %{$aln_stats[0]};
+	# write table with statistics on all alignments
+	my %h = %{$aln_stats[0]};
+	my @header = sort { lc ($a) cmp lc ($b) } keys (%h);
 	open my $outfh, '>', $opt->statstable or die $!;
 	print $outfh join("\t", @header) . "\n";
 	for my $s ( @aln_stats ) {
-		my %h = %{$s};
-		print $outfh join("\t", @h{@header}) . "\n";		
+		my %hash = %{$s};
+		print $outfh join("\t", @hash{@header}) . "\n";		
 	}
 
-
-	$self->logger->info("DONE. Stats written to  " . $opt->statstable .  " marker presences written to " . $opt->markertable);
-}
-
-sub _get_marker_presence {
-	my ($self, @alns) = @_;
-
-	my %stats;
-	for my $aln ( @alns ) {
-		$self->logger->info("Extracting taxa from  alignment $aln");
-		
-		$stats{$aln} = {};
-		
-		# parse matrix
-		my $project = parse(
-			'-format'     => 'fasta',
-			'-type'       => 'dna',
-			'-file'     => $aln,
-			'-as_project' => 1,
-			);
-		my ($matrix) = @{ $project->get_items(_MATRIX_) };
-		
-		for my $m( @{$matrix->get_entities} ) {
-			my $species;
-			if ( $m->get_name=~m/taxon\|(\d+)\//) {
-				$species = $1;
-			}
-			else {
-				$species = $m->get_name;
-			}
-			$stats{$aln}->{$species} = 1;
-		}
-	}
-	return %stats;
+	$self->logger->info("DONE. Stats written to  " . $opt->statstable);
 }
 
 # given a matrix, get properties of the alignment (gap count, indel count and sizes, etc)
 sub _get_aln_stats  {
-	my ($self, $aln) = @_;
-
-	my %stats;
-	$stats{'file'} = $aln;
+	my ($self, $file) = @_;
 
 	# parse matrix
 	my $project = parse(
-			'-format'     => 'fasta',
-			'-type'       => 'dna',
-			'-file'     => $aln,
-			'-as_project' => 1,
-			);
+		'-format'     => 'fasta',
+		'-type'       => 'dna',
+		'-file'     => $file,
+		'-as_project' => 1,
+		);
+
 	my ($matrix) = @{ $project->get_items(_MATRIX_) };
 
+	my %stats;
+	$stats{'file'} = $file;
+	
 	# number of seqs (taxa) and characters
 	$stats{'nchar'} = $matrix->get_nchar;
 	$stats{'ntax'} = $matrix->get_ntax;
@@ -182,6 +131,7 @@ sub _get_aln_stats  {
 	$stats{'ins_avg_size'} = $ins_avg_size;
 	$stats{'del_avg_size'} = $del_avg_size;
 
+	my @species;
 	# count gaps in all sequences
 	my $gapcount = 0;
 	my $avg_gapfreqs = 0;
@@ -191,8 +141,19 @@ sub _get_aln_stats  {
 		my $ch = $dat->get_char;
 		my $cnt = $ch =~ tr/\-//;
 		$gapcount += $cnt;
-	}
 
+		# get species id
+		my $spec;
+		if ( $dat->get_name=~m/taxon\|(\d+)\//) {
+			$spec = $1;
+		}
+		else {
+			$spec = $dat->get_name;
+		}
+		push @species, $spec;
+	}
+	$stats{'species'} = join(',', @species);
+	
 	# average number of gaps per sequence
 	$gapcount /= scalar(@{$matrix->get_entities});
 	$stats{'gaps_per_seq'} = $gapcount;
