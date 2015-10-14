@@ -95,8 +95,12 @@ sub run {
 			chomp @al; 
 			push @files, @al;
 		}
-		$logger->info( 'Got file names of ' . scalar(@files) . ' to proecess' );
-		
+		$logger->info( 'Got file names of ' . scalar(@files) . ' files to proecess' );
+	
+		# fresh outfile for inserted alignments
+		my $outfile = 'aligned-smrt-inserted.txt';
+		unlink $outfile if ( -e $outfile );
+
 		my @inserted;
 		# retrieve matrix object(s) from file(s)
 		for my $file ( @files ) {
@@ -136,9 +140,8 @@ sub run {
 				$logger->info("Writing alignment to $newfile");
 				unparse ( -phylo => $matrix, -file => $newfile, -format=>'fasta' );
 
-				# print filename to list
-				my $list .= 'aligned-smrt-inserted.txt';
-				open my $fh, '>>', $list;
+				# print filename to outfile
+				open my $fh, '>>', $outfile or die $!;
 				print $fh $newfile . "\n";
 				close $fh;
 			}	
