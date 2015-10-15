@@ -30,9 +30,8 @@ mkdir $SIMDIR
 cp final.nex $SIMDIR
 cp aligned.txt $SIMDIR
 cp fossils.tsv $SIMDIR
-cd $SIMDIR
 
-# parameters for SUPERSMART run
+cd $SIMDIR
 
 # Replicate the dataset (final tree, taxa table and alignments)
 smrt-utils replicate -t final.nex -f nexus -a aligned.txt -l replicate.log -v
