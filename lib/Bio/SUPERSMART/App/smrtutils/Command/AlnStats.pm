@@ -144,7 +144,7 @@ sub _get_aln_stats  {
 
 		# get species id
 		my $spec;
-		if ( $dat->get_name=~m/taxon\|(\d+)\//) {
+		if ( $dat->get_name=~m/taxon\|(\d+)/) {
 			$spec = $1;
 		}
 		else {
