@@ -212,7 +212,7 @@ in the specified format (phylip or nexml).
 
 sub write_clade_matrix {
 	my ($self, %args) = @_;
-	
+
 	my $markersfile = $args{'markersfile'};
 	my $outfile = $args{'outfile'};
 	my $enrich   = $args{'enrich'};
@@ -233,11 +233,11 @@ sub write_clade_matrix {
 	$project->insert($taxa);
 
 	my @matrices;
-	
+
 	# process all alignment files
-	
+
 	for my $file ( @{ $self->alnfiles } ) {
-		
+
 		# parse the file, enrich and degap it
 		$log->info("Adding alignment $file");
 		my $matrix = $self->parse_fasta_as_matrix(
@@ -248,16 +248,16 @@ sub write_clade_matrix {
 		$mts->enrich_matrix($matrix) if $enrich;
 		$matrix = $mts->degap_matrix($matrix);
 		push @matrices, $matrix if $matrix;
-		
+
 	}
 	return undef if not @matrices;
-	
+
 	# pick CLADE_MAX_MARKERS biggest alignments
 	@matrices = sort { $b->get_ntax <=> $a->get_ntax } @matrices;
 	if ( scalar(@matrices) > $max_markers ) {
 		$log->info("Found more alignments for clade than CLADE_MAX_MARKERS. Using the first $max_markers largest alignments.");
 	}
-	
+
 	# keep track of taxon ids, the number of markers for each taxid,
 	# because some markers might not be selected and taxa have to be removed
 	my %markers_for_taxon;
@@ -273,7 +273,7 @@ sub write_clade_matrix {
 				$project->insert($mat);
 			}
 	}
-	
+
 	# remove a taxon from matrix if it has none or less markers than given in CLADE_TAXON_MIN_MARKERS
 	# also remove all rows in the matrices where this taxon appears
 	my ($tax) = @{ $project->get_items(_TAXA_) } ;
@@ -283,7 +283,7 @@ sub write_clade_matrix {
 		if ( ! $marker_cnt || $marker_cnt < $min_markers ) {
 			$log->info("Removing taxon $taxname, not enough markers" );
 			$tax->delete($t);
-			
+
 			# remove rows from matrix containing the taxon
 			for my $mat ( @matrices ) {
 				for my $row ( @{$mat->get_entities} ) {
@@ -295,7 +295,7 @@ sub write_clade_matrix {
 			}
 		}
 	}
-	
+
 	# write table listing all marker accessions for taxa
 	my @marker_table = $mts->get_marker_table( @{ $project->get_items(_MATRIX_) } );
 	$mts->write_marker_table( $markersfile, \@marker_table );
@@ -1232,14 +1232,38 @@ sub write_supermatrix {
         ));
     } keys %allseqs;
     $aln->sort_alphabetically;
-
+	
     my $filename = $args{'outfile'};
-    my $stream = Bio::AlignIO->new(
-        '-format'   => $args{'format'} || 'phylip',
-        '-file'     => ">$filename",
-        '-idlength' => 10,
-    );
-    $stream->write_aln($aln);
+	open my $fh, '>', $filename or die $!;
+
+	my $format = $args{'format'} || 'phylip';
+	$format = 'nexus' if lc $format eq 'mrbayes';
+	my %output_args = ( 
+		-format => $format,
+		-fh => $fh, 
+		-idlength => 10,
+		-show_symbols => 0,
+		-show_endblock => 0,
+		);
+	
+    my $stream = Bio::AlignIO->new( %output_args );
+
+	# add run block for MrBayes if requested
+	my $runblock;	
+	if ( lc $args{'format'} eq 'mrbayes' ) {
+		$aln->missing_char('?');
+		my $numruns = $config->EXABAYES_NUMRUNS;
+		my $numgens = $config->EXABAYES_NUMGENS;
+		my $sfreq = 1000;
+		my $file = "mrbayes-out.nex";
+		$runblock = "begin mrbayes;\n" . 
+			"set autoclose=yes nowarn=yes;\n" .
+			"lset nst=6 rates=gamma;\n" .
+			"mcmc nruns=$numruns ngen=$numgens samplefreq=$sfreq file=$file;\n" . 
+			"end;\n";
+	}
+	$stream->write_aln($aln);
+	print $fh $runblock if $runblock;
 }
 
 =back
