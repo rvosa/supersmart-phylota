@@ -51,7 +51,7 @@ sub options {
         ["taxafile|t=s", "file with taxa table (as produced by smrt taxize), mandatory for ExaML inference.", { arg => "file", default => $taxa_default }],
         ["inferencetool|i=s", "software tool for backbone inference (RAxML, ExaML or ExaBayes), defaults to $tool_default", {default => $tool_default, arg => "tool"}],
         ["bootstrap|b=i", "number of bootstrap replicates. Will add the support values to the backbone tree. Not applicable to Bayesian methods.", { default => $boot_default }],
-	["rapid_boot|r", "use RAxML's rapid bootstrap algorithm. Only supported when 'inferencetool' argument is RAxML. Returns single consensus tree with bootstrap values in figtree/nexus format", {}],
+		["rapid_boot|r", "use RAxML's rapid bootstrap algorithm. Only supported when 'inferencetool' argument is RAxML. Returns single consensus tree with bootstrap values in figtree/nexus format", {}],
         ["ids|n", "return tree with NCBI identifiers instead of taxon names", {}],
         ["outfile|o=s", "name of the output tree file (in newick format), defaults to '$outfile_default'", {default => $outfile_default, arg => "file"}],
         ["cleanup|x", "if set, cleans up all intermediate files", {}],
@@ -99,82 +99,55 @@ sub run {
 		$is->usertree( $usertree );
 	}
        
-    # run the analysis, process results
-    my $base = $self->outfile;
-
 	# For RaXML's rapid bootstrap, do not create bootstrap matrices since it's taken care
 	#  of by RaXML
 	if ( $opt->rapid_boot ) {
-
-		$is->outfile( $base ) ;
+		$bootstrap = 1;
+		$is->rapid_boot(1);
+	}
+	
+    # run the analysis, process results
+    my $base = $self->outfile;	
+	pmap {
+		my $i = $_;
 		
-		# do only one iteration, RaXML does the bootstrapping
-		$is->bootstrap(1);
+		# assign input matrix
+		my $matrix;
+		if ( $is->is_bayesian or $bootstrap == 1 ) {
+			$matrix = $supermatrix;
+			}
+		else {
+			$matrix = $ss->bootstrap( $supermatrix, $i );
+		}
+		
+		# create replicate settings
+		$is->outfile( "${base}.${i}" );
+		$is->replicate( $i );
 		$is->configure;
-		my $backbone = $is->run( 'matrix' => $supermatrix, 'rapid_boot' => $bootstrap );  
-
-		# set bootstrap values as figtree annotations to tree
-		my $tree = parse_tree(
-			'-format' => 'newick',
-			'-file'   => $backbone,    	
-			);
-
-		$tree->set_namespaces( 'fig' => _NS_FIGTREE_ );
-		for my $node ( @{$tree->get_internals} ) {
-			if ( $node->id=~m/[0-9]+/ ) {
-				$node->set_meta_object('fig:bootstrap', $node->id);
-				$node->id('');
+		
+		# run
+		my $backbone = $is->run( 'matrix' => $matrix );  
+		$self->_append( $backbone, $base . '.trees' );
+		
+		# cleanup, if requested
+		if ( $opt->cleanup ) {
+			unlink $backbone;
+			$is->cleanup;
+			if ( not $is->is_bayesian and $bootstrap != 1 ) {
+				unlink $matrix;
 			}
 		}
-		$ts->remap_to_name( $tree );		
-		$ts->write_figtree( $tree, $self->outfile );
-				
-		if ( $opt->cleanup ) {
-			$is->cleanup;
-			unlink $backbone;
-		}		
-	}
-    else {
-		pmap {
-			my $i = $_;
-			
-			# assign input matrix
-			my $matrix;
-			if ( $is->is_bayesian or $bootstrap == 1 ) {
-				$matrix = $supermatrix;
-			}
-			else {
-				$matrix = $ss->bootstrap( $supermatrix, $i );
-			}
-			
-			# create replicate settings
-			$is->outfile( "${base}.${i}" );
-			$is->replicate( $i );
-			$is->configure;
-			
-			# run
-			my $backbone = $is->run( 'matrix' => $matrix );  
-			$self->_append( $backbone, $base . '.trees' );
-			
-			# cleanup, if requested
-			if ( $opt->cleanup ) {
-				unlink $backbone;
-				$is->cleanup;
-				if ( not $is->is_bayesian and $bootstrap != 1 ) {
-					unlink $matrix;
-				}
-			}
-		} ( 1 .. $bootstrap );
+	} ( 1 .. $bootstrap );
+	
+	# finalize
+	$self->_process_result( 
+		$base . '.trees',                       # the set of trees (file)
+		!$opt->ids,                             # whether to remap
+		( $bootstrap - 1 || $is->is_bayesian ), # whether to consense
+		$supermatrix,                           # the supermatrix (file)
+		$is,                                    # inference service
+		);		
 
-		# finalize
-		$self->_process_result( 
-			$base . '.trees',                       # the set of trees (file)
-			!$opt->ids,                             # whether to remap
-			( $bootstrap - 1 || $is->is_bayesian ), # whether to consense
-			$supermatrix,                           # the supermatrix (file)
-			$is,                                    # inference service
-			);		
-    }
     unlink $self->workdir . '/user.dnd' if $opt->cleanup;
     return 1;
 }

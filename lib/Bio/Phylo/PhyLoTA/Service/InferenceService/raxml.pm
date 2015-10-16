@@ -82,7 +82,7 @@ sub run {
     my $treefile = File::Spec->catfile( $t->w, 'RAxML_bestTree.' . $id );
 
     # configure rapid bootstrap options   
-    if ( $args{'rapid_boot'} ) {
+    if ( $self->{'rapid_boot'} ) {
         
 		# Do ML search and boostrapping in one go
 		$t->f('a');
@@ -94,13 +94,14 @@ sub run {
         $treefile = File::Spec->catfile( $t->w, 'RAxML_bipartitions.' . $id );
 
 		# set number of rapid boostrap replicates; override number of runs
-		$t->N($args{'rapid_boot'});
+		$t->N($self->bootstrap);
 		
     }   
     # run raxml, returns bioperl tree
     my $bptree = $t->run($args{'matrix'});          
 	
     $logger->fatal('RAxML inference failed; outfile not present') if not -e $treefile; 
+	$logger->warn("Returning RAxML tree file $treefile");
     return $treefile;
 }
 
@@ -129,6 +130,17 @@ sub cleanup {
         }
     }
 }
+
+=item rapid_boot
+
+=cut
+
+sub rapid_boot {
+	my $self = shift;
+	$self->{'rapid_boot'} = shift if @_;
+	return $self->{'rapid_boot'};
+}
+
 
 =back 
 
