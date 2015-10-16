@@ -47,14 +47,44 @@ sub options {
     my $taxa_default    = "species.tsv";
     my $boot_default    = 1;
     return (
-        ["supermatrix|s=s", "matrix of concatenated multiple sequece alignments as produced by 'smrt bbmerge'", { arg => "file", default => $matrix_default }],  
-        ["taxafile|t=s", "file with taxa table (as produced by smrt taxize), mandatory for ExaML inference.", { arg => "file", default => $taxa_default }],
-        ["inferencetool|i=s", "software tool for backbone inference (RAxML, ExaML or ExaBayes), defaults to $tool_default", {default => $tool_default, arg => "tool"}],
-        ["bootstrap|b=i", "number of bootstrap replicates. Will add the support values to the backbone tree. Not applicable to Bayesian methods.", { default => $boot_default }],
-		["rapid_boot|r", "use RAxML's rapid bootstrap algorithm. Only supported when 'inferencetool' argument is RAxML. Returns single consensus tree with bootstrap values in figtree/nexus format", {}],
-        ["ids|n", "return tree with NCBI identifiers instead of taxon names", {}],
-        ["outfile|o=s", "name of the output tree file (in newick format), defaults to '$outfile_default'", {default => $outfile_default, arg => "file"}],
-        ["cleanup|x", "if set, cleans up all intermediate files", {}],
+        [
+		     "supermatrix|s=s", 
+		     "matrix of concatenated multiple sequece alignments as produced by 'smrt bbmerge'", 
+		     { arg => "file", default => $matrix_default }
+		],  
+		[
+		     "taxafile|t=s", 
+			 "file with taxa table (as produced by smrt taxize), mandatory for ExaML inference.", 
+		     { arg => "file", default => $taxa_default }
+		],
+        [
+		     "inferencetool|i=s", 
+    		 "software tool for backbone inference (RAxML, ExaML, PhyML, ExaBayes), defaults to $tool_default", 
+		     {default => $tool_default, arg => "tool"}],
+        [
+		     "bootstrap|b=i", 
+    		 "number of bootstrap replicates. Will add the support values to the backbone tree. Not applicable to Bayesian methods.", 
+    		 { default => $boot_default }
+		],
+		[
+		     "rapid_boot|r", 
+    		 "use RAxML's rapid bootstrap algorithm. Only supported when 'inferencetool' argument is RAxML. Returns single consensus tree with annotated nodes", 
+		     {},
+		],
+        [
+    		 "ids|n", 
+    		 "return tree with NCBI identifiers instead of taxon names", 
+		     {}
+		],
+        [
+		     "outfile|o=s", 
+		     "name of the output tree file (in newick format), defaults to '$outfile_default'", 
+		     {default => $outfile_default, arg => "file"}
+		],
+        [    "cleanup|x", 
+			 "if set, cleans up all intermediate files", 
+			 {}
+		],
     );  
 }
 
