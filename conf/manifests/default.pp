@@ -60,6 +60,7 @@ class install {
 		"r-base-dev":      ensure => installed, require => Exec ["apt_update"];
 		"libopenmpi-dev":  ensure => installed, require => Exec ["apt_update"];
 		"openmpi-bin":     ensure => installed, require => Exec ["apt_update"];  
+		"phyml":     ensure => installed, require => Exec ["apt_update"];  
 	}
 
 	# create links for executables and data directories
