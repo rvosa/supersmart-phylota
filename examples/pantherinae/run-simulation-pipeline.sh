@@ -5,7 +5,7 @@
 # finalized run of the SUPERSMART pipeline.
 
 # number of replicated
-REPLICATES="5"
+REPLICATES="3"
 
 # prefix for simulation directories
 PREFIX="sim-"
@@ -24,11 +24,11 @@ export SUPERSMART_MSA_TOOL="mafft"
 export SUPERSMART_CLADE_MAX_DISTANCE="0.1"
 export SUPERSMART_CLADE_MIN_DENSITY="0.5"
 export SUPERSMART_CLADE_TAXON_MIN_MARKERS="2"
-export SUPERSMART_CLADE_MAX_MARKERS=""
+export SUPERSMART_CLADE_MAX_MARKERS="10"
 
 # make synthetic datasets
 for i in $( seq 1 $REPLICATES ); do
-	echo sh make-replicated-dataset.sh $PREFIX$i
+	sh make-replicated-dataset.sh $PREFIX$i
 done;
 
 # make plots of original and synthetic datasets
