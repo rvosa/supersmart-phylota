@@ -143,7 +143,8 @@ sub run {
     my $include_taxa = $opt->include_taxa;
 
     # instantiate helper objects
-    my $mt  = Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa->new($opt->alnfile);
+    my $config = Bio::Phylo::PhyLoTA::Config->new;
+    my $mt  = Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa->new($opt->alnfile, $config->BACKBONE_MIN_COVERAGE);
     my $log = $self->logger;
         
     # Pick the exemplar taxa:

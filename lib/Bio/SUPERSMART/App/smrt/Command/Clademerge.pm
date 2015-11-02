@@ -81,12 +81,11 @@ sub run {
     my @result = grep { defined $_ and -e $_ } pmap {
 		(my $clade) = @_;
 		my $dir = "${workdir}/${clade}";
-		$mt = Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa->new("${dir}/merged.txt");
+		$mt = Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa->new("${dir}/merged.txt", $config->CLADE_MIN_COVERAGE);
 		$mt->write_clade_matrix( 
 			'markersfile' => "${dir}/${clade}-markers.txt",
 			'outfile' => $opt->outformat eq 'phylip' ? "${dir}/${clade}.phy" : "${dir}/${clade}.xml",
-			'min_markers' => $config->CLADE_TAXON_MIN_MARKERS,
-			'max_markers' => $config->CLADE_MAX_MARKERS,
+			'max_markers' => $config->CLADE_MAX_COVERAGE,
 			'enrich' => $opt->enrich,
 			'format' => $opt->outformat);
     } @dirs;

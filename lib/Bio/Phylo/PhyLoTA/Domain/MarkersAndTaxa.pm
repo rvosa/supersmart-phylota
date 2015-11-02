@@ -28,19 +28,21 @@ has 'taxa_for_alns' => ( is => 'ro', 'isa' => 'HashRef' );
 has 'adjacencies'   => ( is => 'ro', 'isa' => 'HashRef' );
 has 'candidates'    => ( is => 'ro', 'isa' => 'HashRef' );
 has 'species'       => ( is => 'ro', 'isa' => 'ArrayRef' );
+has 'min_cover'     => ( is => 'ro', 'isa' => 'Int' );
 has 'logger'        => ( is => 'ro', 'isa' => 'Str' );
 
 around BUILDARGS => sub {
 	my $orig = shift;
 	my $class = shift;
 
-	if ( @_ == 1 && ! ref $_[0] ) {
+	if ( @_ == 2 && ! ref $_[0] ) {
 
-		# here we prepare the constructor args. first we parse the alignment file list.
+		# here we prepare constructor args. first we parse the alignment file list.
 		my %args = ( 'logger' => Bio::Phylo::Util::Logger->new );
 		my $alnfile = shift;
 		$args{'alnfiles'} = [ $class->parse_aln_file($alnfile) ];
-
+		$args{'min_cover'} = shift;
+		
 		# then we parse the alignments
 		$args{'alignments'} = {};
 		my %taxa;
@@ -152,7 +154,8 @@ sub _index_alignments {
     # prune adjacency matrix: each taxon which has
     #  not sufficient coverage cannot possibly be an exemplar
     my @low_coverage_taxa;
-    my $cover = $config->BACKBONE_MIN_COVERAGE;
+    my $cover = $args->{'min_cover'};
+
     for my $taxon ( keys %adjacency_matrix ) {
 
     	# taxon has zero alignments or fewer than coverage
@@ -171,7 +174,7 @@ sub _index_alignments {
             delete $adjacency_matrix{$k}->{$t};
         }
     }
-
+		
     # get all independent subsets of species that are connected by at least
     # one marker and select the largest subset as candidates for exemplars
     my $sets = $mts->get_connected_taxa_subsets( \%adjacency_matrix );
@@ -216,7 +219,7 @@ sub write_clade_matrix {
 	my $markersfile = $args{'markersfile'};
 	my $outfile = $args{'outfile'};
 	my $enrich   = $args{'enrich'};
-	my $min_markers = $args{'min_markers'};
+	my $min_markers = $self->min_cover;
 	my $max_markers = $args{'max_markers'};
 	my $outformat = $args{'format'};
 
@@ -484,7 +487,7 @@ sub optimize_packing_order {
         # given the selected exemplars and alignments, which taxa are most
         # distant from each other in marker sharing, and try to select
         # markers that shorten that distance.
-        my $max = $config->BACKBONE_MAX_COVERAGE or $config->BACKBONE_MIN_COVERAGE;
+        my $max = $config->BACKBONE_MAX_COVERAGE or $self->min_cover;
       ALN: while ( $seen{$taxon} < $max ) {
 
             # most speciose alignments first: we sorted aft already
@@ -1175,7 +1178,6 @@ sub write_supermatrix {
     my $logger = $self->logger;
     my $mts    = Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector->new;
     my $config = Bio::Phylo::PhyLoTA::Config->new;
-    my $cover  = $config->BACKBONE_MIN_COVERAGE;
 
     # dereference argument data structures
     my @exemplars  = @{ $args{'exemplars'} };
