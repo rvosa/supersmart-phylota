@@ -853,12 +853,13 @@ sub graft_tree {
 			$log->debug("Only in clade: ".$clade_tip->get_name);
 		}
 	}
-
-	# it is possible that no exemplars are found in the backbone tree, when
-	# there is no marker overlap with species in the clade tree. If this
-	# happens, we cannot graft
-	if ( ! scalar @exemplars ) {
-		$log->warn("No matching exemplar found in backbone tree, could not graft clade tree. Possibly no marker overlap");
+	
+	# it is possible that none or only one exemplars are found in the backbone tree,
+	# e.g. when there is no marker overlap of backbone exemplars with other clade taxa
+	# or if an exemplar does have less markers than CLADE_TAXON_MON_MARKERS;
+	# in this case, do not try to graft because mrca depth will be zero   
+	if ( scalar (@clade_exemplars) < 2 ) {
+		$log->error("Less than 2 exemplars found in clade tree, probably too few markers for exemplars available. Skipping clade.");
 		return $backbone;
 	}
 	else {
@@ -870,7 +871,7 @@ sub graft_tree {
 	my $bmrca = $backbone->get_mrca(\@exemplars);
 	my $cmrca = $clade->get_mrca(\@clade_exemplars);
 	if ( $bmrca->is_root ){
-		$log->fatal("Something goes wrong here: MRCA of exemplar species " . join(',', map{$_->id} @exemplars) . " in backbone is the backbone root!");
+		$log->fatal("MRCA of exemplar species " . join(',', map{$_->id} @exemplars) . " in backbone is the backbone root!");
 		return $backbone;
 	}
 	if ( my $min = $bmrca->get_meta_object('fig:fossil_age_min') and my $max = $bmrca->get_meta_object('fig:fossil_age_max') ) {

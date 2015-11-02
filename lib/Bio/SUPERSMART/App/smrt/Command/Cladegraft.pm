@@ -43,7 +43,7 @@ sub options {
 	return (                               	
   		["backbone|b=s", "backbone tree as produced by 'smrt consense', defaults to $tree_default", { arg => "file", default => $tree_default }],
 		["outfile|o=s", "name of the output tree file (newick format) defaults to $outfile_default", { default=> $outfile_default, arg => "file"}],    	    
-		["cladetree|c=s", "name of tree file for single clade (newick format) if only a single cladetree should be grafted", { arg => "file"}],
+		["cladetree|c=s", "name of tree file (newick format) or clade directory for grafting a single tree", { arg => "file"}],
 		["heights|e=s", "node heights (ca, keep, median, mean)", { default => $heights_default, arg => 'keep|median|mean|ca' } ],
 		["squish|s=s", "how to treat negative branches (zero, yulish, none)", { default => $squish_default, arg => 'zero|yulish|none' } ],
     );
