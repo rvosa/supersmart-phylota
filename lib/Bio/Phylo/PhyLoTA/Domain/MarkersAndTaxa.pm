@@ -623,11 +623,23 @@ Reads the flat list of alignments, returns an array of validated file names
 
 sub parse_aln_file {
     my ( $class, $file ) = @_;
+    my $log  = Bio::Phylo::Util::Logger->new;
+    $log->debug("going to read alignment list $file");
     my @alignments;
     open my $fh, '<', $file or die $!;
     while (<$fh>) {
         chomp;
-        push @alignments, $_ if /\S/ && -e $_;
+        if ( /\S/ ) {
+        	if ( -e $_ ) {
+        		push @alignments, $_;
+        	}
+        	else {
+        		$log->warn("Entry $_ not found!");
+        	}
+        }
+        else {
+        	$log->debug("skipping blank line");	
+        }
     }
     return @alignments;
 }
