@@ -35,10 +35,6 @@ sub configure {
     $logger->info("going to use mpirun executable ".$config->MPIRUN_BIN);
 	$tool->mpirun($config->MPIRUN_BIN);
     
-    # set number of nodes
-	$logger->info("setting number of MPI nodes ".$config->NODES);
-	$tool->nodes($config->NODES);
-
     # set exabayes location
     $logger->info("going to use executable ".$config->EXABAYES_BIN);
     $tool->executable($config->EXABAYES_BIN);
@@ -58,7 +54,20 @@ sub configure {
     # set number of coupled chains
     $logger->info("setting coupled chains to ".$config->EXABAYES_NUMCHAINS);
     $tool->numCoupledChains($config->EXABAYES_NUMCHAINS);
-	        
+
+	# set number of coupled chains to run in parallel
+	$logger->info("running ".$config->EXABAYES_NUMCHAINS." coupled chains in parallel");
+	$tool->C($config->EXABAYES_NUMCHAINS);
+	
+    # set number of mpi processes; increase when numruns * numchains too large
+	# to prevent ExaBayes error
+	my $nodes = $config->NODES;
+	if ( $config->EXABAYES_NUMRUNS * $config->EXABAYES_NUMCHAINS > $nodes ) {
+		$nodes = $config->EXABAYES_NUMRUNS * $config->EXABAYES_NUMCHAINS;
+	}
+	$logger->info("setting number of MPI nodes to $nodes");
+	$tool->nodes($nodes);
+
     # set number of generations
     $logger->info("setting number of generations to ".$config->EXABAYES_NUMGENS);
     $tool->numGen($config->EXABAYES_NUMGENS);
