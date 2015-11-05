@@ -349,7 +349,10 @@ sub pick_exemplars {
 	for my $genus ( keys %species_for_genus ) {
 
 		# lookup genus name
-		my $gname = $mts->find_node($genus)->taxon_name;
+		my $gname = '';
+		if (my $n = $mts->find_node($genus) ) {
+			$gname = $n->taxon_name;
+		}
 		$log->info("Looking for exemplars in genus $gname ($genus)");
 
 		# select taxa that are in this genus and are in the candidate exemplars
