@@ -184,8 +184,14 @@ sub _index_alignments {
     # get all independent subsets of species that are connected by at least
     # one marker and select the largest subset as candidates for exemplars
     my $sets = $mts->get_connected_taxa_subsets( \%adjacency_matrix );
-    my %candidates = map { $_ => 1 } @{ ( sort { scalar(@$b) <=> scalar(@$a) } @$sets )[0] };
-    $args->{'candidates'} = \%candidates;
+    if ( @$sets ) {
+    	my %candidates = map { $_ => 1 } @{ ( sort { scalar(@$b) <=> scalar(@$a) } @$sets )[0] };
+    	$args->{'candidates'} = \%candidates;
+    }
+    else {
+    	$log->error("No connected species sets were constructed!");
+    	$args->{'candidates'} = {};
+    }
 }
 
 =item orthologize_cladedir
