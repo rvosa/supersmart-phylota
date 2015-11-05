@@ -122,6 +122,7 @@ sub _index_alignments {
     # instantiate helper objects
     my $config = Bio::Phylo::PhyLoTA::Config->new;
     my $mts    = Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector->new;
+    my $log    = Bio::Phylo::Util::Logger->new;
 
     # make forward and reverse mappings between taxa and alignments
     my %taxa_for_alns;
@@ -129,20 +130,21 @@ sub _index_alignments {
     for my $i ( 0 .. $#{ $args->{'alnfiles'} } ) {
 
         # dereference data
-		my %fasta = %{ $args->{'alignments'}->{$args->{'alnfiles'}->[$i]} };
+	my %fasta = %{ $args->{'alignments'}->{$args->{'alnfiles'}->[$i]} };
 
-		# grep distinct taxa, store under alignment file name
-		my @taxa = uniq $class->get_taxa_from_fasta(%fasta);
-		$taxa_for_alns{$args->{'alnfiles'}->[$i]} = \@taxa;
+	# grep distinct taxa, store under alignment file name
+	my @taxa = uniq $class->get_taxa_from_fasta(%fasta);
+	$taxa_for_alns{$args->{'alnfiles'}->[$i]} = \@taxa;
 
-		# store alignment file names for each taxon
-		for my $t (@taxa) {
-			$alns_for_taxa{$t} = [] if not $alns_for_taxa{$t};
-			push @{ $alns_for_taxa{$t} }, $args->{'alnfiles'}->[$i];
-		}
+	# store alignment file names for each taxon
+	for my $t (@taxa) {
+	    $alns_for_taxa{$t} = [] if not $alns_for_taxa{$t};
+	    push @{ $alns_for_taxa{$t} }, $args->{'alnfiles'}->[$i];
+	}
     }
     $args->{'taxa_for_alns'} = \%taxa_for_alns;
     $args->{'alns_for_taxa'} = \%alns_for_taxa;
+    $log->debug("have ".scalar(keys(%alns_for_taxa))." alignments for ".scalar(keys(%taxa_for_alns))." taxa");
 
     # get adjacency matrix with taxa connected by markers
     my %adjacency_matrix = $mts->generate_marker_adjacency_matrix(
@@ -160,21 +162,23 @@ sub _index_alignments {
 
     	# taxon has zero alignments or fewer than coverage
     	# XXX modify this to allow for user taxa
-		if ( not $alns_for_taxa{$taxon} or scalar( @{ $alns_for_taxa{$taxon} } ) < $cover ) {
-			push @low_coverage_taxa, $taxon;
-		}
+	if ( not $alns_for_taxa{$taxon} or scalar( @{ $alns_for_taxa{$taxon} } ) < $cover ) {
+	    push @low_coverage_taxa, $taxon;
+	}
     }
+    $log->debug("have ".scalar(@low_coverage_taxa)."/".scalar(keys(%adjacency_matrix))." low coverage taxa");
     for my $t ( @low_coverage_taxa ) {
 
     	# remove forward occurrence in AM
-		delete $adjacency_matrix{$t};
+	delete $adjacency_matrix{$t};
         for my $k ( keys %adjacency_matrix ) {
 
             # remove reverse occurrence
             delete $adjacency_matrix{$k}->{$t};
         }
     }
-		
+    $log->debug("adjacency matrix now has ".scalar(keys(%adjacency_matrix))." entries");
+    
     # get all independent subsets of species that are connected by at least
     # one marker and select the largest subset as candidates for exemplars
     my $sets = $mts->get_connected_taxa_subsets( \%adjacency_matrix );
