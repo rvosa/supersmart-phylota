@@ -49,10 +49,11 @@ sub configure {
         
     # set number of independent runs
     $logger->info("going to perform ".$config->EXABAYES_NUMRUNS." independent runs");
-    $tool->R($config->EXABAYES_NUMRUNS);
+    $tool->numRuns($config->EXABAYES_NUMRUNS);
 
 	# set number of runs to run in parallel
 	$logger->info("running ".$config->EXABAYES_NUMRUNS." independent runs in parallel");
+    $tool->R($config->EXABAYES_NUMRUNS);
 
     # set number of coupled chains
     $logger->info("setting coupled chains to ".$config->EXABAYES_NUMCHAINS);
