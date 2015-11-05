@@ -38,9 +38,11 @@ around BUILDARGS => sub {
 	if ( @_ == 2 && ! ref $_[0] ) {
 
 		# here we prepare constructor args. first we parse the alignment file list.
-		my %args = ( 'logger' => Bio::Phylo::Util::Logger->new );
+		my $log  = Bio::Phylo::Util::Logger->new;
+		my %args = ( 'logger' => $log );
 		my $alnfile = shift;
 		$args{'alnfiles'} = [ $class->parse_aln_file($alnfile) ];
+		$log->debug("read ".scalar(@{$args{'alnfiles'}})." alignments from $alnfile");
 		$args{'min_cover'} = shift;
 		
 		# then we parse the alignments
@@ -122,6 +124,7 @@ sub _index_alignments {
     # instantiate helper objects
     my $config = Bio::Phylo::PhyLoTA::Config->new;
     my $mts    = Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector->new;
+    my $log    = Bio::Phylo::Util::Logger->new;
 
     # make forward and reverse mappings between taxa and alignments
     my %taxa_for_alns;
@@ -129,20 +132,21 @@ sub _index_alignments {
     for my $i ( 0 .. $#{ $args->{'alnfiles'} } ) {
 
         # dereference data
-		my %fasta = %{ $args->{'alignments'}->{$args->{'alnfiles'}->[$i]} };
+	my %fasta = %{ $args->{'alignments'}->{$args->{'alnfiles'}->[$i]} };
 
-		# grep distinct taxa, store under alignment file name
-		my @taxa = uniq $class->get_taxa_from_fasta(%fasta);
-		$taxa_for_alns{$args->{'alnfiles'}->[$i]} = \@taxa;
+	# grep distinct taxa, store under alignment file name
+	my @taxa = uniq $class->get_taxa_from_fasta(%fasta);
+	$taxa_for_alns{$args->{'alnfiles'}->[$i]} = \@taxa;
 
-		# store alignment file names for each taxon
-		for my $t (@taxa) {
-			$alns_for_taxa{$t} = [] if not $alns_for_taxa{$t};
-			push @{ $alns_for_taxa{$t} }, $args->{'alnfiles'}->[$i];
-		}
+	# store alignment file names for each taxon
+	for my $t (@taxa) {
+	    $alns_for_taxa{$t} = [] if not $alns_for_taxa{$t};
+	    push @{ $alns_for_taxa{$t} }, $args->{'alnfiles'}->[$i];
+	}
     }
     $args->{'taxa_for_alns'} = \%taxa_for_alns;
     $args->{'alns_for_taxa'} = \%alns_for_taxa;
+    $log->debug("have ".scalar(keys(%alns_for_taxa))." alignments for ".scalar(keys(%taxa_for_alns))." taxa");
 
     # get adjacency matrix with taxa connected by markers
     my %adjacency_matrix = $mts->generate_marker_adjacency_matrix(
@@ -160,26 +164,34 @@ sub _index_alignments {
 
     	# taxon has zero alignments or fewer than coverage
     	# XXX modify this to allow for user taxa
-		if ( not $alns_for_taxa{$taxon} or scalar( @{ $alns_for_taxa{$taxon} } ) < $cover ) {
-			push @low_coverage_taxa, $taxon;
-		}
+	if ( not $alns_for_taxa{$taxon} or scalar( @{ $alns_for_taxa{$taxon} } ) < $cover ) {
+	    push @low_coverage_taxa, $taxon;
+	}
     }
+    $log->debug("have ".scalar(@low_coverage_taxa)."/".scalar(keys(%adjacency_matrix))." low coverage taxa");
     for my $t ( @low_coverage_taxa ) {
 
     	# remove forward occurrence in AM
-		delete $adjacency_matrix{$t};
+	delete $adjacency_matrix{$t};
         for my $k ( keys %adjacency_matrix ) {
 
             # remove reverse occurrence
             delete $adjacency_matrix{$k}->{$t};
         }
     }
-		
+    $log->debug("adjacency matrix now has ".scalar(keys(%adjacency_matrix))." entries");
+    
     # get all independent subsets of species that are connected by at least
     # one marker and select the largest subset as candidates for exemplars
     my $sets = $mts->get_connected_taxa_subsets( \%adjacency_matrix );
-    my %candidates = map { $_ => 1 } @{ ( sort { scalar(@$b) <=> scalar(@$a) } @$sets )[0] };
-    $args->{'candidates'} = \%candidates;
+    if ( @$sets ) {
+    	my %candidates = map { $_ => 1 } @{ ( sort { scalar(@$b) <=> scalar(@$a) } @$sets )[0] };
+    	$args->{'candidates'} = \%candidates;
+    }
+    else {
+    	$log->error("No connected species sets were constructed!");
+    	$args->{'candidates'} = {};
+    }
 }
 
 =item orthologize_cladedir
@@ -617,11 +629,23 @@ Reads the flat list of alignments, returns an array of validated file names
 
 sub parse_aln_file {
     my ( $class, $file ) = @_;
+    my $log  = Bio::Phylo::Util::Logger->new;
+    $log->debug("going to read alignment list $file");
     my @alignments;
     open my $fh, '<', $file or die $!;
     while (<$fh>) {
         chomp;
-        push @alignments, $_ if /\S/ && -e $_;
+        if ( /\S/ ) {
+        	if ( -e $_ ) {
+        		push @alignments, $_;
+        	}
+        	else {
+        		$log->warn("Entry $_ not found!");
+        	}
+        }
+        else {
+        	$log->debug("skipping blank line");	
+        }
     }
     return @alignments;
 }
