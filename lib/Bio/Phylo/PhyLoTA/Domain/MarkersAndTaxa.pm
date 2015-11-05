@@ -38,9 +38,11 @@ around BUILDARGS => sub {
 	if ( @_ == 2 && ! ref $_[0] ) {
 
 		# here we prepare constructor args. first we parse the alignment file list.
-		my %args = ( 'logger' => Bio::Phylo::Util::Logger->new );
+		my $log  = Bio::Phylo::Util::Logger->new;
+		my %args = ( 'logger' => $log );
 		my $alnfile = shift;
 		$args{'alnfiles'} = [ $class->parse_aln_file($alnfile) ];
+		$log->debug("read ".scalar(@{$args{'alnfiles'}})." alignments from $alnfile");
 		$args{'min_cover'} = shift;
 		
 		# then we parse the alignments
