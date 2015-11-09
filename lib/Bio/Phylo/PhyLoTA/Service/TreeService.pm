@@ -718,14 +718,20 @@ sub process_commontree {
     # only retain tips in supermatrix
 
     $self->remap_to_ti( $commontree );
-    $commontree->keep_tips( \@tipnames );
 
+	# filter out tipnames that are not in the tree
+	my %tnames = map { $_->get_name=>1 } @{ $commontree->get_terminals };
+	@tipnames = grep { exists $tnames{$_} } @tipnames;
+
+    $commontree->keep_tips( \@tipnames );
+	
     # it can occur that a taxon that has been chosen as an exemplar is
     # not in the classification tree. For example, if a species has one subspecies,
     # but the species and not the subspecies is an exemplar. Then this node
     # is an unbranched internal and not in the classification tree. We therefore
     # add these node(s) to the starting tree
     my @terminals = @{ $commontree->get_terminals };
+
     if ( @terminals != @tipnames ) {
         $log->warn("Tips mismatch: ".scalar(@tipnames)."!=".scalar(@terminals));
 
