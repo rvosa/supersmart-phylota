@@ -83,7 +83,7 @@ sub run {
 		my $dir = "${workdir}/${clade}";
 		$mt = Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa->new("${dir}/merged.txt", $config->CLADE_MIN_COVERAGE);
 		$mt->write_clade_matrix( 
-			'markersfile' => "${dir}/${clade}-markers.txt",
+			'markersfile' => "${dir}/${clade}-markers.tsv",
 			'outfile' => $opt->outformat eq 'phylip' ? "${dir}/${clade}.phy" : "${dir}/${clade}.xml",
 			'max_markers' => $config->CLADE_MAX_COVERAGE,
 			'enrich' => $opt->enrich,
