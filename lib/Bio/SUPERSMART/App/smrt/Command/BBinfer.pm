@@ -52,23 +52,23 @@ sub options {
 		     "matrix of concatenated multiple sequece alignments as produced by 'smrt bbmerge'", 
 		     { arg => "file", default => $matrix_default }
 		],  
-		[
-		     "taxafile|t=s", 
-			 "file with taxa table (as produced by smrt taxize), mandatory for ExaML inference.", 
-		     { arg => "file", default => $taxa_default }
-		],
         [
 		     "inferencetool|i=s", 
     		 "software tool for backbone inference (RAxML, ExaML, PhyML, ExaBayes), defaults to $tool_default", 
 		     {default => $tool_default, arg => "tool"}],
+		[
+		     "taxafile|t=s", 
+			 "[ExaML inference only] taxa file to generate starting tree. If not given, will start from random tree ", 
+		     { arg => "file", default => $taxa_default }
+		],
         [
 		     "bootstrap|b=i", 
-    		 "number of bootstrap replicates. Will add the support values to the backbone tree. Not applicable to Bayesian methods.", 
+    		 "[ExaML and RaXML inference only] number of bootstrap replicates. Will add the support values to the backbone tree.", 
     		 { default => $boot_default }
 		],
 		[
 		     "rapid_boot|r", 
-    		 "use RAxML's rapid bootstrap algorithm. Only supported when 'inferencetool' argument is RAxML. Returns single consensus tree with annotated nodes", 
+    		 "[RaXML inference only] use RAxML's rapid bootstrap algorithm. Returns single consensus tree with annotated nodes.", 
 		     {},
 		],
         [
@@ -120,14 +120,7 @@ sub run {
     );
 
 	# need starting tree for examl inference
-	if ( lc $opt->inferencetool eq 'examl' ) {
-		# parse the taxa file 
-		my $mt = Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa->new;
-		my @taxatable = $mt->parse_taxa_file($opt->taxafile);
-		my $classification_tree = $ts->make_classification_tree( @taxatable );
-		my $usertree = $ts->make_usertree( $supermatrix, $classification_tree, $self->workdir.'/user.dnd'); 
-		$is->usertree( $usertree );
-	}
+	$self->_set_usertree( $is, $supermatrix, $opt->taxafile ) if lc $opt->inferencetool eq 'examl';
        
 	# For RaXML's rapid bootstrap, do not create bootstrap matrices since it's taken care
 	#  of by RaXML
@@ -220,6 +213,25 @@ sub _process_result {
     }
     
     $self->logger->info("DONE, results written to $outfile");
+}
+
+# set usertree to inference service object if applicable.
+# currently this can be done when inference tool is examl
+sub _set_usertree {
+	my ( $self, $service, $supermatrix, $taxafile ) = @_;
+
+    my $ts = Bio::Phylo::PhyLoTA::Service::TreeService->new;     
+	
+	# if taxa file given make classification tree, otherwise start from random tree
+	my $classtree;
+	if ( $taxafile ) {
+		my $mt = Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa->new;
+		my @taxatable = $mt->parse_taxa_file( $taxafile );
+		$classtree = $ts->make_classification_tree( @taxatable );
+	}
+	my $usertree = $ts->make_usertree( $supermatrix, $classtree, $self->workdir.'/user.dnd' ); 
+	$service->usertree( $usertree );
+	return $service;
 }
 
 1;
