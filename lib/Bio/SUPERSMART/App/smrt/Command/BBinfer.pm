@@ -58,8 +58,13 @@ sub options {
 		     {default => $tool_default, arg => "tool"}],
 		[
 		     "taxafile|t=s", 
-			 "[ExaML inference only] taxa file to generate starting tree. If not given, will start from random tree ", 
+			 "[ExaML inference only] taxa file to generate starting tree. Defaults to $taxa_default", 
 		     { arg => "file", default => $taxa_default }
+		],
+		[
+		     "random_start|m", 
+			 "[ExaML inference only] start inference from random starting tree", 
+		     {}
 		],
         [
 		     "bootstrap|b=i", 
@@ -120,7 +125,7 @@ sub run {
     );
 
 	# need starting tree for examl inference
-	$self->_set_usertree( $is, $supermatrix, $opt->taxafile ) if lc $opt->inferencetool eq 'examl';
+	$self->_set_usertree( $is, $supermatrix, $opt->taxafile, $opt->random_start ) if lc $opt->inferencetool eq 'examl';
        
 	# For RaXML's rapid bootstrap, do not create bootstrap matrices since it's taken care
 	#  of by RaXML
@@ -218,13 +223,13 @@ sub _process_result {
 # set usertree to inference service object if applicable.
 # currently this can be done when inference tool is examl
 sub _set_usertree {
-	my ( $self, $service, $supermatrix, $taxafile ) = @_;
+	my ( $self, $service, $supermatrix, $taxafile, $random_start ) = @_;
 
     my $ts = Bio::Phylo::PhyLoTA::Service::TreeService->new;     
 	
 	# if taxa file given make classification tree, otherwise start from random tree
 	my $classtree;
-	if ( $taxafile ) {
+	if ( ! $random_start ) {
 		my $mt = Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa->new;
 		my @taxatable = $mt->parse_taxa_file( $taxafile );
 		$classtree = $ts->make_classification_tree( @taxatable );
