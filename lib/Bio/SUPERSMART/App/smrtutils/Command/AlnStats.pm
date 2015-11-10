@@ -16,7 +16,6 @@ use Bio::SUPERSMART::App::smrtutils qw(-command);
 
 # ABSTRACT: extract information about a set of alignments
 
-
 =head1 NAME
 
 AlnStats - Extract useful information given a list of alignment locations
@@ -27,7 +26,7 @@ smrt-utils alnstats -a <file> [-o <file>] [-h] [-v] \ [-w <dir>] [-l <file>] [-y
 
 =head1 DESCRIPTION
 
-The script produces two tables (tsv format). The first one,
+The script produces a tables (tsv format)
 giving sequence stats lists following alignment properties:
 
  - length of alignment
@@ -37,9 +36,7 @@ giving sequence stats lists following alignment properties:
  - number of deletions per alignment
  - average size of indels per alignment
  - number of invariant columns in alignment
-
-The second one lists the alignments as columns and species as row. Species
-present in alignment is indicated with '1' in the corresponding cell 
+ - NCBI identifiers for species in the table
 
 =cut
 
