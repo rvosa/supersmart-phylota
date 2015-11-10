@@ -13,6 +13,7 @@ use Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa;
 use Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector;
 use List::MoreUtils 'uniq';
 use List::Util qw'min sum';
+use Data::Dumper;
 
 my $config = Bio::Phylo::PhyLoTA::Config->new;
 my $log = Bio::Phylo::PhyLoTA::Service->logger->new;
@@ -719,10 +720,19 @@ sub process_commontree {
 
     $self->remap_to_ti( $commontree );
 
-	# filter out tipnames that are not in the tree
+	# filter out tipnames that are not in the tree	
 	my %tnames = map { $_->get_name=>1 } @{ $commontree->get_terminals };
-	@tipnames = grep { exists $tnames{$_} } @tipnames;
 
+	$log->debug("Taxa in current supermatrix:");
+	$log->debug(Dumper(\@tipnames));
+
+	$log->debug("Taxa in current commontree:");
+	$log->debug(Dumper(\%tnames));
+	@tipnames = grep { exists $tnames{$_} } @tipnames;
+	
+	$log->debug("Taxa to keep in commontree:");
+	$log->debug(Dumper(\@tipnames));
+	
     $commontree->keep_tips( \@tipnames );
 	
     # it can occur that a taxon that has been chosen as an exemplar is
