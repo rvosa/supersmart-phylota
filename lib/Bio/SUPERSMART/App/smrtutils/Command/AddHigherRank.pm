@@ -6,6 +6,7 @@ use warnings;
 use Bio::Phylo::PhyLoTA::Service::TreeService;
 
 use Bio::Phylo::IO qw(parse);
+use Bio::Phylo::Util::CONSTANT ':namespaces';
 
 use base 'Bio::SUPERSMART::App::SubCommand';
 use Bio::SUPERSMART::App::smrtutils qw(-command);
@@ -75,8 +76,10 @@ sub run {
 	    )->first;
 	}
 	
+	my %clades;
 	$tree->visit( sub{
 		my $n = shift;
+
 		if ($n->is_terminal) {
 			
 			my $name = $n->get_name;
@@ -97,9 +100,20 @@ sub run {
 				last if $current_rank eq $rank;			
 			}		
 			$logger->info("Changing tip name $name to $higher_name-$name");
+			$clades{$higher_name} = [] if not $clades{$higher_name};
+			push @{$clades{$higher_name}}, $n;
 			$n->set_name("$higher_name-$name");
 		}			
-		      });
+				  });
+	
+	# traverse clades and set name to mrca of nodes in one clade
+	for my $clade ( keys %clades ) {
+		my @nodes = @{$clades{$clade}};
+		my $mrca = $tree->get_mrca(\@nodes);
+		$logger->info("Setting internal node name $clade");
+		$mrca->set_namespaces( 'fig' => _NS_FIGTREE_ );
+		$mrca->set_meta_object( 'fig:name' => $clade );
+	}
 
 	$ts->write_figtree( $tree, $outfile);
 	
