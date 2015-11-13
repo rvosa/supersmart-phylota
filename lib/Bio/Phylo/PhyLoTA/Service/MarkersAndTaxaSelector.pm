@@ -1159,6 +1159,7 @@ sub filter_clade_alignments {
 	my $in = $args{'-ingroup'} or throw 'BadArgs' => "Need -ingrup argument";;
 	my $alns =  $args{'-alnfiles'}  or throw 'BadArgs' => "Need -alnfiles argument";;
 	my $out = $args{'-outgroup'} if $args{'-outgroup'};
+	my $clade = $argds{'-clade'};
 
 	my @alignments = @$alns;
 
@@ -1168,7 +1169,7 @@ sub filter_clade_alignments {
 	my $maxdist = $self->config->CLADE_MAX_DISTANCE;
 	my $mindens = $self->config->CLADE_MIN_DENSITY;
 		
-	$logger->info("Filtering clade alignments, min density : $mindens, max distance : $maxdist");
+	$logger->info("Filtering clade for clade $clade alignments, min density : $mindens, max distance : $maxdist");
 	
 	my %ingroup = map {$_=>1} @$in;
 	my %outgroup = map {$_=>1} @$out;
@@ -1176,7 +1177,7 @@ sub filter_clade_alignments {
 	my @clade_alignments;
 	for my $aln ( @alignments ) {
 
-	  $logger->debug("Checking whether alignment $aln can be included");
+	  $logger->debug("Checking whether alignment $aln can be included in clade $clade");
 
 	  # make subset: take only the sequences that are in the clade (or outgroup, if given)
 	  my %fasta = $mt->parse_fasta_file($aln);             
@@ -1188,18 +1189,18 @@ sub filter_clade_alignments {
 	  my $distinct = scalar keys %seqs_ingroup;		    
 	  if ( ($distinct/scalar keys %ingroup) < $mindens ) {
 		  my $dens = sprintf "%.2f", $distinct / scalar keys %ingroup;
-		  $logger->debug("$aln is not  dense enough (density " . $dens . " < $mindens) for taxon set");
+		  $logger->debug("$aln is not  dense enough (density " . $dens . " < $mindens) for clade $clade");
 		  next;
 	  }
 	  
 	  # check if distance is not too high
 	  my $dist = $mt->calc_mean_distance($mt->to_fasta_string(%seqs_ingroup));
 	  if ( $dist > $maxdist ) {
-		  $logger->debug("$aln is too divergent (distance $dist > $maxdist) for taxon set");
+		  $logger->debug("$aln is too divergent (distance $dist > $maxdist) for clade $clade");
 		  next;
 	  }		    
 	  # add alignment to set of clade alignments
-	  $logger->info("Including alignment $aln in clade");
+	  $logger->info("Including alignment $aln in clade $clade");
 	  push @clade_alignments, \%seqs_all;		   
   }
 	return @clade_alignments;

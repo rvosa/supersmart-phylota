@@ -176,7 +176,8 @@ sub run{
 	my @species_for_clades = pmap {
 
 		my $i = $_;
-
+		$logger->info("Processing clade $i");
+		
 		# for each clade, collect a set of alignments
 		my $clade = $clades[$i];
 		my %ingroup  = map { $_ => 1 } @{ $clade->{'ingroup'} };
@@ -190,7 +191,8 @@ sub run{
 	    # check all alignments and assess whether they are suitable for the clade
 	    my @clade_alignments = $mts->filter_clade_alignments( '-ingroup'  => $clade->{'ingroup'},
 															  '-outgroup' => $clade->{'outgroup'},
-															  '-alnfiles' => \@alignments );
+															  '-alnfiles' => \@alignments,
+															  '-clade'    => $i);
 
 		# for the given set of taxa and alignments, get all subsets of taxa that share at least one marker
 		my @all_taxa = map {@$_} map {values(%$_)} @clades;
