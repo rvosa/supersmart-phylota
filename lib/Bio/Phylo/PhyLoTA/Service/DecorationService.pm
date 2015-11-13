@@ -88,15 +88,58 @@ sub apply_taxon_colors {
 
 =item apply_markers
 
-Given a marker file, a tree and an argument to distinguis 'backbone' from 'clade',
+Given a marker file, a tree and an argument to distinguish 'backbone' from 'clade',
 sets the following annotations:
 
 - backbone exemplar tips are given a true value for the 'exemplar' key in the generic hash
-- exemplar tips are given a hash of marker ID to accession mappings under 'backbone'
-- backbone nodes are given hash of marker ID to n seqs mappings under 'backbone'
-- the root is given a hash of marker ID to marker name mappings under 'markers'
+- exemplar tips are given a hash of marker ID to accession mappings under 'backbone_markers'
+- backbone nodes are given hash of marker ID to n seqs mappings under 'backbone_markers'
+- clade tips are given a hash of marker ID to accession mappings under 'clade_markers'
+- clade nodes are given hash of marker ID to n seqs mappings under 'clade_markers'
 
 =cut
+
+sub _apply_clade_markers {
+	my ($self,$tree,$records) = @_;
+	my @tips = map { $tree->get_by_name($_->{'taxon'}) } @$records;
+	my $mrca = $tree->get_mrca(\@tips);
+	if ( $mrca ) {
+		$mrca->visit_depth_first(
+			'-post' => sub {
+				my $n = shift;
+				if ( my @c = @{ $n->get_children } ) {
+					my %m;
+					for my $c ( @c ) {
+						my $cm = $c->get_generic('clade_markers');
+						if ( $cm ) {
+							$m{$_}++ for keys %$cm;
+						}
+					}
+					$n->set_generic( 'clade_markers' => \%m );
+				}
+			}
+		);
+	}
+}
+
+sub _apply_backbone_markers {
+	my ($self,$tree) = @_;
+	$tree->visit_depth_first(
+		'-post' => sub {
+			my $n = shift;
+			if ( my @c = @{ $n->get_children } ) {
+				my %m;
+				for my $c ( @c ) {
+					my $bbm = $c->get_generic('backbone_markers');
+					if ( $bbm ) {
+						$m{$_}++ for keys %$bbm;
+					}
+				}
+				$n->set_generic( 'backbone_markers' => \%m );
+			}
+		}
+	);
+}
 
 sub apply_markers {
 	my ($self,$file,$tree,$type) = @_;
@@ -111,60 +154,30 @@ sub apply_markers {
 	# listing which markers and accessions participated in the node
 	for my $r ( @records ) {
 		if ( my $tip = $tree->get_by_name( $r->{'taxon'} ) ) {
-			$tip->set_generic( 'exemplar' => 1 ) if $type eq 'backbone';
-
-			# store marker ID and accession number
-			my %markers;
-			for my $m ( @{ $r->{'keys'} } ) {
-				next if $m eq 'taxon';
-				$markers{$m} = $r->{$m} if $r->{$m} and $r->{$m} =~ m/\S/;
-			}
-			$tip->set_generic( $predicate => \%markers );
-			$logger->debug("attached ".scalar(keys(%markers))." $type markers to ".$r->{'taxon'});
-
-			# start the counts at 1
-			my %counts = map { $_ => 1 } keys %markers;
-			my $ancestors = 0;
-			NODE: for my $node ( @{ $tip->get_ancestors } ) {
-
-				# may have visited node from another descendent, need
-				# to add current counts
-				if ( my $h = $node->get_generic($predicate) ) {
-					$h->{$_} += $counts{$_} for keys %counts;
-					my %copy = %$h;
-					$node->set_generic( $predicate => \%copy );
+			my %h = %{ $r };
+			delete $h{'taxon'};
+			delete $h{'keys'};
+			MARKER: for my $marker ( keys %h ) {
+				if ( not $h{$marker} ) {
+					delete $h{$marker};
+					next MARKER;
 				}
-				else {
-					my %copy = %counts;
-					$node->set_generic( $predicate => \%copy );
-				}
-				last NODE if $node->get_meta_object('fig:clade');
-				$ancestors++;
+				my @values = split /,/, $h{$marker};
+				$h{$marker} = \@values;
 			}
-			$logger->debug("updated annotations for $ancestors ancestors");
+                        $tip->set_generic( 'exemplar' => 1 ) if $type eq 'backbone';
+			$tip->set_generic( $predicate => \%h );
+			$logger->debug("attached ".scalar(keys(%h))." $type markers to ".$r->{'taxon'});
 		}
 		else {
 			# XXX this really shouldn't happen, yet it did on @rvosa's bunch
 			# of primate files. Possibly this is because I had been poking around
 			# merging files under different settings?
-			$logger->debug("Couldn't find taxon '".$r->{'taxon'}."' from file $file");
+			$logger->warn("Couldn't find taxon '".$r->{'taxon'}."' from file $file");
 		}
 	}
-
-	# get marker names
-	my %markers;
-	my @markers_table = $mt->parse_taxa_file( $file );
-
-	for my $row ( @markers_table ) {
-		my %h = %$row;
-		my @cols = @{$h{'keys'}};
-		for my $c ( 1 .. $#cols ) {			
-			if ( my $marker = $h{$c} ) {
-				$markers{$marker} = $marker;
-			}
-		}
-	}	
-	$tree->get_root->set_generic( $predicate => \%markers );
+	my $method = "_apply_${type}_markers";
+	$self->$method($tree,\@records);
 }
 
 =item apply_fossil_nodes

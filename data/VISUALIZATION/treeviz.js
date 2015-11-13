@@ -383,18 +383,29 @@ TreeDrawer.prototype.drawTableRow = function(row,tr) {
 
             // item is textual key/value pair
             else {
-                textElt = this.createElt('td',null,this.NS_XHTML);
-                textElt.appendChild(this.doc.createTextNode(prop));
+                textElt = this.createElt('td',{'style':'vertical-align:top'},this.NS_XHTML);
+                textElt.appendChild(this.doc.createTextNode(this.shorten(prop)));
                 tr.appendChild(textElt);
 
                 var value = this.createElt('td',null,this.NS_XHTML);
-                var txt = this.doc.createTextNode(row[prop]);
                 if ( url ) {
-                    var a = this.createElt('a',{'href':url},this.NS_XHTML);
-                    a.appendChild(txt);
-                    value.appendChild(a);
+                    if ( Array.isArray(url) ) {
+                       for ( var i = 0; i < url.length; i++ ) {
+                           var txt = this.doc.createTextNode(row[prop][i]);
+                           var a = this.createElt('a',{'href':url[i]},this.NS_XHTML);
+                           a.appendChild(txt);
+                           value.appendChild(a);
+                           if ( i < ( url.length - 1 ) ) {
+                               var comma = this.doc.createTextNode(",");
+                               value.appendChild(comma);
+                               var br = this.createElt('br',null,this.NS_XHTML);
+                               value.appendChild(br);
+                           }
+                       }
+                    }
                 }
                 else {
+                    var txt = this.doc.createTextNode(row[prop]);
                     value.appendChild(txt);
                 }
                 tr.appendChild(value);
@@ -741,8 +752,9 @@ TreeDrawer.prototype.createMarkerContent = function(markerSet,title,content,mark
             var row = { marker : property };
 
             // create row key: marker name(s)
-            var concat = this.shorten(markerLookup[property].join(', '));
-            row[concat] = markerSet[property] || property;
+            // var concat = this.shorten(markerLookup[property].join(', '));
+            // row[concat] = markerSet[property] || property;
+            row[property] = markerSet[property] || property;
 
             // value is the number of sequences per marker
             if (typeof markerSet[property] === 'number') {
@@ -776,7 +788,16 @@ TreeDrawer.prototype.createMarkerContent = function(markerSet,title,content,mark
             }
             // value is the accession number
             else {
-                row['url'] = this.NCBI_NUCCORE + markerSet[property];
+                if ( Array.isArray(markerSet[property]) ) {
+                    var urls = [];
+                    for ( var i = 0; i < markerSet[property].length; i++ ) {
+                        urls.push(this.NCBI_NUCCORE + markerSet[property][i]);
+                    }
+                    row['url'] = urls;
+		}
+                else {
+                    row['url'] = this.NCBI_NUCCORE + markerSet[property];
+                }
             }
             content.push(row);
         }

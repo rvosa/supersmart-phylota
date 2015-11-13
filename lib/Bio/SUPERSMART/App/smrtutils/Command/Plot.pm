@@ -50,7 +50,7 @@ sub options {
 	my $taxa_default      = 'species.tsv';
 	my $fossil_default    = 'fossils.tsv';
 	my $tree_default      = 'final.nex';
-	my $clade_default     = 'markers-clades.tsv';
+	my $clade_default     = 'yes';
 	return (
 		['tree|t=s', "file name of input tree (NEXUS/figtree format, default is '$tree_default')", { default => $tree_default, arg => 'file' } ],
 		['outfile|o=s', "name of the output file, defaults to '$outfile_default'", { default => $outfile_default, arg => 'file' } ],	
@@ -61,7 +61,7 @@ sub options {
 		['markers|m=s', "backbone markers table. Default: $bbmarkers_default", { default => $bbmarkers_default, arg => 'file' } ],
 		['taxa|i=s', "taxa table. Default: $taxa_default", { default => $taxa_default, arg => 'file' } ],
 		['fossils|p=s', "fossil table. Default: $fossil_default", { default => $fossil_default, arg => 'file' } ],
-		['clades|c=s', "clade markers table. Default: $clade_default", { default => $clade_default, arg => 'file' } ],
+		['clades|c=s', "read clade markers tables. Default: $clade_default", { default => $clade_default, arg => 'string' } ],
 	);	
 }
 
@@ -92,8 +92,30 @@ sub validate {
 	if ( not -e $opt->fossils ) {
 		$self->logger->info("fossil table not found, will not process ".$opt->fossils);
 	}
-	if ( not -e $opt->clades ) {
-		$self->logger->info("clade marker table not found, will not process ".$opt->clades);
+	if ( $opt->clades =~ /y(es)?/i ) {
+		my $clades = 0;
+		my $wd = $self->workdir;
+		$self->logger->debug("going to look for clade markers tables inside directory '$wd'");
+		opendir my $dh, $wd or die $!;
+		while( my $entry = readdir $dh ) {
+			if ( -d $entry and $entry =~ /clade\d+/ ) {
+				if ( -e "${wd}/${entry}/${entry}-markers.tsv" ) {
+					$clades++;
+				}
+				else {
+					$self->logger->warn("no clade markers table inside '${wd}/${entry}'");
+				}
+			}
+		}
+		if ( $clades ) {
+			$self->logger->debug("going to read $clades clade markers tables");
+		}
+		else {
+			$self->logger->warn("No clade markers tables found inside '${wd}'");
+		}
+	}
+	else {
+		$self->logger->info("clade marker tables processing not requested, will not process");
 	}
 }
 
@@ -162,9 +184,18 @@ sub run {
 		$logger->info("Going to apply backbone markers from file ".$opt->markers);
 		$ds->apply_markers($opt->markers,$tree,'backbone');
 	}
-        if ( -e $opt->clades and -s $opt->clades ) {
-                $logger->info("Going to apply clade markers from file ".$opt->clades);
-                $ds->apply_markers($opt->clades,$tree,'clade');
+        if ( $opt->clades =~ /y(es)?/ ) {
+		my $wd = $self->workdir;
+		opendir my $dh, $wd or die $!;
+		while( my $entry = readdir $dh ) {
+			if ( -d $entry and $entry =~ /clade\d+/ ) {
+				my $table = "${wd}/${entry}/${entry}-markers.tsv";
+				if ( -e $table ) {
+					$logger->info("Going to apply clade markers from file $table");
+                			$ds->apply_markers($table,$tree,'clade');
+				}
+			}
+		}
         }
 	if ( -e $opt->fossils and -s $opt->fossils ) {
 		$logger->info("Going to apply fossil annotations from file ".$opt->fossils);
@@ -177,7 +208,7 @@ sub run {
 		
 	# instantiate template
 	my $tt = Template->new( 
-		'ABSOLUTE'     => 1, 
+		'ABSOLUTE' => 1, 
 		'INCLUDE_PATH' => $ENV{'SUPERSMART_HOME'} . '/data/VISUALIZATION/' 
 	);
 	my $date = localtime();
