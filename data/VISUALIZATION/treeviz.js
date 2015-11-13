@@ -50,7 +50,7 @@ TreeDrawer.prototype.makeCladeColors = function(tree) {
         }
     });
 
-    // shuffle for more constrasting colors
+    // shuffle for more contrasting colors
     function shuffle(o){
         for(var j, x, i = o.length; i; j = Math.floor(Math.random() * i), x = o[--i], o[i] = o[j], o[j] = x);
         return o;
@@ -229,6 +229,8 @@ TreeDrawer.prototype.drawBranch = function(node,parent){
     if (bbmarkers) {
         var mc = Object.keys(bbmarkers).length;
         width = this.maxWidth * ( mc / this.maxMarkers );
+        if ( width < 1 )
+            width = 1;
     }
 
     // draw styled lines, one vertical, one horizontal
@@ -402,6 +404,12 @@ TreeDrawer.prototype.drawTableRow = function(row,tr) {
                                value.appendChild(br);
                            }
                        }
+                    }
+                    else {
+                        var txt = this.doc.createTextNode(row[prop]);
+                        var a = this.createElt('a',{'href':url},this.NS_XHTML);
+                        a.appendChild(txt);
+                        value.appendChild(a);
                     }
                 }
                 else {
