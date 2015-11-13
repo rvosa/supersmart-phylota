@@ -54,7 +54,7 @@
                 function drawSVGTree () {
 
                     // instantiate the tree object
-                    var tree = new Tree(JSON.parse('[% tree.get_root.to_js %]'));
+                    var tree = new Tree([% tree.get_root.to_js %]);
 
                     // instantiate the tree drawer
                     var td = new TreeDrawer({
