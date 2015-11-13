@@ -1175,6 +1175,7 @@ sub filter_clade_alignments {
 	my %outgroup = map {$_=>1} @$out;
 
 	my @clade_alignments;
+	my %alns_for_taxa;
 	for my $aln ( @alignments ) {
 
 	  $logger->debug("Checking whether alignment $aln can be included in clade $clade");
@@ -1192,7 +1193,7 @@ sub filter_clade_alignments {
 		  $logger->debug("$aln is not  dense enough (density " . $dens . " < $mindens) for clade $clade");
 		  next;
 	  }
-	  
+	  	  
 	  # check if distance is not too high
 	  my $dist = $mt->calc_mean_distance($mt->to_fasta_string(%seqs_ingroup));
 	  if ( $dist > $maxdist ) {
@@ -1202,7 +1203,19 @@ sub filter_clade_alignments {
 	  # add alignment to set of clade alignments
 	  $logger->info("Including alignment $aln in clade $clade");
 	  push @clade_alignments, \%seqs_all;		   
-  }
+
+	  # keep track of alignment count for taxa 
+	  $alns_for_taxa{$_}++ for (keys %outgroup, keys %ingroup);
+	  	  
+	}
+	
+	# warn if a taxon would not end up in a clade tree
+	my @low_cover_taxa = grep { $alns_for_taxa{$_} < $self->config->CLADE_MIN_COVERAGE } keys %alns_for_taxa;	
+	for my $t ( @low_cover_taxa ) {
+		my $tn = $self->find_node($t)->taxon_name;
+		$logger->warn("Too few alignments for taxon $tn ($t) to be included in clade inference. Clade will be discarded if $tn is exemplar species.");
+	}	
+
 	return @clade_alignments;
 	
 }
