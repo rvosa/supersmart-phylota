@@ -1159,7 +1159,7 @@ sub filter_clade_alignments {
 	my $in = $args{'-ingroup'} or throw 'BadArgs' => "Need -ingrup argument";;
 	my $alns =  $args{'-alnfiles'}  or throw 'BadArgs' => "Need -alnfiles argument";;
 	my $out = $args{'-outgroup'} if $args{'-outgroup'};
-	my $clade = $argds{'-clade'};
+	my $clade = $args{'-clade'};
 
 	my @alignments = @$alns;
 
