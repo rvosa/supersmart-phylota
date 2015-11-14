@@ -78,7 +78,7 @@ sub run {
 	my $taxa_outfile = $opt->taxa_outfile;
 	my $ts = Bio::Phylo::PhyLoTA::Service::TreeService->new;
 	my $mt  = Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa->new;
-
+	
 	# read tree
 	my $tree = parse_tree(
 		'-file'   => $treefile,
@@ -87,7 +87,7 @@ sub run {
 	
 	# replicate tree and write to file
 	my $tree_replicated = $self->_replicate_tree($tree)->first;
-
+	
 	open my $fh, '>', $tree_outfile or die $!;
 	print $fh $tree_replicated->to_newick( nodelabels => 1 );
 	close $fh;
@@ -131,11 +131,16 @@ sub run {
 			# replicate if not done so previously
 			if ( ! -e $filename or ! -s $filename ) {
 				my $rep_aln = $self->_replicate_alignment( $aln, $tree_replicated, $tree );
-
+				
 				if ( $rep_aln ) {
 					# simulated alignment will have the same file name plus added '-simulated'
 					$logger->info("Writing alignment $filename");
 					unparse ( -phylo => $rep_aln, -file => $filename, -format=>'fasta' );
+					# output average distances in alignment
+					my $dist_orig = $self->_mean_dist($aln);
+					my $dist_rep = $self->_mean_dist($filename);
+					$logger->info("Average distance in alignments: original : $dist_orig, replicated : $dist_rep");
+
 				}
 				else {
 					$logger->warn("Could not write replicated alignment to file: alignment not replicated ");
@@ -147,7 +152,7 @@ sub run {
 			}
 			# write filename to alignment list
 			print $outfh "$filename\n";
-
+			
 			return $filename;
 
 		} @alnfiles;
@@ -411,6 +416,16 @@ sub _clean_fasta_defline {
 	}
 
 	return $matrix;
+}
+
+sub _mean_dist {
+	my ($self, $filename) = @_;
+	my $mt    = Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa->new;
+	open my $fh, '<', $filename;
+	read $fh, my $string, -s $fh;
+	close $fh;
+	my $dist = $mt->calc_mean_distance($string);
+	return $dist;
 }
 
 1;
