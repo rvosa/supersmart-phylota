@@ -715,10 +715,7 @@ for usage (remove unbranched internal nodes, randomly resolve polytomies, deroot
 sub process_commontree {
     my ( $self, $commontree, @tipnames ) = @_;
 
-    # map names to IDs,
     # only retain tips in supermatrix
-
-    $self->remap_to_ti( $commontree );
 
 	# filter out tipnames that are not in the tree	
 	my %tnames = map { $_->get_name=>1 } @{ $commontree->get_terminals };
@@ -810,6 +807,7 @@ sub make_classification_tree {
 		$node->set_name( $label );
 	});
 	$tree->remove_unbranched_internals;
+	print $tree->to_newick;
 	return ($tree);
 }
 

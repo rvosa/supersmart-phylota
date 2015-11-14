@@ -248,7 +248,7 @@ sub get_tree_for_nodes {
             # we will visit the same node via multiple, distinct paths
             if ( not $by_id{$nid} ) {
                 #$log->debug("creating node with guid $nid and name ".$node->taxon_name);
-                $by_id{$nid} = $fac->create_node( '-guid' => $nid, '-name' => $node->taxon_name );
+                $by_id{$nid} = $fac->create_node( '-guid' => $nid, '-name' => $nid );
             }
             $node = $parent;
         }
@@ -257,7 +257,7 @@ sub get_tree_for_nodes {
         my $nid = $node->get_id;
         if ( not $by_id{$nid} ) {
             #$log->debug("creating node with guid $nid and name ".$node->taxon_name);
-            $by_id{$nid} = $fac->create_node( '-guid' => $nid, '-name' => $node->taxon_name );
+            $by_id{$nid} = $fac->create_node( '-guid' => $nid, '-name' => $nid );
         }        
     }
     
@@ -547,7 +547,7 @@ sub _process_matches {
     Encodes a taxon name such that it can be used within SUPERSMART without ambiguity.
     At the moment, we encode by subtituting the following strings/characters:
 
-    '_' is ecnoded, because Bio::Phylo internally converts spaces to '_', which 
+    '_' is encoded, because Bio::Phylo internally converts spaces to '_', which 
     gives trouble with taxon names containing a '_'
   
 	opening and closing parentheses are encoded, because they will make trouble in newick strings
