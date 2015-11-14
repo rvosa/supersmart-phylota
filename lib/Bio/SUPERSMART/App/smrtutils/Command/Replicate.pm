@@ -305,8 +305,8 @@ sub _replicate_alignment {
 		$self->logger->debug("Attempting to add taxon $id to tree taxa");
 		$keep{$id} = 1;
 	}
-	$pruned->keep_tips( [ keys %keep ] );
-
+	# $pruned->keep_tips( [ keys %keep ] );
+	$logger->debug("Input tree for simulation : " . $pruned->to_newick);
 	# simulate sequences
 	my $rep = $matrix->replicate('-tree'=>$pruned, '-seed'=>$config->RANDOM_SEED, '-model'=>$model);
 
