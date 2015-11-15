@@ -64,12 +64,12 @@ sub run {
 	my @alnfiles = <$fh>;
 	chomp @alnfiles;
 	close $fh;
-	
+
 	# collect statistics for each matrix
 	my @aln_stats = pmap {
 		$self->_get_aln_stats(@_);
 	} @alnfiles;
-	
+
 	# write table with statistics on all alignments
 	my %h = %{$aln_stats[0]};
 	my @header = sort { lc ($a) cmp lc ($b) } keys (%h);
@@ -77,7 +77,7 @@ sub run {
 	print $outfh join("\t", @header) . "\n";
 	for my $s ( @aln_stats ) {
 		my %hash = %{$s};
-		print $outfh join("\t", @hash{@header}) . "\n";		
+		print $outfh join("\t", @hash{@header}) . "\n";
 	}
 
 	$self->logger->info("DONE. Stats written to  " . $opt->statstable);
@@ -99,7 +99,7 @@ sub _get_aln_stats  {
 
 	my %stats;
 	$stats{'file'} = $file;
-	
+
 	# number of seqs (taxa) and characters
 	$stats{'nchar'} = $matrix->get_nchar;
 	$stats{'ntax'} = $matrix->get_ntax;
@@ -150,7 +150,7 @@ sub _get_aln_stats  {
 		push @species, $spec;
 	}
 	$stats{'species'} = join(',', @species);
-	
+
 	# average number of gaps per sequence
 	$gapcount /= scalar(@{$matrix->get_entities});
 	$stats{'gaps_per_seq'} = $gapcount;
@@ -163,7 +163,62 @@ sub _get_aln_stats  {
 	my $prop_invar = $matrix->calc_prop_invar;
 	$stats{'prop_invar'} = $prop_invar;
 
+	# get number of identical sequence pairs
+	my $ident_pairs = $self->_num_identical_seqs($matrix);
+	$stats{'ident_pairs'} = $ident_pairs;
+
+	# get average distance of seqs in alignment
+	my $avg_dist = $self->_avg_dist($file);
+	$stats{'avg_dist'} = $avg_dist;
+
 	return \%stats;
 }
+
+sub _avg_dist {
+	my ($self, $filename) = @_;
+	my $mt    = Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa->new;
+	open my $fh, '<', $filename;
+	read $fh, my $string, -s $fh;
+	close $fh;
+	my $dist = $mt->calc_mean_distance($string);
+	return $dist;
+}
+
+sub _num_identical_seqs {
+	my ($self, $matrix) = @_;
+
+	my $mts    = Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector->new;
+
+	my @rows = @{$matrix->get_entities};
+
+	my $identical = 0;
+	for (my $i=0; $i<=$#rows; $i++) {
+		my $row_i = $rows[$i];
+		for (my $j=$i+1; $j<=$#rows; $j++) {
+			my $row_j = $rows[$j];
+
+			if ($row_i->get_char eq $row_j->get_char) {
+
+				my $name_i = $row_i->get_name;
+				my $name_j = $row_j->get_name;
+				if ( $name_i=~/.*taxon\|([0-9]+)/) {
+					$name_i =$1;
+				}
+				if ( $name_j=~/.*taxon\|([0-9]+)/) {
+					$name_j =$1;
+				}
+
+				$name_i = $mts->find_node($name_i)->taxon_name;
+				$name_j = $mts->find_node($name_j)->taxon_name;
+
+				$identical++;
+				$self->logger->info("seqs " . $name_i . " and " . $name_j  . " are identical !");
+			}
+		}
+	}
+	return $identical;
+}
+
+
 
 1;
