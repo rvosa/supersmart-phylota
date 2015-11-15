@@ -282,7 +282,7 @@ sub _replicate_alignment {
 	# determine for which taxa we want replicated sequences
 	my @rep_taxa = $self->_simulate_marker_presence( '-matrix'=>$matrix, '-tree'=>$original_tree, '-replace'=>0 );
 	if ( scalar(@rep_taxa) < 3 ) {
-		$logger->warn( 'Less than three taxa predicted to have marker. Skipping replication of $fastafile.' );
+		$logger->warn( "Less than three taxa predicted to have marker. Skipping replication of $fastafile." );
 		return 0;
 	}
 
