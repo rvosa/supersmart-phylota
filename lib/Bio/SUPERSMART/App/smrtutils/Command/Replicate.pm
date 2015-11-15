@@ -277,7 +277,11 @@ sub _replicate_alignment {
 	}
 
 	# determine for which taxa we want replicated sequences
-	my @rep_taxa = $self->_simulate_marker_presence( '-matrix'=>$matrix, '-tree'=>$tree, '-replace'=>0 );
+	my @rep_taxa = $self->_simulate_marker_presence( '-matrix'=>$matrix, '-tree'=>$original_tree, '-replace'=>0 );
+	if ( scalar(@rep_taxa) < 3 ) {
+		$logger->warn( 'Less than three taxa predicted to have marker. Skipping replication of $fastafile.' );
+		return 0;
+	}
 
 	# determine substitution model for given alignment
 	my $timeout = 7200; # set to 2h
@@ -285,17 +289,9 @@ sub _replicate_alignment {
 
 	# prune tree for faster sequence simulations
 	my $pruned = parse('-format'=>'newick', '-string'=>$tree->to_newick)->first;
-	my %keep = map {$_=>1} @rep_taxa;
-
-	# prevent from simulating a tree with <3 tips
-	my @tree_taxa = map { $_->get_name } @{ $tree->get_terminals };
-	while ( scalar(keys %keep) < 3) {
-		my $id = @tree_taxa[rand @tree_taxa];
-		$self->logger->debug("Attempting to add taxon $id to tree taxa");
-		$keep{$id} = 1;
-	}
-	$pruned->keep_tips( [ keys %keep ] );
+	$pruned->keep_tips( \@rep_taxa );
 	$logger->debug("Input tree for simulation : " . $pruned->to_newick);
+
 	# simulate sequences
 	my $rep = $matrix->replicate('-tree'=>$pruned, '-seed'=>$config->RANDOM_SEED, '-model'=>$model);
 
