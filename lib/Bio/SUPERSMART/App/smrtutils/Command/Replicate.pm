@@ -6,7 +6,7 @@ use warnings;
 use File::Spec;
 use Data::Dumper;
 
-use Bio::Phylo::IO qw(parse parse_tree unparse);
+use Bio::Phylo::IO qw(parse parse_tree unparse parse_matrix);
 use Bio::Phylo::Util::CONSTANT ':objecttypes';
 use Bio::Phylo::Models::Substitution::Dna;
 
@@ -78,16 +78,16 @@ sub run {
 	my $taxa_outfile = $opt->taxa_outfile;
 	my $ts = Bio::Phylo::PhyLoTA::Service::TreeService->new;
 	my $mt  = Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa->new;
-	
+
 	# read tree
 	my $tree = parse_tree(
 		'-file'   => $treefile,
 		'-format' => $opt->tree_format,
 	    );
-	
+
 	# replicate tree and write to file
 	my $tree_replicated = $self->_replicate_tree($tree)->first;
-	
+
 	open my $fh, '>', $tree_outfile or die $!;
 	print $fh $tree_replicated->to_newick( nodelabels => 1 );
 	close $fh;
@@ -115,31 +115,34 @@ sub run {
 	    open my $outfh, '>', $aln_outfile or die $!;
 
 		my @replicated = pmap {
-			my ($aln) = @_;
+			my ($filename_orig) = @_;
 
 			# set random seed to prevent issue with forking and chosing tempfile names
 			my $seed = 0;
-			$seed += $_ for  map {ord $_} split(//, $aln);
+			$seed += $_ for  map {ord $_} split(//, $filename_orig);
 			srand($seed);
-			
+
 			# file name for replicated alignment
-			my ( $volume, $directories, $filename ) = File::Spec->splitpath( $aln );
-			$filename =~ s/\.fa$/-replicated\.fa/g;
-			$filename = $self->workdir . '/' . $filename;
-			$logger->debug("Checking whether replicated alignment $filename already exists");
+			my ( $volume, $directories, $filename_rep ) = File::Spec->splitpath( $filename_orig );
+			$filename_rep =~ s/\.fa$/-replicated\.fa/g;
+			$filename_rep = $self->workdir . '/' . $filename_rep;
+			$logger->debug("Checking whether replicated alignment $filename_rep already exists");
 
 			# replicate if not done so previously
-			if ( ! -e $filename or ! -s $filename ) {
-				my $rep_aln = $self->_replicate_alignment( $aln, $tree_replicated, $tree );
-				
+			if ( ! -e $filename_rep or ! -s $filename_rep ) {
+				my $rep_aln = $self->_replicate_alignment( $filename_orig, $tree_replicated, $tree );
+
 				if ( $rep_aln ) {
 					# simulated alignment will have the same file name plus added '-simulated'
-					$logger->info("Writing alignment $filename");
-					unparse ( -phylo => $rep_aln, -file => $filename, -format=>'fasta' );
+					$logger->info("Writing alignment $filename_rep");
+					unparse ( -phylo => $rep_aln, -file => $filename_rep, -format=>'fasta' );
 					# output average distances in alignment
-					my $dist_orig = $self->_mean_dist($aln);
-					my $dist_rep = $self->_mean_dist($filename);
+					my $dist_orig = $self->_mean_dist($filename_orig);
+					my $dist_rep = $self->_mean_dist($filename_rep);
+					my $ident_orig = $self->_num_identical_seqs($filename_orig);
+					my $ident_rep = $self->_num_identical_seqs($filename_rep);
 					$logger->info("Average distance in alignments: original : $dist_orig, replicated : $dist_rep");
+					$logger->info("Pairs of identical seqs in alignments: original : $ident_orig, replicated : $ident_rep");
 
 				}
 				else {
@@ -148,12 +151,12 @@ sub run {
 				}
 			}
 			else {
-				$logger->info("Replicated alignment $filename already exists. Skipping replication.")
+				$logger->info("Replicated alignment $filename_rep already exists. Skipping replication.")
 			}
 			# write filename to alignment list
-			print $outfh "$filename\n";
-			
-			return $filename;
+			print $outfh "$filename_rep\n";
+
+			return $filename_rep;
 
 		} @alnfiles;
 
@@ -276,20 +279,6 @@ sub _replicate_alignment {
 	# determine for which taxa we want replicated sequences
 	my @rep_taxa = $self->_simulate_marker_presence( '-matrix'=>$matrix, '-tree'=>$tree, '-replace'=>0 );
 
-	open my $fh, '>>', "all_orig_taxa.txt" or die $!;
-	for my $m ( @{$matrix->get_entities} ) {
-		print $fh $m->get_name . "\n";
-	}
-	close $fh;
-
-	if ( scalar(@rep_taxa) > 1) {
-		open my $fh, '>>', "all_rep_taxa.txt" or die $!;
-		for my $t ( @rep_taxa ) {
-			print $fh $t . "\n";
-		}
-		close $fh;
-	}
-
 	# determine substitution model for given alignment
 	my $timeout = 7200; # set to 2h
 	my $model = 'Bio::Phylo::Models::Substitution::Dna'->modeltest( '-matrix' => $matrix, '-timeout' => $timeout );
@@ -305,7 +294,7 @@ sub _replicate_alignment {
 		$self->logger->debug("Attempting to add taxon $id to tree taxa");
 		$keep{$id} = 1;
 	}
-	# $pruned->keep_tips( [ keys %keep ] );
+	$pruned->keep_tips( [ keys %keep ] );
 	$logger->debug("Input tree for simulation : " . $pruned->to_newick);
 	# simulate sequences
 	my $rep = $matrix->replicate('-tree'=>$pruned, '-seed'=>$config->RANDOM_SEED, '-model'=>$model);
@@ -427,5 +416,49 @@ sub _mean_dist {
 	my $dist = $mt->calc_mean_distance($string);
 	return $dist;
 }
+
+sub _num_identical_seqs {
+	my ($self, $file) = @_;
+
+	$self->logger->info("Checking for identical sequences in alignment $file");
+	my $mts    = Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector->new;
+
+	my $matrix = parse_matrix(
+		'-file'       => $file,
+		'-format'     => 'fasta',
+		'-type'       => 'dna',
+		);
+
+	my @rows = @{$matrix->get_entities};
+
+	my $identical = 0;
+	for (my $i=0; $i<=$#rows; $i++) {
+		my $row_i = $rows[$i];
+		for (my $j=$i+1; $j<=$#rows; $j++) {
+			my $row_j = $rows[$j];
+
+			if ($row_i->get_char eq $row_j->get_char) {
+
+				my $name_i = $row_i->get_name;
+				my $name_j = $row_j->get_name;
+				if ( $name_i=~/.*taxon\|([0-9]+)/) {
+					$name_i =$1;
+				}
+				if ( $name_j=~/.*taxon\|([0-9]+)/) {
+					$name_j =$1;
+				}
+
+				$name_i = $mts->find_node($name_i)->taxon_name;
+				$name_j = $mts->find_node($name_j)->taxon_name;
+
+				$identical++;
+				$self->logger->info("seqs " . $name_i . " and " . $name_j  . " are identical !");
+			}
+		}
+	}
+	return $identical;
+}
+
+
 
 1;
