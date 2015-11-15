@@ -85,6 +85,9 @@ sub run {
 		'-format' => $opt->tree_format,
 	    );
 
+	# prune negative branches from tree, if any
+	$tree = $self->_prune_negative_branches($tree);
+
 	# replicate tree and write to file
 	my $tree_replicated = $self->_replicate_tree($tree)->first;
 
@@ -455,6 +458,24 @@ sub _num_identical_seqs {
 	return $identical;
 }
 
+sub _prune_negative_branches {
+	my ($self, $tree) = @_;
 
+	my $logger = $self->logger;
+	my $count = 0;
+	$tree->visit(sub{
+		my $node = shift;
+		my $bl = $node->get_branch_length || 0;
+		if ( $bl < 0 ) {
+			my @terminals = map {$_->get_name} @{$node->get_terminals};
+			$count += scalar @terminals;
+			$logger->info("Found negative branch length $bl, following tips will be removed: " . join(', ', @terminals));
+			$node->get_parent->prune_child( $node );
+		}
+				 });
+	$tree->remove_unbranched_internals;
+	$logger->info("Removed $count terminals pruning all negative branches");
+	return $tree;
+}
 
 1;
