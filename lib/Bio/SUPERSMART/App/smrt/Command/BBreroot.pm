@@ -198,7 +198,7 @@ sub _get_smallest_outgroup {
 	@subtree_terminals = sort { scalar(@$a) <=> scalar(@$b)  } @subtree_terminals;
 	
 	my $outgroup = $subtree_terminals[0];
-	$logger->info("Determined outgroup '" . join( ',', @$outgroup) . "'from tree $treefile");
+	$logger->info("Determined outgroup '" . join( ',', @$outgroup) . "' from tree $treefile");
 	
 	return $outgroup;
 
