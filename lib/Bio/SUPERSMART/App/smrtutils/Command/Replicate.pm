@@ -287,8 +287,8 @@ sub _replicate_alignment {
 	}
 
 	# determine substitution model for given alignment
-	my $timeout = 2700; # set to 45 min
-	my $model = 'Bio::Phylo::Models::Substitution::Dna'->modeltest( '-matrix' => $matrix, '-timeout' => $timeout );
+	my $timeout = 1800; # set to 30 min
+	my $model = 'Bio::Phylo::Models::Substitution::Dna'->modeltest( '-matrix' => $matrix, '-timeout' => $timeout, '-tree' => $original_tree );
 
 	# prune tree for faster sequence simulations
 	my $pruned = parse('-format'=>'newick', '-string'=>$tree->to_newick)->first;
