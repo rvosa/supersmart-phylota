@@ -54,6 +54,7 @@ sub options {
 		["backbone|b=s", "a backbone tree(s) file as produced by 'smrt bbinfer'", { arg => "file", default => $tree_default}],	
 		["outgroup|g=s", "one or multiple taxa (names or NCBI identifiers, separated by commata) representing the outgroup at "
                  ."which the tree is rerooted. Outgroup must be enclosed in quotes.", { arg => "taxon,taxon,..." } ],
+		["outgroup_tree|p=s", "tree in newick format to extract outgroup from. Outgroup taxa are the terminals of the smallest subtree below the root  "],
 		["outfile|o=s", "name of the output tree file (in newick format), defaults to '$outfile_default'", {default => $outfile_default, arg => "file"}],
 		["smooth|s", "smooth tip heights left and right of root (i.e. midpointify)",{}],
 		["ultrametricize|u", "adjust terminal branch lengths to yield an ultrametric tree",{}],
@@ -92,6 +93,9 @@ sub run {
 	if ( my $csv = $opt->outgroup ) {
 		$outgroup = [map { $_->ti } $mts->get_nodes_for_names(split /,/,$csv)];
 	}	
+	elsif ( my $treefile = $opt->outgroup_tree ) {
+		$outgroup = $self->_get_smallest_outgroup( $treefile );
+	}
 	
 	# prepare taxa data
 	my @records = $mt->parse_taxa_file($taxafile);
@@ -169,6 +173,35 @@ sub run {
 	close $out;
 
 	$log->info("DONE, results written to $outfile");		
+}
+
+
+# given a tree, returns the terminal names of the smallest of the two subtrees below the
+# tree root.
+sub _get_smallest_outgroup {
+	my ($self, $treefile) = @_;
+	my $logger = $self->logger;
+	
+	# parse tree
+	my $tree = parse_tree( '-file' => $treefile, 
+						   '-format' => 'newick' );	
+	$tree->resolve;
+
+	# get subtrees below root
+	my @children = @{$tree->get_root->get_children};
+	$logger->warn("Expecting two children of root node") if not  scalar(@children) == 2;
+	
+	# collect sets of terminal names for subtrees
+	my @subtree_terminals = map { my $c = $_; [ map {$_->get_name} @{ $c->get_terminals }] } @children;
+
+	# sort sets of terminal names by size, increasing
+	@subtree_terminals = sort { scalar(@$a) <=> scalar(@$b)  } @subtree_terminals;
+	
+	my $outgroup = $subtree_terminals[0];
+	$logger->info("Determined outgroup '" . join( ',', @$outgroup) . "'from tree $treefile");
+	
+	return $outgroup;
+
 }
 
 1;
