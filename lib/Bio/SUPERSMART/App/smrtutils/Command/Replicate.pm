@@ -290,6 +290,12 @@ sub _replicate_alignment {
 	my $timeout = 1800; # set to 30 min
 	my $model = 'Bio::Phylo::Models::Substitution::Dna'->modeltest( '-matrix' => $matrix, '-timeout' => $timeout, '-tree' => $original_tree );
 
+	# timeout in model test will most surely also timeout in simulation; therefore do not simulate
+	if ( ! $model ) {
+		$logger->warn("No substitution model determined. Skipping.");
+		return 0;
+	}
+
 	# prune tree for faster sequence simulations
 	my $pruned = parse('-format'=>'newick', '-string'=>$tree->to_newick)->first;
 	$pruned->keep_tips( \@rep_taxa );
