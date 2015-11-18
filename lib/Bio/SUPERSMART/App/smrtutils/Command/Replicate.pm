@@ -14,7 +14,9 @@ use Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector;
 use Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa;
 use Bio::Phylo::PhyLoTA::Config;
 use Bio::Phylo::PhyLoTA::Service::TreeService;
-use Bio::Phylo::PhyLoTA::Service::ParallelService 'pfm';
+#use Bio::Phylo::PhyLoTA::Service::ParallelService 'pfm';
+use Parallel::parallel_map;
+
 use base 'Bio::SUPERSMART::App::SubCommand';
 use Bio::SUPERSMART::App::smrtutils qw(-command);
 
@@ -89,7 +91,7 @@ sub run {
 	# prune negative branches from tree, if any
 	$tree = $self->_prune_negative_branches($tree);
 
-	# replicate tree and write to file, if not replicated already	
+	# replicate tree and write to file, if not replicated already
 	my $tree_replicated;
 	if ( my $filename_rep = $opt->replicated_tree ) {
 
@@ -106,16 +108,16 @@ sub run {
 		open my $fh, '>', $tree_outfile or die $!;
 		print $fh $tree_replicated->to_newick( nodelabels => 1 );
 		close $fh;
-		$logger->info("wrote replicated tree to $tree_outfile");		
+		$logger->info("wrote replicated tree to $tree_outfile");
 		$self->_write_taxafile($tree_replicated, $taxa_outfile);
-		$logger->info("wrote taxa file to $taxa_outfile");		
+		$logger->info("wrote taxa file to $taxa_outfile");
 	}
-	
+
 	my @records = $mt->parse_taxa_file( $taxa_outfile );
-	
+
 	$ts->remap_to_ti( $tree, @records );
 	$ts->remap_to_ti( $tree_replicated, @records );
-	
+
 	if ( my $aln = $opt->alignments ) {
 
 		# read list of alignments
@@ -130,8 +132,11 @@ sub run {
 		# newly written alignments
 	    open my $outfh, '>', $aln_outfile or die $!;
 
-		my @replicated = pmap {
+		my $cnt = 0;
+		my @replicated = parallel_map {
 			my ($filename_orig) = @_;
+
+			$logger->info("Processing item # " . ++$cnt . " of " . scalar( @alnfiles ));
 
 			# set random seed to prevent issue with forking and chosing tempfile names
 			my $seed = 0;
