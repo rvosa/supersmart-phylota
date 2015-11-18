@@ -51,7 +51,7 @@ sub options {
 		['alignments|a=s', "list of alignment files to replicate, as produced by 'smrt align'", { arg => 'file' } ],
 		["aln_outfile|o=s", "name of output file listing the simulated alignments, defaults to '$aln_outfile_default'", {default => $aln_outfile_default, arg => "file"}],
 		["tree_outfile|b=s", "name of the output tree file (newick format), defaults to '$tree_outfile_default'", {default => $tree_outfile_default, arg => "file"}],
-
+		['replicated_tree|r=s', 'Replicated tree from former replication', { arg => 'file' } ],
 		["taxa_outfile|c=s", "name the output taxa file", {default => $taxa_outfile_default, arg => "file"}],
 		["ids|i", "return NCBI identifiers in remapped tree instead of taxon names", { default=> 0}],
 	    );
@@ -80,6 +80,7 @@ sub run {
 	my $mt  = Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa->new;
 
 	# read tree
+	$logger->info("Reading tree to replicate from $treefile");
 	my $tree = parse_tree(
 		'-file'   => $treefile,
 		'-format' => $opt->tree_format,
@@ -88,21 +89,33 @@ sub run {
 	# prune negative branches from tree, if any
 	$tree = $self->_prune_negative_branches($tree);
 
-	# replicate tree and write to file
-	my $tree_replicated = $self->_replicate_tree($tree)->first;
+	# replicate tree and write to file, if not replicated already	
+	my $tree_replicated;
+	if ( my $filename_rep = $opt->replicated_tree ) {
 
-	open my $fh, '>', $tree_outfile or die $!;
-	print $fh $tree_replicated->to_newick( nodelabels => 1 );
-	close $fh;
-	$logger->info("wrote replicated tree to $tree_outfile");
-
-	$self->_write_taxafile($tree_replicated, $taxa_outfile);
-
+		#load replicate tree from file
+		$logger->info("Reading replicated tree from $filename_rep");
+		$tree_replicated = parse_tree(
+			'-file'   => $treefile,
+			'-format' => 'nexus',
+			);
+	}
+	else {
+		$logger->info("Replicating tree from $treefile");
+		$tree_replicated = $self->_replicate_tree($tree)->first;
+		open my $fh, '>', $tree_outfile or die $!;
+		print $fh $tree_replicated->to_newick( nodelabels => 1 );
+		close $fh;
+		$logger->info("wrote replicated tree to $tree_outfile");		
+		$self->_write_taxafile($tree_replicated, $taxa_outfile);
+		$logger->info("wrote taxa file to $taxa_outfile");		
+	}
+	
 	my @records = $mt->parse_taxa_file( $taxa_outfile );
-
+	
 	$ts->remap_to_ti( $tree, @records );
 	$ts->remap_to_ti( $tree_replicated, @records );
-
+	
 	if ( my $aln = $opt->alignments ) {
 
 		# read list of alignments
