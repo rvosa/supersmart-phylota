@@ -333,7 +333,12 @@ sub _replicate_alignment {
 	$logger->debug("Input tree for simulation : " . $pruned->to_newick);
 
 	# simulate sequences
-	my $rep = $matrix->replicate('-tree'=>$pruned, '-seed'=>$config->RANDOM_SEED, '-model'=>$model);
+	my $rep;
+	eval { $rep = $matrix->replicate('-tree'=>$pruned, '-seed'=>$config->RANDOM_SEED, '-model'=>$model); };
+	if ( $@ ) {
+		$logger->warn("Problem replicating matrix, " . $@);
+		return 0;
+	}
 
 	my %rp = map {$_=>1} @rep_taxa;
 	for my $r ( @{$rep->get_entities} ) {
