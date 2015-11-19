@@ -14,8 +14,7 @@ use Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector;
 use Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa;
 use Bio::Phylo::PhyLoTA::Config;
 use Bio::Phylo::PhyLoTA::Service::TreeService;
-#use Bio::Phylo::PhyLoTA::Service::ParallelService 'pfm';
-use Parallel::parallel_map;
+use Bio::Phylo::PhyLoTA::Service::ParallelService 'pfm';
 
 use base 'Bio::SUPERSMART::App::SubCommand';
 use Bio::SUPERSMART::App::smrtutils qw(-command);
@@ -55,6 +54,7 @@ sub options {
 		["tree_outfile|b=s", "name of the output tree file (newick format), defaults to '$tree_outfile_default'", {default => $tree_outfile_default, arg => "file"}],
 		['replicated_tree|r=s', 'Replicated tree from former replication', { arg => 'file' } ],
 		["taxa_outfile|c=s", "name the output taxa file", {default => $taxa_outfile_default, arg => "file"}],
+		["no_marker_sim|n", "do not simulate marker presence with binary simulation, take taxa from original alignments instead", { default=> 0}],
 		["ids|i", "return NCBI identifiers in remapped tree instead of taxon names", { default=> 0}],
 	    );
 }
@@ -132,11 +132,10 @@ sub run {
 		# newly written alignments
 	    open my $outfh, '>', $aln_outfile or die $!;
 
-		my $cnt = 0;
-		my @replicated = parallel_map {
+		my @replicated = pmap {
 			my ($filename_orig) = @_;
 
-			$logger->info("Processing item # " . ++$cnt . " of " . scalar( @alnfiles ));
+			$logger->info("Attempting to replicate alignment $filename_orig");
 
 			# set random seed to prevent issue with forking and chosing tempfile names
 			my $seed = 0;
@@ -151,7 +150,7 @@ sub run {
 
 			# replicate if not done so previously
 			if ( ! -e $filename_rep or ! -s $filename_rep ) {
-				my $rep_aln = $self->_replicate_alignment( $filename_orig, $tree_replicated, $tree );
+				my $rep_aln = $self->_replicate_alignment( $filename_orig, $tree_replicated, $tree, ! $opt->no_marker_sim );
 
 				if ( $rep_aln ) {
 					# simulated alignment will have the same file name plus added '-simulated'
@@ -276,7 +275,7 @@ sub _replicate_tree {
 }
 
 sub _replicate_alignment {
-	my ($self, $fastafile, $tree, $original_tree) = @_;
+	my ($self, $fastafile, $tree, $original_tree, $simulate_presence) = @_;
 
 	my $logger = $self->logger;
 
@@ -298,7 +297,20 @@ sub _replicate_alignment {
 	}
 
 	# determine for which taxa we want replicated sequences
-	my @rep_taxa = $self->_simulate_marker_presence( '-matrix'=>$matrix, '-tree'=>$original_tree, '-replace'=>0 );
+	my @rep_taxa;
+
+	if ( $simulate_presence ) {
+		# do a binary charachter simulation
+		$logger->info("Determining taxa in alignment with binary simulation");
+		@rep_taxa = $self->_simulate_marker_presence( '-matrix'=>$matrix, '-tree'=>$original_tree, '-replace'=>0 );
+	}
+	else {
+		# take the taxa that are in the original alignment
+		$logger->info("Using taxa from original alignment");
+		@rep_taxa = map { $_->get_name } @{$matrix->get_entities};
+	}
+	$logger->debug("Taxa to replicate sequences for : " . Dumper(\@rep_taxa) );
+
 	if ( scalar(@rep_taxa) < 3 ) {
 		$logger->warn( "Less than three taxa predicted to have marker. Skipping replication of $fastafile." );
 		return 0;
