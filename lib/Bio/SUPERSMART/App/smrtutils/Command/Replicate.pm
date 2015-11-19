@@ -109,10 +109,10 @@ sub run {
 		print $fh $tree_replicated->to_newick( nodelabels => 1 );
 		close $fh;
 		$logger->info("wrote replicated tree to $tree_outfile");
-		$logger->info("wrote taxa file to $taxa_outfile");
 	}
 
 	$self->_write_taxafile($tree_replicated, $taxa_outfile) if not -e $taxa_outfile;
+	$logger->info("wrote taxa file to $taxa_outfile");
 	my @records = $mt->parse_taxa_file( $taxa_outfile );
 
 	if ( my $aln = $opt->alignments ) {
