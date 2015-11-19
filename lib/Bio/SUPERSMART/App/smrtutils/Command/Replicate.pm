@@ -82,7 +82,7 @@ sub run {
 	my $mt  = Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa->new;
 
 	# read tree
-	$logger->info("Reading tree to replicate from $treefile");
+	$logger->info("Reading original tree from $treefile");
 	my $tree = parse_tree(
 		'-file'   => $treefile,
 		'-format' => $opt->tree_format,
@@ -109,16 +109,16 @@ sub run {
 		print $fh $tree_replicated->to_newick( nodelabels => 1 );
 		close $fh;
 		$logger->info("wrote replicated tree to $tree_outfile");
-		$self->_write_taxafile($tree_replicated, $taxa_outfile);
 		$logger->info("wrote taxa file to $taxa_outfile");
 	}
 
+	$self->_write_taxafile($tree_replicated, $taxa_outfile) if not -e $taxa_outfile;
 	my @records = $mt->parse_taxa_file( $taxa_outfile );
 
-	$ts->remap_to_ti( $tree, @records );
-	$ts->remap_to_ti( $tree_replicated, @records );
-
 	if ( my $aln = $opt->alignments ) {
+
+		$ts->remap_to_ti( $tree, @records );
+		$ts->remap_to_ti( $tree_replicated, @records );
 
 		# read list of alignments
 		$logger->info("going to read alignment file list $aln");
@@ -182,9 +182,10 @@ sub run {
 
 		close $outfh;
 		$logger->info("Replicated " . scalar(grep {$_} @replicated) . " of " . scalar(@alnfiles) . " alignments from $aln");
+		$logger->info("Alignment written to $aln_outfile");
 	}
 
-	$logger->info("DONE. Tree written to $tree_outfile, alignment list written to $aln_outfile, taxa table written to $taxa_outfile" );
+	$logger->info("DONE. Tree in $tree_outfile, taxa in $taxa_outfile" );
 	return 1;
 }
 
