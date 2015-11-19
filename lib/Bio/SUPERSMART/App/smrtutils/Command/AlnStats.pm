@@ -105,8 +105,8 @@ sub _get_aln_stats  {
 	$stats{'ntax'} = $matrix->get_ntax;
 
 	# get insertions and deletions
-	my %deletions  = %{ $matrix->calc_indel_sizes( '-trim' => 1 ) };
-	my %insertions = %{ $matrix->calc_indel_sizes( '-trim' => 1, '-insertions' => 1 ) };
+	my %deletions  = %{ $matrix->calc_indel_sizes( '-trim' => 0 ) };
+	my %insertions = %{ $matrix->calc_indel_sizes( '-trim' => 0, '-insertions' => 1 ) };
 
 	my @ins_sizes = keys %insertions;
 
