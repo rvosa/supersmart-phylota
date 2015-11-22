@@ -98,7 +98,7 @@ sub run {
 		#load replicate tree from file
 		$logger->info("Reading replicated tree from $filename_rep");
 		$tree_replicated = parse_tree(
-			'-file'   => $treefile,
+			'-file'   => $filename_rep,
 			'-format' => 'nexus',
 			);
 	}
