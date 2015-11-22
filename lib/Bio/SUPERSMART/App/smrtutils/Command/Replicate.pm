@@ -55,6 +55,7 @@ sub options {
 		['replicated_tree|r=s', 'Replicated tree from former replication', { arg => 'file' } ],
 		["taxa_outfile|c=s", "name the output taxa file", {default => $taxa_outfile_default, arg => "file"}],
 		["no_marker_sim|n", "do not simulate marker presence with binary simulation, take taxa from original alignments instead", { default=> 0}],
+		["random_rootseq|d", "simulate alignments from random sequecnce; otherwise the median of the sequences will be the root sequence", { default=> 0}],
 		["ids|i", "return NCBI identifiers in remapped tree instead of taxon names", { default=> 0}],
 	    );
 }
@@ -116,7 +117,7 @@ sub run {
 	my @records = $mt->parse_taxa_file( $taxa_outfile );
 
 	if ( my $aln = $opt->alignments ) {
-
+		
 		$ts->remap_to_ti( $tree, @records );
 		$ts->remap_to_ti( $tree_replicated, @records );
 
@@ -146,32 +147,30 @@ sub run {
 			my ( $volume, $directories, $filename_rep ) = File::Spec->splitpath( $filename_orig );
 			$filename_rep =~ s/\.fa$/-replicated\.fa/g;
 			$filename_rep = $self->workdir . '/' . $filename_rep;
-			$logger->debug("Checking whether replicated alignment $filename_rep already exists");
-
-			# replicate if not done so previously
-			if ( ! -e $filename_rep or ! -s $filename_rep ) {
-				my $rep_aln = $self->_replicate_alignment( $filename_orig, $tree_replicated, $tree, ! $opt->no_marker_sim );
-
-				if ( $rep_aln ) {
-					# simulated alignment will have the same file name plus added '-simulated'
-					$logger->info("Writing alignment $filename_rep");
-					unparse ( -phylo => $rep_aln, -file => $filename_rep, -format=>'fasta' );
-					# output average distances in alignment
-					my $dist_orig = $self->_mean_dist($filename_orig);
-					my $dist_rep = $self->_mean_dist($filename_rep);
-					my $ident_orig = $self->_num_identical_seqs($filename_orig);
-					my $ident_rep = $self->_num_identical_seqs($filename_rep);
-					$logger->info("Average distance in alignments: original : $dist_orig, replicated : $dist_rep");
-					$logger->info("Pairs of identical seqs in alignments: original : $ident_orig, replicated : $ident_rep");
-
-				}
-				else {
-					$logger->warn("Could not write replicated alignment to file: alignment not replicated ");
-					return 0;
-				}
+			
+			# replicate the alignment
+			my $rep_aln = $self->_replicate_alignment( 'alnfile' => $filename_orig, 
+													   'tree_replicated' => $tree_replicated, 
+													   'tree_original' => $tree, 
+													   'simulate_markers' => ! $opt->no_marker_sim, 
+													   'random_rootseq' => $opt->random_rootseq );
+			
+			if ( $rep_aln ) {
+				# simulated alignment will have the same file name plus added '-simulated'
+				$logger->info("Writing alignment $filename_rep");
+				unparse ( -phylo => $rep_aln, -file => $filename_rep, -format=>'fasta' );
+				# output average distances in alignment
+				my $dist_orig = $self->_mean_dist($filename_orig);
+				my $dist_rep = $self->_mean_dist($filename_rep);
+				my $ident_orig = $self->_num_identical_seqs($filename_orig);
+				my $ident_rep = $self->_num_identical_seqs($filename_rep);
+				$logger->info("Average distance in alignments: original : $dist_orig, replicated : $dist_rep");
+				$logger->info("Pairs of identical seqs in alignments: original : $ident_orig, replicated : $ident_rep");
+				
 			}
 			else {
-				$logger->info("Replicated alignment $filename_rep already exists. Skipping replication.")
+				$logger->warn("Could not write replicated alignment to file: alignment not replicated ");
+				return 0;
 			}
 			# write filename to alignment list
 			print $outfh "$filename_rep\n";
@@ -275,35 +274,46 @@ sub _replicate_tree {
 	return $rep;
 }
 
+# Replicate an alignment. Arguments:
+#   'alnfile'
+#	'tree_replicated' 
+#	'tree_original'
+#	'simulate_markers'
+#	'random_rootseq'
+
 sub _replicate_alignment {
-	my ($self, $fastafile, $tree, $original_tree, $simulate_presence) = @_;
-
+	my ($self, %args ) = @_; #$fastafile, $tree, $original_tree, $simulate_presence) = @_;
+	
+	my $alnfile = $args{'alnfile'};
+	my $tree_replicated = $args{'tree_replicated'};
+	my $tree_original = $args{'tree_original'};
+	
 	my $logger = $self->logger;
-
+	
 	# create matrix object from FASTA
-	$logger->fatal("Alignment file $fastafile does not exist") if  ( ! ( -e $fastafile and -s $fastafile ) );
+	$logger->fatal("Alignment file $alnfile does not exist") if  ( ! ( -e $alnfile and -s $alnfile ) );
 
 	my $project = parse(
 		'-format'     => 'fasta',
 		'-type'       => 'dna',
-		'-file'     => $fastafile,
+		'-file'     => $alnfile,
 		'-as_project' => 1,
 	    );
 	my ($matrix) = @{ $project->get_items(_MATRIX_) };
 	$matrix = $self->_clean_fasta_defline( $matrix );
 
 	if ( scalar (@{$matrix->get_entities}) < 3 ) {
-		$logger->warn("Cannot replicate alignment $fastafile with less than three sequences. Skipping.");
+		$logger->warn("Cannot replicate alignment $alnfile with less than three sequences. Skipping.");
 		return 0;
 	}
 
 	# determine for which taxa we want replicated sequences
 	my @rep_taxa;
 
-	if ( $simulate_presence ) {
+	if ( $args{ 'simulate_markers' } ) {
 		# do a binary charachter simulation
 		$logger->info("Determining taxa in alignment with binary simulation");
-		@rep_taxa = $self->_simulate_marker_presence( '-matrix'=>$matrix, '-tree'=>$original_tree, '-replace'=>0 );
+		@rep_taxa = $self->_simulate_marker_presence( '-matrix'=>$matrix, '-tree'=>$tree_original, '-replace'=>0 );
 	}
 	else {
 		# take the taxa that are in the original alignment
@@ -313,13 +323,13 @@ sub _replicate_alignment {
 	$logger->debug("Taxa to replicate sequences for : " . Dumper(\@rep_taxa) );
 
 	if ( scalar(@rep_taxa) < 3 ) {
-		$logger->warn( "Less than three taxa predicted to have marker. Skipping replication of $fastafile." );
+		$logger->warn( "Less than three taxa predicted to have marker. Skipping replication of $alnfile." );
 		return 0;
 	}
 
 	# determine substitution model for given alignment
 	my $timeout = 1800; # set to 30 min
-	my $model = 'Bio::Phylo::Models::Substitution::Dna'->modeltest( '-matrix' => $matrix, '-timeout' => $timeout, '-tree' => $original_tree );
+	my $model = 'Bio::Phylo::Models::Substitution::Dna'->modeltest( '-matrix' => $matrix, '-timeout' => $timeout, '-tree' => $tree_original );
 
 	# timeout in model test will most surely also timeout in simulation; therefore do not simulate
 	if ( ! $model ) {
@@ -328,13 +338,13 @@ sub _replicate_alignment {
 	}
 
 	# prune tree for faster sequence simulations
-	my $pruned = parse('-format'=>'newick', '-string'=>$tree->to_newick)->first;
+	my $pruned = parse('-format'=>'newick', '-string'=>$tree_replicated->to_newick)->first;
 	$pruned->keep_tips( \@rep_taxa );
 	$logger->debug("Input tree for simulation : " . $pruned->to_newick);
 
 	# simulate sequences
 	my $rep;
-	eval { $rep = $matrix->replicate('-tree'=>$pruned, '-seed'=>$config->RANDOM_SEED, '-model'=>$model); };
+	eval { $rep = $matrix->replicate('-tree'=>$pruned, '-seed'=>$config->RANDOM_SEED, '-model'=>$model, '-random_rootseq'=> $args{'random_rootseq'} ); };
 	if ( $@ ) {
 		$logger->warn("Problem replicating matrix, " . $@);
 		return 0;
