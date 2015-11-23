@@ -26,8 +26,8 @@ Instantiates and configures the wrapper object, returns the instantiated wrapper
 sub create {
     my $self = shift;
     my $tool = Bio::Tools::Run::Phylo::Raxml->new;
-    
-    # configure raxml runner           
+
+    # configure raxml runner
     $tool->w( abs_path($self->workdir) );
 
     return $tool;
@@ -35,7 +35,7 @@ sub create {
 
 =item configure
 
-Provides the $config object to the wrapper so that settings defined in $config object can 
+Provides the $config object to the wrapper so that settings defined in $config object can
 be applied to the wrapper.
 
 =cut
@@ -45,13 +45,11 @@ sub configure {
     my $tool   = $self->wrapper;
     my $config = $self->config;
 
-	# determine if we can run with multiple threads
-	if ( $config->NODES > $self->bootstrap ) {
-		$tool->T($config->NODES);
-	}
-	
+	# number of threads for each mpi node
+	$tool->T(4);
+
 	my ($volume,$directories,$id) = File::Spec->splitpath( $self->outfile );
-    $tool->outfile_name($id);      
+    $tool->outfile_name($id);
     $tool->m($config->RAXML_MODEL);
     $tool->N($config->RAXML_RUNS);
     $tool->p($config->RANDOM_SEED);
@@ -81,26 +79,26 @@ sub run {
     # create output file name
     my $treefile = File::Spec->catfile( $t->w, 'RAxML_bestTree.' . $id );
 
-    # configure rapid bootstrap options   
+    # configure rapid bootstrap options
     if ( $self->{'rapid_boot'} ) {
-        
+
 		# Do ML search and boostrapping in one go
 		$t->f('a');
 
-        # bootstrap random seed 
-        $t->x($self->config->RANDOM_SEED);            
+        # bootstrap random seed
+        $t->x($self->config->RANDOM_SEED);
 
 		# we will return the best ML tree annotated with bootstrap values as node labels
         $treefile = File::Spec->catfile( $t->w, 'RAxML_bipartitions.' . $id );
 
 		# set number of rapid boostrap replicates; override number of runs
 		$t->N($self->bootstrap);
-		
-    }   
+
+    }
     # run raxml, returns bioperl tree
-    my $bptree = $t->run($args{'matrix'});          
-	
-    $logger->fatal('RAxML inference failed; outfile not present') if not -e $treefile; 
+    my $bptree = $t->run($args{'matrix'});
+
+    $logger->fatal('RAxML inference failed; outfile not present') if not -e $treefile;
 	$logger->warn("Returning RAxML tree file $treefile");
     return $treefile;
 }
@@ -111,7 +109,7 @@ Cleans up any intermediate files.
 
 =cut
 
-sub cleanup { 
+sub cleanup {
     my $self = shift;
     my $dir = $self->wrapper->w;
     my $outstem = $self->wrapper->outfile_name;
@@ -120,7 +118,7 @@ sub cleanup {
     unlink $dir . '/RAxML_bipartitions' . $outstem;
 	unlink $dir . '/RAxML_bestTree.' . $outstem;
 	unlink $dir . '/RAxML_bootstrap.' . $outstem;
-	
+
     opendir my $dh, $dir or die $!;
     while ( my $entry = readdir $dh ) {
         for my $prefix ( qw(parsimonyTree log result) ) {
@@ -142,7 +140,7 @@ sub rapid_boot {
 }
 
 
-=back 
+=back
 
 =cut
 
