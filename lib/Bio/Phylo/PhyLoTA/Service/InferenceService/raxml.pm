@@ -45,9 +45,14 @@ sub configure {
     my $tool   = $self->wrapper;
     my $config = $self->config;
 
-	# number of threads for each mpi node
-	$tool->T(4);
-
+	# number of threads
+	if ( $config->NODES > $self->bootstrap ) {
+		$tool->T($config->NODES);
+	}
+	else {
+		$tool->T(4);
+	}
+	
 	my ($volume,$directories,$id) = File::Spec->splitpath( $self->outfile );
     $tool->outfile_name($id);
     $tool->m($config->RAXML_MODEL);
