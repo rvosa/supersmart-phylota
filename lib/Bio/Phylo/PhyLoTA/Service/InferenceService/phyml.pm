@@ -42,6 +42,7 @@ sub configure {
     my $tool   = $self->wrapper;
 	$tool->data_type('nt');
 	$tool->model($config->PHYML_MODEL);
+	$tool->tree("BIONJ");
 }
 
 =item run
@@ -58,6 +59,7 @@ sub run {
     # run phyml, returns bioperl tree	
 	$logger->info('Running phyml with matrix ' . $args{'matrix'});
     my $bptree = $t->run($args{'matrix'});
+	
 	$logger->fatal('No tree received from phyml') if not $bptree;
 
 	# Write bioperl tree to file, 
