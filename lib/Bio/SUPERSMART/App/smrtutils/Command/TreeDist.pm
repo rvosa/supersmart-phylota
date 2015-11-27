@@ -4,6 +4,7 @@ use strict;
 use warnings;
 
 use Bio::Phylo::IO qw(parse);
+use Bio::Phylo::PhyLoTA::Service::TreeService; 
 
 use base 'Bio::SUPERSMART::App::SubCommand';
 use Bio::SUPERSMART::App::smrtutils qw(-command);
@@ -32,7 +33,7 @@ sub options {
 		['tree1|t=s', "tree file", { arg => 'file' }],		
 		['tree2|u=s', "tree file to compare to", { arg => 'file' }],		
 		['treeformat|f=s', "file format of both input trees, defaults to $format_default", { default => $format_default, arg => "format" }],
-		['distance_measure|d=s', "distance measure, currntly supported: rf (Robinson Foulds), defaults to $measure_default", { default => $measure_default}]
+		['distance_measure|d=s', "distance measure, currntly supported: rf (Robinson Foulds), defaults to $measure_default", { default => $measure_default}],
 	);	
 }
 
@@ -60,17 +61,27 @@ sub run {
 		'-file'   => $opt->tree2,
 		'-format' => $opt->treeformat,
 	    )->first;
-	
-	my $diff;
-	
-	if ( $opt->distance_measure eq 'rf' ) {
+
+	# prune tips such that both trees have the same taxa.
+	$logger->info("Pruning tips to have the same taxa in both trees");
+	my $ts = Bio::Phylo::PhyLoTA::Service::TreeService->new; 
+	my @trees = $ts->intersect_trees($tree1, $tree2);
+	$tree1 = $trees[0];
+	$tree2 = $trees[1];
+
+	# calculate robinson-foulds distance and a normalized robinson foulds-distance
+	my $diff;		
+	my $ndiff;
+	if ( $opt->distance_measure eq 'rf' ) { 
 		$diff = $tree1->calc_symdiff($tree2);
+		$ndiff = $tree1->calc_symdiff($tree2, 1);
 	}
 	
-	$logger->info("Distance between " . $opt->tree1 . " and " . $opt->tree2 . " : $diff");
-
+	$logger->info("Distance between " . $opt->tree1 . " and " . $opt->tree2 . " : $diff, normalized by splits: $ndiff");	
 	$logger->info("DONE");
 	
 }
+
+
 
 1;

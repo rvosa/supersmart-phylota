@@ -230,6 +230,30 @@ sub _count_paraphyletic_species {
 	return $para_count;
 }
 
+=item intersect_trees
+
+	Given two trees, prunes the trees such that both will have the 
+	same set of tip labels
+
+=cut
+
+sub intersect_trees {
+	my ($self, $tree1, $tree2) = @_;
+	
+	# get leaves shared by both trees
+	my @terminals1 = map { $_->get_name } @{$tree1->get_terminals};
+	my @terminals2 = map { $_->get_name } @{$tree2->get_terminals};	
+	my @intersect = _intersect(\@terminals1, \@terminals2);
+
+	# prune trees
+	$log->debug("Pruning trees to tips: " . Dumper(\@intersect));
+	$tree1->keep_tips(\@intersect);
+	$tree2->keep_tips(\@intersect);
+	
+	return ( $tree1, $tree2 );
+	
+}
+
 # get intersection between elements of two array references
 sub _intersect {
 	my ($a1, $a2) = @_;
