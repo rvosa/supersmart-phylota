@@ -76,7 +76,7 @@ __PACKAGE__->add_columns(
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration
-use Bio::Phylo::PhyLoTA::Config;
+use Bio::SUPERSMART::Config;
 
 =head2 table
 
@@ -88,7 +88,7 @@ database table.
 sub table {
 	my $class = shift;
 	my $table = shift;
-	my $release = Bio::Phylo::PhyLoTA::Config->new->currentGBRelease;
+	my $release = Bio::SUPERSMART::Config->new->currentGBRelease;
 	$class->SUPER::table( $table . '_' . $release );
 }
 1;

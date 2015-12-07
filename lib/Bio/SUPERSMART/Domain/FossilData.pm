@@ -1,6 +1,6 @@
 # this is an object oriented perl module
 
-package Bio::Phylo::PhyLoTA::Domain::FossilData;
+package Bio::SUPERSMART::Domain::FossilData;
 use strict;
 use warnings;
 
@@ -8,7 +8,7 @@ our $AUTOLOAD;
 
 =head1 NAME
 
-Bio::Phylo::PhyLoTA::Domain::FossilData - Fossil Data
+Bio::SUPERSMART::Domain::FossilData - Fossil Data
 
 =head1 DESCRIPTION
 

@@ -1,11 +1,11 @@
 # this is an object oriented perl module
 
-package Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa;
+package Bio::SUPERSMART::Domain::MarkersAndTaxa;
 
 use strict;
 use warnings;
 
-use Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector;
+use Bio::SUPERSMART::Service::MarkersAndTaxaSelector;
 use List::Util 'min';
 use List::MoreUtils 'uniq';
 use Data::Dumper;
@@ -14,7 +14,7 @@ use Bio::SimpleAlign;
 use Bio::LocatableSeq;
 use Bio::Phylo::Matrices::Datum;
 use Bio::Phylo::Factory;
-use Bio::Phylo::PhyLoTA::Config;
+use Bio::SUPERSMART::Config;
 use Bio::Phylo::Util::CONSTANT ':objecttypes';
 use Bio::Phylo::Util::Exceptions 'throw';
 use Bio::Phylo::Util::Logger;
@@ -68,7 +68,7 @@ around BUILDARGS => sub {
 
 =head1 NAME
 
-Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa - Markers and Taxa
+Bio::SUPERSMART::Domain::MarkersAndTaxa - Markers and Taxa
 
 =head1 DESCRIPTION
 
@@ -122,8 +122,8 @@ sub _index_alignments {
     my ( $class, $args ) = @_;
 
     # instantiate helper objects
-    my $config = Bio::Phylo::PhyLoTA::Config->new;
-    my $mts    = Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector->new;
+    my $config = Bio::SUPERSMART::Config->new;
+    my $mts    = Bio::SUPERSMART::Service::MarkersAndTaxaSelector->new;
     my $log    = Bio::Phylo::Util::Logger->new;
 
     # make forward and reverse mappings between taxa and alignments
@@ -207,7 +207,7 @@ sub orthologize_cladedir {
 	my $outfile    = $args{'outfile'};
 	my $maxdist    = $args{'maxdist'};
 
-	my $sg = Bio::Phylo::PhyLoTA::Service::SequenceGetter->new;
+	my $sg = Bio::SUPERSMART::Service::SequenceGetter->new;
 
 	# collect seed gis from alignment file names
 	my @files =  <"${dir}/*.fa">;
@@ -239,9 +239,9 @@ sub write_clade_matrix {
 	my $log = Bio::Phylo::Util::Logger->new;
 	my $ns      = 'http://www.supersmart-project.org/terms#';
     my $factory = Bio::Phylo::Factory->new;
-    my $mts     = Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector->new;
-    my $service = Bio::Phylo::PhyLoTA::Service::TreeService->new;
-	my $sg      = Bio::Phylo::PhyLoTA::Service::SequenceGetter->new;
+    my $mts     = Bio::SUPERSMART::Service::MarkersAndTaxaSelector->new;
+    my $service = Bio::SUPERSMART::Service::TreeService->new;
+	my $sg      = Bio::SUPERSMART::Service::SequenceGetter->new;
 
 	my $project = $factory->create_project( '-namespaces' => { 'smrt' => $ns } );
 	my $taxa    = $factory->create_taxa;
@@ -346,7 +346,7 @@ sub pick_exemplars {
 
 	# instantiate helper objects
 	my $log = $self->logger;
-	my $mts = Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector->new;
+	my $mts = Bio::SUPERSMART::Service::MarkersAndTaxaSelector->new;
 
 	# read and pre-process taxa
 	my @records = $self->parse_taxa_file($taxafile);
@@ -446,7 +446,7 @@ sub optimize_packing_order {
 
     # instantiate helper objects
     my $log = $self->logger;
-    my $config = Bio::Phylo::PhyLoTA::Config->new;
+    my $config = Bio::SUPERSMART::Config->new;
 
     # dereference precomputed data
     my %alns_for_taxa = %{ $self->alns_for_taxa };
@@ -660,7 +660,7 @@ array of taxon records from species.tsv
 sub parse_user_taxa {
     my ( $self, $include_taxa, @records ) = @_;
     my $log = $self->logger;
-    my $mts = Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector->new;
+    my $mts = Bio::SUPERSMART::Service::MarkersAndTaxaSelector->new;
     my @ranks = qw(species subspecies varietas forma);
     my %user_taxa;
     if ($include_taxa) {
@@ -861,7 +861,7 @@ normalized by sequence length
 sub calc_aln_distances {
     my ( $self, $aln, $tax ) = @_;
     my @taxa  = @$tax;
-    my $ts    = Bio::Phylo::PhyLoTA::Service::TreeService->new;
+    my $ts    = Bio::SUPERSMART::Service::TreeService->new;
     my $dat   = 'Bio::Phylo::Matrices::Datum';
     my $log   = $self->logger;
     my %fasta = $self->parse_fasta_file($aln);
@@ -1044,7 +1044,7 @@ for paraphyly in the branches spawning from there.
 
 sub get_highest_informative_level{
     my ( $class, @records) = @_;
-    my $mts = Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector->new;
+    my $mts = Bio::SUPERSMART::Service::MarkersAndTaxaSelector->new;
     my $result;
 
     # get all possible taxonomic ranks, ordered from highest to lowest
@@ -1081,7 +1081,7 @@ is the same for all entries in the species table.
 
 sub get_root_taxon_level {
     my ( $class, @records) = @_;
-    my $mts = Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector->new;
+    my $mts = Bio::SUPERSMART::Service::MarkersAndTaxaSelector->new;
     my $result;
 
     # get all possible taxonomic ranks, ordered from lowest to highest
@@ -1203,8 +1203,8 @@ sub write_supermatrix {
 
     # instantiate helper objects
     my $logger = $self->logger;
-    my $mts    = Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector->new;
-    my $config = Bio::Phylo::PhyLoTA::Config->new;
+    my $mts    = Bio::SUPERSMART::Service::MarkersAndTaxaSelector->new;
+    my $config = Bio::SUPERSMART::Config->new;
 
     # dereference argument data structures
     my @exemplars  = @{ $args{'exemplars'} };

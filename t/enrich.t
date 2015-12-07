@@ -6,11 +6,11 @@ use FindBin '$Bin';
 use Bio::Phylo::Factory;
 use Bio::Phylo::IO 'parse_matrix';
 use Bio::Phylo::Util::Logger ':levels';
-use Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector;
+use Bio::SUPERSMART::Service::MarkersAndTaxaSelector;
 
 my $outfile = shift;
 
-my $mts     = Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector->new;
+my $mts     = Bio::SUPERSMART::Service::MarkersAndTaxaSelector->new;
 my $fac     = Bio::Phylo::Factory->new;
 my $ns      = 'http://www.supersmart-project.org/terms#';
 my $file    = "${Bin}/testdata/186701483-16739-4-subtree.fa";

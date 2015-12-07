@@ -5,10 +5,10 @@ use version;
 use FindBin '$Bin';
 use File::Temp 'tempdir';
 use Test::More 'no_plan';
-use Bio::Phylo::PhyLoTA::Config;
+use Bio::SUPERSMART::Config;
 
 my $wd = tempdir( 'CLEANUP' => 1, 'DIR' => $ENV{HOME} );
-my $config = Bio::Phylo::PhyLoTA::Config->new;
+my $config = Bio::SUPERSMART::Config->new;
 
 # test instantiation
 BEGIN { use_ok('Bio::Tools::Run::Phylo::ExaML'); }

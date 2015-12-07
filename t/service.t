@@ -3,9 +3,9 @@ use strict;
 use warnings;
 use Test::More 'no_plan';
 
-BEGIN{ use_ok('Bio::Phylo::PhyLoTA::Service'); }
+BEGIN{ use_ok('Bio::SUPERSMART::Service'); }
 
-my $service = new_ok ('Bio::Phylo::PhyLoTA::Service');
+my $service = new_ok ('Bio::SUPERSMART::Service');
 
 # test retreiving Trichosanthes cucumerina from database
 my $name = 'Trichosanthes cucumerina';

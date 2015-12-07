@@ -2,7 +2,7 @@
 use strict;
 use warnings;
 use Test::More;
-use Bio::Phylo::PhyLoTA::Service;
+use Bio::SUPERSMART::Service;
 
 eval "use Test::Pod::Coverage 1.00";
 plan skip_all => "Test::Pod::Coverage 1.00 required for testing POD coverage" if $@;

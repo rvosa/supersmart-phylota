@@ -206,12 +206,12 @@ __PACKAGE__->has_many(
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration
-use Bio::Phylo::PhyLoTA::Config;
+use Bio::SUPERSMART::Config;
 use Bio::Phylo::Forest::NodeRole;
-use Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector;
+use Bio::SUPERSMART::Service::MarkersAndTaxaSelector;
 push @Bio::Phylo::PhyLoTA::DAO::Result::Node::ISA, 'Bio::Phylo::Forest::NodeRole';
 
-my $mts = Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector->new;
+my $mts = Bio::SUPERSMART::Service::MarkersAndTaxaSelector->new;
 my %tree;
 
 =head2 table
@@ -224,7 +224,7 @@ database table.
 sub table {
 	my $class = shift;
 	my $table = shift;
-	my $release = Bio::Phylo::PhyLoTA::Config->new->currentGBRelease;
+	my $release = Bio::SUPERSMART::Config->new->currentGBRelease;
 	$class->SUPER::table( $table . '_' . $release );
 }
 

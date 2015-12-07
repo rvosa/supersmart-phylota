@@ -1,27 +1,27 @@
-package Bio::Phylo::PhyLoTA::Service::TreeService;
+package Bio::SUPERSMART::Service::TreeService;
 use strict;
 use warnings;
 use Cwd;
 use File::Temp 'tempfile';
 use Bio::Phylo::IO qw'parse parse_tree unparse';
 use Bio::Phylo::Factory;
-use Bio::Phylo::PhyLoTA::Config;
-use Bio::Phylo::PhyLoTA::Service;
+use Bio::SUPERSMART::Config;
+use Bio::SUPERSMART::Service;
 use Bio::Phylo::Util::CONSTANT ':namespaces';
-use base 'Bio::Phylo::PhyLoTA::Service';
-use Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa;
-use Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector;
+use base 'Bio::SUPERSMART::Service';
+use Bio::SUPERSMART::Domain::MarkersAndTaxa;
+use Bio::SUPERSMART::Service::MarkersAndTaxaSelector;
 use List::MoreUtils 'uniq';
 use List::Util qw'min sum';
 use Data::Dumper;
 
-my $config = Bio::Phylo::PhyLoTA::Config->new;
-my $log = Bio::Phylo::PhyLoTA::Service->logger->new;
+my $config = Bio::SUPERSMART::Config->new;
+my $log = Bio::SUPERSMART::Service->logger->new;
 my $fac = Bio::Phylo::Factory->new;
 
 =head1 NAME
 
-Bio::Phylo::PhyLoTA::Service::TreeService - Operations on phylogenetic Trees
+Bio::SUPERSMART::Service::TreeService - Operations on phylogenetic Trees
 
 =head1 DESCRIPTION
 
@@ -352,8 +352,8 @@ sub outgroup_root {
 	my @ranks   = $args{'-ranks'} ? @{ $args{'-ranks'} } : qw[forma varietas subspecies species];
 	my @ids     = $args{'-ids'} ? @{ $args{'-ids'} } : ();
 	my @names   = $args{'-outgroup'} ? @{ $args{'-outgroup'} } : ();
-	my $mt = Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa->new;
-	my $mts = Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector->new;
+	my $mt = Bio::SUPERSMART::Domain::MarkersAndTaxa->new;
+	my $mts = Bio::SUPERSMART::Service::MarkersAndTaxaSelector->new;
 
 	# remap outgroup species names to taxon identifiers
 	if ( not @ids ) {
@@ -415,7 +415,7 @@ changes the names of the terminal nodes from NCBI taxonomy identifiers to their 
 sub remap_to_name {
        	my ($self, $tree) = @_;
 
-	my $mts = Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector->new;
+	my $mts = Bio::SUPERSMART::Service::MarkersAndTaxaSelector->new;
 
         $tree->visit(sub{
                 my $n = shift;
@@ -474,7 +474,7 @@ as given in the NCBI taxonomy database. The records argument is optional.
 sub remap_to_ti {
     my ($self, $tree, @records) = @_;
 
-        my $mts = Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector->new;
+        my $mts = Bio::SUPERSMART::Service::MarkersAndTaxaSelector->new;
 
 	# no taxa table given, we will query the database
 	$tree->visit(sub{
@@ -526,7 +526,7 @@ to taxon names
 sub make_mapping_table {
 	my ( $self, $tree ) = @_;
 
-	my $mts = Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector->new;
+	my $mts = Bio::SUPERSMART::Service::MarkersAndTaxaSelector->new;
 	my %mapping;
 
 	for my $t ( @{$tree->get_terminals} ) {
@@ -815,7 +815,7 @@ to the NCBI taxonomy database
 sub make_classification_tree {
 	my ( $self, @taxatable) = @_;
 
-	my $mts = Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector->new;
+	my $mts = Bio::SUPERSMART::Service::MarkersAndTaxaSelector->new;
 
     # instantiate nodes from infile
 	my @nodes = $mts->get_nodes_for_table( @taxatable );
@@ -1137,7 +1137,7 @@ from sister clades until the paraphyly is resolved.
 sub extract_clades {
 	my ($self, $tree, @records) = @_;
 	my %genera;
-    my $mt = 'Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa';
+    my $mt = 'Bio::SUPERSMART::Domain::MarkersAndTaxa';
 
     # first get all taxa that will be included in the clades
     my @valid_ranks = ("species", "subspecies", "varietas", "forma");

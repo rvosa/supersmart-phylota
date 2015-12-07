@@ -4,8 +4,8 @@ use FindBin '$Bin';
 use Test::More 'no_plan';
 use Bio::Phylo::IO 'parse_tree';
 use Bio::Phylo::Util::Logger ':levels';
-use Bio::Phylo::PhyLoTA::Service::TreeService;
-use Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa;
+use Bio::SUPERSMART::Service::TreeService;
+use Bio::SUPERSMART::Domain::MarkersAndTaxa;
 
 my $backbone = "${Bin}/testdata/piperaceae-backbone.dnd";
 my $taxafile = "${Bin}/testdata/piperaceae-species.tsv";
@@ -14,13 +14,13 @@ my $log = Bio::Phylo::Util::Logger->new(
 	'-style' => 'simple',
 	'-class' => [
 		'main',
-		'Bio::Phylo::PhyLoTA::Service::TreeService'
+		'Bio::SUPERSMART::Service::TreeService'
 	]
 );
 	
 # instantiate helper objects
-my $ts = Bio::Phylo::PhyLoTA::Service::TreeService->new;
-my $mt = Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa->new;
+my $ts = Bio::SUPERSMART::Service::TreeService->new;
+my $mt = Bio::SUPERSMART::Domain::MarkersAndTaxa->new;
 
 # prepare taxa data
 my @records = $mt->parse_taxa_file($taxafile);

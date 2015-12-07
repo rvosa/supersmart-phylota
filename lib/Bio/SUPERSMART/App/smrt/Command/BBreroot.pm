@@ -5,11 +5,11 @@ use warnings;
 use File::Temp 'tempfile';
 
 use Bio::Phylo::Factory;
-use Bio::Phylo::PhyLoTA::Service::TreeService;
-use Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector;
+use Bio::SUPERSMART::Service::TreeService;
+use Bio::SUPERSMART::Service::MarkersAndTaxaSelector;
 use Bio::Phylo::IO qw(parse parse_tree);
 
-use Bio::Phylo::PhyLoTA::Service::ParallelService;
+use Bio::SUPERSMART::Service::ParallelService;
 
 use base 'Bio::SUPERSMART::App::SubCommand';
 use Bio::SUPERSMART::App::smrt qw(-command);
@@ -83,9 +83,9 @@ sub run {
 	my $outfile  = $self->outfile;
 		
 	# instantiate helper objects
-	my $ts  = Bio::Phylo::PhyLoTA::Service::TreeService->new;
-	my $mt  = Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa->new;
-	my $mts = Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector->new;
+	my $ts  = Bio::SUPERSMART::Service::TreeService->new;
+	my $mt  = Bio::SUPERSMART::Domain::MarkersAndTaxa->new;
+	my $mts = Bio::SUPERSMART::Service::MarkersAndTaxaSelector->new;
 	my $log = $self->logger;
 	
 	# identify outgroup once

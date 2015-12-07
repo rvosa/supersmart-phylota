@@ -3,9 +3,9 @@ use strict;
 use warnings;
 use Bio::Phylo::Factory;
 use Bio::Phylo::Matrices::Datum;
-use Bio::Phylo::PhyLoTA::Config;
-use Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa;
-use Bio::Phylo::PhyLoTA::Service::TreeService;
+use Bio::SUPERSMART::Config;
+use Bio::SUPERSMART::Domain::MarkersAndTaxa;
+use Bio::SUPERSMART::Service::TreeService;
 use Bio::SUPERSMART::App::SubCommand;
 use List::MoreUtils qw(uniq);
 use List::Util qw(max);
@@ -80,7 +80,7 @@ sub options {
     my $markerstable_default = "markers-backbone.tsv";
     my $taxa_default         = "species.tsv";
     my $merged_default       = "merged.txt";	
-    my $config       = Bio::Phylo::PhyLoTA::Config->new;
+    my $config       = Bio::SUPERSMART::Config->new;
 	my $exemplars_default = $config->BACKBONE_EXEMPLARS;
     return (
         [
@@ -143,8 +143,8 @@ sub run {
     my $include_taxa = $opt->include_taxa;
 
     # instantiate helper objects
-    my $config = Bio::Phylo::PhyLoTA::Config->new;
-    my $mt  = Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa->new($opt->alnfile, $config->BACKBONE_MIN_COVERAGE);
+    my $config = Bio::SUPERSMART::Config->new;
+    my $mt  = Bio::SUPERSMART::Domain::MarkersAndTaxa->new($opt->alnfile, $config->BACKBONE_MIN_COVERAGE);
     my $log = $self->logger;
         
     # Pick the exemplar taxa:

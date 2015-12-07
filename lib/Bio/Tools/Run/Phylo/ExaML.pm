@@ -9,7 +9,7 @@ use Bio::Phylo::IO 'parse';
 use Bio::Tools::Run::Phylo::PhyloBase;
 use Bio::Phylo::Util::CONSTANT ':objecttypes';
 use Bio::Phylo::Util::Logger;
-use Bio::Phylo::PhyLoTA::Service::TreeService;
+use Bio::SUPERSMART::Service::TreeService;
 use base qw(Bio::Tools::Run::Phylo::PhyloBase);
 
 =head1 NAME
@@ -47,7 +47,7 @@ our $PROGRAM_NAME = 'examl';
 our @ExaML_PARAMS = qw(B c e f i m p);
 our @ExaML_SWITCHES = qw(a D M Q S);
 my $log = Bio::Phylo::Util::Logger->new;
-my $treeservice = Bio::Phylo::PhyLoTA::Service::TreeService->new;
+my $treeservice = Bio::SUPERSMART::Service::TreeService->new;
 
 =item new
 

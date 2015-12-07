@@ -6,13 +6,13 @@ use File::Temp 'tempfile';
 use Bio::Phylo::IO qw(parse parse_tree);
 use Bio::Phylo::Factory;
 use Bio::Phylo::Util::CONSTANT ':namespaces';
-use Bio::Phylo::PhyLoTA::Config;
-use Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa;
-use Bio::Phylo::PhyLoTA::Service::TreeService;
-use Bio::Phylo::PhyLoTA::Service::SequenceGetter;
-use Bio::Phylo::PhyLoTA::Service::InferenceService;
-use Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector;
-use Bio::Phylo::PhyLoTA::Service::ParallelService;
+use Bio::SUPERSMART::Config;
+use Bio::SUPERSMART::Domain::MarkersAndTaxa;
+use Bio::SUPERSMART::Service::TreeService;
+use Bio::SUPERSMART::Service::SequenceGetter;
+use Bio::SUPERSMART::Service::InferenceService;
+use Bio::SUPERSMART::Service::MarkersAndTaxaSelector;
+use Bio::SUPERSMART::Service::ParallelService;
 use Bio::Phylo::Util::Exceptions 'throw';
 use base 'Bio::SUPERSMART::App::SubCommand';
 use Bio::SUPERSMART::App::smrt qw(-command);
@@ -116,9 +116,9 @@ sub run {
     my $bootstrap   = $opt->bootstrap;
     	           
     # instantiate and configure helper objects
-    my $ts = Bio::Phylo::PhyLoTA::Service::TreeService->new;     
-    my $ss = Bio::Phylo::PhyLoTA::Service::SequenceGetter->new;   
-    my $is = Bio::Phylo::PhyLoTA::Service::InferenceService->new(
+    my $ts = Bio::SUPERSMART::Service::TreeService->new;     
+    my $ss = Bio::SUPERSMART::Service::SequenceGetter->new;   
+    my $is = Bio::SUPERSMART::Service::InferenceService->new(
         'tool'      => lc( $opt->inferencetool ),
         'workdir'   => $opt->workdir,
 		'bootstrap' => $opt->bootstrap
@@ -200,13 +200,13 @@ sub _append {
 sub _process_result {
     my ( $self, $backbone, $remap, $consense, $matrix, $service ) = @_;
 
-    my $ts = Bio::Phylo::PhyLoTA::Service::TreeService->new;
+    my $ts = Bio::SUPERSMART::Service::TreeService->new;
     my $outfile = $self->outfile;
 
     # map ID to name
     if ( $remap ) {
-		my $ms  = Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector->new;
-		my $mt  = Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa->new;		
+		my $ms  = Bio::SUPERSMART::Service::MarkersAndTaxaSelector->new;
+		my $mt  = Bio::SUPERSMART::Domain::MarkersAndTaxa->new;		
 
 		my %map = map { $_ => $ms->find_node($_)->taxon_name } $mt->get_supermatrix_taxa($matrix);
         $map{$_} =~ s/ /_/g for keys %map;		
@@ -225,12 +225,12 @@ sub _process_result {
 sub _set_usertree {
 	my ( $self, $service, $supermatrix, $taxafile, $random_start ) = @_;
 
-    my $ts = Bio::Phylo::PhyLoTA::Service::TreeService->new;     
+    my $ts = Bio::SUPERSMART::Service::TreeService->new;     
 	
 	# if taxa file given make classification tree, otherwise start from random tree
 	my $classtree;
 	if ( ! $random_start ) {
-		my $mt = Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa->new;
+		my $mt = Bio::SUPERSMART::Domain::MarkersAndTaxa->new;
 		my @taxatable = $mt->parse_taxa_file( $taxafile );
 		$classtree = $ts->make_classification_tree( @taxatable );
 	}

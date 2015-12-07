@@ -5,10 +5,10 @@ use FindBin '$Bin';
 use Test::More 'no_plan';
 use Scalar::Util 'looks_like_number';
 use Bio::Phylo::Util::Logger ':levels';
-use Bio::Phylo::PhyLoTA::Service::TreeService;
+use Bio::SUPERSMART::Service::TreeService;
 
 # instantiate tree service
-my $ts = Bio::Phylo::PhyLoTA::Service::TreeService->new;
+my $ts = Bio::SUPERSMART::Service::TreeService->new;
 
 {
 	# test newick file

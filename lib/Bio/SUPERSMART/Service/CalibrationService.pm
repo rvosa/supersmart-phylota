@@ -1,30 +1,30 @@
-package Bio::Phylo::PhyLoTA::Service::CalibrationService;
+package Bio::SUPERSMART::Service::CalibrationService;
 use strict;
 use warnings;
 use JSON;
 use File::Temp 'tempfile';
 use LWP::UserAgent;
 use Bio::Phylo::IO 'parse_tree';
-use Bio::Phylo::PhyLoTA::Service;
-use Bio::Phylo::PhyLoTA::Domain::FossilData;
-use Bio::Phylo::PhyLoTA::Domain::CalibrationTable;
-use Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector;
+use Bio::SUPERSMART::Service;
+use Bio::SUPERSMART::Domain::FossilData;
+use Bio::SUPERSMART::Domain::CalibrationTable;
+use Bio::SUPERSMART::Service::MarkersAndTaxaSelector;
 use Bio::Phylo::Util::CONSTANT ':namespaces';
-use base 'Bio::Phylo::PhyLoTA::Service';
+use base 'Bio::SUPERSMART::Service';
 
 =head1 NAME
 
-Bio::Phylo::PhyLoTA::Service::CalibrationService - manages tree calibration
+Bio::SUPERSMART::Service::CalibrationService - manages tree calibration
 
 =head1 SYNOPSYS
 
- use Bio::Phylo::PhyLoTA::Service::CalibrationService;
+ use Bio::SUPERSMART::Service::CalibrationService;
  use Bio::Phylo::IO 'parse_tree';
  
- my $cs = Bio::Phylo::PhyLoTA::Service::CalibrationService->new;
+ my $cs = Bio::SUPERSMART::Service::CalibrationService->new;
  
  # read a PROTEUS compatible tab-separated spreadsheet with fossils,
- # returns an array of Bio::Phylo::PhyLoTA::Domain::FossilData objects
+ # returns an array of Bio::SUPERSMART::Domain::FossilData objects
  my @fossils = $cs->read_fossil_table('fossils.tsv');
  
  # identify the calibration points the nodes should attach to
@@ -37,7 +37,7 @@ Bio::Phylo::PhyLoTA::Service::CalibrationService - manages tree calibration
  	'-as_project' => 1,
  );
  
- # creates a Bio::Phylo::PhyLoTA::Domain::CalibrationTable
+ # creates a Bio::SUPERSMART::Domain::CalibrationTable
  my $ct = $cs->create_calibration_table( $tree, @identified );
  
  # calibrate the tree
@@ -78,7 +78,7 @@ Arguments:
 
  -numsites => Number of sites in the alignment that induced the tree
  -tree     => A Bio::Phylo::Forest::Tree object
- -calibration_table => A Bio::Phylo::PhyLoTA::Domain::CalibrationTable object
+ -calibration_table => A Bio::SUPERSMART::Domain::CalibrationTable object
  -treepl_smooth     => (Optional) TreePL smoothing factor
  -nthreads          => (Optional) Number of threads
 
@@ -135,7 +135,7 @@ HEADER
 
 =item find_calibration_point
 
-Given a L<Bio::Phylo::PhyLoTA::Domain::FossilData>, this method looks at the
+Given a L<Bio::SUPERSMART::Domain::FossilData>, this method looks at the
 CalibratedTaxon from the fossil table and looks up this taxon name in the
 phylota nodes table. If nodes are found, they are attached. Note that usually, 
 one or no node will be found but for some taxon names there are multiple names in
@@ -146,7 +146,7 @@ the nodes table, due to homonyms across kingdoms.
 sub find_calibration_point {
     my ( $self, $fd ) = @_;
     my $log = $self->logger;
-    my $mts = Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector->new;
+    my $mts = Bio::SUPERSMART::Service::MarkersAndTaxaSelector->new;
     
     my @nodes;
 
@@ -171,7 +171,7 @@ sub find_calibration_point {
 =item create_calibration_table
 
 Given a tree and an array of fossils, creates a 
-L<Bio::Phylo::PhyLoTA::Domain::CalibrationTable>. Note that this method assumes for now 
+L<Bio::SUPERSMART::Domain::CalibrationTable>. Note that this method assumes for now 
 that whitespaces in species names in the tree are substituted to underscores 
 (e.g. Mandevilla emarginata -> Mandevilla_emarginata).
 
@@ -188,7 +188,7 @@ sub create_calibration_table {
 	
 	my $config = $self->config;
 	my $logger = $self->logger;        
-	my $table  = Bio::Phylo::PhyLoTA::Domain::CalibrationTable->new;
+	my $table  = Bio::SUPERSMART::Domain::CalibrationTable->new;
 	my $cutoff = $config->FOSSIL_BEST_PRACTICE_CUTOFF;
 	$tree->set_namespaces( 'fig' => _NS_FIGTREE_ );
 
@@ -306,7 +306,7 @@ sub create_calibration_table {
 =item read_fossil_table
 
 Given a fossil table, returns an array of 
-L<Bio::Phylo::PhyLoTA::Domain::FossilData> objects.
+L<Bio::SUPERSMART::Domain::FossilData> objects.
 
 =cut
 
@@ -324,7 +324,7 @@ sub read_fossil_table {
         if ( @fields ) {
             my %record;
             $record{$header[$_]} = $fields[$_] for 0 .. $#header;
-            push @records, Bio::Phylo::PhyLoTA::Domain::FossilData->new(\%record);
+            push @records, Bio::SUPERSMART::Domain::FossilData->new(\%record);
         }
     }
     # calibratedTaxon field can have more than calibrated taxon split by commata
@@ -341,7 +341,7 @@ sub read_fossil_table {
 
 =item fetch_fossil_dates
 
-Fetches an array of L<Bio::Phylo::PhyLoTA::Domain::FossilData> from
+Fetches an array of L<Bio::SUPERSMART::Domain::FossilData> from
 L<http://fossilcalibrations.org>. Note that this requires a taxon name
 as an argument. "Primates" appears to work. 
 
@@ -388,7 +388,7 @@ sub fetch_fossil_dates {
 				my $f = $fossils->[0];
 				
 				# here we rename keys in the hash so that they 
-				# match Bio::Phylo::PhyLoTA::Domain::FossilData				
+				# match Bio::SUPERSMART::Domain::FossilData				
 				$c->{'CalibratedTaxon'} = delete $c->{'nodeName'};
 				$c->{'MinAge'} = delete $c->{'nodeMinAge'};
 				$c->{'MaxAge'} = delete $c->{'nodeMaxAge'};
@@ -400,7 +400,7 @@ sub fetch_fossil_dates {
 				if ( $ref =~ /([^0-9]+?)\s*([0-9]{4})/ ) {
 					( $c->{'NUsrcrFos'}, $c->{'DcrFos'} ) = ( $1, $2 );
 				}
-				push @records, Bio::Phylo::PhyLoTA::Domain::FossilData->new($c);
+				push @records, Bio::SUPERSMART::Domain::FossilData->new($c);
 			}
 		}
 		return @records;

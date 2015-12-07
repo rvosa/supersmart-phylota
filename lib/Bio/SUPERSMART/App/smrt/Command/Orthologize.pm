@@ -6,11 +6,11 @@ use warnings;
 use File::Copy qw(copy);
 use File::Spec;
 
-use Bio::Phylo::PhyLoTA::Config;
-use Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa;
-use Bio::Phylo::PhyLoTA::Service::SequenceGetter;
+use Bio::SUPERSMART::Config;
+use Bio::SUPERSMART::Domain::MarkersAndTaxa;
+use Bio::SUPERSMART::Service::SequenceGetter;
 
-use Bio::Phylo::PhyLoTA::Service::ParallelService;
+use Bio::SUPERSMART::Service::ParallelService;
 
 use Bio::SUPERSMART::App::SubCommand;
 use base 'Bio::SUPERSMART::App::SubCommand';
@@ -71,9 +71,9 @@ sub run {
 	my $workdir = $self->workdir;
 	
 	# instantiate helper objects
-	my $service = Bio::Phylo::PhyLoTA::Service::SequenceGetter->new;
-	my $mts     = Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa->new;
-	my $config  = Bio::Phylo::PhyLoTA::Config->new;
+	my $service = Bio::SUPERSMART::Service::SequenceGetter->new;
+	my $mts     = Bio::SUPERSMART::Domain::MarkersAndTaxa->new;
+	my $config  = Bio::SUPERSMART::Config->new;
 	my $log     = $self->logger;
 	
 	# parse seed GIs of aligned files

@@ -1,7 +1,7 @@
 package Bio::SUPERSMART::App::smrtutils;
 
-use Bio::Phylo::PhyLoTA::Config;
-my $config 	= Bio::Phylo::PhyLoTA::Config->new;
+use Bio::SUPERSMART::Config;
+my $config 	= Bio::SUPERSMART::Config->new;
 our $VERSION = $config->RELEASE;
 
 use App::Cmd::Setup -app;

@@ -1,11 +1,11 @@
 #!/usr/bin/perl
 use strict;
 use warnings;
-use Bio::Phylo::PhyLoTA::Service;
+use Bio::SUPERSMART::Service;
 use Test::More 'no_plan';
 
 # connect to the database
-my $service = Bio::Phylo::PhyLoTA::Service->new;
+my $service = Bio::SUPERSMART::Service->new;
 
 # some example GIs:
 # matK: 6174789

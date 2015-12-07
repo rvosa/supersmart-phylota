@@ -5,10 +5,10 @@ use Bio::Phylo::Matrices::Matrix;
 use Test::More 'no_plan';
 
 # this tests if we can use the SequenceGetter package
-use_ok('Bio::Phylo::PhyLoTA::Service::SequenceGetter');
+use_ok('Bio::SUPERSMART::Service::SequenceGetter');
 
 # this just tests that we can create a new SequenceGetter object
-my $sg=new_ok('Bio::Phylo::PhyLoTA::Service::SequenceGetter');
+my $sg=new_ok('Bio::SUPERSMART::Service::SequenceGetter');
 
 # this fetches the smallest containing cluster around the seed
 # sequence with gi 326632174, which is a lemur cytb sequence

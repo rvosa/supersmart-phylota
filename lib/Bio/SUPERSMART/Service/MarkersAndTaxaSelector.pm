@@ -1,6 +1,6 @@
 # this is an object oriented perl module
 
-package Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector;
+package Bio::SUPERSMART::Service::MarkersAndTaxaSelector;
 use strict;
 use warnings;
 use JSON;
@@ -14,15 +14,15 @@ use Bio::Phylo::Factory;
 use Bio::Phylo::Util::Logger;
 use Bio::Phylo::Util::Exceptions 'throw';
 use Bio::Phylo::PhyLoTA::DAO;
-use Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa;
-use Bio::Phylo::PhyLoTA::Service::SequenceGetter;
-use Bio::Phylo::PhyLoTA::Service::ParallelService;
+use Bio::SUPERSMART::Domain::MarkersAndTaxa;
+use Bio::SUPERSMART::Service::SequenceGetter;
+use Bio::SUPERSMART::Service::ParallelService;
 
-extends 'Bio::Phylo::PhyLoTA::Service';
+extends 'Bio::SUPERSMART::Service';
 
 =head1 NAME
 
-Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector - Markers and Taxa Selector
+Bio::SUPERSMART::Service::MarkersAndTaxaSelector - Markers and Taxa Selector
 
 =head1 DESCRIPTION
 
@@ -106,7 +106,7 @@ sub get_nodes_for_names {
 
 =item get_nodes_for_table
 
-Accepts an array of taxa table entries as produced by parse_taxa_file in class Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa 
+Accepts an array of taxa table entries as produced by parse_taxa_file in class Bio::SUPERSMART::Domain::MarkersAndTaxa 
 and returns instantiated node objects
 
 =cut
@@ -793,7 +793,7 @@ sub write_marker_table {
 	@all_species = uniq map { keys %{$_} } @table;	    
     }
 
-    my $sg = Bio::Phylo::PhyLoTA::Service::SequenceGetter->new;
+    my $sg = Bio::SUPERSMART::Service::SequenceGetter->new;
 
     # remove empty columns (for markers that are never included)
     @table = grep {keys %{$_}} @table;
@@ -977,7 +977,7 @@ sub enrich_matrix {
     });
 
     # now align
-    my $sg = Bio::Phylo::PhyLoTA::Service::SequenceGetter->new;
+    my $sg = Bio::SUPERSMART::Service::SequenceGetter->new;
     my @seqs;
     for my $ti ( keys %taxa ) {
         push @seqs, values %{ $taxa{$ti} };
@@ -1164,7 +1164,7 @@ sub filter_clade_alignments {
 	my @alignments = @$alns;
 
 	my $logger = $self->logger;
-    my $mt     = Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa->new;
+    my $mt     = Bio::SUPERSMART::Domain::MarkersAndTaxa->new;
 	
 	my $maxdist = $self->config->CLADE_MAX_DISTANCE;
 	my $mindens = $self->config->CLADE_MIN_DENSITY;

@@ -5,7 +5,7 @@ use warnings;
 
 use Bio::Phylo::IO qw(parse parse_tree unparse);
 
-use Bio::Phylo::PhyLoTA::Service::TreeService;
+use Bio::SUPERSMART::Service::TreeService;
 use Bio::Phylo::Factory;
 use Bio::Phylo::Util::CONSTANT ':objecttypes';
 
@@ -50,7 +50,7 @@ sub validate {
 sub run {
 	my ($self, $opt, $args) = @_;    
 	my $logger = $self->logger;      	
-	my $ts = Bio::Phylo::PhyLoTA::Service::TreeService->new;
+	my $ts = Bio::SUPERSMART::Service::TreeService->new;
 		
 	my $outformat = $opt->outformat || $opt->format;
 	my $result;
@@ -78,7 +78,7 @@ sub run {
 sub _remap {
 	my ( $self, $tree ) = @_;
 	
-	my $ts = Bio::Phylo::PhyLoTA::Service::TreeService->new;
+	my $ts = Bio::SUPERSMART::Service::TreeService->new;
 
 	# determine if tree has ids or names and then remap	
 	my @t = map { $_->get_name } @{ $tree->get_terminals };

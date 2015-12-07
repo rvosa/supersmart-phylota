@@ -1,16 +1,16 @@
-package Bio::Phylo::PhyLoTA::Service::InferenceService::phyml;
+package Bio::SUPERSMART::Service::InferenceService::phyml;
 use strict;
 use warnings;
 use Cwd 'abs_path';
 use File::Spec;
 use Bio::TreeIO;
 use Bio::Tools::Run::Phylo::Phyml;
-use Bio::Phylo::PhyLoTA::Service::InferenceService;
-use base 'Bio::Phylo::PhyLoTA::Service::InferenceService';
+use Bio::SUPERSMART::Service::InferenceService;
+use base 'Bio::SUPERSMART::Service::InferenceService';
 
 =head1 NAME
 
-Bio::Phylo::PhyLoTA::Service::InferenceService::phyml - Infers phylogenetic trees
+Bio::SUPERSMART::Service::InferenceService::phyml - Infers phylogenetic trees
 
 =head1 DESCRIPTION
 
@@ -84,5 +84,8 @@ sub cleanup {
     unlink $dir . '/*_phyml_tree.txt';
 }
 
+=back 
+
+=cut
 
 1;

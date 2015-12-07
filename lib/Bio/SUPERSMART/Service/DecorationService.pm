@@ -1,18 +1,18 @@
-package Bio::Phylo::PhyLoTA::Service::DecorationService;
+package Bio::SUPERSMART::Service::DecorationService;
 use strict;
 use warnings;
 use List::Util 'sum';
 use List::MoreUtils qw(pairwise uniq all);
-use Bio::Phylo::PhyLoTA::Service;
-use Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa;
-use Bio::Phylo::PhyLoTA::Service::SequenceGetter;
-use Bio::Phylo::PhyLoTA::Service::CalibrationService;
-use Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector;
-use base 'Bio::Phylo::PhyLoTA::Service';
+use Bio::SUPERSMART::Service;
+use Bio::SUPERSMART::Domain::MarkersAndTaxa;
+use Bio::SUPERSMART::Service::SequenceGetter;
+use Bio::SUPERSMART::Service::CalibrationService;
+use Bio::SUPERSMART::Service::MarkersAndTaxaSelector;
+use base 'Bio::SUPERSMART::Service';
 
 =head1 NAME
 
-Bio::Phylo::PhyLoTA::Service::DecorationService - Applies decorations to trees
+Bio::SUPERSMART::Service::DecorationService - Applies decorations to trees
 
 =head1 DESCRIPTION
 
@@ -34,7 +34,7 @@ the NCBI species ID is attached with C<set_guid>.
 sub apply_taxon_colors {
 	my ($self,$file,$tree) = @_;
 	$self->logger->debug("going to apply taxon colors using $file");
-	my $mts = Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa->new;
+	my $mts = Bio::SUPERSMART::Domain::MarkersAndTaxa->new;
 	my @records = $mts->parse_taxa_file($file);
 	$_->{'name'} =~ s/_/ /g for @records;
 
@@ -145,8 +145,8 @@ sub apply_markers {
 	my ($self,$file,$tree,$type) = @_;
 	my $logger = $self->logger;
 	$logger->debug("going to apply $type markers using $file");
-	my $mt = Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa->new;
-	my $sg  = Bio::Phylo::PhyLoTA::Service::SequenceGetter->new;
+	my $mt = Bio::SUPERSMART::Domain::MarkersAndTaxa->new;
+	my $sg  = Bio::SUPERSMART::Service::SequenceGetter->new;
 	my @records   = $mt->parse_taxa_file($file);
 	my $predicate = $type . '_markers'; 
 
@@ -193,8 +193,8 @@ sub apply_fossil_nodes {
 	$self->logger->debug("going to apply fossil nodes using $file");
 
 	# read fossil table and convert to calibration table
-	my $mts = Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector->new;
-	my $cs  = Bio::Phylo::PhyLoTA::Service::CalibrationService->new;
+	my $mts = Bio::SUPERSMART::Service::MarkersAndTaxaSelector->new;
+	my $cs  = Bio::SUPERSMART::Service::CalibrationService->new;
 	my @records = $cs->read_fossil_table($file);
 	@records = map { $cs->find_calibration_point($_) } @records;
 

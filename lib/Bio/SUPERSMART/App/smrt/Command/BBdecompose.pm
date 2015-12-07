@@ -6,12 +6,12 @@ use warnings;
 use List::MoreUtils 'uniq';
 
 use Bio::Phylo::IO 'parse_tree';
-use Bio::Phylo::PhyLoTA::Config;
-use Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa;
-use Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector;
-use Bio::Phylo::PhyLoTA::Service::TreeService;
+use Bio::SUPERSMART::Config;
+use Bio::SUPERSMART::Domain::MarkersAndTaxa;
+use Bio::SUPERSMART::Service::MarkersAndTaxaSelector;
+use Bio::SUPERSMART::Service::TreeService;
 
-use Bio::Phylo::PhyLoTA::Service::ParallelService;
+use Bio::SUPERSMART::Service::ParallelService;
 
 use Bio::SUPERSMART::App::SubCommand;
 use base 'Bio::SUPERSMART::App::SubCommand';
@@ -91,10 +91,10 @@ sub run{
     my $workdir      = $self->workdir;
 
     # instantiate helper objects
-    my $mt     = Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa->new;
-    my $mts    = Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector->new;
-    my $ts     = Bio::Phylo::PhyLoTA::Service::TreeService->new;
-    my $config = Bio::Phylo::PhyLoTA::Config->new;
+    my $mt     = Bio::SUPERSMART::Domain::MarkersAndTaxa->new;
+    my $mts    = Bio::SUPERSMART::Service::MarkersAndTaxaSelector->new;
+    my $ts     = Bio::SUPERSMART::Service::TreeService->new;
+    my $config = Bio::SUPERSMART::Config->new;
     my $logger = $self->logger;
 
     # parse backbone tree

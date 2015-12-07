@@ -1,4 +1,4 @@
-package Bio::Phylo::PhyLoTA::Domain::CalibrationPoint;
+package Bio::SUPERSMART::Domain::CalibrationPoint;
 use strict;
 use warnings;
 
@@ -6,7 +6,7 @@ our $AUTOLOAD;
 
 =head1 NAME
 
-Bio::Phylo::PhyLoTA::Domain::CalibrationPoint - a single, known node age
+Bio::SUPERSMART::Domain::CalibrationPoint - a single, known node age
 
 =head1 DESCRIPTION
 
@@ -19,7 +19,7 @@ Represents a single record in a set of calibration points.
 =item new
 
 The constructor is typically executed by the 
-L<Bio::Phylo::PhyLoTA::Domain::CalibrationTable>, which passes it the named arguments
+L<Bio::SUPERSMART::Domain::CalibrationTable>, which passes it the named arguments
 'min_age' and/or 'max_age' and 'taxa' (i.e. the names of the subtended terminal taxa). 
 These properties subsequently become available as object methods, i.e. $point->min_age and
 so on.
@@ -50,7 +50,7 @@ sub AUTOLOAD {
 
 =item min_age
 
-    Getter/setter for minimum age for a L<Bio::Phylo::PhyLoTA::Domain::CalibrationPoint> object.
+    Getter/setter for minimum age for a L<Bio::SUPERSMART::Domain::CalibrationPoint> object.
     Note that this corresponds to the column named "MinAge" in the fossil table.
 
 =cut 
@@ -65,7 +65,7 @@ sub min_age {
 
 =item max_age
 
-    Getter/setter for maximum age for a L<Bio::Phylo::PhyLoTA::Domain::CalibrationPoint> object.
+    Getter/setter for maximum age for a L<Bio::SUPERSMART::Domain::CalibrationPoint> object.
     Note that this corresponds to the column named "MaxAge" in the fossil table.
 
 =cut 
@@ -80,7 +80,7 @@ sub max_age {
 
 =item name
 
-    Getter/setter for the calibrated taxon name  for a  L<Bio::Phylo::PhyLoTA::Domain::CalibrationPoint> object.
+    Getter/setter for the calibrated taxon name  for a  L<Bio::SUPERSMART::Domain::CalibrationPoint> object.
     Note that this corresponds to the column named "CalibratedTaxon" in the fossil table.
 
 =cut 

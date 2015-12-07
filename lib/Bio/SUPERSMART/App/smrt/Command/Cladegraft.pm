@@ -3,15 +3,15 @@ package Bio::SUPERSMART::App::smrt::Command::Cladegraft;
 use strict;
 use warnings;
 
-use Bio::Phylo::PhyLoTA::Service::TreeService;
-use Bio::Phylo::PhyLoTA::Config;
+use Bio::SUPERSMART::Service::TreeService;
+use Bio::SUPERSMART::Config;
 use Bio::Phylo::Util::CONSTANT qw':objecttypes :namespaces';
 use Bio::Phylo::IO qw'parse parse_tree';
 
 use base 'Bio::SUPERSMART::App::SubCommand';
 use Bio::SUPERSMART::App::smrt qw(-command);
 
-my $conf = Bio::Phylo::PhyLoTA::Config->new;
+my $conf = Bio::SUPERSMART::Config->new;
 
 # ABSTRACT: grafts the inferred clade trees on the backbone chronogram
 
@@ -92,7 +92,7 @@ sub run {
 	my $workdir   = $self->workdir;
 	
 	# instantiate helper objects
-	my $ts      = Bio::Phylo::PhyLoTA::Service::TreeService->new;
+	my $ts      = Bio::SUPERSMART::Service::TreeService->new;
 	my $logger  = $self->logger;	
 	my $grafted = $ts->read_figtree( '-file' => $backbone );
 	$ts->remap_to_ti( $grafted );

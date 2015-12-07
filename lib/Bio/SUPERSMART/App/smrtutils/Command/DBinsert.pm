@@ -8,8 +8,8 @@ use File::Spec;
 use Bio::Phylo::IO qw(parse unparse);
 use Bio::Phylo::Util::CONSTANT ':objecttypes';
 
-use Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector;
-use Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa;
+use Bio::SUPERSMART::Service::MarkersAndTaxaSelector;
+use Bio::SUPERSMART::Domain::MarkersAndTaxa;
 
 use base 'Bio::SUPERSMART::App::SubCommand';
 use Bio::SUPERSMART::App::smrtutils qw(-command);
@@ -159,7 +159,7 @@ sub _insert_seq {
 	my ($self, $seq, $matrix, $prefix, $desc) = @_;
 	
  	my $logger = $self->logger;
-	my $mts = Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector->new;
+	my $mts = Bio::SUPERSMART::Service::MarkersAndTaxaSelector->new;
 	
 	my $id;
 	my $name = $seq->get_name;
@@ -220,7 +220,7 @@ sub _insert_taxon {
 	my ($self, $taxon_name, $prefix) = @_;
 
 	my $logger = $self->logger;
-	my $mts = Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector->new;
+	my $mts = Bio::SUPERSMART::Service::MarkersAndTaxaSelector->new;
 	
 	# get genus ti
 	my @names = split(/\s+/, $taxon_name);
@@ -258,8 +258,8 @@ sub _insert_taxon {
 sub _insert_taxa {
 	my ($self, $taxafile, $prefix) = @_;
 	
-	my $mt = Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa->new;
-	my $mts = Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector->new;
+	my $mt = Bio::SUPERSMART::Domain::MarkersAndTaxa->new;
+	my $mts = Bio::SUPERSMART::Service::MarkersAndTaxaSelector->new;
 	my $logger = $self->logger;
 	
 	my @records = $mt->parse_taxa_file($taxafile);

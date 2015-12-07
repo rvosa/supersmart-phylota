@@ -3,28 +3,28 @@ use strict;
 use warnings;
 use FindBin '$Bin';
 use Test::More 'no_plan';
-use Bio::Phylo::PhyLoTA::Config;
+use Bio::SUPERSMART::Config;
 use Bio::Phylo::IO 'parse_tree';
 use Bio::Phylo::Util::Logger ':levels';
 use Bio::Phylo::Matrices::Matrix;
-use Bio::Phylo::PhyLoTA::Service::SequenceGetter;
-use Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa;
+use Bio::SUPERSMART::Service::SequenceGetter;
+use Bio::SUPERSMART::Domain::MarkersAndTaxa;
 
 use Data::Dumper;
 
 # BEWARE: this is a lengthy test to run!
 
-my $config = Bio::Phylo::PhyLoTA::Config->new;
+my $config = Bio::SUPERSMART::Config->new;
 
 # instantiate logger
 my $log = Bio::Phylo::Util::Logger->new( '-level' => WARN, '-class' => 'main' );
 
 # the first tests: can we use and instantiate the MarkersAndTaxaSelector
-BEGIN { use_ok('Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector'); }
-my $mts = new_ok('Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector');
+BEGIN { use_ok('Bio::SUPERSMART::Service::MarkersAndTaxaSelector'); }
+my $mts = new_ok('Bio::SUPERSMART::Service::MarkersAndTaxaSelector');
 $log->VERBOSE(
 	'-level' => ERROR,
-	'-class' => 'Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector',
+	'-class' => 'Bio::SUPERSMART::Service::MarkersAndTaxaSelector',
 );
 
 # get species for a given root taxon
@@ -80,7 +80,7 @@ my @no_nodes = $mts->get_nodes_for_names("xy");
 is ( scalar @no_nodes, 0, "nonsense query yields no taxon");
 
 # test getting the nodes for a whole taxon table 
-my $mt =  Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa->new;
+my $mt =  Bio::SUPERSMART::Domain::MarkersAndTaxa->new;
 my $taxa = $Bin . '/testdata/species.tsv';
 my @records = $mt->parse_taxa_file($taxa);
 @nodes = $mts->get_nodes_for_table(@records);

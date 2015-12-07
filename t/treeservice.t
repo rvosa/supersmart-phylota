@@ -4,15 +4,15 @@ use warnings;
 use FindBin '$Bin';
 use Test::More 'no_plan';
 use Bio::Phylo::IO 'parse_tree';
-use Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa 'parse_taxa_file';
-use Bio::Phylo::PhyLoTA::Config;
+use Bio::SUPERSMART::Domain::MarkersAndTaxa 'parse_taxa_file';
+use Bio::SUPERSMART::Config;
 
 # load the package
-BEGIN { use_ok('Bio::Phylo::PhyLoTA::Service::TreeService'); }
+BEGIN { use_ok('Bio::SUPERSMART::Service::TreeService'); }
 
 # create a new instance
-my $ts = new_ok('Bio::Phylo::PhyLoTA::Service::TreeService');
-my $conf = Bio::Phylo::PhyLoTA::Config->new;
+my $ts = new_ok('Bio::SUPERSMART::Service::TreeService');
+my $conf = Bio::SUPERSMART::Config->new;
 
 my $tf = $Bin . '/testdata/testtree.dnd';
 my $tree = parse_tree(
@@ -23,7 +23,7 @@ my $tree = parse_tree(
 
 my $taxa = $Bin . '/testdata/species.tsv';
 # parse taxon mapping
-my $mt = 'Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa';
+my $mt = 'Bio::SUPERSMART::Domain::MarkersAndTaxa';
 my @records = $mt->parse_taxa_file($taxa);
 
 $tf = $Bin . '/testdata/tree-not-rerooted.dnd';

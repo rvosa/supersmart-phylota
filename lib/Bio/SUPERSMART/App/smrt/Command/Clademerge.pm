@@ -5,14 +5,14 @@ use warnings;
 
 use List::MoreUtils 'uniq';
 
-use Bio::Phylo::PhyLoTA::Config;
+use Bio::SUPERSMART::Config;
 use Bio::Phylo::Factory;
 use Bio::Phylo::IO 'parse_matrix';
 
-use Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa;
-use Bio::Phylo::PhyLoTA::Service::TreeService;
-use Bio::Phylo::PhyLoTA::Service::ParallelService;
-use Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector;
+use Bio::SUPERSMART::Domain::MarkersAndTaxa;
+use Bio::SUPERSMART::Service::TreeService;
+use Bio::SUPERSMART::Service::ParallelService;
+use Bio::SUPERSMART::Service::MarkersAndTaxaSelector;
 
 use base 'Bio::SUPERSMART::App::SubCommand';
 use Bio::SUPERSMART::App::smrt qw(-command);
@@ -52,8 +52,8 @@ sub run {
     my $workdir   = $self->workdir;
         
     # instantiate helper objects
-    my $mt      = Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa->new;
-	my $config  = Bio::Phylo::PhyLoTA::Config->new;
+    my $mt      = Bio::SUPERSMART::Domain::MarkersAndTaxa->new;
+	my $config  = Bio::SUPERSMART::Config->new;
     my $log     = $self->logger;
 
 
@@ -81,7 +81,7 @@ sub run {
     my @result = grep { defined $_ and -e $_ } pmap {
 		(my $clade) = @_;
 		my $dir = "${workdir}/${clade}";
-		$mt = Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa->new("${dir}/merged.txt", $config->CLADE_MIN_COVERAGE);
+		$mt = Bio::SUPERSMART::Domain::MarkersAndTaxa->new("${dir}/merged.txt", $config->CLADE_MIN_COVERAGE);
 		$mt->write_clade_matrix( 
 			'markersfile' => "${dir}/${clade}-markers.tsv",
 			'outfile' => $opt->outformat eq 'phylip' ? "${dir}/${clade}.phy" : "${dir}/${clade}.xml",

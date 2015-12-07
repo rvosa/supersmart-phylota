@@ -5,10 +5,10 @@ use FindBin '$Bin';
 use Test::More 'no_plan';
 
 # load the package
-BEGIN { use_ok('Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa'); }
+BEGIN { use_ok('Bio::SUPERSMART::Domain::MarkersAndTaxa'); }
 
 # create a new instance
-my $mt = new_ok('Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa');
+my $mt = new_ok('Bio::SUPERSMART::Domain::MarkersAndTaxa');
 
 my $taxa = $Bin . '/testdata/species-allranks.tsv';
 

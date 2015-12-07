@@ -9,11 +9,11 @@ use Bio::Phylo::IO 'parse';
 use Bio::Tools::Run::Phylo::PhyloBase;
 use Bio::Phylo::Util::CONSTANT ':objecttypes';
 use Bio::Phylo::Util::Logger;
-use Bio::Phylo::PhyLoTA::Service::TreeService;
+use Bio::SUPERSMART::Service::TreeService;
 
 use base qw(Bio::Tools::Run::Phylo::PhyloBase);
 
-my $treeservice = Bio::Phylo::PhyLoTA::Service::TreeService->new;
+my $treeservice = Bio::SUPERSMART::Service::TreeService->new;
 my $log = Bio::Phylo::Util::Logger->new;
 
 # program name required by PhyloBase

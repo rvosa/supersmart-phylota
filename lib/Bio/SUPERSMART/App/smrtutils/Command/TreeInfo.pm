@@ -4,7 +4,7 @@ use strict;
 use warnings;
 
 use Bio::Phylo::IO qw(parse parse_tree unparse);
-use Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector;
+use Bio::SUPERSMART::Service::MarkersAndTaxaSelector;
 
 use base 'Bio::SUPERSMART::App::SubCommand';
 use Bio::SUPERSMART::App::smrtutils qw(-command);

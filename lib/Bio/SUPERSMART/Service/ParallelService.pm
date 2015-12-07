@@ -1,9 +1,9 @@
-package Bio::Phylo::PhyLoTA::Service::ParallelService;
+package Bio::SUPERSMART::Service::ParallelService;
 use strict;
 use warnings;
 use Carp 'croak';
 use POSIX 'ceil';
-use base 'Bio::Phylo::PhyLoTA::Service';
+use base 'Bio::SUPERSMART::Service';
 use Bio::Phylo::Util::Exceptions 'throw';
 
 my $mode;
@@ -93,8 +93,8 @@ sub import {
 		}
 
 		# get number of processes from config file
-		require Bio::Phylo::PhyLoTA::Config;
-		my $config  = Bio::Phylo::PhyLoTA::Config->new;
+		require Bio::SUPERSMART::Config;
+		my $config  = Bio::SUPERSMART::Config->new;
 		$num_workers = $config->NODES || 1; 
 	} 
 	else {

@@ -1,15 +1,15 @@
-package Bio::Phylo::PhyLoTA::Service::InferenceService::raxml;
+package Bio::SUPERSMART::Service::InferenceService::raxml;
 use strict;
 use warnings;
 use Cwd 'abs_path';
 use File::Spec;
 use Bio::Tools::Run::Phylo::Raxml;
-use Bio::Phylo::PhyLoTA::Service::InferenceService;
-use base 'Bio::Phylo::PhyLoTA::Service::InferenceService';
+use Bio::SUPERSMART::Service::InferenceService;
+use base 'Bio::SUPERSMART::Service::InferenceService';
 
 =head1 NAME
 
-Bio::Phylo::PhyLoTA::Service::InferenceService::raxml - Infers phylogenetic trees
+Bio::SUPERSMART::Service::InferenceService::raxml - Infers phylogenetic trees
 
 =head1 DESCRIPTION
 

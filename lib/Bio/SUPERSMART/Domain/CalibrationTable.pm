@@ -1,16 +1,16 @@
 # this is an object oriented perl module
 
-package Bio::Phylo::PhyLoTA::Domain::CalibrationTable;
+package Bio::SUPERSMART::Domain::CalibrationTable;
 use strict;
 use warnings;
-use Bio::Phylo::PhyLoTA::Domain::CalibrationPoint;
+use Bio::SUPERSMART::Domain::CalibrationPoint;
 use Bio::Phylo::Util::Logger ':levels';
 
 my $log = Bio::Phylo::Util::Logger->new;
 
 =head1 NAME
 
-Bio::Phylo::PhyLoTA::Domain::CalibrationTable - Calibration table
+Bio::SUPERSMART::Domain::CalibrationTable - Calibration table
 
 =head1 DESCRIPTION
 
@@ -36,19 +36,19 @@ sub new {
 =item add_row
 
 Adds a row to the table. Each row is represented as a 
-L<Bio::Phylo::PhyLoTA::Domain::CalibrationPoint> object.
+L<Bio::SUPERSMART::Domain::CalibrationPoint> object.
 
 =cut
 
 sub add_row {
     my ( $self, %args ) = @_;
-    push @{ $self }, Bio::Phylo::PhyLoTA::Domain::CalibrationPoint->new(%args);
+    push @{ $self }, Bio::SUPERSMART::Domain::CalibrationPoint->new(%args);
 }
 
 =item get_rows
 
 Returns the rows in the table, which are represented as 
-L<Bio::Phylo::PhyLoTA::Domain::CalibrationPoint> objects.
+L<Bio::SUPERSMART::Domain::CalibrationPoint> objects.
 
 =cut
     
@@ -108,9 +108,9 @@ sub to_string {
 =item sort_by_min_age
 
 Sorts the table according to the min_age attributes of 
-all L<Bio::Phylo::PhyLoTA::Domain::CalibrationPoint> objects contained in the
+all L<Bio::SUPERSMART::Domain::CalibrationPoint> objects contained in the
 table. Sorting is done in ascending order. This function also sets prefixes in front 
-of the calibrated taxon name for each L<Bio::Phylo::PhyLoTA::Domain::CalibrationPoint>, 
+of the calibrated taxon name for each L<Bio::SUPERSMART::Domain::CalibrationPoint>, 
 such that also the names have ascending order. This function is to get control
 over the behavior of treePL, which seems to care about the 
 order of the calibrated taxa recorded in the config file.

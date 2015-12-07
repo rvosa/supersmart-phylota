@@ -116,10 +116,10 @@ __PACKAGE__->set_primary_key("gi");
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration
-use Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector;
+use Bio::SUPERSMART::Service::MarkersAndTaxaSelector;
 use Bio::PrimarySeq;
 
-my $mts = Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector->new;
+my $mts = Bio::SUPERSMART::Service::MarkersAndTaxaSelector->new;
 
 =head2 get_id
 

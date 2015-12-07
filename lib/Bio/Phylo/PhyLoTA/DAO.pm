@@ -46,7 +46,7 @@ These tables are mapped to object classes inside the Bio::Phylo::PhyLoTA::DAO::*
 namespace, principally using the code generator from L<DBIx::Class>. This package
 represents the schema as a whole, through which different tables can be queried, as
 shown in the SYNOPSIS. Note that this provides a fairly verbose API, and that a more
-concise equivalent one is provided by L<Bio::Phylo::PhyLoTA::Service>, which delegates
+concise equivalent one is provided by L<Bio::SUPERSMART::Service>, which delegates
 to this one.
 
 =head1 METHODS
@@ -65,7 +65,7 @@ use Bio::Phylo::Util::Logger ':levels';
 
 my $SINGLETON;
 my $log = Bio::Phylo::Util::Logger->new;
-my $config   = Bio::Phylo::PhyLoTA::Config->new;
+my $config   = Bio::SUPERSMART::Config->new;
 
 sub new {
 	my $package = shift;	

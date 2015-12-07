@@ -10,11 +10,11 @@ use Bio::Phylo::IO qw(parse parse_tree unparse parse_matrix);
 use Bio::Phylo::Util::CONSTANT ':objecttypes';
 use Bio::Phylo::Models::Substitution::Dna;
 
-use Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector;
-use Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa;
-use Bio::Phylo::PhyLoTA::Config;
-use Bio::Phylo::PhyLoTA::Service::TreeService;
-use Bio::Phylo::PhyLoTA::Service::ParallelService 'pfm';
+use Bio::SUPERSMART::Service::MarkersAndTaxaSelector;
+use Bio::SUPERSMART::Domain::MarkersAndTaxa;
+use Bio::SUPERSMART::Config;
+use Bio::SUPERSMART::Service::TreeService;
+use Bio::SUPERSMART::Service::ParallelService 'pfm';
 
 use base 'Bio::SUPERSMART::App::SubCommand';
 use Bio::SUPERSMART::App::smrtutils qw(-command);
@@ -38,7 +38,7 @@ parameters chosen for the initial run.
 
 =cut
 
-my $config = Bio::Phylo::PhyLoTA::Config->new;
+my $config = Bio::SUPERSMART::Config->new;
 
 sub options {
 	my ($self, $opt, $args) = @_;
@@ -79,8 +79,8 @@ sub run {
 	my $aln_outfile = $opt->aln_outfile;
 	my $tree_outfile = $opt->tree_outfile;
 	my $taxa_outfile = $opt->taxa_outfile;
-	my $ts = Bio::Phylo::PhyLoTA::Service::TreeService->new;
-	my $mt  = Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa->new;
+	my $ts = Bio::SUPERSMART::Service::TreeService->new;
+	my $mt  = Bio::SUPERSMART::Domain::MarkersAndTaxa->new;
 
 	# read tree
 	$logger->info("Reading original tree from $treefile");
@@ -193,8 +193,8 @@ sub _write_taxafile {
 	my ($self, $tree, $filename) = @_;
 
 	my $logger = $self->logger;
-	my $mts    = Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector->new;
-	my $mt  = Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa->new;
+	my $mts    = Bio::SUPERSMART::Service::MarkersAndTaxaSelector->new;
+	my $mt  = Bio::SUPERSMART::Domain::MarkersAndTaxa->new;
 
 	my @names = map { s/_/ /g; $_;} map {$_->get_name} @{$tree->get_terminals};
 
@@ -460,7 +460,7 @@ sub _clean_fasta_defline {
 
 sub _mean_dist {
 	my ($self, $filename) = @_;
-	my $mt    = Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa->new;
+	my $mt    = Bio::SUPERSMART::Domain::MarkersAndTaxa->new;
 	open my $fh, '<', $filename;
 	read $fh, my $string, -s $fh;
 	close $fh;
@@ -472,7 +472,7 @@ sub _num_identical_seqs {
 	my ($self, $file) = @_;
 
 	$self->logger->info("Checking for identical sequences in alignment $file");
-	my $mts    = Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector->new;
+	my $mts    = Bio::SUPERSMART::Service::MarkersAndTaxaSelector->new;
 
 	my $matrix = parse_matrix(
 		'-file'       => $file,

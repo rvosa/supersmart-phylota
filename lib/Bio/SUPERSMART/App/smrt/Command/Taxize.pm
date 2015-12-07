@@ -3,8 +3,8 @@ package Bio::SUPERSMART::App::smrt::Command::Taxize;
 use strict;
 use warnings;
 
-use Bio::Phylo::PhyLoTA::Config;
-use Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector;
+use Bio::SUPERSMART::Config;
+use Bio::SUPERSMART::Service::MarkersAndTaxaSelector;
 
 use Bio::SUPERSMART::App::SubCommand;
 use base 'Bio::SUPERSMART::App::SubCommand';
@@ -89,8 +89,8 @@ sub run {
 
 	# instantiate helper objects
 	my $log    = $self->logger;
-	my $config = Bio::Phylo::PhyLoTA::Config->new;
-	my $mts    = Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector->new;
+	my $config = Bio::SUPERSMART::Config->new;
+	my $mts    = Bio::SUPERSMART::Service::MarkersAndTaxaSelector->new;
 
 	my @names;
 

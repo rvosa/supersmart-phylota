@@ -3,12 +3,12 @@ use strict;
 use warnings;
 use Test::More 'no_plan';
 use Bio::Phylo::Matrices::Matrix;
-use Bio::Phylo::PhyLoTA::Config;
-use Bio::Phylo::PhyLoTA::Service::SequenceGetter;
+use Bio::SUPERSMART::Config;
+use Bio::SUPERSMART::Service::SequenceGetter;
 
 # instantiate helper objects
-my $sg = Bio::Phylo::PhyLoTA::Service::SequenceGetter->new;
-my $conf = Bio::Phylo::PhyLoTA::Config->new;
+my $sg = Bio::SUPERSMART::Service::SequenceGetter->new;
+my $conf = Bio::SUPERSMART::Config->new;
 
 # this fetches the smallest containing cluster around the seed
 # sequence with gi 326632174, which is a lemur cytb sequence

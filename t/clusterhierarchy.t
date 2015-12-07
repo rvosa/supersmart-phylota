@@ -2,11 +2,11 @@
 use strict;
 use warnings;
 use Bio::Phylo::Matrices::Matrix;
-use Bio::Phylo::PhyLoTA::Service::SequenceGetter;
+use Bio::SUPERSMART::Service::SequenceGetter;
 use Test::More 'no_plan';
 
 # create sequence getter object
-my $sg = Bio::Phylo::PhyLoTA::Service::SequenceGetter->new;
+my $sg = Bio::SUPERSMART::Service::SequenceGetter->new;
 ok( $sg, "instantiate sequence getter" );
 
 # this fetches the smallest containing cluster around the seed

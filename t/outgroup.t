@@ -4,14 +4,14 @@ use Test::More 'no_plan';
 use FindBin '$Bin';
 use Bio::Phylo::IO 'parse_tree';
 use Bio::Phylo::Util::Logger ':levels';
-use Bio::Phylo::PhyLoTA::Service::TreeService;
-use Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa;
+use Bio::SUPERSMART::Service::TreeService;
+use Bio::SUPERSMART::Domain::MarkersAndTaxa;
 
-my $ts  = Bio::Phylo::PhyLoTA::Service::TreeService->new;
-my $mt  = Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa->new;
+my $ts  = Bio::SUPERSMART::Service::TreeService->new;
+my $mt  = Bio::SUPERSMART::Domain::MarkersAndTaxa->new;
 #my $log = Bio::Phylo::Util::Logger->new(
 #	'-level'  => DEBUG,
-#	'-method' => 'Bio::Phylo::PhyLoTA::Service::TreeService::outgroup_root',
+#	'-method' => 'Bio::SUPERSMART::Service::TreeService::outgroup_root',
 #	'-style'  => 'simple',
 #);
 my @records = $mt->parse_taxa_file("${Bin}/testdata/species.tsv");

@@ -2,7 +2,7 @@
 use strict;
 use warnings;
 use Test::More 'no_plan';
-use Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector;
+use Bio::SUPERSMART::Service::MarkersAndTaxaSelector;
 
 my @names = (
 	'Homo sapiens',
@@ -12,7 +12,7 @@ my @names = (
 	'Pongo pygmaeus',
 );
 
-my $mts = Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector->new;
+my $mts = Bio::SUPERSMART::Service::MarkersAndTaxaSelector->new;
 my @nodes = $mts->get_nodes_for_names(@names);
 my $tree  = $mts->get_tree_for_nodes(@nodes);
 ok( my $newick = $tree->to_newick( '-nodelabels' => 1 ) );

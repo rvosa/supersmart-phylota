@@ -2,7 +2,7 @@ package Bio::SUPERSMART::App::SubCommand;
 
 use Cwd;
 use Term::ANSIColor ':constants';
-use Bio::Phylo::PhyLoTA::Config;
+use Bio::SUPERSMART::Config;
 use Bio::Phylo::Util::Logger ':levels';
 use Bio::Phylo::Util::Exceptions 'throw';
 
@@ -70,7 +70,7 @@ sub workdir {
 
 =item config
 
-Getter/setter for the L<Bio::Phylo::PhyLoTA::Config> object
+Getter/setter for the L<Bio::SUPERSMART::Config> object
 
 =cut
 
@@ -113,7 +113,7 @@ method then calls the 'run' subroutine, which must be implemented for all child 
 
 sub execute {
 	my ($class, $opt, $args) = @_;
-	my $c = Bio::Phylo::PhyLoTA::Config->new;
+	my $c = Bio::SUPERSMART::Config->new;
 	$class->logger->info("This is SUPERSMART release " . $c->RELEASE);
 	
 	my $result = $class->run( $opt, $args );	
@@ -161,20 +161,20 @@ sub init {
 		'-class' => [ 
 			ref( $self ), 
 			'Bio::SUPERSMART::App::SubCommand', 
-			'Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa', 
-			'Bio::Phylo::PhyLoTA::Service::ParallelService', 
-			'Bio::Phylo::PhyLoTA::Service::TreeService', 
-			'Bio::Phylo::PhyLoTA::Service::CalibrationService',
-			'Bio::Phylo::PhyLoTA::Service::SequenceGetter',
-			'Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector',
-			'Bio::Phylo::PhyLoTA::Service::DecorationService',
+			'Bio::SUPERSMART::Domain::MarkersAndTaxa', 
+			'Bio::SUPERSMART::Service::ParallelService', 
+			'Bio::SUPERSMART::Service::TreeService', 
+			'Bio::SUPERSMART::Service::CalibrationService',
+			'Bio::SUPERSMART::Service::SequenceGetter',
+			'Bio::SUPERSMART::Service::MarkersAndTaxaSelector',
+			'Bio::SUPERSMART::Service::DecorationService',
 			'Bio::Tools::Run::Phylo::ExaML',
 			'Bio::Tools::Run::Phylo::ExaBayes',
 		],		
     ));
     
     # create config object
-    $self->config( Bio::Phylo::PhyLoTA::Config->new );
+    $self->config( Bio::SUPERSMART::Config->new );
     
     # redirect logger output to file if specified by command call
     if ( my $logfile = $opt->logfile ) {

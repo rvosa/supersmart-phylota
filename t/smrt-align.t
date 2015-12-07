@@ -19,7 +19,7 @@ BEGIN {
 		'-level' => WARN, 
 		'-class' => [
 			'main',
-			'Bio::Phylo::PhyLoTA::Service::ParallelService',
+			'Bio::SUPERSMART::Service::ParallelService',
 		]
 	);
 }

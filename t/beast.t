@@ -4,9 +4,9 @@ use warnings;
 use FindBin '$Bin';
 use Test::More 'no_plan';
 use File::Temp qw(tempfile);
-use Bio::Phylo::PhyLoTA::Config;
+use Bio::SUPERSMART::Config;
 
-my $config = Bio::Phylo::PhyLoTA::Config->new;
+my $config = Bio::SUPERSMART::Config->new;
 
 # test instantiation
 BEGIN { use_ok('Bio::Tools::Run::Phylo::StarBEAST'); }

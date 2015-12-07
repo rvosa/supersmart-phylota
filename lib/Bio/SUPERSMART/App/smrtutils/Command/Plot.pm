@@ -7,7 +7,7 @@ use List::Util 'sum';
 use List::MoreUtils qw(pairwise uniq all);
 use Bio::Phylo::Treedrawer;
 use Bio::Phylo::IO qw(parse_tree);
-use Bio::Phylo::PhyLoTA::Service::DecorationService;
+use Bio::SUPERSMART::Service::DecorationService;
 
 use Bio::SUPERSMART::App::SubCommand;
 use base 'Bio::SUPERSMART::App::SubCommand';
@@ -175,7 +175,7 @@ sub run {
 	});
 	
 	# apply metadata for styling
-	my $ds = Bio::Phylo::PhyLoTA::Service::DecorationService->new;
+	my $ds = Bio::SUPERSMART::Service::DecorationService->new;
 	if ( -e $opt->taxa and -s $opt->taxa ) {
 		$logger->info("Going to apply taxon colors from file ".$opt->taxa);
 		$ds->apply_taxon_colors($opt->taxa,$tree);

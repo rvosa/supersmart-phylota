@@ -3,7 +3,7 @@ package Bio::SUPERSMART::App::smrtutils::Command::AddHigherRank;
 use strict;
 use warnings;
 
-use Bio::Phylo::PhyLoTA::Service::TreeService;
+use Bio::SUPERSMART::Service::TreeService;
 
 use Bio::Phylo::IO qw(parse);
 use Bio::Phylo::Util::CONSTANT ':namespaces';
@@ -63,7 +63,7 @@ sub run {
 	my $rank = lc $opt->rank;
 	my $logger = $self->logger;
 	
-	my $ts = Bio::Phylo::PhyLoTA::Service::TreeService->new;
+	my $ts = Bio::SUPERSMART::Service::TreeService->new;
 
 	my $tree;
 	if ( lc $opt->informat  eq "figtree" ) {

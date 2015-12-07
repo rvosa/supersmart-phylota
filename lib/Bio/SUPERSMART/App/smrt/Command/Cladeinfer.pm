@@ -5,8 +5,8 @@ use warnings;
 
 use File::Copy;
 use File::Temp 'tempfile';
-use Bio::Phylo::PhyLoTA::Config;
-use Bio::Phylo::PhyLoTA::Service::ParallelService;
+use Bio::SUPERSMART::Config;
+use Bio::SUPERSMART::Service::ParallelService;
 use Bio::Phylo::Util::Exceptions 'throw';
 use Bio::Tools::Run::Phylo::StarBEAST;
 
@@ -50,7 +50,7 @@ on different processors.
 
 sub options {
     my ($self, $opt, $args) = @_;
-    my $config = Bio::Phylo::PhyLoTA::Config->new;
+    my $config = Bio::SUPERSMART::Config->new;
     return (
         [ "ngens|n=i", "number of generations in *BEAST, defaults to 100_000 (strictly for testing!)", { arg => "value", default => 100_000 } ],
         [ "sfreq|s=i", "sampling frequency, defaults to 1000", { arg => "value", default => 1000 } ],
@@ -208,7 +208,7 @@ sub run {
     my $rebuild = $opt->rebuild;    
         
     # instantiate helper objects
-    my $config = Bio::Phylo::PhyLoTA::Config->new;
+    my $config = Bio::SUPERSMART::Config->new;
     my $beast  = Bio::Tools::Run::Phylo::StarBEAST->new;
     my $logger = $self->logger;
 

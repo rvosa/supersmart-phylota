@@ -3,8 +3,8 @@ package Bio::SUPERSMART::App::smrtutils::Command::PruneTree;
 use strict;
 use warnings;
 
-use Bio::Phylo::PhyLoTA::Service::TreeService;
-use Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector;
+use Bio::SUPERSMART::Service::TreeService;
+use Bio::SUPERSMART::Service::MarkersAndTaxaSelector;
 
 use Bio::Phylo::IO qw(parse_tree);
 
@@ -61,8 +61,8 @@ sub run {
 	my $outfile = $opt->outfile;
 	my $logger = $self->logger;
 
-	my $ts = Bio::Phylo::PhyLoTA::Service::TreeService->new;
-	my $mts = Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector->new;
+	my $ts = Bio::SUPERSMART::Service::TreeService->new;
+	my $mts = Bio::SUPERSMART::Service::MarkersAndTaxaSelector->new;
 
 	my $tree = parse_tree(
 		'-file'   => $treefile,

@@ -1,19 +1,19 @@
-package Bio::Phylo::PhyLoTA::Service;
+package Bio::SUPERSMART::Service;
 use strict;
 use warnings;
 use Moose;
 use Bio::Phylo::PhyLoTA::DAO;
-use Bio::Phylo::PhyLoTA::Config;
+use Bio::SUPERSMART::Config;
 use Bio::Phylo::Util::Logger;
 use Bio::Phylo::Util::Exceptions 'throw';
 
-my $config = Bio::Phylo::PhyLoTA::Config->new;
+my $config = Bio::SUPERSMART::Config->new;
 my $schema = Bio::Phylo::PhyLoTA::DAO->new;
 my $logger = Bio::Phylo::Util::Logger->new;
 
 =head1 NAME
 
-Bio::Phylo::PhyLoTA::Service - base class for the service layer
+Bio::SUPERSMART::Service - base class for the service layer
 
 =head1 DESCRIPTION
 
@@ -36,7 +36,7 @@ sub schema { $schema }
 
 =item config
 
-Returns the L<Bio::Phylo::PhyLoTA::Config> singleton
+Returns the L<Bio::SUPERSMART::Config> singleton
 
 =cut
 

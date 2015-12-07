@@ -4,8 +4,8 @@ use Net::Ping;
 use Config;
 use File::Spec;
 
-BEGIN { use_ok('Bio::Phylo::PhyLoTA::Config'); }
-my $config = new_ok('Bio::Phylo::PhyLoTA::Config');
+BEGIN { use_ok('Bio::SUPERSMART::Config'); }
+my $config = new_ok('Bio::SUPERSMART::Config');
 
 # verify these files exist
 my @files = qw(

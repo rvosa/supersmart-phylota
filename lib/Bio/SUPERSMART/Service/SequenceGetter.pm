@@ -1,6 +1,6 @@
 # this is an object oriented perl module
 
-package Bio::Phylo::PhyLoTA::Service::SequenceGetter; # maybe this should be SequenceService
+package Bio::SUPERSMART::Service::SequenceGetter; # maybe this should be SequenceService
 use strict;
 use warnings;
 use Moose;
@@ -14,16 +14,16 @@ use Bio::DB::GenBank;
 use Bio::Phylo::Factory;
 use Bio::Phylo::Util::Exceptions 'throw';
 use Bio::Phylo::IO 'parse_matrix';
-use Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa;
-use Bio::Phylo::PhyLoTA::Service::ParallelService;
+use Bio::SUPERSMART::Domain::MarkersAndTaxa;
+use Bio::SUPERSMART::Service::ParallelService;
 
-extends 'Bio::Phylo::PhyLoTA::Service';
+extends 'Bio::SUPERSMART::Service';
 
 my $fac = Bio::Phylo::Factory->new;
 
 =head1 NAME
 
-Bio::Phylo::PhyLoTA::Service::SequenceGetter - Sequence Getter
+Bio::SUPERSMART::Service::SequenceGetter - Sequence Getter
 
 =head1 DESCRIPTION
 
@@ -1210,7 +1210,7 @@ outfile.
 # I was trying to do this using List::Util::reduce, but it segfaults.
 sub profile_align_all {
 	my ( $self, $merged, $maxdist, @files ) = @_;
-	my $mts = Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa->new;
+	my $mts = Bio::SUPERSMART::Domain::MarkersAndTaxa->new;
 	my $log = $self->logger;	
 	$log->debug("going to reduce @files");
 	

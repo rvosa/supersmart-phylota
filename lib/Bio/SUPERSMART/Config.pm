@@ -1,5 +1,5 @@
 # this is an object oriented perl module
-package Bio::Phylo::PhyLoTA::Config;
+package Bio::SUPERSMART::Config;
 use strict;
 use warnings;
 use Config::Tiny;
@@ -14,14 +14,14 @@ my $SINGLETON;
 
 =head1 NAME
 
-Bio::Phylo::PhyLoTA::Config - manager of runtime configuration variables
+Bio::SUPERSMART::Config - manager of runtime configuration variables
 
 =head1 SYNOPSYS
 
- use Bio::Phylo::PhyLoTA::Config; 
+ use Bio::SUPERSMART::Config; 
  
  # instantiate the singleton config object
- my $conf = Bio::Phylo::PhyLoTA::Config->new;
+ my $conf = Bio::SUPERSMART::Config->new;
  
  # fetch the value of a variable in supersmart.ini
  my $examl = $conf->EXAML_BIN;
@@ -72,7 +72,7 @@ sub new {
 
 Prints the value of a variable to STDOUT. Example on the shell:
 
- $ perl -MBio::Phylo::PhyLoTA::Config=printval -e 'printval "EXAML_BIN"'
+ $ perl -MBio::SUPERSMART::Config=printval -e 'printval "EXAML_BIN"'
 
 =cut
 

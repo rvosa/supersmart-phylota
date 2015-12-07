@@ -4,10 +4,10 @@ use strict;
 use warnings;
 
 use Bio::Phylo::Matrices::Matrix;
-use Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa;
-use Bio::Phylo::PhyLoTA::Service::SequenceGetter;
-use Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector;
-use Bio::Phylo::PhyLoTA::Service::ParallelService;
+use Bio::SUPERSMART::Domain::MarkersAndTaxa;
+use Bio::SUPERSMART::Service::SequenceGetter;
+use Bio::SUPERSMART::Service::MarkersAndTaxaSelector;
+use Bio::SUPERSMART::Service::ParallelService;
 
 use Bio::PrimarySeq;
 use Bio::AlignIO;
@@ -79,10 +79,10 @@ sub run {
     
     # instantiate helper objects
     my $log = $self->logger;
-    my $mts = Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector->new;
-    my $mt  = Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa->new;
-    my $sg  = Bio::Phylo::PhyLoTA::Service::SequenceGetter->new;
-    my $ps  = 'Bio::Phylo::PhyLoTA::Service::ParallelService';
+    my $mts = Bio::SUPERSMART::Service::MarkersAndTaxaSelector->new;
+    my $mt  = Bio::SUPERSMART::Domain::MarkersAndTaxa->new;
+    my $sg  = Bio::SUPERSMART::Service::SequenceGetter->new;
+    my $ps  = 'Bio::SUPERSMART::Service::ParallelService';
     
     # instantiate taxonomy nodes from infile
     my @nodes = $mts->get_nodes_for_table($mt->parse_taxa_file($infile));     

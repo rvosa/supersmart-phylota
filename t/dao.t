@@ -2,7 +2,7 @@
 use strict;
 use warnings;
 use Test::More 'no_plan';
-use Bio::Phylo::PhyLoTA::Service;
+use Bio::SUPERSMART::Service;
 
 # this is a unit test
 BEGIN{ use_ok('Bio::Phylo::PhyLoTA::DAO'); }

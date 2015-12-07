@@ -7,8 +7,8 @@ use List::Util 'sum';
 use List::MoreUtils qw(pairwise uniq all);
 use Bio::Phylo::Treedrawer;
 use Bio::Phylo::IO qw(parse_tree);
-use Bio::Phylo::PhyLoTA::Service::DecorationService;
-use Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa;
+use Bio::SUPERSMART::Service::DecorationService;
+use Bio::SUPERSMART::Domain::MarkersAndTaxa;
 
 use Bio::SUPERSMART::App::SubCommand;
 use base 'Bio::SUPERSMART::App::SubCommand';
@@ -79,7 +79,7 @@ sub run {
 	$logger->info("Going to lookup ".scalar(keys(%acc))." accession numbers");
 
 	# do the lookup
-	my $sg = Bio::Phylo::PhyLoTA::Service::SequenceGetter->new;
+	my $sg = Bio::SUPERSMART::Service::SequenceGetter->new;
 	for my $acc ( keys %acc ) {
 		my @result = $sg->get_markers_for_accession($acc);
 		$acc{$acc} = join ', ', @result;
@@ -99,7 +99,7 @@ sub run {
 
 sub _get_acc {
 	my ( $self, $file ) = @_;
-        my $mt = Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa->new;
+        my $mt = Bio::SUPERSMART::Domain::MarkersAndTaxa->new;
 	my @records = $mt->parse_taxa_file($file);
 	my @result;
 	for my $r ( @records ) {

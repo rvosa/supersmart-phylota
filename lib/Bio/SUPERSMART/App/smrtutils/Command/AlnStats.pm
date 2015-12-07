@@ -9,7 +9,7 @@ use List::MoreUtils qw(uniq);
 
 use Bio::Phylo::IO qw(parse);
 use Bio::Phylo::Util::CONSTANT ':objecttypes';
-use Bio::Phylo::PhyLoTA::Service::ParallelService;
+use Bio::SUPERSMART::Service::ParallelService;
 
 use base 'Bio::SUPERSMART::App::SubCommand';
 use Bio::SUPERSMART::App::smrtutils qw(-command);
@@ -176,7 +176,7 @@ sub _get_aln_stats  {
 
 sub _avg_dist {
 	my ($self, $filename) = @_;
-	my $mt    = Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa->new;
+	my $mt    = Bio::SUPERSMART::Domain::MarkersAndTaxa->new;
 	open my $fh, '<', $filename;
 	read $fh, my $string, -s $fh;
 	close $fh;
@@ -187,7 +187,7 @@ sub _avg_dist {
 sub _num_identical_seqs {
 	my ($self, $matrix) = @_;
 
-	my $mts    = Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector->new;
+	my $mts    = Bio::SUPERSMART::Service::MarkersAndTaxaSelector->new;
 
 	my @rows = @{$matrix->get_entities};
 

@@ -3,11 +3,11 @@ package Bio::SUPERSMART::App::smrt::Command::BBcalibrate;
 use strict;
 use warnings;
 
-use Bio::Phylo::PhyLoTA::Service::CalibrationService;
-use Bio::Phylo::PhyLoTA::Service::TreeService;
-use Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa;
-use Bio::Phylo::PhyLoTA::Config;
-use Bio::Phylo::PhyLoTA::Service::ParallelService;
+use Bio::SUPERSMART::Service::CalibrationService;
+use Bio::SUPERSMART::Service::TreeService;
+use Bio::SUPERSMART::Domain::MarkersAndTaxa;
+use Bio::SUPERSMART::Config;
+use Bio::SUPERSMART::Service::ParallelService;
 
 use Bio::Phylo::IO qw(parse_tree);
 
@@ -77,10 +77,10 @@ sub run {
 	my $logger = $self->logger;
 	 
 	# instantiate helper objects
-	my $config = Bio::Phylo::PhyLoTA::Config->new;
-	my $cs = Bio::Phylo::PhyLoTA::Service::CalibrationService->new;
-	my $ts = Bio::Phylo::PhyLoTA::Service::TreeService->new;
-	my $mt = Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa->new;
+	my $config = Bio::SUPERSMART::Config->new;
+	my $cs = Bio::SUPERSMART::Service::CalibrationService->new;
+	my $ts = Bio::SUPERSMART::Service::TreeService->new;
+	my $mt = Bio::SUPERSMART::Domain::MarkersAndTaxa->new;
 	
 	# prepare reusable variables
 	$logger->info( "Reading fossils from file $fossiltable" );

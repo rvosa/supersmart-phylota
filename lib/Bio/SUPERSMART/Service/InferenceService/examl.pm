@@ -1,13 +1,13 @@
-package Bio::Phylo::PhyLoTA::Service::InferenceService::examl;
+package Bio::SUPERSMART::Service::InferenceService::examl;
 use strict;
 use warnings;
 use Bio::Tools::Run::Phylo::ExaML;
-use Bio::Phylo::PhyLoTA::Service::InferenceService;
-use base 'Bio::Phylo::PhyLoTA::Service::InferenceService';
+use Bio::SUPERSMART::Service::InferenceService;
+use base 'Bio::SUPERSMART::Service::InferenceService';
 
 =head1 NAME
 
-Bio::Phylo::PhyLoTA::Service::InferenceService::examl - Infers phylogenetic trees
+Bio::SUPERSMART::Service::InferenceService::examl - Infers phylogenetic trees
 
 =head1 DESCRIPTION
 

@@ -5,8 +5,8 @@ use warnings;
 
 use List::MoreUtils qw(uniq);
 
-use Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector;
-use Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa;
+use Bio::SUPERSMART::Service::MarkersAndTaxaSelector;
+use Bio::SUPERSMART::Domain::MarkersAndTaxa;
 
 use base 'Bio::SUPERSMART::App::SubCommand';
 use Bio::SUPERSMART::App::smrtutils qw(-command);
@@ -54,8 +54,8 @@ sub run {
 	my ($self, $opt, $args) = @_;    
 	
 	my $log = $self->logger;
-	my $mts = Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector->new;
-	my $mt = Bio::Phylo::PhyLoTA::Domain::MarkersAndTaxa->new;
+	my $mts = Bio::SUPERSMART::Service::MarkersAndTaxaSelector->new;
+	my $mt = Bio::SUPERSMART::Domain::MarkersAndTaxa->new;
 
 	my $outgroup_rank = lc $opt->outgroup_rank;
 

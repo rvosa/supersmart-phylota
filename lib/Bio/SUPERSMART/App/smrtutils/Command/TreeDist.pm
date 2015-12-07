@@ -4,7 +4,7 @@ use strict;
 use warnings;
 
 use Bio::Phylo::IO qw(parse);
-use Bio::Phylo::PhyLoTA::Service::TreeService; 
+use Bio::SUPERSMART::Service::TreeService; 
 
 use base 'Bio::SUPERSMART::App::SubCommand';
 use Bio::SUPERSMART::App::smrtutils qw(-command);
@@ -64,7 +64,7 @@ sub run {
 
 	# prune tips such that both trees have the same taxa.
 	$logger->info("Pruning tips to have the same taxa in both trees");
-	my $ts = Bio::Phylo::PhyLoTA::Service::TreeService->new; 
+	my $ts = Bio::SUPERSMART::Service::TreeService->new; 
 	my @trees = $ts->intersect_trees($tree1, $tree2);
 	$tree1 = $trees[0];
 	$tree2 = $trees[1];

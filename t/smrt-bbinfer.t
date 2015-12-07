@@ -12,7 +12,7 @@ use File::Temp qw(tempfile tempdir);
 
 use Bio::SUPERSMART::App::smrt;
 
-my $config = Bio::Phylo::PhyLoTA::Config->new;
+my $config = Bio::SUPERSMART::Config->new;
 
 BEGIN { use_ok('Bio::SUPERSMART::App::smrt::Command::BBinfer') };
 

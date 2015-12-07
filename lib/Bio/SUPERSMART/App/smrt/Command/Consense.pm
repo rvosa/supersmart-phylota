@@ -4,12 +4,12 @@ use warnings;
 use File::Temp 'tempfile';
 use Bio::Phylo::Factory;
 use Bio::Phylo::IO 'unparse';
-use Bio::Phylo::PhyLoTA::Service::TreeService;
-use Bio::Phylo::PhyLoTA::Service::CalibrationService;
+use Bio::SUPERSMART::Service::TreeService;
+use Bio::SUPERSMART::Service::CalibrationService;
 use base 'Bio::SUPERSMART::App::SubCommand';
 use Bio::SUPERSMART::App::smrt qw(-command);
 
-my $ts  = Bio::Phylo::PhyLoTA::Service::TreeService->new;
+my $ts  = Bio::SUPERSMART::Service::TreeService->new;
 my $fac = Bio::Phylo::Factory->new;
 
 # ABSTRACT: constructs a consensus tree
@@ -106,7 +106,7 @@ sub run {
 	# apply calibration points
 	if ( $opt->fossils and -e $opt->fossils ) {
 		$ts->remap_to_ti($consensus);
-		my $cs = Bio::Phylo::PhyLoTA::Service::CalibrationService->new;
+		my $cs = Bio::SUPERSMART::Service::CalibrationService->new;
 		my @fossils = $cs->read_fossil_table( $opt->fossils );
 		my @identified = map { $cs->find_calibration_point($_) } @fossils;
 		my $ct = $cs->create_calibration_table( $consensus, @identified );
