@@ -1,0 +1,3 @@
+#!/bin/bash
+	
+docker run -h docker-supersmart -v $PWD:/mydata docker-supersmart smrt $@
