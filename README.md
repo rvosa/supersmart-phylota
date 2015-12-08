@@ -16,14 +16,16 @@ Installation depends on vagrant and Virtualbox, see INSTALL.md, the installation
 
 COMMANDS
 --------
-The functionality of the pipeline is exposed via the 'smrt' command located in script/.
-The 'smrt' command offers twelve subcommands, representing each step of the pipeline. 
+The functionality of the pipeline is exposed via the [smrt](script/smrt) command.
+The 'smrt' command offers [twelve subcommands](https://github.com/naturalis/supersmart/wiki/Analysis-run-through), 
+representing each step of the pipeline. 
 
 CONFIGURATION
 -------------
 Basic configuration is done via options passed to the 'smrt' command. 
-Advanced configuration of the pipeline API is possible in the conf/supersmart.ini file.
-The app/smrt-config command provides an interface for changing the configuration file.
+Advanced configuration of the pipeline API is possible in the 
+[conf/supersmart.ini](conf/supersmart.ini) file. The [smrt-config](script/smrt-config) 
+command provides an interface for changing the configuration file.
 
 EXAMPLES
 --------
