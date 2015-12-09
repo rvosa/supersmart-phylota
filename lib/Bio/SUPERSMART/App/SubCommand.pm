@@ -67,8 +67,8 @@ sub workdir {
 		my $wd = shift;
 		$self->logger->debug ("Setting working directory to $wd" );
 		$self->{'workdir'} = $wd;		
-		if ( !  ( -e $ed && -w $ed ) ) {
-			$self->logger->fatal ('Working directory $wd does not exist or is not writable') ;		
+		if ( !  ( -e $wd && -w $wd ) ) {
+			$self->logger->fatal ("Working directory $wd does not exist or is not writable") ;		
 			exit(1);
 		}
 	}
@@ -161,7 +161,7 @@ sub init {
     ));
    
 	# set working directory
-	($wd = $opt->workdir || getcwd()) =~ s/\/$//g;
+	my $wd = $opt->workdir || '.';
 	$self->workdir($wd);
 
 	# loop through options to see which ones are file options; 
