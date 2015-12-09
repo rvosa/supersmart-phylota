@@ -62,8 +62,15 @@ Getter/setter for the working directory for the subcommand
 
 sub workdir {
 	my $self = shift;
+
 	if ( @_ ) {
-		$self->{'workdir'} = shift;		
+		my $wd = shift;
+		$self->logger->debug ("Setting working directory to $wd" );
+		$self->{'workdir'} = $wd;		
+		if ( !  ( -e $ed && -w $ed ) ) {
+			$self->logger->fatal ('Working directory $wd does not exist or is not writable') ;		
+			exit(1);
+		}
 	}
 	return $self->{'workdir'};
 }
@@ -133,26 +140,6 @@ sub init {
 	my ($self, $opt, $args) = @_;
 	my $verbosity = INFO;
 	$verbosity += $opt->verbose ? $opt->verbose : 0;
-    
-	# set working directory
-	($wd = $opt->workdir || getcwd()) =~ s/\/$//g;
-	$self->workdir($wd);
-
-	# loop through options to see which ones are file options; 
-	# set absolute path for all filenames given
-	my %file_opts = map { (my $optname= $_->[0])=~s/\|.+//g; $_->[2]->{'arg'} eq 'file' ? ($optname=>1) : () } $self->options;
-	$file_opts{'logfile'} = 1;
-	for my $given_opt ( keys %$opt ) {
-		if ( exists $file_opts{$given_opt} ) {
-			my $new_filename = 
-			$opt->{$given_opt} = $self->absolute_path($opt->{$given_opt});
-		}		
-	}
-	
- 	# set outfile name
-	if ( my $of = eval { $opt->outfile } ) {
-		$self->outfile($of);
-	}
  
  	# create logger object with user-defined verbosity
 	$self->logger( Bio::Phylo::Util::Logger->new(
@@ -172,7 +159,27 @@ sub init {
 			'Bio::Tools::Run::Phylo::ExaBayes',
 		],		
     ));
-    
+   
+	# set working directory
+	($wd = $opt->workdir || getcwd()) =~ s/\/$//g;
+	$self->workdir($wd);
+
+	# loop through options to see which ones are file options; 
+	# set absolute path for all filenames given
+	my %file_opts = map { (my $optname= $_->[0])=~s/\|.+//g; $_->[2]->{'arg'} eq 'file' ? ($optname=>1) : () } $self->options;
+	$file_opts{'logfile'} = 1;
+	for my $given_opt ( keys %$opt ) {
+		if ( exists $file_opts{$given_opt} ) {
+			my $new_filename = 
+			$opt->{$given_opt} = $self->absolute_path($opt->{$given_opt});
+		}		
+	}
+	
+ 	# set outfile name
+	if ( my $of = eval { $opt->outfile } ) {
+		$self->outfile($of);
+	}
+     
     # create config object
     $self->config( Bio::SUPERSMART::Config->new );
     
