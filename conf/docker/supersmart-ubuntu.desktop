@@ -1,0 +1,7 @@
+[Desktop Entry]
+Name=supersmart-ubuntu
+Comment=SUPERSMART for ubuntu linux
+Exec=gnome-terminal --title "SUPERSMART" -e "bash -c -i 'exec $SHELL --init-file ./dsmrt'"
+Icon=favicon.gif
+Terminal=true
+Type=Application
