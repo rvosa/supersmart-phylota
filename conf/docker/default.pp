@@ -121,33 +121,6 @@ class install {
 	# command line tasks
 	exec {	     
 
-	
-		# set locale to US english to get rid of annoying perl warnings
-		"set_locale_sh":
-			command => "echo 'export LC_ALL=en_US.UTF-8' > set_locale.sh",
-			cwd     => "/etc/profile.d",
-			creates => "/etc/profile.d/set_locale.sh";
-
-		# add bin directory for all required tools and smrt executables to PATH
-		"make_bindir_sh":
-			command => "echo 'export PATH=\$PATH:${tools_bin_dir}:${supersmart_home}/script' > supersmart-tools-bin.sh",
-			cwd     => "/etc/profile.d",
-			creates => "/etc/profile.d/supersmart-tools-bin.sh";
-		"make_bindir_csh":
-			command => "echo 'setenv PATH \$PATH:${tools_bin_dir}:${supersmart_home}/script' > supersmart-tools-bin.csh",
-			cwd     => "/etc/profile.d",
-			creates => "/etc/profile.d/supersmart-tools-bin.csh";
-
-		# add default EDITOR environment variable
-		"make_editor_sh":
-			command => "echo 'export EDITOR=/etc/alternatives/editor' > supersmart-editor.sh",
-			cwd     => "/etc/profile.d",
-			creates => "/etc/profile.d/supersmart-editor.sh";
-		"make_editor_csh":
-			command => "echo 'setenv EDITOR=/etc/alternatives/editor' > supersmart-editor.csh",
-			cwd     => "/etc/profile.d",
-			creates => "/etc/profile.d/supersmart-editor.csh";
-
 		# make phylota database
 		"dl_phylota_db":
 			command => "wget http://biovel.naturalis.nl/phylota.sqlite.gz",
