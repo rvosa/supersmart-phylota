@@ -1,16 +1,5 @@
 #!/bin/bash
 
-# check if docker is installed
-command -v docker >/dev/null 2>&1 || { echo >&2 "'docker' must be installed and in your PATH. Aborting."; exit 1; }
-
-# get latest supersmart release from docker hub
-docker pull naturalis/supersmart
-
-# set aliases to create docker container for runing smrt
-alias smrt="docker run -h docker-supersmart -v $PWD:/mydata docker-supersmart smrt $@"
-alias smrt-utils='docker run -h docker-supersmart -v $PWD:/mydata docker-supersmart smrt-utils $@'
-alias smrt-config='docker run -h docker-supersmart -v $PWD:/mydata docker-supersmart smrt-config $@'
-
 echo '
    _____ _    _ _____  ______ _____    
   / ____| |  | |  __ \|  ____|  __ \   

@@ -1,6 +1,7 @@
 FROM ubuntu:14.04
 
 ADD default.pp /
+ADD intro.sh /
 
 RUN apt-get -y update && apt-get install -y puppet nano
 
@@ -13,7 +14,6 @@ ENV SUPERSMART_HOME "/supersmart/"
 ENV EDITOR=nano
 
 VOLUME [ "/shared" ]
-WORKDIR /supersmart
+WORKDIR /shared
 
-RUN cd /supersmart
-RUN /usr/bin/git pull
+RUN sh intro.sh
