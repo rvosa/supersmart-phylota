@@ -16,4 +16,4 @@ ENV EDITOR=nano
 VOLUME [ "/shared" ]
 WORKDIR /shared
 
-RUN sh intro.sh
+RUN sh /intro.sh
