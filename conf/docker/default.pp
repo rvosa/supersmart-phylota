@@ -321,34 +321,6 @@ class install {
 
 	}
 
-	# the Travis continuous integration system has special templates for testing different
-	# perl versions in parallel. These templates use perlbrew and local::lib to hot swap 
-	# different perl versions. For each version, cpan can be used to install 
-	# dependencies, and we do so using the commands in .travis.yml. For Travis we SHOULD 
-	# NOT try to do that within this puppet manifest because then we end up installing 
-	# dependencies system-wide, which means that the perlbrew that runs the unit tests 
-	# cannot find them. Hence, we only install these here when FACTER variable $ci has 
-	# not been set to 'travis'. To make sure that this variable IS set to 'travis', an
-	# easy approach is to add the environment variable FACTER_ci=travis to the .travis.yml
-	if $ci != "travis" {
-		exec {
-			"install_cpan_deps":
-				command => "cpanm --notest --installdeps .",
-				cwd     => "${supersmart_home}",
-				require => [ Exec['clone_supersmart'], Package['cpanminus'] ];
-			"install_bio_phylo":
-				command => "cpanm --notest git://github.com/rvosa/bio-phylo.git",
-	            require => Package['cpanminus'];
-			"install_bioperl_live":
-				command => "cpanm --notest git://github.com/bioperl/bioperl-live.git@v1.6.x",
-	            require => Package['cpanminus'];
-			"install_bioperl_run":
-				command => "cpanm --notest git://github.com/bioperl/bioperl-run.git",
-	            require => Package['cpanminus'];
-		}
-	}
-}
-
 # Operations to shrink the size of the VM disk. Only run these cleanup operations when 
 # provisioning a virtualbox image. 
 class cleanup {
