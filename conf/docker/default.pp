@@ -55,7 +55,8 @@ class install {
 	"libopenmpi-dev":  ensure => installed, require => Exec ["apt_update"];
 	"openmpi-bin":     ensure => installed, require => Exec ["apt_update"];  
 	"cpanminus":       ensure => installed, require => Exec ["apt_update"];  
-	"phyml":     ensure => installed, require => Exec ["apt_update"];  
+	"phyml":           ensure => installed, require => Exec ["apt_update"];  
+    "clang-3.6":       ensure => installed, require => Exec ["apt_update"];  
   }
   
   # create links for executables and data directories
@@ -205,8 +206,9 @@ class install {
 	"configure_exabayes":		
 	  command => "sh configure --enable-mpi",		
 	  cwd     => "${tools_dir}/exabayes-1.4.1",		
+      environment => ["CC=clang-3.6", "CXX=clang++-3.6"],
 	  creates => "${tools_dir}/exabayes-1.4.1/exabayes/Makefile",		
- 	  require => Exec[ "unzip_exabayes" ];
+	  require => [ Exec[ "unzip_exabayes" ], Package[ "clang-3.6" ] ];
 	"compile_exabayes":		
 	  command => "make",		
 	  cwd     => "${tools_dir}/exabayes-1.4.1",		
