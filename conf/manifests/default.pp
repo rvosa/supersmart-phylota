@@ -253,7 +253,7 @@ class install {
 	  cwd     => "${tools_dir}/exabayes-1.4.1",		
       environment => ["CC=clang", "CXX=clang++"],
 	  creates => "${tools_dir}/exabayes-1.4.1/exabayes/Makefile",		
-	  require => [ Exec[ "unzip_exabayes" ], Package[ "clang" ];
+	  require => [ Exec[ "unzip_exabayes" ], Package[ "clang" ] ];
 	"compile_exabayes":		
 	  command => "make",		
 	  cwd     => "${tools_dir}/exabayes-1.4.1",		
