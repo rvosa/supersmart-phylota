@@ -22,5 +22,5 @@ Available commands:
      smrt-utils
      smrt-config 
 
-To get started, try 'mysmrt --help' and visit www.supersmart-project.org.
+To get started, try 'smrt --help' and visit www.supersmart-project.org.
 "
