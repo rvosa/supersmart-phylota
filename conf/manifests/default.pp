@@ -61,7 +61,6 @@ class install {
 	"libopenmpi-dev":  ensure => installed, require => Exec ["apt_update"];
 	"openmpi-bin":     ensure => installed, require => Exec ["apt_update"];  
 	"phyml":           ensure => installed, require => Exec ["apt_update"];
-    "clang-3.4":           ensure => installed, require => Exec ["apt_update"];  
   }
 
   # create links for executables and data directories
@@ -239,21 +238,20 @@ class install {
     
 	# install exabayes
 	"download_exabayes":
-	  command => "wget http://sco.h-its.org/exelixis/material/exabayes/1.4.1/exabayes-1.4.1-linux-openmpi-sse.tar.gz",
+	  command => "wget http://sco.h-its.org/exelixis/material/exabayes/1.4.1/exabayes-1.4.1-linux-openmpi-avx.tar.gz",
 	  cwd     => $tools_dir,
-	  creates => "${tools_dir}/exabayes-1.4.1-linux-openmpi-sse.tar.gz",
+	  creates => "${tools_dir}/exabayes-1.4.1-linux-openmpi-avx.tar.gz",
 	  require => Package["libopenmpi-dev","openmpi-bin"];
 	"unzip_exabayes":
-	  command => "tar -xvzf exabayes-1.4.1-linux-openmpi-sse.tar.gz",
+	  command => "tar -xvzf exabayes-1.4.1-linux-openmpi-avx.tar.gz",
 	  cwd     => $tools_dir,
 	  creates => "${tools_dir}/exabayes-1.4.1/",
 	  require => Exec[ "download_exabayes" ];
 	"configure_exabayes":		
 	  command => "sh configure --enable-mpi",		
 	  cwd     => "${tools_dir}/exabayes-1.4.1",		
-      environment => ["CC=clang", "CXX=clang++"],
 	  creates => "${tools_dir}/exabayes-1.4.1/exabayes/Makefile",		
-	  require => [ Exec[ "unzip_exabayes" ], Package[ "clang-3.4" ] ];
+	  require => Exec[ "unzip_exabayes" ];
 	"compile_exabayes":		
 	  command => "make",		
 	  cwd     => "${tools_dir}/exabayes-1.4.1",		
