@@ -35,6 +35,4 @@ WORKDIR /shared
 RUN echo 'sh /intro.sh' >> /root/.bashrc
 
 # run unit tests
-RUN cd $SUPERSMART_HOME
-RUN perl Makefile.PL
-RUN make test
+RUN cd $SUPERSMART_HOME && perl Makefile.PL && make test
