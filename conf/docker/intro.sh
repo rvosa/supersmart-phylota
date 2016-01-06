@@ -1,5 +1,14 @@
 #!/bin/bash
 
+# make custom prompt with version and commit id 
+cd $SUPERSMART_HOME
+commit=`git log -1 | head -1 | cut -f 2 -d ' '`
+hash=${commit:0:10}
+cd - >/dev/null
+VERSION=`perl -MBio::SUPERSMART -e 'print $Bio::SUPERSMART::VERSION'`
+export PS1="\[\e[0;32m\]SUPERSMART $VERSION - $hash\[\e[m\] \[\e[1;34m\]\w\[\e[m\] \[\e[1;32m\]\$\[\e[m\] "
+
+# print welcome message
 echo '
    _____ _    _ _____  ______ _____    
   / ____| |  | |  __ \|  ____|  __ \   

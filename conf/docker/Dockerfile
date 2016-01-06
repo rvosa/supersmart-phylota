@@ -33,3 +33,8 @@ WORKDIR /shared
 
 # automatically run intro script giving information on startup
 RUN echo 'sh /intro.sh' >> /root/.bashrc
+
+# run unit tests
+RUN cd $SUPERSMART_HOME
+RUN perl Makefile.PL
+RUN make test
