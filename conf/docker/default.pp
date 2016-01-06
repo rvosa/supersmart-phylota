@@ -307,32 +307,47 @@ class install {
 	  command => "echo 'install.packages(\"phangorn\",repos=\"${cran_url}\")' | R --vanilla",		
 	  require => Exec['install_r_ape'];    
 
+	  # install perl dependency libraries
+	  "install_cpanm":
+		command => "wget -O - https://cpanmin.us | sudo perl - App::cpanminus",
+		require => Package['wget'];
+	  "install_cpan_deps":
+		command => "cpanm --notest --installdeps .",
+		cwd     => "${supersmart_home}",
+		require => Exec['install_cpanm','clone_supersmart'];
+	  "install_bio_phylo":
+		command => "cpanm --notest git://github.com/rvosa/bio-phylo.git",
+		require => Exec['install_cpanm'];
+	  "install_bioperl_live":
+		command => "cpanm --notest git://github.com/bioperl/bioperl-live.git@v1.6.x",
+		require => Exec['install_cpanm'];
+	  "install_bioperl_run":
+		command => "cpanm --notest git://github.com/bioperl/bioperl-run.git",
+		require => Exec['install_cpanm'];    
   }
-
-  # Operations to shrink the size of the VM disk. Only run these cleanup operations when 
-  # provisioning a virtualbox image. 
-  class cleanup {
-	if $virtual == 'virtualbox' {
-	  exec {
-
-		# clean up the VM
-		"clean_apt_get":
-		  command => "apt-get clean";
-        "clean_meta":
-		  command => "rm MYMETA.*",	
-		  cwd     => "${supersmart_home}";
-	  }
+}
+# Operations to shrink the size of the VM disk. Only run these cleanup operations when 
+# provisioning a virtualbox image. 
+class cleanup {
+  if $virtual == 'virtualbox' {
+	exec {
+      
+	  # clean up the VM
+	  "clean_apt_get":
+		command => "apt-get clean";
+      "clean_meta":
+		command => "rm MYMETA.*",	
+		cwd     => "${supersmart_home}";
 	}
   }
-  
-  # make sure all the cleanup happens last
-  stage { 'last': }
-  Stage['main'] -> Stage['last']
-  class { 'install':
-    stage => main,
-  }
-  class { 'cleanup':
-    stage => last,
-  }
+}
 
+# make sure all the cleanup happens last
+stage { 'last': }
+Stage['main'] -> Stage['last']
+class { 'install':
+  stage => main,
+}
+class { 'cleanup':
+  stage => last,
 }
