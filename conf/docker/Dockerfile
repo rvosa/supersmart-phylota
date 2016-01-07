@@ -3,7 +3,8 @@
 # 'default.pp' manifest.
 
 # specify version of ubuntu
-FROM ubuntu:14.04
+# FROM ubuntu:14.04
+FROM naturalis/supersmart
 
 # add scripts
 ADD default.pp /
