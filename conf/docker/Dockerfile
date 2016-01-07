@@ -36,7 +36,7 @@ VOLUME [ "/shared" ]
 WORKDIR /shared
 
 # automatically run intro script giving information on startup
-RUN echo 'sh /intro.sh' >> /root/.bashrc
+RUN echo 'source /intro.sh' >> /root/.bashrc
 
 # run unit tests
 RUN cd $SUPERSMART_HOME && perl Makefile.PL && make test
