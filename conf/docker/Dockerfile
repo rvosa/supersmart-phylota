@@ -22,6 +22,9 @@ ENV PATH "$PATH:/supersmart/tools/bin/"
 ENV SUPERSMART_HOME "/supersmart/"
 ENV EDITOR "nano"
 
+# this is needed by treePL on the virtual machine
+ENV LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/usr/lib64"
+
 # other environment variables
 ENV SHELL "/bin/bash"
 
