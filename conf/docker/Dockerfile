@@ -11,7 +11,7 @@ ADD default.pp /
 ADD intro.sh /
 
 # install necessary packages
-RUN apt-get -y update && apt-get install -y puppet nano
+RUN apt-get -y update && apt-get install -y puppet nano gzip
 
 # set environment variables required by SUPERSMART
 ENV PERL5LIB "$PERL5LIB:/supersmart/lib/"
