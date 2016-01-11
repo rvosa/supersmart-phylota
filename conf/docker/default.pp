@@ -35,7 +35,6 @@ class install {
   
   # install packages.
   package {
-	"sqlite3":         ensure => installed, require => Exec ["apt_update"];
 	"ncbi-blast+":     ensure => installed, require => Exec ["apt_update"];
 	"wget":            ensure => installed, require => Exec ["apt_update"];
 	"tar":             ensure => installed, require => Exec ["apt_update"];
@@ -117,19 +116,7 @@ class install {
   
   # command line tasks
   exec {	     
-    
-	# make phylota database
-	"dl_phylota_db":
-	  command => "wget http://biovel.naturalis.nl/phylota.sqlite.gz",
-	  cwd     => $data_dir,
-	  creates => "${data_dir}/phylota.sqlite.gz",                        
-	  require => [ File[ $data_dir ], Package[ 'wget' ], Exec[ 'clone_supersmart' ] ];
-	"unzip_phylota_db":		
-	  command => "gunzip phylota.sqlite.gz",		
-	  creates => "${data_dir}/phylota.sqlite",		
-	  cwd     => $data_dir,		
-	  require => Exec[ 'dl_phylota_db'];
-    
+        
 	# install mafft
 	"dl_mafft":
 	  command   => "wget http://mafft.cbrc.jp/alignment/software/mafft-7.130-without-extensions-src.tgz",
