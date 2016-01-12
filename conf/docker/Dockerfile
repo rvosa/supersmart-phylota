@@ -42,4 +42,4 @@ RUN puppet apply /default.pp
 RUN cd $SUPERSMART_HOME && perl Makefile.PL && make test
 
 # zip phylota database to reduce image size
-RUN gzip $SUPERSMART_HOME/data/phylota.sqlite.gz
+RUN gzip $SUPERSMART_HOME/data/phylota.sqlite
