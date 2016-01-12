@@ -8,6 +8,12 @@ cd - >/dev/null
 VERSION=`perl -MBio::SUPERSMART -e 'print $Bio::SUPERSMART::VERSION'`
 export PS1="\[\e[0;32m\]SUPERSMART $VERSION - $hash\[\e[m\] \[\e[1;34m\]\w\[\e[m\] \[\e[1;32m\]\$\[\e[m\] "
 
+# unzip phylota on first use
+if [ -e $SUPERSMART_HOME/data/phylota.sqlite.gz ]; then
+	echo 'preparing database for usage'
+	gunzip $SUPERSMART_HOME/data/phylota.sqlite.gz
+fi
+
 # print welcome message
 echo '
    _____ _    _ _____  ______ _____    

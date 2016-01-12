@@ -38,8 +38,8 @@ RUN echo 'source /intro.sh' >> /root/.bashrc
 # provision virtual machine with SUPERSMART environment
 RUN puppet apply /default.pp 
 
-RUN wget -P / http://biovel.naturalis.nl/phylota.sqlite.gz
-RUN gunzip /phylota.sqlite.gz
-
 # run unit tests
-# RUN cd $SUPERSMART_HOME && perl Makefile.PL && make test
+RUN cd $SUPERSMART_HOME && perl Makefile.PL && make test
+
+# zip phylota database to reduce image size
+gzip $SUPERSMART_HOME/data/phylota.sqlite.gz
