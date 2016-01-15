@@ -3,6 +3,7 @@ use warnings;
 
 use Data::Dumper;
 use Module::Find;
+use XML::Simple;
 
 use Bio::SUPERSMART::Config;
 
@@ -45,18 +46,22 @@ sub get_tool {
 
 	# get and set description
 	my $description = "Bio::SUPERSMART::App::smrt::Command::$subcommand"->description;
-	$result{'tool'}->{'description'} = [ $description ];
+	$description =~ s/\s+$//g;
+	#chomp $description;
+	$result{'tool'}->{'description'} = [ "\n$description\n" ];
 
 	# prevent stderr from being error in galaxy:
-	$result{'tool'}->{'stdio'}->{'exit_code'} = { 'range' => '1:', 'err_level' => 'fatal'};
+	$result{'tool'}->{'stdio'}->{'exit_code'} = [ { 'range' => '1:', 'err_level' => 'fatal'} ];
 	
 	my $in_out = get_inputs_outputs($subcommand);
 	my @a = values(%{$in_out});
 
-	@result{keys(%{$in_out})} = values(%{$in_out});
+	$result{'tool'}->{'inputs'} = $in_out->{'inputs'};
+	$result{'tool'}->{'outputs'} = $in_out->{'outputs'};
 
-	print Dumper(\%result);
-
+	my $out = XMLout(\%result, KeepRoot => 1);
+	print $out;
+	
 	return \%result;
 
 }
@@ -78,12 +83,14 @@ sub get_inputs_outputs {
 	# seperate in- and output elements into a higher level structure,
 	# put into tags 'inputs' and 'outputs'. In Galaxy, per default 
 	# inputs have the tag 'param' and outputs the tag 'data'
-	my @in = grep {$_->{'param'}} @in_out;
-	my @out = grep {$_->{'data'}} @in_out;
+	my @in = map { values %$_ } grep { $_->{'param'} } @in_out;
+	my @out = map { values %$_ } grep { $_->{'data'} } @in_out;
+
+	my @kk = map {values %$_} @in;
 	
 	# put into higher level structure
-	$result{'inputs'} = \@in if scalar @in;
-	$result{'outputs'} = \@out if scalar @out;
+	$result{'inputs'}->{'param'} = \@in if scalar @in;
+	$result{'outputs'}->{'data'} = \@out if scalar @out;
 	
 	return \%result;
 }
@@ -96,6 +103,7 @@ sub parse_option {
 	
 	my $name_str = $arr[0];
 	my $description = $arr[1];
+
 	my %info = %{$arr[2]};
 	
 	# extract long option name  from name string
@@ -120,5 +128,23 @@ sub parse_option {
 	return \%result;
 }
 
-
-
+#parameter types:
+=pod
+   text=TextToolParameter,
+    integer=IntegerToolParameter,
+    float=FloatToolParameter,
+    boolean=BooleanToolParameter,
+    genomebuild=GenomeBuildParameter,
+    select=SelectToolParameter,
+    color=ColorToolParameter,
+    data_column=ColumnListParameter,
+    hidden=HiddenToolParameter,
+    hidden_data=HiddenDataToolParameter,
+    baseurl=BaseURLToolParameter,
+    file=FileToolParameter,
+    ftpfile=FTPFileToolParameter,
+    data=DataToolParameter,
+    data_collection=DataCollectionToolParameter,
+    library_data=LibraryDatasetToolParameter,
+    drill_down=DrillDownSelectToolParameter
+=cut
