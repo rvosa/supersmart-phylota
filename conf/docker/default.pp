@@ -118,16 +118,16 @@ class install {
   exec {	     
 
 	# install phylota database
-	"dl_phylota_db":
-	  command => "wget http://biovel.naturalis.nl/phylota.sqlite.gz",
-	  cwd     => $data_dir,
-	  creates => "${data_dir}/phylota.sqlite.gz",                        
-	  require => [ File[ $data_dir ], Package[ 'wget' ], Exec[ 'clone_supersmart' ] ];    
-	"unzip_phylota_db":		
-	  command => "gunzip phylota.sqlite.gz",		
-	  creates => "${data_dir}/phylota.sqlite",		
-	  cwd     => $data_dir,		
-	  require => Exec[ 'dl_phylota_db'];
+	#"dl_phylota_db":
+	#  command => "wget http://biovel.naturalis.nl/phylota.sqlite.gz",
+	#  cwd     => $data_dir,
+	#  creates => "${data_dir}/phylota.sqlite.gz",                        
+	#  require => [ File[ $data_dir ], Package[ 'wget' ], Exec[ 'clone_supersmart' ] ];    
+	#"unzip_phylota_db":		
+	#  command => "gunzip phylota.sqlite.gz",		
+	#  creates => "${data_dir}/phylota.sqlite",		
+	#  cwd     => $data_dir,		
+	#  require => Exec[ 'dl_phylota_db'];
     
 	# install mafft
 	"dl_mafft":

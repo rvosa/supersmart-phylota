@@ -2,9 +2,8 @@
 # on a virtual ubuntu host. Provisioning is done by puppet, using the
 # 'default.pp' manifest.
 
-# specify version of ubuntu
-FROM ubuntu:14.04
-# FROM naturalis/supersmart
+# create from image containing phylota database
+FROM naturalis/phylota
 
 # add scripts
 ADD default.pp /
@@ -19,9 +18,10 @@ ENV PATH "$PATH:/supersmart/script/"
 ENV PATH "$PATH:/supersmart/tools/bin/"
 ENV SUPERSMART_HOME "/supersmart/"
 ENV EDITOR "nano"
+ENV DATABASE_FILE "/phylota/phylota.sqlite"
 
 # this is needed by treePL on the virtual machine
-ENV LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/usr/lib64"
+ENV LD_LIBRARY_PATH "$LD_LIBRARY_PATH:/usr/lib64"
 
 # other environment variables
 ENV SHELL "/bin/bash"
@@ -40,6 +40,3 @@ RUN puppet apply /default.pp
 
 # run unit tests
 RUN cd $SUPERSMART_HOME && perl Makefile.PL && make test
-
-# zip phylota database to reduce image size
-RUN gzip $SUPERSMART_HOME/data/phylota.sqlite
