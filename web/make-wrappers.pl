@@ -33,11 +33,15 @@ sub to_galaxy_xml {
 
 }
 
-# given a subcommand, constructs the galaxy 'tool' tag and returns it as a hash
+# given a subcommand, constructs the galaxy 'tool' tag (the root tag for a tool) and returns it as a hash
 sub get_tool {
 	my $subcommand = shift;
 	
+	# hash representing xml structure of entire tool
 	my %result;
+	
+	# string containing detailed information, will be in <help> tag
+	my $help;
 
     # gather attributes: id, name and version
 	my $c = Bio::SUPERSMART::Config->new;	
@@ -46,18 +50,34 @@ sub get_tool {
 
 	# get and set description
 	my $description = "Bio::SUPERSMART::App::smrt::Command::$subcommand"->description;
-	$description =~ s/\s+$//g;
-	#chomp $description;
-	$result{'tool'}->{'description'} = [ "\n$description\n" ];
+	my $abstract = "Bio::SUPERSMART::App::smrt::Command::$subcommand"->abstract;
+	$description =~ s/\s+$//g;	
+	$help .= "**What it does**\n\n$description\n";	
+	$result{'tool'}->{'description'} = [ "\n$abstract\n" ];
+	
 
 	# prevent stderr from being error in galaxy:
 	$result{'tool'}->{'stdio'}->{'exit_code'} = [ { 'range' => '1:', 'err_level' => 'fatal'} ];
 	
+	# set in- and output parameters
 	my $in_out = get_inputs_outputs($subcommand);
-	my @a = values(%{$in_out});
-
 	$result{'tool'}->{'inputs'} = $in_out->{'inputs'};
 	$result{'tool'}->{'outputs'} = $in_out->{'outputs'};
+
+	# make command tag
+	my $cmd = "smrt " . lc($subcommand) . "\n";
+
+	my @inputs = @{ $in_out->{'inputs'}->{'param'} };
+	for ( @inputs  ) {
+		my %h = %{$_};
+		my $param_name = $h{"name"};
+		$cmd .= "--$param_name \$${param_name}\n";		
+	}
+
+	$result{'tool'}->{'command'} = [ $cmd ];
+
+	# set help
+	$result{'tool'}->{'help'} = [ $help ];
 
 	my $out = XMLout(\%result, KeepRoot => 1);
 	print $out;
@@ -100,7 +120,7 @@ sub parse_option {
 	my $op = shift;
 
 	my @arr = @{$op};
-	
+
 	my $name_str = $arr[0];
 	my $description = $arr[1];
 
@@ -114,11 +134,16 @@ sub parse_option {
 	my $tag = $info{'galaxy_in'} ? 'param' : 'data';
 	my %h;
 
+	# extract type
+	my $type = $info{'galaxy_type'};
+	die("Need type of parameter!") if not $type;
+	$h{'type'} = $type;
+
 	# only process when option is desired to appear in Galaxy,
 	# as set by the attributes galaxy_in and galaxy_out in the command class
 	if ( $info{'galaxy_in'} || $info{'galaxy_out'} ) {
 		$h{'name'} = $name_str;
-		$h{'label'} = $name_str;		
+		$h{'label'} = "$name_str: $description";		
 	} 
 	else {
 		return ();

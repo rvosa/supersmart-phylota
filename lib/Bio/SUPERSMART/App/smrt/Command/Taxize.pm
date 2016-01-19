@@ -39,28 +39,28 @@ sub options {
 		[
 			"infile|i=s",
 			"file with list of taxon names",
-			{ arg => "file", galaxy_in => 1 }
+			{ arg => "file", galaxy_in => 1, galaxy_type => "file" }
 		],
 		[
 			"outfile|o=s",
 			"name of the output file, defaults to '$outfile_default'",
-			{ default => $outfile_default, arg => "file", galaxy_out => 1 }
+			{ default => $outfile_default, arg => "file", galaxy_out => 1, galaxy_type => "file" }
 		],
 		[
 			"root_taxa|r=s",
 			"one or multiple taxon names (seperated by commata) to be expanded to either 'Species' or to taxonomic rank "
 			. "given in <expand_rank>. Taxon names containing spaces must be enclosed in quotes",
-			{ arg => "taxon,taxon,...", galaxy_in => 1 }
+			{ arg => "taxon,taxon,...", galaxy_in => 1, galaxy_type => "text" }
 		],
 		[
 			"expand_rank|e=s",
 			"rank to which root taxa are expanded",
-			{ default => 0, arg => "rank", galaxy_in => 1 }
+			{ default => 0, arg => "rank", galaxy_in => 1, galaxy_type => "text" }
 		],
 		[
 			"binomials_only|b",
 			"rank to which root taxa are expanded",
-			{ default => 0, galaxy_in => 1 }
+			{ default => 0, galaxy_in => 1, galaxy_type => "boolean" }
 		],
 	);
 }
