@@ -11,10 +11,12 @@ use Bio::SUPERSMART::Config;
 my @modules = usesub(Bio::SUPERSMART::App::smrt::Command);
 my @subcommands = map { $_=~ s/.*:://g; $_} @modules;
 
-my $subcommand = "Taxize";
+my $subcommand = "Align";
 
 #get_inputs_outputs($subcommand);
 get_tool($subcommand);
+
+
 
 
 sub to_galaxy_xml {
@@ -61,19 +63,45 @@ sub get_tool {
 	
 	# set in- and output parameters
 	my $in_out = get_inputs_outputs($subcommand);
+
+	# add workspace in- and outputs
 	$result{'tool'}->{'inputs'} = $in_out->{'inputs'};
 	$result{'tool'}->{'outputs'} = $in_out->{'outputs'};
 
 	# make command tag
-	my $cmd = "smrt " . lc($subcommand) . "\n";
-
+	my $cmd; 
+	
+	# unzip workspace, if exists
+	#$cmd .= "\n#if \$workspace\n";
+	#$cmd .= "\tunzip \$workspace;\n";
+	#$cmd .= "#end if\n\n";
+	#
+	$cmd .= "smrt " . lc($subcommand) . "\n";
+	
+	# add input and output arguments to command
 	my @inputs = @{ $in_out->{'inputs'}->{'param'} };
-	for ( @inputs  ) {
+	my @outputs = @{ $in_out->{'outputs'}->{'data'} };
+	for ( @inputs ) {
 		my %h = %{$_};
 		my $param_name = $h{"name"};
-		$cmd .= "--$param_name \$${param_name}\n";		
+		$cmd .= "#if \$${param_name}\n";
+		$cmd .= "\t--$param_name \$${param_name}\n";
+		$cmd .= "#end if\n\n";
+	}
+	for ( @outputs ) {
+		my %h = %{$_};
+		my $param_name = $h{"name"};
+
+		$cmd .= "\t--$param_name \$${param_name}\n\n" unless $param_name eq "workspace";		
 	}
 
+	# add workidir
+	$cmd .= "--workdir /tmp/\$jobid;\n\n";
+
+	# zip workspace which is returned by galaxy
+	#$cmd .= "zip workspace.zip *; mv workspace.zip \$workspace;\n\n";
+
+	# set command
 	$result{'tool'}->{'command'} = [ $cmd ];
 
 	# set help
@@ -112,6 +140,11 @@ sub get_inputs_outputs {
 	$result{'inputs'}->{'param'} = \@in if scalar @in;
 	$result{'outputs'}->{'data'} = \@out if scalar @out;
 	
+	# add workspace for input data
+	push $result{'inputs'}->{'param'}, {'name'=>'jobid', 'label'=>'jobid', 'type'=>'text'};
+	#$result{'inputs'}->{'data'} = [ {'name'=>'workspace', 'label'=>'workspace', 'type'=>'zip'} ];
+	#push $result{'outputs'}->{'data'}, {'name'=>'workspace', 'label'=>'workspace', 'type'=>'zip'};
+
 	return \%result;
 }
 
@@ -136,8 +169,15 @@ sub parse_option {
 
 	# extract type
 	my $type = $info{'galaxy_type'};
-	die("Need type of parameter!") if not $type;
+	if ( not $type ) {
+		warn("No galaxy type for option $name_str given. Skipping");
+		return ();
+	}
 	$h{'type'} = $type;
+
+	# extract format
+	my $format = $info{'galaxy_format'};
+	$h{'format'} = $format if $format;
 
 	# only process when option is desired to appear in Galaxy,
 	# as set by the attributes galaxy_in and galaxy_out in the command class

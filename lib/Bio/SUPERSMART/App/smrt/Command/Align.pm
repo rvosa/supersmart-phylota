@@ -43,9 +43,21 @@ sub options {
     my $outfile_default = "aligned.txt";
     my $taxa_default = "species.tsv";
     return (
-    ["infile|i=s", "taxa file (tab-seperated value format) as produced by 'smrt taxize'", { arg => "file", default => $taxa_default }],
-    ["outfile|o=s", "name of the output file, defaults to '$outfile_default'", {default => $outfile_default, arg => "file"}],   
-    ["dirname|d=s", "write alignments to specified directory name, if not given, alignments are written to working directory", { arg => "dir" }]
+		[
+		 "infile|i=s", 
+		 "taxa file (tab-seperated value format) as produced by 'smrt taxize'", 
+		 { arg => "file", default => $taxa_default, galaxy_in => 1, galaxy_format => 'tabular', galaxy_type => "data" }
+		],
+		[
+		 "outfile|o=s", 
+		 "name of the output file, defaults to '$outfile_default'", 
+		 {default => $outfile_default, arg => "file", galaxy_out => 1, galaxy_format => 'tabular', galaxy_type => "data" }
+		],   
+		[
+		 "dirname|d=s", 
+		 "write alignments to specified directory name, if not given, alignments are written to working directory", 
+		 { arg => "dir" }
+		]
     );  
 }
 

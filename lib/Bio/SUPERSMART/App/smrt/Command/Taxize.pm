@@ -44,7 +44,7 @@ sub options {
 		[
 			"outfile|o=s",
 			"name of the output file, defaults to '$outfile_default'",
-			{ default => $outfile_default, arg => "file", galaxy_out => 1, galaxy_type => "file" }
+			{ default => $outfile_default, arg => "file", galaxy_out => 1, galaxy_type => "data", galaxy_format => "tabular" }
 		],
 		[
 			"root_taxa|r=s",
