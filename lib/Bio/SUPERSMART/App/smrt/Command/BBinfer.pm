@@ -46,45 +46,53 @@ sub options {
     my $matrix_default  = "supermatrix.phy";
     my $taxa_default    = "species.tsv";
     my $boot_default    = 1;
+	my @tools = qw(RAxML ExaML PhyML ExaBayes);
     return (
         [
 		     "supermatrix|s=s", 
 		     "matrix of concatenated multiple sequece alignments as produced by 'smrt bbmerge'", 
-		     { arg => "file", default => $matrix_default }
+		     { arg => "file", default => $matrix_default, galaxy_in => 1, galaxy_type => 'data' }
 		],  
         [
 		     "inferencetool|i=s", 
-    		 "software tool for backbone inference (RAxML, ExaML, PhyML, ExaBayes), defaults to $tool_default", 
-		     {default => $tool_default, arg => "tool"}],
+    		 "software tool for backbone inference, defaults to $tool_default. Available tools: " . join(', ', @tools), 
+    		 {default => $tool_default, arg => "tool", galaxy_in => 1, galaxy_type => 'select', galaxy_value => $tool_default, galaxy_options => \@tools }
+		],
 		[
 		     "taxafile|t=s", 
 			 "[ExaML inference only] taxa file to generate starting tree. Defaults to $taxa_default", 
-		     { arg => "file", default => $taxa_default }
+		     { arg => "file", default => $taxa_default, galaxy_in => 1, galaxy_type => 'data', galaxy_format => 'tabular' }
 		],
 		[
 		     "random_start|m", 
 			 "[ExaML inference only] start inference from random starting tree", 
-		     {}
+		     { galaxy_in => 1, galaxy_type => 'boolean', galaxy_condition => { 'inferencetool' => 'ExaML' } }
 		],
         [
 		     "bootstrap|b=i", 
     		 "[ExaML and RaXML inference only] number of bootstrap replicates. Will add the support values to the backbone tree.", 
-    		 { default => $boot_default }
+    		 { 
+				 default => $boot_default, 
+				 galaxy_in => 1, 
+				 galaxy_type => 'integer', 
+				 galaxy_value => $boot_default, 
+#				 galaxy_condition => { 'inferencetool' => ["RAxML", "ExaML", "PhyML"] } 
+			 }
 		],
 		[
 		     "rapid_boot|r", 
     		 "[RaXML inference only] use RAxML's rapid bootstrap algorithm. Returns single consensus tree with annotated nodes.", 
-		     {},
+		     { galaxy_in => 1, galaxy_type => 'boolean', galaxy_condition => { 'inferencetool' => 'RAxML' } }
 		],
         [
     		 "ids|n", 
     		 "return tree with NCBI identifiers instead of taxon names", 
-		     {}
+		     { galaxy_in => 1, galaxy_type => 'boolean' }
 		],
         [
 		     "outfile|o=s", 
 		     "name of the output tree file (in newick format), defaults to '$outfile_default'", 
-		     {default => $outfile_default, arg => "file"}
+		     {default => $outfile_default, arg => "file", galaxy_out => 1, galaxy_type => "data", galaxy_format => "newick" }
 		],
         [    "cleanup|x", 
 			 "if set, cleans up all intermediate files", 

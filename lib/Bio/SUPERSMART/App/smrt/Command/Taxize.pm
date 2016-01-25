@@ -35,6 +35,8 @@ the keywords 'unidentified' and 'environmental_sample'.
 sub options {
 	my ( $self, $opt, $args ) = @_;
 	my $outfile_default = "species.tsv";
+	
+	my @ranks = reverse(Bio::SUPERSMART::Service::MarkersAndTaxaSelector->get_taxonomic_ranks);
 	return (
 		[
 			"infile|i=s",
@@ -54,12 +56,12 @@ sub options {
 		],
 		[
 			"expand_rank|e=s",
-			"rank to which root taxa are expanded",
-			{ default => 0, arg => "rank", galaxy_in => 1, galaxy_type => "text" }
+			"rank to which root taxa are expanded. Possible values : " . join(', ', @ranks),
+			{ default => 0, arg => "rank", galaxy_in => 1, galaxy_type => "text", galaxy_type => "select", galaxy_value => "species", galaxy_options => \@ranks, }
 		],
 		[
 			"binomials_only|b",
-			"rank to which root taxa are expanded",
+			"filter taxon names that are not binomials",
 			{ default => 0, galaxy_in => 1, galaxy_type => "boolean" }
 		],
 	);

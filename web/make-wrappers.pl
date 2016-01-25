@@ -4,6 +4,7 @@ use warnings;
 use Data::Dumper;
 use Module::Find;
 use XML::Simple;
+use List::MoreUtils qw (uniq);
 
 use Bio::SUPERSMART::Config;
 
@@ -11,28 +12,16 @@ use Bio::SUPERSMART::Config;
 my @modules = usesub(Bio::SUPERSMART::App::smrt::Command);
 my @subcommands = map { $_=~ s/.*:://g; $_} @modules;
 
-my $subcommand = "Align";
+@subcommands = reverse ("Taxize", "Align", "Orthologize", "BBmerge", "BBinfer");
 
-#get_inputs_outputs($subcommand);
-get_tool($subcommand);
-
-
-
-
-sub to_galaxy_xml {
-	
-	# tool tag
-	
-	# description tag
-
-	# command
-
-	# inputs
-
-	# outputs
-
-	# help
-
+for my $subcommand ( @subcommands ) {
+	print $subcommand . "\n";
+	my $tags = get_tool($subcommand);
+	my $out = XMLout($tags, KeepRoot => 1);
+	my $filename = lc "$subcommand.xml";
+	open my $fh, '>',  $filename or die $!;
+	print $fh $out;
+	close $fh;	
 }
 
 # given a subcommand, constructs the galaxy 'tool' tag (the root tag for a tool) and returns it as a hash
@@ -80,6 +69,7 @@ sub get_tool {
 	
 	# add input and output arguments to command
 	my @inputs = @{ $in_out->{'inputs'}->{'param'} };
+
 	my @outputs = @{ $in_out->{'outputs'}->{'data'} };
 	for ( @inputs ) {
 		my %h = %{$_};
@@ -107,9 +97,7 @@ sub get_tool {
 	# set help
 	$result{'tool'}->{'help'} = [ $help ];
 
-	my $out = XMLout(\%result, KeepRoot => 1);
-	print $out;
-	
+	print Dumper(\%result);
 	return \%result;
 
 }
@@ -136,7 +124,11 @@ sub get_inputs_outputs {
 
 	my @kk = map {values %$_} @in;
 	
+    # check for dependant parameter values
+#	check_conditionals(\@in);
+	
 	# put into higher level structure
+
 	$result{'inputs'}->{'param'} = \@in if scalar @in;
 	$result{'outputs'}->{'data'} = \@out if scalar @out;
 	
@@ -179,18 +171,79 @@ sub parse_option {
 	my $format = $info{'galaxy_format'};
 	$h{'format'} = $format if $format;
 
+	# extract value, if given
+	my $value = $info{'galaxy_value'};
+	$h{'value'} = $value if $value;
+
+
 	# only process when option is desired to appear in Galaxy,
 	# as set by the attributes galaxy_in and galaxy_out in the command class
 	if ( $info{'galaxy_in'} || $info{'galaxy_out'} ) {
 		$h{'name'} = $name_str;
-		$h{'label'} = "$name_str: $description";		
+		$h{'label'} = $name_str;		
+		$h{'help'} = $description;
+
+		# extract options for value, if given
+		if ( $info{'galaxy_options'} ) {
+			for my $op ( @ {$info{'galaxy_options'}} ) {
+				print "OPTION : $op \n";
+				$h{'option'} = [] if not $h{'option'};
+				print $value . "\n";
+				push $h{'option'}, {"value" => $op, "selected" => $value eq $op ? "Yes" : "No" };
+			}						
+		}	
+
+		# add conditionals
+		if ( $info{'galaxy_condition'} ) {
+			$h{'condition'} = $info{'galaxy_condition'};
+		}		
 	} 
 	else {
 		return ();
 	}
+
 	   	
 	my %result = ( $tag => \%h );
 	return \%result;
+}
+
+sub check_conditionals {
+	my $p = shift;
+
+	# make hash with params by name
+	my %params = map { $_->{'name'}=>$_ } @{$p};
+
+
+
+	# we will return a list of <parameter> tags encoded as hashes
+	my @result;
+	
+	# loop over parameters and check which ones are 'conditional', meaning their existance
+	#  depend on the value of another parameter. If so, the parameter gets nested under
+	#  the parameter that is referenced by the condition
+	for my $p ( values %params ) {
+		
+		# check if this parameter depends on another
+		if ( $p->{'condition'} ) {
+
+			# get the name for the parameter that is referenced
+			# NOTE: Only one parameter can be referenced!!
+			( my $ref_param ) = keys ($p->{'condition'});
+			my @values = values ($p->{'condition'} );
+
+			# nest the dependant parameter under the reference parameter,
+			#  for all specified values
+			for my $v (@values) {
+				$params{ $ref_param }->{'when'} = [] if not $params{ $ref_param }->{'when'};				
+				push $params{ $ref_param }->{'when'}, {'value'=> $v, 'param'=>[ $p ]};				
+			}
+			
+			# delete the dependant parameter from initial hash 
+			delete $params{$p};
+		}
+	}
+
+	print Dumper(\%params);	
 }
 
 #parameter types:

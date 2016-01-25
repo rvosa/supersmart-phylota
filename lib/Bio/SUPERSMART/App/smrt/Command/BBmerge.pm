@@ -82,41 +82,42 @@ sub options {
     my $merged_default       = "merged.txt";	
     my $config       = Bio::SUPERSMART::Config->new;
 	my $exemplars_default = $config->BACKBONE_EXEMPLARS;
+	my @formats = qw (bl2seq clustalw emboss fasta maf mase mega meme msf nexus pfam phylip prodom psi selex stockholm mrbayes);
     return (
         [
             "alnfile|a=s",
 			"list of file locations of merged alignments  as produced by 'smrt orthologize'",
-            { arg => "file", default => $merged_default }
+            { arg => "file", default => $merged_default, galaxy_in => 1, galaxy_format => 'tabular', galaxy_type => "data" }
         ],
         [
             "taxafile|t=s",
             "tsv (tab-seperated value) taxa file as produced by 'smrt taxize'",
-            { arg => "file", default => $taxa_default }
+            { arg => "file", default => $taxa_default, galaxy_in => 1, galaxy_format => 'tabular', galaxy_type => "data" }
         ],
         [
             "outfile|o=s",
             "name of the output file, defaults to '$outfile_default'",
-            { default => $outfile_default, arg => "file" }
+            { default => $outfile_default, arg => "file", galaxy_out => 1, galaxy_format => $outformat_default, galaxy_type => "data" }
         ],
         [
             "format|f=s",
-			"format of supermatrix, defaults to '$outformat_default'; possible formats: bl2seq, clustalw, emboss, fasta, maf, mase, mega, meme, msf, nexus, pfam, phylip, prodom, psi, selex, stockholm, mrbayes",
-            { default => $outformat_default }
+			"format of supermatrix, defaults to '$outformat_default'; possible formats: " . join (', ', @formats),
+            { default => $outformat_default, galaxy_in => 1, galaxy_type => "select", galaxy_options => \@formats, galaxy_value => $outformat_default }
         ],
         [
             "include_taxa|i=s",
 			"one or multiple names of taxa present in <taxafile> (e.g. species or genus names, separated by commata) whose representative species will be included in the output dataset, regardless of marker coverage and sequence divergence",
-            {}
+            { galaxy_in => 1, galaxy_type => "text" }
         ],
         [
             "markersfile|m=s",
 			"name for summary table with included accessions, defaults to $markerstable_default",
-            { default => $markerstable_default, arg => "file" }
+            { default => $markerstable_default, arg => "file", galaxy_out => 1, galaxy_format => 'tabular', galaxy_type => "data" }
         ],
         [
             "exemplars|e=s",
 			"number of exemplar species per genus, defaults to $exemplars_default, set to -1 to include all species",
-            { default => $exemplars_default }
+            { default => $exemplars_default, galaxy_in => 1, galaxy_type => "integer", galaxy_value => $exemplars_default }
         ],
 
     );
