@@ -52,7 +52,8 @@ sub options {
 sub validate {
 	my ($self, $opt, $args) = @_;
 	my $file = $opt->alignments;
-	$self->usage_error("file $file does not exist") unless (-e $file);
+	$self->usage_error("input file not given") unless ( $file);
+	$self->usage_error("input file does not exist") unless (-e $file);
 	$self->usage_error("file $file is empty") unless (-s $file);
 }
 
