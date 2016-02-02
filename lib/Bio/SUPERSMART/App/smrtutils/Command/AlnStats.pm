@@ -5,11 +5,12 @@ use warnings;
 
 use File::Spec;
 use Data::Dumper;
+use List::Util qw(max);
 use List::MoreUtils qw(uniq);
 
 use Bio::Phylo::IO qw(parse);
 use Bio::Phylo::Util::CONSTANT ':objecttypes';
-use Bio::SUPERSMART::Service::ParallelService;
+use Bio::SUPERSMART::Service::ParallelService 'pthreads';
 
 use base 'Bio::SUPERSMART::App::SubCommand';
 use Bio::SUPERSMART::App::smrtutils qw(-command);
@@ -165,8 +166,11 @@ sub _get_aln_stats  {
 	$stats{'prop_invar'} = $prop_invar;
 
 	# get number of identical sequence pairs
-	my $ident_pairs = $self->_num_identical_seqs($matrix);
+	my @ident = $self->_num_identical_seqs($matrix);
+	my $ident_pairs = $ident[0];
 	$stats{'ident_pairs'} = $ident_pairs;
+	my $frac_ident = $ident[1];
+	$stats{'max_frac_ident'} = $frac_ident;
 
 	# get average distance of seqs in alignment
 	my $avg_dist = $self->_avg_dist($file);
@@ -192,7 +196,13 @@ sub _num_identical_seqs {
 
 	my @rows = @{$matrix->get_entities};
 
+	# count pairs of identical sequences
 	my $identical = 0;
+
+	# also count for each unique sequence, how many instances are there in the alignment?
+	my %ident_by_seq;
+	$ident_by_seq{$_->get_char}++ for @rows;
+
 	for (my $i=0; $i<=$#rows; $i++) {
 		my $row_i = $rows[$i];
 		for (my $j=$i+1; $j<=$#rows; $j++) {
@@ -208,16 +218,20 @@ sub _num_identical_seqs {
 				if ( $name_j=~/.*taxon\|([0-9]+)/) {
 					$name_j =$1;
 				}
-
+				
 				$name_i = $mts->find_node($name_i)->taxon_name;
 				$name_j = $mts->find_node($name_j)->taxon_name;
 
 				$identical++;
+				
 				$self->logger->info("seqs " . $name_i . " and " . $name_j  . " are identical !");
 			}
 		}
 	}
-	return $identical;
+	# how high is fraction of the most frequent sequence in the alignment?
+	my $frac = max (values (%ident_by_seq)) / scalar(@rows);
+	
+	return ($identical, $frac);
 }
 
 
