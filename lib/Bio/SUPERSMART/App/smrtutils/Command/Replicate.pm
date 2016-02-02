@@ -5,6 +5,7 @@ use warnings;
 
 use File::Spec;
 use Data::Dumper;
+use List::Util qw(max);
 
 use Bio::Phylo::IO qw(parse parse_tree unparse parse_matrix);
 use Bio::Phylo::Util::CONSTANT ':objecttypes';
@@ -57,6 +58,7 @@ sub options {
 		["no_marker_sim|n", "do not simulate marker presence with binary simulation, take taxa from original alignments instead", { default=> 0}],
 		["random_rootseq|d", "simulate alignments from random sequecnce; otherwise the median of the sequences will be the root sequence", { default=> 0}],
 		["ids|i", "return NCBI identifiers in remapped tree instead of taxon names", { default=> 0}],
+		["phylogenetically_informative|p", "Discard simulated alignments in which > 50% sequences are identical, and simulate again  ", { default=> 0}],
 	    );
 }
 
@@ -78,7 +80,7 @@ sub run {
 	my $treefile = $opt->tree;
 	my $aln_outfile = $opt->aln_outfile;
 	my $tree_outfile = $opt->tree_outfile;
-	my $taxa_outfile = $opt->taxa_outfile;
+	my $taxa_outfile = $opt->taxa_outfile;   
 	my $ts = Bio::SUPERSMART::Service::TreeService->new;
 	my $mt  = Bio::SUPERSMART::Domain::MarkersAndTaxa->new;
 
@@ -153,7 +155,8 @@ sub run {
 													   'tree_replicated' => $tree_replicated, 
 													   'tree_original' => $tree, 
 													   'simulate_markers' => ! $opt->no_marker_sim, 
-													   'random_rootseq' => $opt->random_rootseq );
+													   'random_rootseq' => $opt->random_rootseq,
+				                                       'informative' => $opt->phylogenetically_informative);
 			
 			if ( $rep_aln ) {
 				# simulated alignment will have the same file name plus added '-simulated'
@@ -343,21 +346,36 @@ sub _replicate_alignment {
 	$logger->debug("Input tree for simulation : " . $pruned->to_newick);
 
 	# simulate sequences
+	#  In case the 'informative' option is set: if the number of identical sequences in the alignments is greater than 50%, we  
+	#  try 10 times to get a phylogenetically informative alignment by re-simulating.   
 	my $rep;
-	eval { $rep = $matrix->replicate('-tree'=>$pruned, '-seed'=>$config->RANDOM_SEED, '-model'=>$model, '-random_rootseq'=> $args{'random_rootseq'} ); };
-	if ( $@ ) {
-		$logger->warn("Problem replicating matrix, " . $@);
-		return 0;
-	}
-
-	my %rp = map {$_=>1} @rep_taxa;
-	for my $r ( @{$rep->get_entities} ) {
-		if ( ! $rp{$r->get_name} ) {
-			$logger->info("Removing taxon " . $r->get_name . " from replicated matrix");
-			$rep->delete($r);
+	my $frac_ident = 1;
+	my $tries = 0;
+	while ( $frac_ident > 0.5) {
+		$tries++;
+		$logger->info("Try # $tries to simulate phylogenetically informative alignment.");
+		if ( $tries >= 10 ) {
+			$logger->warn("Exceeded 10 tries for simulating phylogenetically informative alignment. Skipping.");
+			return 0;
 		}
+		
+		eval { $rep = $matrix->replicate('-tree'=>$pruned, '-seed'=>$config->RANDOM_SEED, '-model'=>$model, '-random_rootseq'=> $args{'random_rootseq'} ); };
+		if ( $@ ) {
+			$logger->warn("Problem replicating matrix, " . $@);
+			return 0;
+		}
+		
+		my %rp = map {$_=>1} @rep_taxa;
+		for my $r ( @{$rep->get_entities} ) {
+			if ( ! $rp{$r->get_name} ) {
+				$logger->info("Removing taxon " . $r->get_name . " from replicated matrix");
+				$rep->delete($r);
+			}
+		}
+		$frac_ident = $self->_get_frac_identical_seqs( $rep );
+		last if not $args{'informative'};
 	}
-
+	
 	$logger->info("Number of seqs in original alignment: " . scalar(@{$matrix->get_entities}) . ", number of seqs in rep alignment: " . scalar(@{$rep->get_entities}));
 	# If we had less than two simulated marker presences, the replicated alignment is not an alignment, therefore skip
 	if ( @{ $rep->get_entities } < 2 ) {
@@ -367,6 +385,19 @@ sub _replicate_alignment {
 	$rep = $self->_fix_fasta_defline( $rep );
 
 	return $rep;
+}
+
+# given an alignment as matrix object, returns the highest fraction
+#  of sequences that are identical in the alignment 
+sub _get_frac_identical_seqs {
+	my ($self, $matrix) = @_;	
+
+	my @rows = @{$matrix->get_entities};
+	my %ident_by_seq;
+	$ident_by_seq{$_->get_char}++ for @rows;
+	my $frac = max (values (%ident_by_seq)) / scalar(@rows);
+	
+	return $frac;
 }
 
 # Given an alignment as matrix object and a tree, simulates the presence in the alignment
