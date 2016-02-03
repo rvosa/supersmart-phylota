@@ -81,14 +81,19 @@ sub run {
     my @result = grep { defined $_ and -e $_ } pmap {
 		(my $clade) = @_;
 		my $dir = "${workdir}/${clade}";
-		$mt = Bio::SUPERSMART::Domain::MarkersAndTaxa->new("${dir}/merged.txt", $config->CLADE_MIN_COVERAGE);
-		$mt->write_clade_matrix( 
-			'markersfile' => "${dir}/${clade}-markers.tsv",
-			'outfile' => $opt->outformat eq 'phylip' ? "${dir}/${clade}.phy" : "${dir}/${clade}.xml",
-			'max_markers' => $config->CLADE_MAX_COVERAGE,
-			'enrich' => $opt->enrich,
-			'format' => $opt->outformat);
-    } @dirs;
+		if ( -e "$dir/merged.txt" ) {
+			$mt = Bio::SUPERSMART::Domain::MarkersAndTaxa->new("${dir}/merged.txt", $config->CLADE_MIN_COVERAGE);
+			$mt->write_clade_matrix( 
+				'markersfile' => "${dir}/${clade}-markers.tsv",
+				'outfile' => $opt->outformat eq 'phylip' ? "${dir}/${clade}.phy" : "${dir}/${clade}.xml",
+				'max_markers' => $config->CLADE_MAX_COVERAGE,
+				'enrich' => $opt->enrich,
+				'format' => $opt->outformat);
+		} 
+		else {
+			$log->warn("Clade $clade is missing merged alignments, possibly due to low coverage. Skipping.");
+		}
+	} @dirs;
     
     # report result
     $log->info("Wrote outfile $_") for @result;

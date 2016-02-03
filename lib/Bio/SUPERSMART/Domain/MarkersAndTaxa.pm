@@ -631,6 +631,7 @@ sub parse_aln_file {
     my ( $class, $file ) = @_;
     my $log  = Bio::Phylo::Util::Logger->new;
     $log->debug("going to read alignment list $file");
+	$log->error("file $file does not exist") if not -e $file;
     my @alignments;
     open my $fh, '<', $file or die $!;
     while (<$fh>) {
