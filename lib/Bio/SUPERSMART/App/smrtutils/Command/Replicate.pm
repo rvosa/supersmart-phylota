@@ -102,7 +102,7 @@ sub run {
 		$logger->info("Reading replicated tree from $filename_rep");
 		$tree_replicated = parse_tree(
 			'-file'   => $filename_rep,
-			'-format' => 'nexus',
+			'-format' => 'newick',
 			);
 	}
 	else {
