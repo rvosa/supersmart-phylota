@@ -25,6 +25,18 @@ for my $subcommand ( @subcommands ) {
 	close $fh;	
 }
 
+##if $condition_inferencetool.inferencetool == "RAxML"
+#	--rapid_boot $condition_inferencetool.rapid_boot
+##end if
+
+
+sub _get_cheetah {
+	my $in_out = shift;
+
+	
+
+}
+
 # given a subcommand, constructs the galaxy 'tool' tag (the root tag for a tool) and returns it as a hash
 sub get_tool {
 	my $subcommand = shift;
@@ -64,21 +76,42 @@ sub get_tool {
 	
 	# add input and output arguments to command
 	my @inputs = @{ $in_out->{'inputs'}->{'param'} };
+	# extract params from conditionals
+	my $conditionals = $in_out->{'inputs'}->{'conditional'};
+
+    # make mapping of parameter name -> variable name of parameter in galaxy 
+	my %in_params;
+	for my $v ( values (%$conditionals) ) {
+		my $cond_name = $v->{'name'};
+		my $ref_param = $v->{'param'};
+		$in_params{$ref_param->{'name'}} = $cond_name . '.' . $ref_param->{'name'};
+		# get referenced parameter names
+		for my $w ( @{$v->{'when'}} ) {
+			my $refd = $w->{'param'};
+			$in_params{$_->{'name'}} = $_->{'name'} for @$refd;			
+		}
+	}
+	#add parameters that are not in conditionals
+	for ( @inputs ) {
+		$in_params{$_->{'name'}} = $_->{'name'} if not $in_params{$_->{'name'}};
+	}
+
+	# write to string that checks if parameter is present and sets the parameter
+	for my $param_name ( keys %in_params ) {
+		my $ref_name = $in_params{$param_name};
+		$cmd .= "#if \$${ref_name}\n";
+		$cmd .= "\t--$param_name \$${ref_name}\n";
+		$cmd .= "#end if\n\n";	
+	}
 
 	my @outputs = @{ $in_out->{'outputs'}->{'data'} };
-	for ( @inputs ) {
-		my %h = %{$_};
-		my $param_name = $h{"name"};
-		$cmd .= "#if \$${param_name}\n";
-		$cmd .= "\t--$param_name \$${param_name}\n";
-		$cmd .= "#end if\n\n";
-	}
 	for ( @outputs ) {
 		my %h = %{$_};
 		my $param_name = $h{"name"};
-
 		$cmd .= "\t--$param_name \$${param_name}\n\n" unless $param_name eq "workspace";		
 	}
+
+	
 
 	# add workidir
 	$cmd .= "--workdir /tmp/\$jobid;\n\n";
@@ -227,7 +260,7 @@ sub get_conditionals {
 			# remove 'condition' tag since it is not a galaxy tag
 			delete $p->{'condition'};
 			
-			$conditionals{$ref_paramname} = {'name'=>$ref_paramname} if not $conditionals{$ref_paramname};
+			$conditionals{$ref_paramname} = {'name'=>"condition_$ref_paramname"} if not $conditionals{$ref_paramname};
 			$conditionals{$ref_paramname}->{'param'} = $ref_p if not $conditionals{$ref_paramname}->{'param'};
 			$conditionals{$ref_paramname}->{'when'} = [] if not $conditionals{$ref_paramname}->{'when'};
 
