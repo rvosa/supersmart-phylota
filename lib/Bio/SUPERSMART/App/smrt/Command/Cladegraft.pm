@@ -40,8 +40,10 @@ sub options {
 	my $tree_default    = "consensus.nex";
 	my $heights_default = $conf->NODE_HEIGHTS;
 	my $squish_default  = 'none';
+    my $format_default  = "figtree";
 	return (                               	
   		["backbone|b=s", "backbone tree as produced by 'smrt consense', defaults to $tree_default", { arg => "file", default => $tree_default }],
+        ["format|f=s", "file format of the backbone tree as produced by 'smrt consense', defaults to $format_default", { default => $format_default, arg => "format" }],
 		["outfile|o=s", "name of the output tree file (newick format) defaults to $outfile_default", { default=> $outfile_default, arg => "file"}],    	    
 		["cladetree|c=s", "name of tree file (newick format) or clade directory for grafting a single tree", { arg => "file"}],
 		["heights|e=s", "node heights (ca, keep, median, mean)", { default => $heights_default, arg => 'keep|median|mean|ca' } ],
@@ -80,6 +82,10 @@ sub validate {
 	if ( $opt->squish !~ /^(?:zero|none|yulish)$/ ) {
 		$self->usage_error("squish must be one of yulish, zero or none");
 	}
+	
+    if ( $opt->format !~ /^(?:newick|nexus|figtree)$/i ) {
+        $self->usage_error("only newick and nexus format are supported");
+    }
 }
 
 sub run {
@@ -94,7 +100,13 @@ sub run {
 	# instantiate helper objects
 	my $ts      = Bio::SUPERSMART::Service::TreeService->new;
 	my $logger  = $self->logger;	
-	my $grafted = $ts->read_figtree( '-file' => $backbone );
+
+    # read backbone tree which will become the final tree
+	my $grafted = parse_tree(
+        '-format' => $opt->format,
+        '-file'   => $backbone,
+		);
+	
 	$ts->remap_to_ti( $grafted );
 	$logger->info("Read backbone $backbone");
 	
