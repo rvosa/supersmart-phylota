@@ -56,7 +56,7 @@
             "guest_os_type": "Ubuntu_64",
             "http_directory": "http",
             "iso_checksum": "9e5fecc94b3925bededed0fdca1bd417",
-            "iso_checksum_type": "sha256",
+            "iso_checksum_type": "md5",
             "iso_url": "http://releases.ubuntu.com/trusty/ubuntu-14.04.3-server-amd64.iso",
             "ssh_username": "vagrant",
             "ssh_password": "vagrant",
