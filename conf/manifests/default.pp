@@ -176,7 +176,7 @@ class install {
 	"chown_phylota_db":		
 	  command => "chown vagrant phylota.sqlite.gz",		
 	  cwd     => $data_dir,		
-	  require => Exec[ 'gunzip_phylota_db'];
+	  require => Exec[ 'unzip_phylota_db'];
     
 	# install mafft
 	"dl_mafft":
