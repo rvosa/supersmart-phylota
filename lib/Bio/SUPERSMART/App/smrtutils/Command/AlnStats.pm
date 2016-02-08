@@ -10,7 +10,7 @@ use List::MoreUtils qw(uniq);
 
 use Bio::Phylo::IO qw(parse);
 use Bio::Phylo::Util::CONSTANT ':objecttypes';
-use Bio::SUPERSMART::Service::ParallelService 'pthreads';
+use Bio::SUPERSMART::Service::ParallelService;
 
 use base 'Bio::SUPERSMART::App::SubCommand';
 use Bio::SUPERSMART::App::smrtutils qw(-command);
