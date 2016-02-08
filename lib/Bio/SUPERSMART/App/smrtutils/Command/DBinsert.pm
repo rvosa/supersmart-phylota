@@ -131,15 +131,11 @@ sub run {
 				# the sequences! As the seed gi, we take the last 
 				# inserted artificial gi:
 
-				my $newfilename = $inserted[-1] . "-";				
-				my ($volume,$dirs,$filename) = File::Spec->splitpath( $file );
-
-				#remove current file extension
-				$filename =~ s/\.[^\.]+$//;
-				$newfilename .= $filename . '-smrt-inserted.fa';
-
-				my $newfile = $volume || $dirs ? File::Spec->catfile($volume, $dirs, $newfilename) : $newfilename;
-				
+				#remove current file extension				
+				my $newfile = $file;
+				$newfile =~ s/\.[^\.]+$//;
+				$newfile .= '-smrt-inserted.fa';
+								
 				$logger->info("Writing alignment to $newfile");
 				unparse ( -phylo => $matrix, -file => $newfile, -format=>'fasta' );
 
