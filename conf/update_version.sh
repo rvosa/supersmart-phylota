@@ -9,6 +9,10 @@ H=$SUPERSMART_HOME
 # semantic version tag as argument, MUST match /v\d+\.\d+\.\d+/ and MUST be at least
 # one minor increment above the current highest git tag version.
 TAGVERSION=$1
+if [ -z "$1" ]; then 
+	echo "Need varsion tag as argument. Must match /v\d+\.\d+\.\d+/"
+	exit 0;
+fi
 eval $(perl -Mversion -e "version::is_strict('$TAGVERSION') or warn and print 'exit'");
 
 # version in framework code
