@@ -174,7 +174,7 @@ class install {
 	  cwd     => $data_dir,		
 	  require => Exec[ 'dl_phylota_db'];
 	"chown_phylota_db":		
-	  command => "chown vagrant phylota.sqlite.gz",		
+	  command => "chown $username phylota.sqlite.gz",		
 	  cwd     => $data_dir,		
 	  require => Exec[ 'unzip_phylota_db'];
     

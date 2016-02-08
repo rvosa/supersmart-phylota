@@ -128,11 +128,7 @@ class install {
 	  creates => "${data_dir}/phylota.sqlite",		
 	  cwd     => $data_dir,		
 	  require => Exec[ 'dl_phylota_db'];
-	"chown_phylota_db":		
-	  command => "chown vagrant phylota.sqlite.gz",		
-	  cwd     => $data_dir,		
-	  require => Exec[ 'unzip_phylota_db'];
-    
+
 	# install mafft
 	"dl_mafft":
 	  command   => "wget http://mafft.cbrc.jp/alignment/software/mafft-7.130-without-extensions-src.tgz",
