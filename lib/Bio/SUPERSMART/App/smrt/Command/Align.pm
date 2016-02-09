@@ -46,12 +46,12 @@ sub options {
 		[
 		 "infile|i=s", 
 		 "taxa file (tab-seperated value format) as produced by 'smrt taxize'", 
-		 { arg => "file", default => $taxa_default, galaxy_in => 1, galaxy_format => 'tabular', galaxy_type => "data" }
+		 { arg => "file", default => $taxa_default, galaxy_in => 1, galaxy_format => 'tabular', galaxy_type => "data", galaxy_label => 'taxa file' }
 		],
 		[
 		 "outfile|o=s", 
 		 "name of the output file, defaults to '$outfile_default'", 
-		 {default => $outfile_default, arg => "file", galaxy_out => 1, galaxy_format => 'tabular', galaxy_type => "data" }
+		 {default => $outfile_default, arg => "file", galaxy_out => 1, galaxy_format => 'tabular', galaxy_type => "data", galaxy_label => 'alignments' }
 		],   
 		[
 		 "dirname|d=s", 

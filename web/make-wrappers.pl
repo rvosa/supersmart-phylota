@@ -12,13 +12,13 @@ use Bio::SUPERSMART::Config;
 my @modules = usesub(Bio::SUPERSMART::App::smrt::Command);
 my @subcommands = map { $_=~ s/.*:://g; $_} @modules;
 
-@subcommands = ("BBinfer");##reverse ("Taxize", "Align", "Orthologize", "BBmerge", "BBinfer");
+@subcommands = ("Taxize", "Align", "Orthologize"); ##("BBinfer");##reverse ("Taxize", "Align", "Orthologize", "BBmerge", "BBinfer");
 
 for my $subcommand ( @subcommands ) {
 	print $subcommand . "\n";
 	my $tags = get_tool($subcommand);
 
-	my $out = XMLout($tags, KeepRoot => 1);
+	my $out = XMLout($tags, KeepRoot => 1, NoEscape => 1);
 	my $filename = lc "$subcommand.xml";
 	open my $fh, '>',  $filename or die $!;
 	print $fh $out;
@@ -30,11 +30,58 @@ for my $subcommand ( @subcommands ) {
 ##end if
 
 
+# generate the cheetah code used in the <command> tag
 sub _get_cheetah {
-	my $in_out = shift;
-
+	my ($subcommand, $in_out) = @_;
 	
+	my $cheetah;
 
+	$cheetah .= "smrt " . lc($subcommand) . "\n\n";
+	
+	# add input parameters to cheetah command
+	my @inputs = @{ $in_out->{'inputs'}->{'param'} };
+	for ( @inputs ) {
+		my %h = %{$_};
+		my $param_name = $h{"name"};
+		next if $param_name eq 'jobid';
+		$cheetah .= "#if \$${param_name}\n";
+		$cheetah .= "\t--$param_name \$${param_name}\n";
+		$cheetah .= "#end if\n\n";	
+	}
+
+	# add output parameters to cheetah command
+	if ( $in_out->{'outputs'} ) {
+		my @outputs = @{ $in_out->{'outputs'}->{'data'} };
+		for ( @outputs ) {
+			my %h = %{$_};
+			my $param_name = $h{"name"};
+			$cheetah .= "--$param_name \$${param_name}\n\n";		
+		}
+	}
+
+	# add conditional parameters to cheetah command
+	if ( $in_out->{'inputs'}->{'conditional'} ) {
+		my %conditionals = %{ $in_out->{'inputs'}->{'conditional'} };
+		for my $k ( keys %conditionals ) {
+			my $c = $conditionals{$k};
+			my $condition_name = $c->{'name'};
+			
+			for my $w ( @{$c->{'when'}} ) {
+				my $value = $w->{'value'};
+				$cheetah .= "#if \$${condition_name}.${k} == \"${value}\" \n";
+				for my $p ( @{$w->{'param'}} ) { 
+					my $paramname = $p->{'name'};
+					$cheetah .= "\t --$paramname \$${condition_name}.${paramname}\n";
+				}
+				$cheetah .= "#end if\n\n";
+			}		
+		}
+	}
+
+	# add workidir
+	$cheetah .= "--workdir /tmp/\$jobid;\n\n";
+
+	return $cheetah;
 }
 
 # given a subcommand, constructs the galaxy 'tool' tag (the root tag for a tool) and returns it as a hash
@@ -70,55 +117,8 @@ sub get_tool {
 	$result{'tool'}->{'outputs'} = $in_out->{'outputs'};
 
 	# make command tag
-	my $cmd; 
+	my $cmd = _get_cheetah( $subcommand, $in_out ); 
 	
-	$cmd .= "smrt " . lc($subcommand) . "\n";
-	
-	# add input and output arguments to command
-	my @inputs = @{ $in_out->{'inputs'}->{'param'} };
-	# extract params from conditionals
-	my $conditionals = $in_out->{'inputs'}->{'conditional'};
-
-    # make mapping of parameter name -> variable name of parameter in galaxy 
-	my %in_params;
-	for my $v ( values (%$conditionals) ) {
-		my $cond_name = $v->{'name'};
-		my $ref_param = $v->{'param'};
-		$in_params{$ref_param->{'name'}} = $cond_name . '.' . $ref_param->{'name'};
-		# get referenced parameter names
-		for my $w ( @{$v->{'when'}} ) {
-			my $refd = $w->{'param'};
-			$in_params{$_->{'name'}} = $_->{'name'} for @$refd;			
-		}
-	}
-	#add parameters that are not in conditionals
-	for ( @inputs ) {
-		$in_params{$_->{'name'}} = $_->{'name'} if not $in_params{$_->{'name'}};
-	}
-
-	# write to string that checks if parameter is present and sets the parameter
-	for my $param_name ( keys %in_params ) {
-		my $ref_name = $in_params{$param_name};
-		$cmd .= "#if \$${ref_name}\n";
-		$cmd .= "\t--$param_name \$${ref_name}\n";
-		$cmd .= "#end if\n\n";	
-	}
-
-	my @outputs = @{ $in_out->{'outputs'}->{'data'} };
-	for ( @outputs ) {
-		my %h = %{$_};
-		my $param_name = $h{"name"};
-		$cmd .= "\t--$param_name \$${param_name}\n\n" unless $param_name eq "workspace";		
-	}
-
-	
-
-	# add workidir
-	$cmd .= "--workdir /tmp/\$jobid;\n\n";
-
-	# zip workspace which is returned by galaxy
-	#$cmd .= "zip workspace.zip *; mv workspace.zip \$workspace;\n\n";
-
 	# set command
 	$result{'tool'}->{'command'} = [ $cmd ];
 
@@ -159,7 +159,7 @@ sub get_inputs_outputs {
 	@in = grep { ! $cond_params{$_->{'name'}} } @in;
 
 	# set in, out and conditional parameters 
-	$result{'inputs'}->{'conditional'} = $conditionals;
+	$result{'inputs'}->{'conditional'} = $conditionals if keys %{$conditionals};
 	$result{'inputs'}->{'param'} = \@in if scalar @in;
 	$result{'outputs'}->{'data'} = \@out if scalar @out;
 	
@@ -173,45 +173,46 @@ sub get_inputs_outputs {
 sub parse_option {
 	my $op = shift;
 
+	my %result;
+
 	my @arr = @{$op};
 
 	my $name_str = $arr[0];
 	my $description = $arr[1];
-
 	my %info = %{$arr[2]};
-	
-	# extract long option name from name string
-	$name_str =~ s/\|.+$//g;
-	
-	# set tag for xml: per default in Galaxy, for inputs, tag is 'param',
-	#  for outputs, tag is 'data'
-	my $tag = $info{'galaxy_in'} ? 'param' : 'data';
-	my %h;
-
-	# extract type
-	my $type = $info{'galaxy_type'};
-	if ( not $type ) {
-		warn("No galaxy type for option $name_str given. Skipping");
-		return ();
-	}
-	$h{'type'} = $type;
-
-	# extract format
-	my $format = $info{'galaxy_format'};
-	$h{'format'} = $format if $format;
-
-	# extract value, if given
-	my $value = $info{'galaxy_value'};
-	$h{'value'} = $value if $value;
-
 
 	# only process when option is desired to appear in Galaxy,
 	# as set by the attributes galaxy_in and galaxy_out in the command class
 	if ( $info{'galaxy_in'} || $info{'galaxy_out'} ) {
-		$h{'name'} = $name_str;
-		$h{'label'} = $name_str;		
-		$h{'help'} = $description;
+	
+		# extract long option name from name string
+		$name_str =~ s/\|.+$//g;
+		
+		# set tag for xml: per default in Galaxy, for inputs, tag is 'param',
+		#  for outputs, tag is 'data'
+		my $tag = $info{'galaxy_in'} ? 'param' : 'data';
+		my %h;
+		
+		# extract type
+		my $type = $info{'galaxy_type'};
+		if ( not $type ) {
+			warn("No galaxy type for option $name_str given. Skipping");
+			return \%result;
+		}
+		$h{'type'} = $type;
 
+		# extract format
+		my $format = $info{'galaxy_format'};
+		$h{'format'} = $format if $format;
+
+		# extract value, if given
+		my $value = $info{'galaxy_value'};
+		$h{'value'} = $value if $value;
+		
+		$h{'name'} =  $name_str;
+		$h{'label'} = $info{'galaxy_label'} || $name_str;		
+		$h{'help'} = $description;
+		
 		# extract options for value, if given
 		if ( $info{'galaxy_options'} ) {
 			for my $op ( @ {$info{'galaxy_options'}} ) {
@@ -219,18 +220,19 @@ sub parse_option {
 				push $h{'option'}, {"value" => $op, "selected" => $value eq $op ? "Yes" : "No" };
 			}						
 		}	
-
+		
 		# add conditionals
 		if ( $info{'galaxy_condition'} ) {
 			$h{'condition'} = $info{'galaxy_condition'};
-		}		
+		} 
+
+		# summarize all fields into return value
+		%result = ( $tag => \%h );
 	} 
 	else {
 		return ();
 	}
-
-	   	
-	my %result = ( $tag => \%h );
+		   	
 	return \%result;
 }
 
@@ -266,7 +268,7 @@ sub get_conditionals {
 
 			my %existing = map {$_=>1} map {$_->{'value'}} @{$conditionals{$ref_paramname}->{'when'}};
 
-			# some <when> tags could be already initialized, if another paramtere is dependant on 
+			# some <when> tags could be already initialized, if another parameter is dependant on 
 			#  the reference parameters. Get the values for which <when> tags exist
 			for my $v (@values) {
 				# make shallow copy of parameter hash

@@ -50,7 +50,7 @@ sub options {
     return (
         [
 		     "supermatrix|s=s", 
-		     "matrix of concatenated multiple sequece alignments as produced by 'smrt bbmerge'", 
+		     "matrix of concatenated multiple sequence alignments as produced by 'smrt bbmerge'", 
 		     { arg => "file", default => $matrix_default, galaxy_in => 1, galaxy_type => 'data' }
 		],  
         [
@@ -76,7 +76,7 @@ sub options {
 				 galaxy_in => 1, 
 				 galaxy_type => 'integer', 
 				 galaxy_value => $boot_default, 
-#				 galaxy_condition => { 'inferencetool' => ["RAxML", "ExaML", "PhyML"] } 
+				 galaxy_condition => { 'inferencetool' => ["RAxML", "ExaML", "PhyML"] } 
 			 }
 		],
 		[
@@ -92,7 +92,7 @@ sub options {
         [
 		     "outfile|o=s", 
 		     "name of the output tree file (in newick format), defaults to '$outfile_default'", 
-		     {default => $outfile_default, arg => "file", galaxy_out => 1, galaxy_type => "data", galaxy_format => "newick" }
+		     {default => $outfile_default, arg => "file", galaxy_out => 1, galaxy_type => "data", galaxy_format => "newick", galaxy_label => "backbone" }
 		],
         [    "cleanup|x", 
 			 "if set, cleans up all intermediate files", 

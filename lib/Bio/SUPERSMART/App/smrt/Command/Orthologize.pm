@@ -42,11 +42,11 @@ sub options {
 		[
 		 "infile|i=s", 
 		 "list of file locations of multiple sequence alignments  as produced by 'smrt align'", 
-		 { arg => "file", default => $infile_default, galaxy_in => 1, galaxy_format => 'tabular', galaxy_type => "data" }
+		 { arg => "file", default => $infile_default, galaxy_in => 1, galaxy_format => 'tabular', galaxy_type => "data", galaxy_label => 'alignments' }
 		],
 		["outfile|o=s", 
 		 "name of the output file, defaults to '$outfile_default'", 
-		 {default => $outfile_default, arg => "file", galaxy_out => 1, galaxy_format => 'tabular', galaxy_type => "data" }
+		 {default => $outfile_default, arg => "file", galaxy_out => 1, galaxy_format => 'tabular', galaxy_type => "data", galaxy_label => 'merged alignments' }
 		],	
 	);	
 }
