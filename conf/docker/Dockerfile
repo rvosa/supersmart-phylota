@@ -3,7 +3,7 @@
 # 'default.pp' manifest.
 
 # create from image containing phylota database
-FROM naturalis/phylota
+FROM ubuntu:14.04
 
 # add scripts
 ADD default.pp /
@@ -18,7 +18,6 @@ ENV PATH "$PATH:/supersmart/script/"
 ENV PATH "$PATH:/supersmart/tools/bin/"
 ENV SUPERSMART_HOME "/supersmart/"
 ENV EDITOR "nano"
-ENV SUPERSMART_DATABASE_FILE "/phylota/phylota.sqlite"
 
 # this is needed by treePL on the virtual machine
 ENV LD_LIBRARY_PATH "$LD_LIBRARY_PATH:/usr/lib64"
