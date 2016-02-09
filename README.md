@@ -12,7 +12,7 @@ www.supersmart-project.org.
 
 INSTALLATION
 ------------
-Installation depends on vagrant and Virtualbox, see INSTALL.md, the installation guide on the [wiki page](https://github.com/naturalis/supersmart/wiki/Installation-instructions) and the [project website](www.supersmart-project.org).
+Installation depends on vagrant and Virtualbox, see INSTALL.md, the installation guide on the [wiki page](https://github.com/naturalis/supersmart/wiki/Installation-instructions) and the [project website](http://www.supersmart-project.org).
 
 COMMANDS
 --------
