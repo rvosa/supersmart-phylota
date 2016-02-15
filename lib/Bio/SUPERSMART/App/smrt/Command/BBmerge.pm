@@ -119,6 +119,12 @@ sub options {
 			"number of exemplar species per genus, defaults to $exemplars_default, set to -1 to include all species",
             { default => $exemplars_default, galaxy_in => 1, galaxy_type => "integer", galaxy_value => $exemplars_default }
         ],
+        [
+		 "names|n",
+		 "print taxon names instead of identifiers in supermatrix",
+		 { default => 0, galaxy_in => 1, galaxy_type => "boolean" }
+        ],
+
 
     );
 }
@@ -169,6 +175,7 @@ sub run {
         'outfile'     => $self->outfile, 
         'format'      => $opt->format, 
         'markersfile' => $opt->markersfile, 
+		'taxon_names'       => $opt->names,
     );
     $log->info("DONE, results written to $outfile");
     return 1;
