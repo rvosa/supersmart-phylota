@@ -6,7 +6,7 @@ use strict;
 use warnings;
 
 use Bio::SUPERSMART::Service::MarkersAndTaxaSelector;
-use List::Util 'min';
+use List::Util qw (min max);
 use List::MoreUtils 'uniq';
 use Data::Dumper;
 use Bio::AlignIO;
@@ -1210,6 +1210,8 @@ sub write_supermatrix {
     # dereference argument data structures
     my @exemplars  = @{ $args{'exemplars'} };
     my @alignments = @{ $args{'alignments'} };
+	# if 'taxon_names' given, print taxon names instead of IDs
+	my $taxon_names = $args{'taxon_names'};
 
     # make hash with concatenated sequences per exemplar
     my %allseqs = map { $_ => "" } @exemplars;
@@ -1255,8 +1257,10 @@ sub write_supermatrix {
     # Write supermatrix to file
     my $aln = Bio::SimpleAlign->new();
 	map {
+		my $id = $taxon_names ? $mts->find_node($_)->taxon_name : $_;
+		$id =~ s/\s/_/g;
         $aln->add_seq(Bio::LocatableSeq->new(
-	    '-id'   => $_,
+	    '-id'   => $id,
 	    'seq'   => $allseqs{$_},
 	    'start' => 1
         ));
@@ -1268,10 +1272,14 @@ sub write_supermatrix {
 
 	my $format = $args{'format'} || 'phylip';
 	$format = 'nexus' if lc $format eq 'mrbayes';
+	my $idlength = 10;
+	if ( $taxon_names ) {
+		$idlength = max ( map { length $_->id } $aln->each_seq );
+	}
 	my %output_args = ( 
 		-format => $format,
 		-fh => $fh, 
-		-idlength => 10,
+		-idlength => $idlength,
 		-show_symbols => 0,
 		-show_endblock => 0,
 		);
