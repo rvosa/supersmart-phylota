@@ -97,7 +97,7 @@ sub options {
         [
             "outfile|o=s",
             "name of the output file, defaults to '$outfile_default'",
-            { default => $outfile_default, arg => "file", galaxy_out => 1, galaxy_format => $outformat_default, galaxy_type => "data" }
+            { default => $outfile_default, arg => "file", galaxy_out => 1, galaxy_format => $outformat_default, galaxy_type => "data", galaxy_label => 'supermatrix' }
         ],
         [
             "format|f=s",
@@ -106,7 +106,7 @@ sub options {
         ],
         [
             "include_taxa|i=s",
-			"one or multiple names of taxa present in <taxafile> (e.g. species or genus names, separated by commata) whose representative species will be included in the output dataset, regardless of marker coverage and sequence divergence",
+			"one or multiple names of taxa present in 'taxafile' (e.g. species or genus names, separated by commata) whose representative species will be included in the output dataset, regardless of marker coverage and sequence divergence",
             { galaxy_in => 1, galaxy_type => "text" }
         ],
         [

@@ -37,14 +37,46 @@ sub options {
 	my $fossils_default = "fossils.tsv";
 	my $heights_default = $ts->config->NODE_HEIGHTS; 
 	return (
-		["infile|i=s", "newick input tree(s) file", { arg => "file", default => $intree_default}],
-		["outfile|o=s", "name of the output file, defaults to '$outfile_default'", {default => $outfile_default, arg => "file"}],
-		["burnin|b=s", "fraction of burnin to omit, defaults to " . $ts->config->BURNIN . "; set to 0.0 for no burnin", {default => $ts->config->BURNIN, arg => "fraction" }],
-		["heights|e=s", "how to summarize heights (keep, median, mean, ca), defaults to $heights_default", {default => $heights_default, arg => "keep|median|mean|ca"}],
-		["limit|l=f", "the minimum support for a node to be annotated",{default => 0.0, arg => "value"}],
-		["fossils|s=s","fossil table (if re-applying calibration points)", {default => $fossils_default, arg => "file" }],
-		["format|f=s", "format of consensus tree file, (nexus, newick) defaults to 'nexus'", {default => 'nexus', arg => "format" }],
-		["prob|p","write node support as probabilities (otherwise fractions)",{}],
+		[
+		     "infile|i=s", 
+    		 "newick input tree(s) file", 
+		     { arg => "file", default => $intree_default, galaxy_in => 1, galaxy_type => 'data'}
+		],
+		[
+		     "outfile|o=s", 
+		     "name of the output file, defaults to '$outfile_default'", 
+		     { default => $outfile_default, arg => "file", galaxy_out => 1, galaxy_type => 'data', galaxy_label => 'consensus'}
+		],
+		[
+		     "burnin|b=s", "fraction of burnin to omit, defaults to " . $ts->config->BURNIN . "; set to 0.0 for no burnin", 
+    		 { default => $ts->config->BURNIN, arg => "fraction",  galaxy_in => 1, galaxy_type => 'text'}
+		],
+		[
+		     "heights|e=s", 
+		     "how to summarize heights (keep, median, mean, ca), defaults to $heights_default", 
+		     { default => $heights_default, arg => "keep|median|mean|ca", 
+			   galaxy_in => 1, galaxy_type => 'select', galaxy_value => $heights_default, galaxy_options => ['keep', 'median', 'mean', 'ca']}
+		],
+		[
+		     "limit|l=f", 
+		     "the minimum support for a node to be annotated",
+		     { default => 0.0, arg => "value", galaxy_in => 1, galaxy_type => 'text', galaxy_value => '0.0'}
+		],
+		[
+		     "fossils|s=s",
+		     "fossil table (if re-applying calibration points)", 
+		     {default => $fossils_default, arg => "file", galaxy_in => 1, galaxy_type => 'data' }
+		],
+		[
+		     "format|f=s", 
+		     "format of consensus tree file, (nexus, newick) defaults to 'nexus'", 
+		     { default => 'nexus', arg => "format" },
+		],
+		[    
+			 "prob|p",
+			 "write node support as probabilities (otherwise fractions)",
+			 { galaxy_in => 1, galaxy_type => 'boolean'}
+		],
 	);
 }
 

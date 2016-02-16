@@ -46,10 +46,25 @@ sub options {
 	my $tree_default    = "backbone-rerooted.dnd";
 	my $matrix_default  = "supermatrix.phy";
 	return (
-		["fossiltable|f=s", "tsv (tab-separated value) file containing fossil table with at least 5 columns (id, name, crown/stem, taxon, age)", { arg => "file", mandatory => 1}],
-		["tree|t=s", "backbone tree to calibrate as produced by 'smrt bbreroot'", { arg => "file", default => $tree_default}],
-		["supermatrix|s=s", "matrix of concatenated multiple sequece alignments which was used to generate the tree", { arg => "file", default => $matrix_default}],	
-		["outfile|o=s", "name of the output tree file (in newick format), defaults to '$outfile_default'", {default => $outfile_default, arg => "file"}],			
+		[
+		     "fossiltable|f=s", 
+		     "tsv (tab-separated value) file containing fossil table with at least 5 columns (id, name, crown/stem, taxon, age)", 
+		     { arg => "file", mandatory => 1, galaxy_in => 1, galaxy_type => 'data'}
+		],
+		[
+		     "tree|t=s", 
+		     "backbone tree to calibrate as produced by 'smrt bbreroot'", 
+		     { arg => "file", default => $tree_default, galaxy_in => 1, galaxy_type => 'data'}
+		],
+		[    "supermatrix|s=s", 
+			 "matrix of concatenated multiple sequece alignments which was used to generate the tree", 
+			 { arg => "file", default => $matrix_default, galaxy_in => 1, galaxy_type => 'data'}
+		],	
+		[
+		     "outfile|o=s", 
+		     "name of the output tree file (in newick format), defaults to '$outfile_default'", 
+		     { arg => "file", default => $outfile_default, galaxy_out => 1, galaxy_type => 'data'} 
+		],			
 
 	);	
 }

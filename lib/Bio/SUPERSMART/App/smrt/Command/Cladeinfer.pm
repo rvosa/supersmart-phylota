@@ -51,14 +51,37 @@ on different processors.
 sub options {
     my ($self, $opt, $args) = @_;
     my $config = Bio::SUPERSMART::Config->new;
+	my $ngens_default = 100_000;
     return (
-        [ "ngens|n=i", "number of generations in *BEAST, defaults to 100_000 (strictly for testing!)", { arg => "value", default => 100_000 } ],
-        [ "sfreq|s=i", "sampling frequency, defaults to 1000", { arg => "value", default => 1000 } ],
-        [ "lfreq|l=i", "logging frequency, defaults to 1000", { arg => "value", default => 1000 } ],
-        [ "file|f=s", "file (nexml format) to start a single inference from", { arg=>"file" } ],
-        [ "rebuild|x", "rebuild existing *BEAST XML files", {}],
-        [ "append|a", "append trees to existing tree file", {}],
-        [ "burnin|b=f", "burnin to omit when appending trees", { arg => "value", default => $config->BURNIN } ],
+        [ 
+    		  "ngens|n=i", 
+    		  "number of generations in *BEAST, defaults to $ngens_default (strictly for testing!)", 
+		      { arg => "value", default => $ngens_default, galaxy_in => 1, galaxy_type => 'text', galaxy_value => $ngens_default } 
+		],
+        [ 
+		      "sfreq|s=i", 
+		      "sampling frequency, defaults to " . $ngens_default/100, 
+		  { arg => "value", default => $ngens_default/100, galaxy_in => 1, galaxy_type => 'text', galaxy_value => $ngens_default/100 } 
+		],
+        [ 
+		      "lfreq|l=i", 
+		      "logging frequency, defaults to 1000", 
+		      { arg => "value", default => $ngens_default/100 } 
+		],
+        [ 
+		      "file|f=s", 
+		      "file (nexml format) to start a single inference from", 
+		      { arg=>"file" } ],
+        [ 
+		      "rebuild|x", "rebuild existing *BEAST XML files", {}
+		],
+        [ 
+		      "append|a", "append trees to existing tree file", {}
+		],
+        [ 
+		      "burnin|b=f", "burnin to omit when appending trees", 
+		      { arg => "value", default => $config->BURNIN, galaxy_in => 1, galaxy_type => 'text', galaxy_value => $config->BURNIN } 
+		],
     );
 }
 

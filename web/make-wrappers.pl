@@ -12,10 +12,10 @@ use Bio::SUPERSMART::Config;
 my @modules = usesub(Bio::SUPERSMART::App::smrt::Command);
 my @subcommands = map { $_=~ s/.*:://g; $_} @modules;
 
-@subcommands = ("Taxize", "Align", "Orthologize"); ##("BBinfer");##reverse ("Taxize", "Align", "Orthologize", "BBmerge", "BBinfer");
+#@subcommands = ("Taxize", "Align", "Orthologize", "BBmerge"); ##("BBinfer");##reverse ("Taxize", "Align", "Orthologize", "BBmerge", "BBinfer");
 
 for my $subcommand ( @subcommands ) {
-	print $subcommand . "\n";
+	print "Processing $subcommand \n";
 	my $tags = get_tool($subcommand);
 
 	my $out = XMLout($tags, KeepRoot => 1, NoEscape => 1);
@@ -164,7 +164,7 @@ sub get_inputs_outputs {
 	$result{'outputs'}->{'data'} = \@out if scalar @out;
 	
 	# add workspace for input data
-	push $result{'inputs'}->{'param'}, {'name'=>'jobid', 'label'=>'jobid', 'type'=>'text'};
+	push $result{'inputs'}->{'param'}, {'name'=>'jobid', 'label'=>'jobid', 'type'=>'text'} if $result{'inputs'}->{'param'};
 
 	return \%result;
 }
@@ -226,6 +226,10 @@ sub parse_option {
 			$h{'condition'} = $info{'galaxy_condition'};
 		} 
 
+		# add optional flag
+		if ( $info{'galaxy_optional'} ) {
+			$h{'optional'} = 'true'
+		}
 		# summarize all fields into return value
 		%result = ( $tag => \%h );
 	} 

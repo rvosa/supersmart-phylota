@@ -41,7 +41,7 @@ sub options {
 		[
 			"infile|i=s",
 			"file with list of taxon names",
-			{ arg => "file", galaxy_in => 1, galaxy_type => "file" }
+			{ arg => "file", galaxy_in => 1, galaxy_type => "data", galaxy_optional => 1 }
 		],
 		[
 			"outfile|o=s",
@@ -51,8 +51,8 @@ sub options {
 		[
 			"root_taxa|r=s",
 			"one or multiple taxon names (seperated by commata) to be expanded to either 'Species' or to taxonomic rank "
-			. "given in <expand_rank>. Taxon names containing spaces must be enclosed in quotes",
-			{ arg => "taxon,taxon,...", galaxy_in => 1, galaxy_type => "text" }
+			. "given in parameter 'expand_rank'. Taxon names containing spaces must be enclosed in quotes",
+			{ arg => "taxon,taxon,...", galaxy_in => 1, galaxy_type => "text", galaxy_optional => 1 }
 		],
 		[
 			"expand_rank|e=s",

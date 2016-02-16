@@ -39,8 +39,16 @@ produces a single output file that can be analysed by the subcommand cladeinfer.
 sub options {
     my ($self, $opt, $args) = @_;       
     return (
-        [ "outformat|o=s", "output format for merged clade files (phylip or nexml), defaults to 'nexml'", { arg=>"format", default=> 'nexml'} ],
-        [ "enrich|e", "enrich the selected markers with additional haplotypes", {} ],
+        [     
+			  "outformat|o=s", 
+			  "output format for merged clade files (phylip or nexml), defaults to 'nexml'", 
+			  { arg=>"format", default=> 'nexml'} 
+		],
+        [ 
+		      "enrich|e", 
+		      "enrich the selected markers with additional haplotypes", 
+		      { galaxy_in => 1, galaxy_type => 'boolean'} 
+		],
     );  
 }
 

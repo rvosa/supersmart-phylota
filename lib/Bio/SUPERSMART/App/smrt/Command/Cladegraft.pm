@@ -42,12 +42,34 @@ sub options {
 	my $squish_default  = 'none';
     my $format_default  = "figtree";
 	return (                               	
-  		["backbone|b=s", "backbone tree as produced by 'smrt consense', defaults to $tree_default", { arg => "file", default => $tree_default }],
-        ["format|f=s", "file format of the backbone tree as produced by 'smrt consense', defaults to $format_default", { default => $format_default, arg => "format" }],
-		["outfile|o=s", "name of the output tree file (newick format) defaults to $outfile_default", { default=> $outfile_default, arg => "file"}],    	    
-		["cladetree|c=s", "name of tree file (newick format) or clade directory for grafting a single tree", { arg => "file"}],
-		["heights|e=s", "node heights (ca, keep, median, mean)", { default => $heights_default, arg => 'keep|median|mean|ca' } ],
-		["squish|s=s", "how to treat negative branches (zero, yulish, none)", { default => $squish_default, arg => 'zero|yulish|none' } ],
+  		[
+		     "backbone|b=s", 
+		     "backbone tree as produced by 'smrt consense', defaults to $tree_default", 
+		     { arg => "file", default => $tree_default, galaxy_in => 1, galaxy_type => 'data' }
+		],
+        [    
+			 "format|f=s", 
+			 "file format of the backbone tree as produced by 'smrt consense', defaults to $format_default", 
+			 { default => $format_default, arg => "format" }
+		],
+		[    
+			 "outfile|o=s", 
+			 "name of the output tree file (newick format) defaults to $outfile_default", 
+			 { default=> $outfile_default, arg => "file", galaxy_out => 1, galaxy_type => 'data', galaxy_label => 'final tree'}
+		],    	    
+		[    
+			 "cladetree|c=s", 
+			 "name of tree file (newick format) or clade directory for grafting a single tree", 
+			 { arg => "file"}
+		],
+		[    
+			 "heights|e=s", 
+			 "node heights (ca, keep, median, mean)", { default => $heights_default, arg => 'keep|median|mean|ca' } 
+		],
+		[    
+			 "squish|s=s", "how to treat negative branches (zero, yulish, none)", 
+			 { default => $squish_default, arg => 'zero|yulish|none' } 
+		],
     );
 }
 
