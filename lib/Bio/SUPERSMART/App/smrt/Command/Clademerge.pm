@@ -74,13 +74,12 @@ sub run {
             push @dirs, $dir;
         }
     }
-
 	# merge alignments for each clade, don't include this in the pmap below since
 	# orthologize_cladedir also uses pmap, hence avoid nested pmap calls
 	for my $cladedir ( @dirs ) {
 		my $mergedfile = "${workdir}/${cladedir}/merged.txt";		
 		$mt->orthologize_cladedir( 
-			'dir'=>$cladedir, 
+			'dir'=>"${workdir}/${cladedir}", 
 			'outfile'=>$mergedfile, 
 			'maxdist'=>$config->CLADE_MAX_DISTANCE );
 	}
@@ -88,12 +87,12 @@ sub run {
     # enrich (if requested in argument) and write matrix to file
     my @result = grep { defined $_ and -e $_ } pmap {
 		(my $clade) = @_;
-		my $dir = "${workdir}/${clade}";
-		if ( -e "$dir/merged.txt" ) {
-			$mt = Bio::SUPERSMART::Domain::MarkersAndTaxa->new("${dir}/merged.txt", $config->CLADE_MIN_COVERAGE);
+		my $dir = $clade;
+		if ( -e "${workdir}/${dir}/merged.txt" ) {
+			$mt = Bio::SUPERSMART::Domain::MarkersAndTaxa->new("${workdir}/${dir}/merged.txt", $config->CLADE_MIN_COVERAGE);
 			$mt->write_clade_matrix( 
-				'markersfile' => "${dir}/${clade}-markers.tsv",
-				'outfile' => $opt->outformat eq 'phylip' ? "${dir}/${clade}.phy" : "${dir}/${clade}.xml",
+				'markersfile' => "${workdir}/${dir}/${clade}-markers.tsv",
+				'outfile' => $opt->outformat eq 'phylip' ? "${workdir}/${dir}/${clade}.phy" : "${workdir}/${dir}/${clade}.xml",
 				'max_markers' => $config->CLADE_MAX_COVERAGE,
 				'enrich' => $opt->enrich,
 				'format' => $opt->outformat);
