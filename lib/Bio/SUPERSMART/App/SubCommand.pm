@@ -68,8 +68,9 @@ sub workdir {
 		$self->logger->debug ("Setting working directory to $wd" );
 		$self->{'workdir'} = $wd;		
 		if ( !  ( -e $wd && -w $wd ) ) {
-			$self->logger->fatal ("Working directory $wd does not exist or is not writable") ;		
-			exit(1);
+			#$self->logger->fatal ("Working directory $wd does not exist or is not writable") ;		
+			#exit(1);
+			mkdir $wd or die $!;
 		}
 	}
 	return $self->{'workdir'};
@@ -199,13 +200,15 @@ subcommand specific options.
 =cut 
 
 sub opt_spec {
-	my ($class, $app) = @_;		
+	my ($class, $app) = @_;
+	( my $subcommand = lc $class ) =~ s/.*:://g ;
 	return (
 		$class->options($app),
 		[ "help|h", "display help screen", { urgency => 'super' } ],
 		[ "verbose|v+", "increase verbosity level", { urgency => 'super' } ],
 		[ "workdir|w=s", "directory in which results and intermediate files are stored", { arg => "dir", urgency => 'super' } ],
-		[ "logfile|l=s", "write run-time information to logfile", { arg => "file", urgency => 'super' }],	
+		[ "logfile|l=s", "write run-time information to logfile", 
+		  { arg => "file", urgency => 'super', galaxy_out => 1, galaxy_label => "logfile-${subcommand}", galaxy_type => 'text'}],	
 		[ "logstyle|y=s", "toggles logging style between 'simple' and 'detailed'", { default => "simple", urgency => 'super' }],
 	);	
 }
