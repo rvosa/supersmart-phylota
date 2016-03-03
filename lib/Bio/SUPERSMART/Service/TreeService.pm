@@ -79,6 +79,53 @@ sub to_string {
 	return $string;
 }
 
+=item read_tree
+
+Reads a phylogenetic tree from file, detects format if not given as argument
+
+ -file => filename
+ -format => format
+
+=cut 
+
+sub read_tree {
+	my ( $self, %args ) = @_;
+	
+	my $file = $args{'-file'} or throw 'BadArgs' => "Need -file argument";
+	my $format = $args{'-format'};
+	
+	my @formats = qw(figtree nexus newick);	
+
+	my $tree;
+	
+	if ( ! $format ) {		
+		$log->info("Detecting format of tree $file");
+		for my $f ( @formats ) {
+			$log->info("Checking if file is in $f format");
+			eval { 
+				$tree = parse_tree(
+					'-file'   => $file,
+					'-format' => $f,
+					);
+			};
+			if ( $tree ) {
+				$log->info("Read tree in $f format");
+				last;		
+			}									
+		}
+	}
+	else {
+		$tree = parse_tree(
+			'-file'   => $file,
+			'-format' => $format,
+			);		
+		$log->info("Read tree in $format format")
+	}
+	
+	$log->fatal("Could not parse tree file $file") if ! $tree;
+	return ( $tree );
+}
+
 =item read_figtree
 
 Reads a tree in figtree-NEXUS format
