@@ -44,16 +44,17 @@ around BUILDARGS => sub {
 		$args{'alnfiles'} = [ $class->parse_aln_file($alnfile) ];
 		$log->debug("read ".scalar(@{$args{'alnfiles'}})." alignments from $alnfile");
 		$args{'min_cover'} = shift;
-		
+
 		# then we parse the alignments
 		$args{'alignments'} = {};
-		my %taxa;
+		my @taxa;
 		for my $f ( @{ $args{'alnfiles'} } ) {
 			my %fasta = $class->parse_fasta_file($f);
 			$args{'alignments'}->{$f} = \%fasta;
-			%taxa = map { $_ => 1 } $class->get_taxa_from_fasta(%fasta);
+			push @taxa, $class->get_taxa_from_fasta(%fasta);
+			@taxa = uniq @taxa;
 		}
-		$args{'species'} = [ keys %taxa ];
+		$args{'species'} = \@taxa;
 
 		# then we index the alignments
 		$class->_index_alignments(\%args);
@@ -132,17 +133,17 @@ sub _index_alignments {
     for my $i ( 0 .. $#{ $args->{'alnfiles'} } ) {
 
         # dereference data
-	my %fasta = %{ $args->{'alignments'}->{$args->{'alnfiles'}->[$i]} };
+		my %fasta = %{ $args->{'alignments'}->{$args->{'alnfiles'}->[$i]} };
 
-	# grep distinct taxa, store under alignment file name
-	my @taxa = uniq $class->get_taxa_from_fasta(%fasta);
-	$taxa_for_alns{$args->{'alnfiles'}->[$i]} = \@taxa;
+		# grep distinct taxa, store under alignment file name
+		my @taxa = uniq $class->get_taxa_from_fasta(%fasta);
+		$taxa_for_alns{$args->{'alnfiles'}->[$i]} = \@taxa;
 
-	# store alignment file names for each taxon
-	for my $t (@taxa) {
-	    $alns_for_taxa{$t} = [] if not $alns_for_taxa{$t};
-	    push @{ $alns_for_taxa{$t} }, $args->{'alnfiles'}->[$i];
-	}
+		# store alignment file names for each taxon
+		for my $t (@taxa) {
+			$alns_for_taxa{$t} = [] if not $alns_for_taxa{$t};
+			push @{ $alns_for_taxa{$t} }, $args->{'alnfiles'}->[$i];
+		}
     }
     $args->{'taxa_for_alns'} = \%taxa_for_alns;
     $args->{'alns_for_taxa'} = \%alns_for_taxa;
@@ -180,7 +181,7 @@ sub _index_alignments {
         }
     }
     $log->debug("adjacency matrix now has ".scalar(keys(%adjacency_matrix))." entries");
-    
+
     # get all independent subsets of species that are connected by at least
     # one marker and select the largest subset as candidates for exemplars
     my $sets = $mts->get_connected_taxa_subsets( \%adjacency_matrix );
@@ -359,7 +360,6 @@ sub pick_exemplars {
 	my @alignments       = @{ $self->alnfiles };
 	my @exemplars;
 	for my $genus ( keys %species_for_genus ) {
-
 		# lookup genus name
 		my $gname = '';
 		if (my $n = $mts->find_node($genus) ) {
@@ -645,7 +645,7 @@ sub parse_aln_file {
         	}
         }
         else {
-        	$log->debug("skipping blank line");	
+        	$log->debug("skipping blank line");
         }
     }
     return @alignments;
@@ -1266,7 +1266,7 @@ sub write_supermatrix {
         ));
     } keys %allseqs;
     $aln->sort_alphabetically;
-	
+
     my $filename = $args{'outfile'};
 	open my $fh, '>', $filename or die $!;
 
@@ -1276,28 +1276,28 @@ sub write_supermatrix {
 	if ( $taxon_names ) {
 		$idlength = max ( map { length $_->id } $aln->each_seq );
 	}
-	my %output_args = ( 
+	my %output_args = (
 		-format => $format,
-		-fh => $fh, 
+		-fh => $fh,
 		-idlength => $idlength,
 		-show_symbols => 0,
 		-show_endblock => 0,
 		);
-	
+
     my $stream = Bio::AlignIO->new( %output_args );
 
 	# add run block for MrBayes if requested
-	my $runblock;	
+	my $runblock;
 	if ( lc $args{'format'} eq 'mrbayes' ) {
 		$aln->missing_char('?');
 		my $numruns = $config->EXABAYES_NUMRUNS;
 		my $numgens = $config->EXABAYES_NUMGENS;
 		my $sfreq = 1000;
 		my $file = "mrbayes-out.nex";
-		$runblock = "begin mrbayes;\n" . 
+		$runblock = "begin mrbayes;\n" .
 			"set autoclose=yes nowarn=yes;\n" .
 			"lset nst=6 rates=gamma;\n" .
-			"mcmc nruns=$numruns ngen=$numgens samplefreq=$sfreq file=$file;\n" . 
+			"mcmc nruns=$numruns ngen=$numgens samplefreq=$sfreq file=$file;\n" .
 			"end;\n";
 	}
 	$stream->write_aln($aln);
