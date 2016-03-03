@@ -3,7 +3,7 @@ package Bio::SUPERSMART::App::smrtutils::Command::TreeDist;
 use strict;
 use warnings;
 
-use Bio::Phylo::IO qw(parse);
+use Bio::Phylo::IO qw(parse_tree);
 use Bio::SUPERSMART::Service::TreeService; 
 
 use base 'Bio::SUPERSMART::App::SubCommand';
@@ -51,20 +51,20 @@ sub run {
 	my ($self, $opt, $args) = @_;    
 
 	my $logger = $self->logger;      	
-	
-	my $tree1 = parse(
+	my $ts = Bio::SUPERSMART::Service::TreeService->new; 	
+
+	my $tree1 = parse_tree(
 		'-file'   => $opt->tree1,
 		'-format' => $opt->treeformat,
-	    )->first;
+	    );
 	
-	my $tree2 = parse(
+	my $tree2 = parse_tree(
 		'-file'   => $opt->tree2,
 		'-format' => $opt->treeformat,
-	    )->first;
+	    );
 
 	# prune tips such that both trees have the same taxa.
 	$logger->info("Pruning tips to have the same taxa in both trees");
-	my $ts = Bio::SUPERSMART::Service::TreeService->new; 
 	my @trees = $ts->intersect_trees($tree1, $tree2);
 	$tree1 = $trees[0];
 	$tree2 = $trees[1];
@@ -81,7 +81,5 @@ sub run {
 	$logger->info("DONE");
 	
 }
-
-
 
 1;

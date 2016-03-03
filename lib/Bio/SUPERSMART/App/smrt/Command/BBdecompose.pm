@@ -69,7 +69,7 @@ sub options {
         [
 		     "alnfile|a=s", 
 		     "list of file locations of alignments as produced by 'smrt aln'", 
-		     { arg => "file", default => $aln_default}
+		     { arg => "file", default => $aln_default, galaxy_in => 1, galaxy_type => 'data'}
 		],
         [
 		     "taxafile|t=s", 

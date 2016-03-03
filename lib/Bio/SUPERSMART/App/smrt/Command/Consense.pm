@@ -49,7 +49,7 @@ sub options {
 		],
 		[
 		     "burnin|b=s", "fraction of burnin to omit, defaults to " . $ts->config->BURNIN . "; set to 0.0 for no burnin", 
-    		 { default => $ts->config->BURNIN, arg => "fraction",  galaxy_in => 1, galaxy_type => 'text'}
+    		 { default => $ts->config->BURNIN, arg => "fraction",  galaxy_in => 1, galaxy_type => 'float', galaxy_value => $ts->config->BURNIN}
 		],
 		[
 		     "heights|e=s", 
@@ -60,7 +60,7 @@ sub options {
 		[
 		     "limit|l=f", 
 		     "the minimum support for a node to be annotated",
-		     { default => 0.0, arg => "value", galaxy_in => 1, galaxy_type => 'text', galaxy_value => '0.0'}
+		     { default => 0.0, arg => "value", galaxy_in => 1, galaxy_type => 'float', galaxy_value => '0.0'}
 		],
 		[
 		     "fossils|s=s",

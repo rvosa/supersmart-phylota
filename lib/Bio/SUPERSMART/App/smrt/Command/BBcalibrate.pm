@@ -63,7 +63,7 @@ sub options {
 		[
 		     "outfile|o=s", 
 		     "name of the output tree file (in newick format), defaults to '$outfile_default'", 
-		     { arg => "file", default => $outfile_default, galaxy_out => 1, galaxy_type => 'data'} 
+		     { arg => "file", default => $outfile_default, galaxy_out => 1, galaxy_type => 'data', galaxy_label => 'chronogram'} 
 		],			
 
 	);	

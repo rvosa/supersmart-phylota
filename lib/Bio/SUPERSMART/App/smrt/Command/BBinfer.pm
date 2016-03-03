@@ -92,7 +92,7 @@ sub options {
         [
 		     "outfile|o=s", 
 		     "name of the output tree file (in newick format), defaults to '$outfile_default'", 
-		     {default => $outfile_default, arg => "file", galaxy_out => 1, galaxy_type => "data", galaxy_format => "newick", galaxy_label => "backbone" }
+		     {default => $outfile_default, arg => "file", galaxy_out => 1, galaxy_type => "data", galaxy_label => "backbone" }
 		],
         [    "cleanup|x", 
 			 "if set, cleans up all intermediate files", 

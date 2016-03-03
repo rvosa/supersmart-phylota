@@ -109,7 +109,7 @@ sub run {
 	my $ntax_pruned = $tree->get_ntax;
 	$logger->info("Taxon number changed from $ntax_initial to $ntax_pruned");
 
-	# write rerooted tree to output file
+	# write pruned tree to output file
 	open my $out, '>', $outfile or die $!;
 	print $out $tree->to_newick(nodelabels=>1);
 	close $out;
