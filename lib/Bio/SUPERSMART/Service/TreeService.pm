@@ -8,6 +8,7 @@ use Bio::Phylo::Factory;
 use Bio::SUPERSMART::Config;
 use Bio::SUPERSMART::Service;
 use Bio::Phylo::Util::CONSTANT ':namespaces';
+use Bio::Phylo::Util::Exceptions 'throw';
 use base 'Bio::SUPERSMART::Service';
 use Bio::SUPERSMART::Domain::MarkersAndTaxa;
 use Bio::SUPERSMART::Service::MarkersAndTaxaSelector;
@@ -29,6 +30,54 @@ Provides functionality for handling trees, e.g. decomposing, rerooting and graft
 clade trees onto a backbone tree.
 
 =over
+
+=item to_file
+
+Writes a tree object to file.
+
+ -file => filename
+ -tree => tree object
+ -format => output format, newick, nexus or figtree, defaults to newick
+
+=cut
+
+sub to_file {
+	my ( $self, %args ) = @_;
+	
+	my $file = $args{'-file'} or throw 'BadArgs' => "Need -file argument";
+	my $tree = $args{'-tree'} or throw 'BadArgs' => "Need -tree argument";
+	my $format = $args{'-format'} || 'newick';
+
+	open my $fh, '>', $file or die $!;
+	print $fh $self->to_string( $tree, $format );
+	close $fh;
+	
+	$log->info("Wrote tree in $format format to file $file.");
+}
+
+
+=item to_string
+
+Returns the string representation of a tree in the specified format
+
+=cut
+
+sub to_string {
+	my ( $self, $tree, $format ) = @_;
+	
+	# create output
+	my $project = $fac->create_project;
+	my $forest  = $fac->create_forest;
+	$forest->insert($tree);
+	my $taxa = $forest->make_taxa;
+	$project->insert($taxa);
+	$project->insert($forest);
+	my $string = unparse(
+		'-format' => $format,
+		'-phylo'  => $project,
+	    );
+	return $string;
+}
 
 =item read_figtree
 
@@ -61,47 +110,6 @@ sub read_figtree {
 	my $tree = parse_tree( %parse_args );
 
 	return $tree;
-}
-
-=item to_figtree
-
-Given a tree object, returns a string in figtree-NEXUS format
-
-=cut
-
-sub to_figtree {
-	my ( $self, $tree ) = @_;
-
-	# create output
-	my $project = $fac->create_project;
-	my $forest  = $fac->create_forest;
-	$forest->insert($tree);
-	my $taxa = $forest->make_taxa;
-	$project->insert($taxa);
-	$project->insert($forest);
-	my $string = unparse(
-		'-format' => 'figtree',
-		'-phylo'  => $project,
-	    );
-	return $string;
-}
-
-
-=item write_figtree
-
-Writes a tree in figtree-NEXUS format
-
-=cut
-
-sub write_figtree {
-	my ( $self, $tree, $outfile ) = @_;
-
-	my $string = $self->to_figtree( $tree );
-
-	# write to file
-	open my $outfh, '>', $outfile or die $!;
-	print $outfh $string;
-	close $outfh;
 }
 
 =item reroot_tree
@@ -922,8 +930,11 @@ sub graft_tree {
 	my $bmrca_depth = $bmrca->calc_max_path_to_tips;
 	$log->info("Clade depth: $cmrca_depth " . $cmrca->to_newick);
 	$log->info("Backbone MRCA depth: $bmrca_depth " . $bmrca->to_newick);
-	$self->_rescale( $clade, $bmrca_depth / $cmrca_depth );
-	$log->debug("multiplied clade tree by ". ($bmrca_depth/$cmrca_depth));
+	
+	if ( $cmrca_depth > 0 ) {
+		$self->_rescale( $clade, $bmrca_depth / $cmrca_depth );
+		$log->debug("multiplied clade tree by ". ($bmrca_depth/$cmrca_depth));
+	}
 
 	# calculate the depth of the root in the clade, adjust backbone depth accordingly
 	my $crd  = $clade->get_root->calc_max_path_to_tips;

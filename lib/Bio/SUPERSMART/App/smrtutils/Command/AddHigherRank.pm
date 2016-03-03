@@ -115,7 +115,7 @@ sub run {
 		$mrca->set_meta_object( 'fig:name' => $clade );
 	}
 
-	$ts->write_figtree( $tree, $outfile);
+	$ts->to_file( '-tree'=>$tree, '-file'=>$outfile, '-format'=>'figtree');
 	
 	$logger->info("DONE. Outfile written to $outfile");
 	return 1;

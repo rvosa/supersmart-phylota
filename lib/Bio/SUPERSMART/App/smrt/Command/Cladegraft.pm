@@ -153,7 +153,7 @@ sub run {
 	
 	# map taxon IDs back to names and write to file
 	$ts->remap_to_name( $grafted );
-	$ts->write_figtree( $grafted, $outfile );
+	$ts->to_file( '-tree'=>$grafted, '-file'=>$outfile, '-format'=>'figtree' );
 	$logger->info("DONE, results written to $outfile");	    
 }
 
@@ -179,10 +179,10 @@ sub _graft_single_tree {
 	$consensus->get_root->set_meta_object( "fig:clade" => $clade );
 
 	# write remapped consensus in clade directory
-	my $clone = $ts->read_figtree( '-string' => $ts->to_figtree($consensus));
+	my $clone = $ts->read_figtree( '-string' => $ts->to_string($consensus, 'figtree'));
 	$ts->remap_to_name( $clone );	
 	my $fname    = "${workdir}/${clade}/${clade}-consensus.dnd";
- 	$ts->write_figtree( $clone, $fname );
+ 	$ts->to_file( '-tree'=>$clone, '-file'=>$fname, '-format'=>'figtree' );
 
 	# prune outgroup from consensus tree (if exists)
 	if ( -e $ogfile ) {
