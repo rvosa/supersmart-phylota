@@ -849,7 +849,7 @@ sub get_markers_for_gi {
 	my $seq;
 	eval { $seq = $gb->get_Seq_by_id($gi) };
 	if ( $@ ) {
-		$log->warn("Unable to fetch $gi");
+		$log->warn("Unable to fetch GI $gi");
 		$log->debug($@);
 		return ();
 	}
