@@ -7,7 +7,7 @@ use File::Spec;
 use Data::Dumper;
 use List::Util qw(max);
 
-use Bio::Phylo::IO qw(parse parse_tree unparse parse_matrix);
+use Bio::Phylo::IO qw(parse unparse parse_matrix);
 use Bio::Phylo::Util::CONSTANT ':objecttypes';
 use Bio::Phylo::Models::Substitution::Dna;
 
@@ -49,7 +49,6 @@ sub options {
 	my $format_default = 'newick';
 	return (
 		['tree|t=s', 'file name of input tree, must be ultrametric', { arg => 'file', mandatory => 1 } ],
-		['tree_format|f=s', "format of tree input file (newick or nexus), defaults to $format_default", { default => $format_default } ],
 		['alignments|a=s', "list of alignment files to replicate, as produced by 'smrt align'", { arg => 'file' } ],
 		["aln_outfile|o=s", "name of output file listing the simulated alignments, defaults to '$aln_outfile_default'", {default => $aln_outfile_default, arg => "file"}],
 		["tree_outfile|b=s", "name of the output tree file (newick format), defaults to '$tree_outfile_default'", {default => $tree_outfile_default, arg => "file"}],
@@ -83,34 +82,25 @@ sub run {
 	my $taxa_outfile = $opt->taxa_outfile;   
 	my $ts = Bio::SUPERSMART::Service::TreeService->new;
 	my $mt  = Bio::SUPERSMART::Domain::MarkersAndTaxa->new;
+	my $mts    = Bio::SUPERSMART::Service::MarkersAndTaxaSelector->new;
 
 	# read tree
-	$logger->info("Reading original tree from $treefile");
-	my $tree = parse_tree(
-		'-file'   => $treefile,
-		'-format' => $opt->tree_format,
-	    );
-
+	my $tree = $ts->read_tree( '-file' => $treefile );
+	
 	# prune negative branches from tree, if any
 	$tree = $self->_prune_negative_branches($tree);
 
 	# replicate tree and write to file, if not replicated already
 	my $tree_replicated;
 	if ( my $filename_rep = $opt->replicated_tree ) {
-
 		#load replicate tree from file
 		$logger->info("Reading replicated tree from $filename_rep");
-		$tree_replicated = parse_tree(
-			'-file'   => $filename_rep,
-			'-format' => 'newick',
-			);
+		$tree_replicated = $ts->read_tree( '-file'   => $filename_rep );
 	}
 	else {
 		$logger->info("Replicating tree from $treefile");
 		$tree_replicated = $self->_replicate_tree($tree)->first;
-		open my $fh, '>', $tree_outfile or die $!;
-		print $fh $tree_replicated->to_newick( nodelabels => 1 );
-		close $fh;
+		$ts->to_file( '-tree' => $tree_replicated, '-file' => $tree_outfile );
 		$logger->info("wrote replicated tree to $tree_outfile");
 	}
 
@@ -124,11 +114,7 @@ sub run {
 		$ts->remap_to_ti( $tree_replicated, @records );
 
 		# read list of alignments
-		$logger->info("going to read alignment file list $aln");
-		open my $fh, '<', $aln or die $!;
-		my @alnfiles = <$fh>;
-		chomp @alnfiles;
-		close $fh;
+		my @alnfiles = $mt->parse_aln_file( $aln );
 
 		# replicate all alignments fiven in input align file,
 		# write alignments to file and also create a list with all
@@ -353,7 +339,7 @@ sub _replicate_alignment {
 	my $tries = 0;
 	while ( $frac_ident > 0.5) {
 		$tries++;
-		$logger->info("Try # $tries to simulate phylogenetically informative alignment.");
+		$logger->info("Try # $tries to simulate phylogenetically informative alignment.") if $args{'informative'};
 		if ( $tries >= 10 ) {
 			$logger->warn("Exceeded 10 tries for simulating phylogenetically informative alignment. Skipping.");
 			return 0;
@@ -373,6 +359,7 @@ sub _replicate_alignment {
 			}
 		}
 		$frac_ident = $self->_get_frac_identical_seqs( $rep );
+		# never try to re-simulate if '--phylogenetically_informative' flag not set
 		last if not $args{'informative'};
 	}
 	
