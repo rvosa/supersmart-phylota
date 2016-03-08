@@ -162,7 +162,7 @@ sub run{
     if ( $add_outgroup ) {
 
         # make a classification tree, source of candidate outgroups
-		my $classtree = $ts->make_classification_tree( @taxa );
+		my $classtree = $ts->make_ncbi_tree( @taxa );
         $ts->remap_to_ti( $classtree, @taxa );
 
         # iterate over hashes, with key 'ingroup', value is an

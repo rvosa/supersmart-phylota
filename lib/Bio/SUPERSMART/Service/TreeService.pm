@@ -860,14 +860,14 @@ sub make_random_starttree {
     return $tree;
 }
 
-=item make_classification_tree
+=item make_ncbi_tree
 
 Given a taxa table, creates a tree with classifications according
 to the NCBI taxonomy database
 
 =cut
 
-sub make_classification_tree {
+sub make_ncbi_tree {
 	my ( $self, @taxatable) = @_;
 
 	my $mts = Bio::SUPERSMART::Service::MarkersAndTaxaSelector->new;
