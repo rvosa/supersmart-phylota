@@ -620,6 +620,34 @@ sub query_taxa_table {
     return @result;
 }
 
+=item parse_names_file
+
+Reads a file listing taxon names and returns them in an array 
+
+=cut
+
+sub parse_names_file {
+    my ( $class, $file ) = @_;
+    my $log  = Bio::Phylo::Util::Logger->new;
+    $log->info("going to read taxon names from file $file");	
+	my @names;
+
+	# read names from file or STDIN, clean line breaks
+	open my $fh, '<', $file or die $!;
+	while(<$fh>) {
+		
+		# strip line breaks and leading/trailing whitespace
+		chomp;
+		s/^\s*//;
+		s/\s*$//;
+		push @names, $_ if /\S/;
+	}
+	close $fh;
+	$log->info( "Read " . scalar(@names) . " taxon names from $file" );
+	
+	return @names;
+}
+
 =item parse_aln_file
 
 Reads the flat list of alignments, returns an array of validated file names

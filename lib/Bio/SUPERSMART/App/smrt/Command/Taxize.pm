@@ -5,6 +5,7 @@ use warnings;
 
 use Bio::SUPERSMART::Config;
 use Bio::SUPERSMART::Service::MarkersAndTaxaSelector;
+use Bio::SUPERSMART::Domain::MarkersAndTaxa;
 
 use Bio::SUPERSMART::App::SubCommand;
 use base 'Bio::SUPERSMART::App::SubCommand';
@@ -64,6 +65,11 @@ sub options {
 			"filter taxon names that are not binomials",
 			{ default => 0, galaxy_in => 1, galaxy_type => "boolean" }
 		],
+		[
+		    "all_ranks|a",
+		    "also write higher taxa than 'Species' to taxa file",
+		    { default => 0, galaxy_in => 1, galaxy_type => "boolean" }
+		]
 	);
 }
 
@@ -85,7 +91,6 @@ sub run {
 	my ( $self, $opt, $args ) = @_;
 
 	# collect command-line arguments
-	my $infile      = $opt->infile;
 	my $expand_rank = $opt->expand_rank;
 	my $root_taxa   = $opt->root_taxa;
 
@@ -93,22 +98,12 @@ sub run {
 	my $log    = $self->logger;
 	my $config = Bio::SUPERSMART::Config->new;
 	my $mts    = Bio::SUPERSMART::Service::MarkersAndTaxaSelector->new;
+	my $mt     = Bio::SUPERSMART::Domain::MarkersAndTaxa->new;
 
 	my @names;
 
-	if ( $infile ) {
-		# read names from file or STDIN, clean line breaks
-		open my $fh, '<', $infile or die $!;
-		while(<$fh>) {
-
-			# strip line breaks and leading/trailing whitespace
-			chomp;
-			s/^\s*//;
-			s/\s*$//;
-			push @names, $_ if /\S/;
-		}
-		close $fh;
-		$log->info( "Read " . scalar(@names) . " species names from $infile" );
+	if ( my $infile = $opt->infile ) {
+		@names = $mt->parse_names_file( $infile );
 	}
 	if ( $root_taxa ) {
 		my @taxa = split(',', $root_taxa);
@@ -120,8 +115,8 @@ sub run {
 		@names = $mts->expand_taxa( \@names, $expand_rank || "species" );
 	}
 	
-	my @taxa_table = $mts->make_taxa_table( \@names, $opt->binomials_only );	
-	$mts->write_taxa_file( $opt->outfile, @taxa_table );
+	my @taxa_table = $mts->make_taxa_table( \@names, $opt->binomials_only );
+	$mts->write_taxa_file( '-file' => $opt->outfile, '-table' => \@taxa_table, '-all_ranks' => $opt->all_ranks );
 
 	$log->info("DONE, results written to " . $opt->outfile);
 	return 1;

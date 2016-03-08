@@ -693,10 +693,17 @@ from low to high. If a taxon ID is not found at a certain level, 'NA' is written
 table cell.
 Omits entries for taxa of higher level than "species".
 
+ -file => filename
+ -table => array ref of taxa table
+ -all_ranks => whether to also write taxa higher than 'Species'
+
 =cut
 
 sub write_taxa_file {
-    my ($self, $outfile, @table) = @_;
+    my ($self, %args) = @_;
+
+	my $outfile = $args{'-file'} or throw 'BadArgs' => "Need -file argument";
+	my @table = @{$args{'-table'}} or throw 'BadArgs' => "Need -table argument";
 
     my @levels = reverse ( $self->get_taxonomic_ranks );
     
@@ -704,10 +711,10 @@ sub write_taxa_file {
     
     # print table header
     print $out join( "\t", 'name', @levels ), "\n";
-    
+
     # only write row for taxon if id for one of the below ranks is given
-    my @valid_ranks = ("species", "subspecies", "varietas", "forma");
-    
+    my @valid_ranks = $args{'-all_ranks'} ? @TAXONOMIC_RANKS : ("species", "subspecies", "varietas", "forma");
+
     # loop over table and write each entry, if no id at a taxonomic level exists, write "NA"
 	for my $row ( @table ) {
         my %h = %$row;

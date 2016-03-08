@@ -195,7 +195,7 @@ sub _write_taxafile {
 	$logger->info("Going to make taxa table");
 	my @taxa_table = $mts->make_taxa_table( \@names );
 	$logger->info("Writing taxa table to $filename");
-	$mts->write_taxa_file( $filename, @taxa_table );
+	$mts->write_taxa_file( '-file' => $filename, '-table' => \@taxa_table );
 
 	# for the species with artificial taxon names, do as follows: first: assign an artificial
 	# ti to the species. Then iteratively select the children of the father of the focal node, and

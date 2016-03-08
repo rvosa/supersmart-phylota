@@ -246,7 +246,7 @@ sub run{
 			@names = map { $mts->find_node($_)->taxon_name } @set;
 			my @taxa_table = $mts->make_taxa_table( \@names );
 			my $taxafile = "clade$i/species.tsv";
-			$mts->write_taxa_file( $taxafile, @taxa_table );
+			$mts->write_taxa_file( '-file' => $taxafile, '-table' => \@taxa_table );
 		}
 		return ( {"clade$i"=> \@names});
 
