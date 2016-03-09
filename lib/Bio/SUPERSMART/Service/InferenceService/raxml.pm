@@ -60,7 +60,7 @@ sub configure {
     $tool->p($config->RANDOM_SEED);
 
 	# set starting tree if given
-	if ( my $tree = $self->usertree ) {
+	if ( my $tree = $self->usertree and  ! $self->{'rapid_boot'} ) {
 		$self->logger->info("Setting starting tree $tree");
 		$tool->t($tree);
 	}
@@ -89,22 +89,23 @@ sub run {
 
 		# Do ML search and boostrapping in one go
 		$t->f('a');
-
+		
         # bootstrap random seed
         $t->x($self->config->RANDOM_SEED);
 
 		# we will return the best ML tree annotated with bootstrap values as node labels
-        $treefile = File::Spec->catfile( $t->w, 'RAxML_bipartitions.' . $id );
+        $treefile = File::Spec->catfile( $t->w, 'RAxML_bootstrap.' . $id );
 
 		# set number of rapid boostrap replicates; override number of runs
 		$t->N($self->bootstrap);
-
+		
+		# tell RaXML to put branch lenghts on bootstrap trees	   
+		$t->k(1);
     }
     # run raxml, returns bioperl tree
     my $bptree = $t->run($args{'matrix'});
-
     $logger->fatal('RAxML inference failed; outfile not present') if not -e $treefile;
-	$logger->warn("Returning RAxML tree file $treefile");
+
     return $treefile;
 }
 

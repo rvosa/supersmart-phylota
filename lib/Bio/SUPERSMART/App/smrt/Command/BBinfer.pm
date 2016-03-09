@@ -231,6 +231,7 @@ sub _process_result {
         $map{$_} =~ s/ /_/g for keys %map;		
 		my ( $fh, $filename ) = tempfile();
 		close $fh;
+		
 		$ts->remap_newick( $backbone => $filename, %map );
 		move( $filename => $outfile );
         unlink $backbone;

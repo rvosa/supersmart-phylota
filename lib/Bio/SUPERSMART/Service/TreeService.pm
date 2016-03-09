@@ -886,7 +886,6 @@ sub make_ncbi_tree {
 		$node->set_name( $label );
 	});
 	$tree->remove_unbranched_internals;
-	print $tree->to_newick;
 	return ($tree);
 }
 
