@@ -71,7 +71,7 @@ sub options {
 		[
 		     "random_start|m", 
 			 "[ExaML inference only] start inference from random starting tree", 
-		     { galaxy_in => 1, galaxy_type => 'boolean', galaxy_condition => { 'inferencetool' => 'ExaML' } }
+		     { galaxy_in => 1, galaxy_type => 'boolean', galaxy_condition => { 'inferencetool' => ['ExaML'] } }
 		],
         [
 		     "bootstrap|b=i", 
@@ -121,7 +121,7 @@ sub validate {
     $self->usage_error("File $tax is empty") unless -s $tax;
     $self->usage_error("Need taxa file for ExaML inference") if lc $tool eq 'examl' and not $opt->taxafile;
 	$self->usage_error("Rapid boostrap only supported when 'inferencetool' argument is RAxML.") if ! (lc $tool eq 'raxml') and $opt->rapid_boot;
-	$self->usage_error("starttree only supported when 'inferencetool' argument is ExaML.") if ! (lc $tool eq 'examl') and $opt->starttree;
+	$self->usage_error("starttree only supported when 'inferencetool' argument is ExaML or RaXML.") if ! ($tool =~ /^examl$|^raxml$|^phyml$/i) and $opt->starttree;
 }
 
 # run the analysis
@@ -142,9 +142,10 @@ sub run {
     );
 
 	# need starting tree for examl inference
+	if ( $opt->inferencetool =~ /^examl$|^raxml$|^phyml$/i ) {
+		$self->_set_usertree( $is, $supermatrix, $opt->taxafile, $opt->random_start, $opt->starttree );
+	}
 
-	$self->_set_usertree( $is, $supermatrix, $opt->taxafile, $opt->random_start, $opt->starttree ) if lc $opt->inferencetool eq 'examl';
-       
 	# For RaXML's rapid bootstrap, do not create bootstrap matrices since it's taken care
 	#  of by RaXML
 	if ( $opt->rapid_boot ) {
@@ -244,19 +245,25 @@ sub _set_usertree {
 	my ( $self, $service, $supermatrix, $taxafile, $random_start, $treefile ) = @_;
 
     my $ts = Bio::SUPERSMART::Service::TreeService->new;     
-	
+	my $log = $self->logger; 
+		
 	# starting tree is either a given one, an NCBI classification tree, 
 	# or a random one (if starttree is empty argument to 'make_usertree')
 	my $starttree;
 	if ( $treefile ) {
+		$log->info("Starting inference from tree $treefile");
 		$starttree = $ts->read_tree( '-file' => $treefile );
 		$starttree = $ts->remap_to_ti( $starttree );
 	}
 	else {
 		if ( ! $random_start ) {
+			$log->info("Starting inference from NCBI classification tree");
 			my $mt = Bio::SUPERSMART::Domain::MarkersAndTaxa->new;
 			my @taxatable = $mt->parse_taxa_file( $taxafile );
 			$starttree = $ts->make_ncbi_tree( @taxatable );
+		} 
+		else {
+			$log->info("Starting inference from random tree");
 		}
 	}
 	my $usertree = $ts->make_usertree( $supermatrix, $starttree, $self->workdir.'/user.dnd' ); 

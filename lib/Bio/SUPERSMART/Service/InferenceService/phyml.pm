@@ -42,7 +42,15 @@ sub configure {
     my $tool   = $self->wrapper;
 	$tool->data_type('nt');
 	$tool->model($config->PHYML_MODEL);
-	$tool->tree("BIONJ");
+
+	# set starting tree if given, otherwise start from neighbor-joining tree
+	if ( my $tree = $self->usertree ) {
+		$self->logger->info("Setting starting tree $tree");
+		$tool->tree($tree);
+	}
+	else {
+		$tool->tree("BIONJ");	
+	}
 }
 
 =item run
