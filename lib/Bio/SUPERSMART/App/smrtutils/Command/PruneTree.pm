@@ -32,10 +32,8 @@ sub options {
 
 	my ($self, $opt, $args) = @_;
 	my $outfile_default = 'pruned.dnd';
-	my $format_default = 'nexus';
 	return (
 		['tree|t=s', 'file name of input tree', { arg => 'file', mandatory => 1}],
-		['tree_format|f=s', "format of tree input file (newick or nexus), defaults to $format_default", { default => $format_default } ],
 		['outfile|o=s', "name of the output file, defaults to '$outfile_default'", {default => $outfile_default, arg => 'file'}],
 		['taxa|g=s', 'one or multiple taxa to be pruned from the tree', {} ],
 		['negative_branches|n', 'prune out branches (and appendent nodes) which have negative length']
@@ -64,10 +62,7 @@ sub run {
 	my $ts = Bio::SUPERSMART::Service::TreeService->new;
 	my $mts = Bio::SUPERSMART::Service::MarkersAndTaxaSelector->new;
 
-	my $tree = parse_tree(
-		'-file'   => $treefile,
-		'-format' => $opt->tree_format,
-	    );
+	my $tree = $ts->read_tree( '-file' => $treefile );
 	my $ntax_initial = $tree->get_ntax;
 
 	if ( $taxa ) {
@@ -110,9 +105,7 @@ sub run {
 	$logger->info("Taxon number changed from $ntax_initial to $ntax_pruned");
 
 	# write pruned tree to output file
-	open my $out, '>', $outfile or die $!;
-	print $out $tree->to_newick(nodelabels=>1);
-	close $out;
+	$ts->to_file( '-file' => $outfile, '-format' => 'figtree', '-tree' => $tree );
 
 	$logger->info("DONE. Outfile written to $outfile");
 	return 1;
