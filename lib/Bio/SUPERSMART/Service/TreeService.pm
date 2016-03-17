@@ -1207,6 +1207,10 @@ sub extract_clades {
 
 	foreach my $id ( keys(%terminal_ids) ) {
 		my ($genus) = $mt->query_taxa_table($id, "genus", @records);
+		if ( ! $genus ) {
+			$log->warn("No genus found for taxon id  $id");
+			next;
+		}
 		push @{$genera{$genus}->{'exemplars'}}, $id;
 	}
 
