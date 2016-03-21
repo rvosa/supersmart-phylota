@@ -55,7 +55,7 @@ sub options {
 		['replicated_tree|r=s', 'Replicated tree from former replication', { arg => 'file' } ],
 		["taxa_outfile|c=s", "name the output taxa file", {default => $taxa_outfile_default, arg => "file"}],
 		["no_marker_sim|n", "do not simulate marker presence with binary simulation, take taxa from original alignments instead", { default=> 0}],
-		["random_rootseq|d", "simulate alignments from random sequecnce; otherwise the median of the sequences will be the root sequence", { default=> 0}],
+		["random_rootseq|d", "simulate alignments from random sequence; otherwise the median of the sequences will be the root sequence", { default=> 0}],
 		["ids|i", "return NCBI identifiers in remapped tree instead of taxon names", { default=> 0}],
 		["phylogenetically_informative|p", "Discard simulated alignments in which > 50% sequences are identical, and simulate again  ", { default=> 0}],
 	    );

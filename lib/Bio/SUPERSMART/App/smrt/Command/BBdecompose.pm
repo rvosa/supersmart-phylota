@@ -54,17 +54,11 @@ sub options {
     my $tree_default    = "consensus.nex";
     my $taxa_default    = "species.tsv";
     my $aln_default     = "aligned.txt";
-    my $format_default  = "nexus";
     return (
         [
 		     "backbone|b=s", 
 		     "backbone tree as produced by e.g. 'smart bbinfer' and 'smrt consense', defaults to $tree_default", 
 		 { arg => "file", default => $tree_default, galaxy_in => 1, galaxy_type => 'data'}
-		],
-        [
-		     "format|f=s", 
-		     "file format of the backbone tree as produced by 'smrt consense', defaults to $format_default", 
-		     { default => $format_default, arg => "format" }
 		],
         [
 		     "alnfile|a=s", 
@@ -94,10 +88,6 @@ sub validate {
         $self->usage_error("file $file does not exist") unless (-e $file);
         $self->usage_error("file $file is empty") unless (-s $file);
     }
-
-    if ( $opt->format !~ /^(?:newick|nexus)$/i ) {
-        $self->usage_error("only newick and nexus format are supported");
-    }
 }
 
 sub run{
@@ -119,27 +109,15 @@ sub run{
 
     # parse backbone tree
     $logger->info("Going to read backbone tree $backbone");
-	my $format = $opt->format;
-	$format = 'figtree' if $format eq 'nexus';
-    my $tree = parse_tree(
-        '-format' => $opt->format,
-        '-file'   => $backbone,
-    );
-
+    my $tree = $ts->read_tree( '-file'   => $backbone );	
     $ts->remap_to_ti($tree);
-
+	
     # parse taxon mapping
     $logger->info("Going to read taxa mapping $taxafile");
     my @taxa = $mt->parse_taxa_file($taxafile);
 
     # now read the list of alignments
-    my @alignments;
-    $logger->info("Going to read list of alignments $alnfile");
-    open my $fh, '<', $alnfile or die $!;
-    while(<$fh>) {
-        chomp;
-        push @alignments, $_ if /\S/ and -e $_;
-    }
+    my @alignments = $mt->parse_aln_file( $alnfile );
 
     # decompose tree into clades and get the sets of species
     # extract_clades() returns a list of array references. the map operation results
@@ -148,7 +126,7 @@ sub run{
     # value is not an array reference with scalar taxon IDs, there is a deeper nesting
     # of arrays inside.
     my @clades = map { { 'ingroup' => $_ } } $ts->extract_clades($tree, @taxa);
-
+	
     # get the exemplars
     for my $c ( @clades ) {
 
@@ -159,43 +137,10 @@ sub run{
     }
 
     # get one outgroup species for each clade and append to species sets
-    if ( $add_outgroup ) {
-
-        # make a classification tree, source of candidate outgroups
-		my $classtree = $ts->make_ncbi_tree( @taxa );
-        $ts->remap_to_ti( $classtree, @taxa );
-
-        # iterate over hashes, with key 'ingroup', value is an
-        # array ref of taxon IDs
-        my $counter = 0;
-        for my $clade ( @clades ){
-            my $ingroup = $clade->{'ingroup'};
-
-			# TODO: Should extra_depth for more distant outgroup species be given as argument?
-			my $extra_depth = 0;
-            my @og = $mts->get_outgroup_taxa( $classtree, $ingroup, $extra_depth );
-
-            # get the two species which occur in the most number of alignments
-            my %aln_for_sp;
-            for my $aln ( @alignments ) {
-                my %fasta = $mt->parse_fasta_file($aln);
-                for my $ogsp ( @og ) {
-                    my @sp = grep { /taxon\|$ogsp[^\d]/ } keys %fasta;
-                    @sp = map { $1 if $_ =~ m/taxon\|([0-9]+)/ } @sp;
-                    $aln_for_sp{$_}++ for @sp;
-                }
-            }
-            my @sorted_sp = sort { $aln_for_sp{$a} <=> $aln_for_sp{$b} } keys %aln_for_sp;
-            my @outgroup = scalar @sorted_sp > 4 ? @sorted_sp[0..3] : @sorted_sp;
-
-            $clade->{'outgroup'} = \@outgroup;
-            $logger->info("Adding outgroup species " . join (', ', @outgroup) . " to clade #" . $counter);
-            $counter++;
-        }
-    }
+	@clades = $self->_add_outgroups( \@clades, \@taxa, \@alignments ) if $add_outgroup;
 
 	# collect alignments for clades and write them into respective clade directories
-	my @species_for_clades = pmap {
+	my @species_for_clades = map {
 
 		my $i = $_;
 		$logger->info("Processing clade $i");
@@ -205,7 +150,6 @@ sub run{
 		my %ingroup  = map { $_ => 1 } @{ $clade->{'ingroup'} };
 		my %outgroup = map { $_ => 1 } @{ $clade->{'outgroup'} };
 		my %exemplars = map { $_ => 1 } @{ $clade->{'exemplars'} };
-
 
 		my $mindens = $config->CLADE_MIN_DENSITY;
 		my $maxdist = $config->CLADE_MAX_DISTANCE;
@@ -236,7 +180,6 @@ sub run{
 		my @names;
 		if ( scalar (@set) < 3 ) {
 			$logger->warn("Could not find sufficient data for species in clade $i. Skipping clade with taxa " . join(',', keys(%ingroup)));
-
 		}
 		else {
 			_write_clade_alignments( $i, \@clade_alignments, \@set, $self->workdir );
@@ -248,10 +191,10 @@ sub run{
 			my $taxafile = "clade$i/species.tsv";
 			$mts->write_taxa_file( '-file' => $taxafile, '-table' => \@taxa_table );
 		}
-		return ( {"clade$i"=> \@names});
+		{"clade$i"=> \@names}
 
 	}  ( 0..$#clades);
-
+	
 	for ( @species_for_clades )  {
 		my ($clade) = keys %$_;
 		my @names = @{$_->{$clade}};
@@ -261,6 +204,52 @@ sub run{
     $logger->info("DONE, results written into working directory $workdir");
 
     return 1;
+}
+
+# add outgroups to species sets representing clades
+sub _add_outgroups {
+	my ($self, $clades_ref, $taxa_ref, $alignments_ref) = @_;
+
+	my @clades = @{$clades_ref};
+	my @taxa = @{$taxa_ref};
+	my @alignments = @{$alignments_ref};
+
+	my $mt     = Bio::SUPERSMART::Domain::MarkersAndTaxa->new;
+    my $mts    = Bio::SUPERSMART::Service::MarkersAndTaxaSelector->new;
+    my $ts     = Bio::SUPERSMART::Service::TreeService->new;
+	my $logger = $self->logger;
+
+	# make a classification tree, source of candidate outgroups
+	my $classtree = $ts->make_ncbi_tree( @taxa );
+	
+	# iterate over hashes, with key 'ingroup', value is an
+	# array ref of taxon IDs
+	my $counter = 0;
+	for my $clade ( @clades ){
+		my $ingroup = $clade->{'ingroup'};
+		
+		# TODO: Should extra_depth for more distant outgroup species be given as argument?
+		my $extra_depth = 0;
+		my @og = $mts->get_outgroup_taxa( $classtree, $ingroup, $extra_depth );
+		
+		# get the two species which occur in the most number of alignments
+		my %aln_for_sp;
+		for my $aln ( @alignments ) {
+			my %fasta = $mt->parse_fasta_file($aln);
+                for my $ogsp ( @og ) {
+                    my @sp = grep { /taxon\|$ogsp[^\d]/ } keys %fasta;
+                    @sp = map { $1 if $_ =~ m/taxon\|([0-9]+)/ } @sp;
+                    $aln_for_sp{$_}++ for @sp;
+                }
+		}
+		my @sorted_sp = sort { $aln_for_sp{$a} <=> $aln_for_sp{$b} } keys %aln_for_sp;
+		my @outgroup = scalar @sorted_sp > 4 ? @sorted_sp[0..3] : @sorted_sp;
+		
+		$clade->{'outgroup'} = \@outgroup;
+		$logger->info("Adding outgroup species " . join (', ', @outgroup) . " to clade #" . $counter);
+		$counter++;
+	}
+	return (@clades);
 }
 
 # writes alignments for a given set of taxa
