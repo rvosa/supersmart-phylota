@@ -529,7 +529,7 @@ as given in the NCBI taxonomy database. The records argument is optional.
 sub remap_to_ti {
     my ($self, $tree, @records) = @_;
 
-        my $mts = Bio::SUPERSMART::Service::MarkersAndTaxaSelector->new;
+	my $mts = Bio::SUPERSMART::Service::MarkersAndTaxaSelector->new;
 
 	# no taxa table given, we will query the database
 	$tree->visit(sub{
