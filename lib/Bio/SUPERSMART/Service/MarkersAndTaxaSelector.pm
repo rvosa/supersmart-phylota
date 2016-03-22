@@ -296,8 +296,8 @@ sub expand_taxa {
         # keep ranks that are higher or equal to highest rank specified as argument
         # do not expand taxa if lowest rank not given
         if ( ! $lowest_rank ) {
-                $log->info("taxonomic rank for taxa expansion not set, skipping");
-                return ( @root_taxa );
+			$log->info("taxonomic rank for taxa expansion not set, skipping");
+			return ( @root_taxa );
         }
         
         $log->info("expanding taxa names to taxonomic level down to '$lowest_rank'");
@@ -319,28 +319,28 @@ sub expand_taxa {
         # traverse the tree upwards and keep the leaves that have at least
         #  the taxnomic rank specified by parameter $lowest_rank
         while ( @queue ) {
-                my $node = shift @queue;
-                $log->debug("Processing node " . $node->get_name);
-                my @children = @{ $node->get_children };
-
-                # if there is at least one child which has not reached the 
-                # specified lowest taxonomic rank yet, we keep traversing 
-                # the tree
-                my @child_ranks = map { $_->rank } @children;
-                foreach  my $rank ( @child_ranks ) {
-                        if ( grep { $_ eq $rank } @valid_ranks ) {
-                                push @queue, @children;                                
-                                last;
+			my $node = shift @queue;
+			$log->debug("Processing node " . $node->get_name);
+			my @children = @{ $node->get_children };
+			
+			# if there is at least one child which has not reached the 
+			# specified lowest taxonomic rank yet, we keep traversing 
+			# the tree
+			my @child_ranks = map { $_->rank } @children;
+			foreach  my $rank ( @child_ranks ) {
+				if ( grep { $_ eq $rank } @valid_ranks ) {
+					push @queue, @children;                                
+					last;
                         }
-                }                
-                # check if current node has valid rank, if yes it 
-                # is in the result list, except if it is the root taxon that
-                #  is expanded!
-                my $name = $node->get_name;
-                if ( grep { $_ eq $node->rank } @valid_ranks) {  #and not  grep (/^$name$/, @root_taxa)  ) {
-                                my $tipname = $name;
-                                push @result, $tipname;                        
-                }
+			}                
+			# check if current node has valid rank, if yes it 
+			# is in the result list, except if it is the root taxon that
+			#  is expanded!
+			my $name = $node->get_name;
+			if ( grep { $_ eq $node->rank } @valid_ranks) {  #and not  grep (/^$name$/, @root_taxa)  ) {
+				my $tipname = $name;
+				push @result, $tipname;                        
+			}
         }                 
         return @result;
 }
@@ -600,26 +600,40 @@ sub decode_taxon_name {
 Given a list of taxon names, returns a taxa table containing 
 the taxonomic classifications for each name (if found in database), for all
 taxonomic ranks. Returns an array of hashes with keys being ranks (and taxon name), 
-values are the taxon IDs at each rank.
+values are the taxon IDs at each rank. The method can filter for a certainb rank 
+with the option -expand_rank, by default it takes all ranks from 'species' and below
 
-If argument binomals is given, filters out taxon names that are not binomials
+Arguments: 
+ -taxon_names => arrayref of taxon names (required)
+ -binomial => omit taxa that don't have binomial name
+ -expand_rank => ranks to expand to
+ -all_ranks => get taxa of all taxonomic ranks
+
 =cut
 
 sub make_taxa_table {
-    my ($self, $taxon_names, $binomial) = @_;
+    my ($self, %args) = @_;
 
-	my @names = @{$taxon_names};
+	my @names = @{$args{'-taxon_names'}} or throw 'BadArgs' => "Need -taxon_names argument";
+	my $binomial = $args{'-binomial'};
+	my $rank = $args{'-rank'};
 
     # get all possible taxonomic ranks
     my %levels = map{ $_=>1 } $self->get_taxonomic_ranks;
+	
+	# Filter for ranks as follows:
+    # if --all_ranks flag is given, write everything, if --expand_rank (and not --all_ranks) is given, write 
+	# until that rank, if none of both is given, write only species and below
+	my @valid_ranks = ("species", "subspecies", "varietas", "forma");
+	@valid_ranks = $args{'-expand_rank'} if $args{'-expand_rank'};
+	@valid_ranks = $self->get_taxonomic_ranks if $args{'-all_ranks'};
 
 	# filter binomials
 	if ( $binomial ) {
 		my $cnt = scalar(@names);
 		@names = grep {/^\w+\s+\w+\z/} @names;
 		my $diff = $cnt - scalar(@names);
-		$log->info("Removed $diff taxon names that are not binomials");
-		
+		$log->info("Removed $diff taxon names that are not binomials");		
 	}
 
     # filter further undesired taxon names such as 'unidentified'
@@ -651,9 +665,16 @@ sub make_taxa_table {
             # for each node, fetch the IDs of all taxonomic levels of interest
             for my $node (@nodes) {
 				
+				# filter for allowed ranks
+				my $rank = $node->rank;
+				if (! grep(/^$rank$/, @valid_ranks) ) {
+					$log->debug("Omitting taxon " . $node->taxon_name . " since it is no in ranks: " . join(',', @valid_ranks) );
+					next;
+				}
+
                 # walk up the  taxonomy tree and get tids for levels of interest,
                 # store all ids and taxon name in hash
-                my %taxinfo;                
+                my %taxinfo;
                 $taxinfo{'name'} = $node->taxon_name;
 				
                 # traverse up the tree
@@ -691,11 +712,9 @@ writes the file to a tab separated table with headers. Each row corresponds to a
 first entry is the taxon name followed by the ids for all possible taxonomic ranks, ordered
 from low to high. If a taxon ID is not found at a certain level, 'NA' is written into the
 table cell.
-Omits entries for taxa of higher level than "species".
 
  -file => filename
  -table => array ref of taxa table
- -all_ranks => whether to also write taxa higher than 'Species'
 
 =cut
 
@@ -711,10 +730,7 @@ sub write_taxa_file {
     
     # print table header
     print $out join( "\t", 'name', @levels ), "\n";
-
-    # only write row for taxon if id for one of the below ranks is given
-    my @valid_ranks = $args{'-all_ranks'} ? @TAXONOMIC_RANKS : ("species", "subspecies", "varietas", "forma");
-
+	
     # loop over table and write each entry, if no id at a taxonomic level exists, write "NA"
 	for my $row ( @table ) {
         my %h = %$row;
@@ -723,11 +739,6 @@ sub write_taxa_file {
         my @missing_ranks = grep { ! $h{$_}} @levels;
         $h{ $_ } = "NA" for @missing_ranks;
         
-        # omit taxa higher than species
-        if ( ! grep /[0-9]+/, @h{@valid_ranks} ) {
-            $log->debug("Omitting higher level taxon " . $h{'name'});
-            next;
-        }
         print $out join( "\t", $self->encode_taxon_name($h{'name'}),  @h{@levels} ) . "\n";
     }
     close $out;
