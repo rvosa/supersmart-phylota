@@ -31,7 +31,7 @@ expanded and all species (or lower) belonging to the higher level taxon are prun
 sub options {
 
 	my ($self, $opt, $args) = @_;
-	my $outfile_default = 'pruned.dnd';
+	my $outfile_default = 'pruned.nex';
 	return (
 		['tree|t=s', 'file name of input tree', { arg => 'file', mandatory => 1}],
 		['outfile|o=s', "name of the output file, defaults to '$outfile_default'", {default => $outfile_default, arg => 'file'}],
