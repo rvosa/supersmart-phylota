@@ -53,15 +53,9 @@ sub run {
 
 	my $logger = $self->logger;      	
 	my $ts = Bio::SUPERSMART::Service::TreeService->new; 	
-
-	my $tree1 = parse_tree(
-		'-file'   => $opt->tree1,
-		'-format' => $opt->format,
-	    );
-	my $tree2 = parse_tree(
-		'-file'   => $opt->tree2,
-		'-format' => $opt->format,
-	    );
+   
+	my $tree1 = $ts->read_tree( '-file'   => $opt->tree1 );
+	my $tree2 = $ts->read_tree( '-file'   => $opt->tree2 );
   
 	if ( $opt->prune ) {
 		# prune tips such that both trees have the same taxa.
@@ -114,7 +108,7 @@ sub _get_outfilenames {
 		$out1 .= '-sorted' . $suffix; 
 	}
 	if ( ! $out2 ) {
-		($out2 = $opt->tree1) =~ s/\.[^.]+$//;
+		($out2 = $opt->tree2) =~ s/\.[^.]+$//;
 		$out2 .= '-sorted' . $suffix;
 	}
 
