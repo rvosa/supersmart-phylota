@@ -37,5 +37,5 @@ RUN echo 'source /intro.sh' >> /root/.bashrc
 # provision virtual machine with SUPERSMART environment
 RUN puppet apply /default.pp 
 
-# run unit tests
+# run unit tests 
 RUN cd $SUPERSMART_HOME && perl Makefile.PL && make test
