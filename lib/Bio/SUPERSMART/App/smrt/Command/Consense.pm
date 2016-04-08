@@ -69,7 +69,7 @@ sub options {
 		],
 		[
 		     "format|f=s", 
-		     "format of consensus tree file, (nexus, newick) defaults to 'nexus'", 
+		     "format of output consensus tree file, (nexus, newick) defaults to 'nexus'", 
 		     { default => 'nexus', arg => "format" },
 		],
 		[    
@@ -97,21 +97,15 @@ sub validate {
 sub run {
 	my ($self, $opt, $args) = @_;
 
-	# write simple nexus file (no translation table)
-	$self->logger->info("Preparing input file");
-	my ( $fh, $filename ) = tempfile();
-	close $fh;
-	my $ntrees = $ts->newick2nexus( $opt->infile => $filename );
-
 	# run treeannotator, remove temp file
 	$self->logger->info("Computing consensus with heights '".$opt->heights."'");
 	my $consensus = $ts->consense_trees(
-		'-infile'  => $filename,
+		'-infile'  => $opt->infile,
 		'-burnin'  => $opt->burnin,
 		'-heights' => $opt->heights,
 		'-limit'   => $opt->limit,
-	);
-	unlink $filename;
+		'-format'  => 'newick',
+		);
 
 	# update node labels to distinguish bootstraps from posteriors
 	$self->logger->info("applying node labels");
@@ -122,7 +116,7 @@ sub run {
 	
 				# apply optionally converted node support as node label
 				if ( not $opt->prob ) {
-					my $count = int( $posterior * $ntrees + 0.5 );
+					my $count = int( $posterior * 100 + 0.5 ) ;
 					$node->set_meta_object( 'fig:bootstrap' => $count );
 					my @meta = @{ $node->get_meta('fig:posterior') };
 					$node->remove_meta( $_ ) for @meta;
