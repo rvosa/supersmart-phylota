@@ -21,9 +21,9 @@ my $log = Bio::Phylo::Util::Logger->new( '-level' => INFO, '-class' => 'main' );
 
 # copy workflow and possible name- and fossil files into temporary directory
 my $workdir = tempdir( CLEANUP => 1 );
-my $srcdir = $ENV{'SUPERSMART_HOME'} . "/examples/primates/";
+my $srcdir = $ENV{'SUPERSMART_HOME'} . "/examples/pantherinae";
 chdir( $workdir );
-my @files = glob("$srcdir/*");
+my @files = grep { /fossils\.tsv|workflow\.sh/ } glob("$srcdir/*");
 copy( $_, $workdir ) or die "Copy failed: $!" for @files;
 
 # run the whole workflow
