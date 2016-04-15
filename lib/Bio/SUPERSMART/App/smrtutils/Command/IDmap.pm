@@ -30,13 +30,12 @@ Maps between taxon names (as in the NCBI taxonomy and phylota) and NCBI taxonomy
 
 sub options {    
 	my ($self, $opt, $args) = @_;
-	my $format_default = 'newick';
+	my $outformat_default = 'newick';
 	my $outfile_default = 'tree-remapped.dnd';
 	return (
 		['treefile|t=s', "tree files", { arg => 'file' }],		
-		['format|f=s', "file format of both input trees, defaults to $format_default. Supported formats: newick, nexus, figtree (nexus)", { default => $format_default, arg => "format" }],
 		["outfile|o=s", "name of the output tree file (newick format) defaults to $outfile_default", { default=> $outfile_default, arg => "file"}],    	    
-		['outformat|u=s', "file format of output tree, defaults to the value of the 'format' argument. Supported formats: newick, nexus, figtree (nexus)", { arg => "format" }],
+		['outformat|f=s', "file format of output tree, defaults to $outformat_default. Supported formats: newick, nexus, figtree (nexus)", { default => $outformat_default, arg => "format" }],
 	    );	
 }
 
@@ -52,25 +51,21 @@ sub run {
 	my $logger = $self->logger;      	
 	my $ts = Bio::SUPERSMART::Service::TreeService->new;
 		
-	my $outformat = $opt->outformat || $opt->format;
-	my $result;
+	my $outformat = $opt->outformat;	
 	
 	# parse tree(s)
-	my $project = parse(
-		'-file'   => $opt->treefile,
-			'-format' => $opt->format,
-		'-as_project' => 1,
-	    );
-	
-	# remap
-	for my $t ( @{ $project->get_items(_TREE_) } ) {
-		$self->_remap( $t );
-	}		
+	my $forest = $ts->read_tree( '-file'=>$opt->treefile );
+	my @trees = $forest->isa('Bio::Phylo::Forest::Tree') ? ($forest) : @{$forest->get_entities};
+
+	# remap	
+	$self->_remap($_) for @trees;
 	
 	# write to file
-	open my $fh, '>', $opt->outfile;
-	print $fh unparse ( '-phylo'=>$project, '-format'=>$outformat );
-	close $fh;
+	$ts->to_file( 
+		'-file'   => $opt->outfile, 
+		'-tree'   => $forest, 
+		'-format' => $outformat
+		);
 
 	$logger->info("DONE, tree written to " . $opt->outfile ); 
 }
