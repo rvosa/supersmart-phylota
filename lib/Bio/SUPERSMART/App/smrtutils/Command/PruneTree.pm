@@ -36,6 +36,7 @@ sub options {
 		['tree|t=s', 'file name of input tree', { arg => 'file', mandatory => 1}],
 		['outfile|o=s', "name of the output file, defaults to '$outfile_default'", {default => $outfile_default, arg => 'file'}],
 		['taxa|g=s', 'one or multiple taxa to be pruned from the tree', {} ],
+		['keep|k', "keep the taxa given in 'taxa' argument and remove all other taxa", {} ],
 		['negative_branches|n', 'prune out branches (and appendent nodes) which have negative length']
 	    );
 }
@@ -47,9 +48,11 @@ sub validate {
 	#  If the infile is absent or empty, abort
 	my $file = $opt->tree;
 	$self->usage_error('no tree argument given') if not $file;
-	$self->usage_error('file $file does not exist') unless (-e $file);
-	$self->usage_error('file $file is empty') unless (-s $file);
-	$self->usage_error('taxa and/or negative_branches flag must be given') if not ($opt->taxa or $opt->negative_branches);
+	$self->usage_error("file $file does not exist") unless (-e $file);
+	$self->usage_error("file $file is empty") unless (-s $file);
+	$self->usage_error('taxa and/or negative_branches flag must be given') if not ($opt->taxa or $opt->negative_branches);	
+	$self->logger->warn("Option 'keep' does not have effect when no taxa argument given") if ($opt->keep and not $opt->taxa);
+	
 }
 
 sub run {
@@ -67,23 +70,32 @@ sub run {
 
 	if ( $taxa ) {
 		my @names = split(',', $taxa);
+		my @terminal_names;
 		for my $n (@names) {
 			# taxa to prune could be higher level, so search all child taxa until lowest rank
 			my %all_taxa = map {$_=~s/_/|/g; $_=~s/\ /_/g; $_=~s/\'|\"//g;  $_=>1} $mts->expand_taxa([$n], 'Forma');
 
 			# select the taxa which are present in the tree
-			my @to_prune;
+
 			for my $node ( @{$tree->get_terminals} ) {
 				my $terminal_name = $node->get_name;
 				$terminal_name =~s/\'|\"//g;
 				if ( $all_taxa{$terminal_name} ) {
-					push @to_prune, $node->get_name;
+					push @terminal_names, $node->get_name;
 				}
 			}
-			# prune
-			$logger->info('Pruning ' . scalar (@to_prune) . " terminals from tree for taxon $n");
-			$tree->prune_tips(\@to_prune);
 		}
+		# prune or keep
+
+		if ( $opt->keep ) {
+			$logger->info('Keeping taxa ' . join(", ", @terminal_names));
+			$tree->keep_tips(\@terminal_names);
+		}
+		else {							
+			$logger->info('Removing taxa ' . join(", ", @terminal_names));
+			$tree->prune_tips(\@terminal_names);
+		}
+
 	}
 	if ( $opt->negative_branches ) {
 		my $count = 0;
