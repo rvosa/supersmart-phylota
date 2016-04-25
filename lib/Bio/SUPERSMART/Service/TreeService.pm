@@ -5,6 +5,7 @@ use Cwd;
 use File::Temp 'tempfile';
 use Bio::Phylo::IO qw'parse parse_tree unparse';
 use Bio::Phylo::Factory;
+use Bio::Phylo::Util::CONSTANT ':objecttypes';
 use Bio::SUPERSMART::Config;
 use Bio::SUPERSMART::Service;
 use Bio::Phylo::Util::CONSTANT ':namespaces';
@@ -67,8 +68,16 @@ sub to_string {
 	
 	# create output
 	my $project = $fac->create_project;
-	my $forest  = $fac->create_forest;
-	$forest->insert($tree);
+
+	# input can be tree or forest, 
+	# create forest object if input is tree
+	my $forest = $tree;
+	if ( ! $forest->can('make_taxa') ) {
+		$log->debug("Creating forest object");
+		$forest  = $fac->create_forest;
+		$forest->insert($tree);	
+	}
+	
 	my $taxa = $forest->make_taxa;
 	$project->insert($taxa);
 	$project->insert($forest);
@@ -91,41 +100,62 @@ Reads a phylogenetic tree from file, detects format if not given as argument
 sub read_tree {
 	my ( $self, %args ) = @_;
 	
+	# tree or forest that will get returned
+	my $ret;
+	
 	my $file = $args{'-file'} or throw 'BadArgs' => "Need -file argument";
-	my $format = $args{'-format'};
+	my $format = $args{'-format'} || $self->_detect_treeformat( $file );
 	
-	my @formats = qw(figtree nexus newick);	
+	my $project = parse(
+		'-file'   => $file,
+		'-format' => $format,
+		'-as_project' => 1 );
+	
+	my @trees = @{ $project->get_items( _TREE_ ) };
 
-	my $tree;
-	
-	if ( ! $format ) {		
-		$log->info("Detecting format of tree $file");
-		for my $f ( @formats ) {
-			$log->info("Checking if file is in $f format");
-			eval { 
-				$tree = parse_tree(
-					'-file'   => $file,
-					'-format' => $f,
-					);
-			};
-			if ( $tree ) {
-				$log->info("Read tree in $f format");
-				last;		
-			}									
-		}
+	# If one tree is in the file, return a Bio::Phylo::Forest::Tree,
+	# otherwise a Bio::Phylo::Forest object
+	if ( ! scalar( @trees) ) {
+		$log->fatal("Could not parse tree(s) in file $file");
+	}
+	if ( scalar( @trees ) == 1 ) {
+		$log->info("Found one tree in file $file");
+		$ret = $trees[0];
 	}
 	else {
-		$tree = parse_tree(
-			'-file'   => $file,
-			'-format' => $format,
-			);		
-		$log->info("Read tree in $format format")
-	}
-	
-	$log->fatal("Could not parse tree file $file") if ! $tree;
-	return ( $tree );
+		$log->info("Found "  . scalar( @trees) . " trees in file $file");
+		$log->debug("Returning a Bio::Phylo::Forest object");
+		my @forest = @{ $project->get_items( _FOREST_ ) };
+		$ret = $forest[0];
+	}	
+	return $ret;
 }
 
+sub _detect_treeformat {
+	my ($self, $file) = @_;
+	
+	my $format;   
+	
+	my @formats = qw(figtree nexus newick);		
+	$log->info("Detecting format of tree $file");
+	for my $f ( @formats ) {
+		$log->info("Checking if file is in $f format");
+		my $tree;
+		eval { 
+			$tree = parse_tree(
+				'-file'   => $file,
+				'-format' => $f,
+				);				
+		};
+			if ( $tree ) {
+				$log->info("Detected tree format $f");
+				$format = $f;
+				last;		
+			}									
+	}
+	return $format;
+}
+	
 =item read_figtree
 
 Reads a tree in figtree-NEXUS format

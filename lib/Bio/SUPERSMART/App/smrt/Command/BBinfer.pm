@@ -116,12 +116,14 @@ sub validate {
     
     $self->usage_error("Need supermatrix") if not $sm;
     $self->usage_error("File $sm does not exist") unless -e $sm;
-    $self->usage_error("File $sm is empty") unless -s $sm;
-    $self->usage_error("File $tax does not exist") unless -e $tax;
-    $self->usage_error("File $tax is empty") unless -s $tax;
-    $self->usage_error("Need taxa file for ExaML inference") if lc $tool eq 'examl' and not $opt->taxafile;
+    $self->usage_error("File $sm is empty") unless -s $sm;	
 	$self->usage_error("Rapid boostrap only supported when 'inferencetool' argument is RAxML.") if ! (lc $tool eq 'raxml') and $opt->rapid_boot;
 	$self->usage_error("starttree only supported when 'inferencetool' argument is ExaML or RaXML.") if ! ($tool =~ /^examl$|^raxml$|^phyml$/i) and $opt->starttree;
+	if ( lc ($tool)  eq 'examl' ) {
+		$self->usage_error("Need taxa file for ExaML inference") unless $opt->taxafile;
+		$self->usage_error("File $tax does not exist") unless -e $tax;
+		$self->usage_error("File $tax is empty") unless -s $tax;
+	}	
 }
 
 # run the analysis

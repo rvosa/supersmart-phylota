@@ -211,7 +211,7 @@ sub orthologize_cladedir {
 	my $sg = Bio::SUPERSMART::Service::SequenceGetter->new;
 
 	# collect seed gis from alignment file names
-	my @files =  <"${dir}/*.fa">;
+	my @files =  glob("${dir}/*.fa");
 	my @gis =  grep { $_ ne '' } map {$1 if $_=~/\/([0-9]+)-clade[0-9]+\.fa/ } @files;
 
 	$sg->merge_alignments( $maxdist, $dir, $outfile, @gis );

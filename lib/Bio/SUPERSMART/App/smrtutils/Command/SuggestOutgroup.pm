@@ -72,7 +72,7 @@ sub run {
 		close $fh;
 		$log->info( "read " . scalar(@names) . " species names from $infile" );
 		
-		my @records = $mts->make_taxa_table(@names);
+		my @records = $mts->make_taxa_table('-taxon_names' => \@names);
 
 		my $root_rank = $mt->get_root_taxon_level( @records );
 		my $root_ti = $records[0]{$root_rank};

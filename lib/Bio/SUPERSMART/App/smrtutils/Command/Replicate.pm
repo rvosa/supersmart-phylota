@@ -193,7 +193,7 @@ sub _write_taxafile {
 
 	# write initial taxa table to file
 	$logger->info("Going to make taxa table");
-	my @taxa_table = $mts->make_taxa_table( \@names );
+	my @taxa_table = $mts->make_taxa_table( '-taxon_names' => \@names );
 	$logger->info("Writing taxa table to $filename");
 	$mts->write_taxa_file( '-file' => $filename, '-table' => \@taxa_table );
 

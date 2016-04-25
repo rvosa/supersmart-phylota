@@ -68,7 +68,7 @@ sub options {
 		],
 		[
     		 "outgroup_tree|p=s", 
-    		 "tree in newick format to extract outgroup from. Outgroup taxa are the terminals of the smallest subtree below the root  ",
+    		 "tree to extract outgroup from. Outgroup taxa are the terminals of the smallest subtree below the root  ",
     		 { arg => "file" }
 		],
 		[
@@ -114,6 +114,7 @@ sub run {
 	my $mt  = Bio::SUPERSMART::Domain::MarkersAndTaxa->new;
 	my $mts = Bio::SUPERSMART::Service::MarkersAndTaxaSelector->new;
 	my $log = $self->logger;
+	my $fac = Bio::Phylo::Factory->new;
 	
 	# identify outgroup once
 	my $outgroup;
@@ -128,9 +129,8 @@ sub run {
 	my @records = $mt->parse_taxa_file($taxafile);
 		
 	# iterate over trees
-	open my $in, '<', $backbone or die $!;
-	chomp(my @backbone_trees = <$in>);
-	close $in;
+	my $forest = $ts->read_tree( '-file' => $backbone );
+	my @trees = @{ $forest->get_entities };
 	
 	# mapping tables for faster id and taxon name lookup
 	my %ti_to_name;
@@ -138,12 +138,7 @@ sub run {
 
 	# reroot input trees in parallel
 	my @rerooted_trees = pmap{	
-		my $treestr = $_;
-
-		# read tree
-		$log->debug("Reading tree from string");
-		my $tree = parse_tree( '-string' => $treestr, 
-							   '-format' => 'newick' );	
+		my $tree = $_;
 		
 		# create id mapping table
 		if ( ! scalar(%ti_to_name) ) {
@@ -188,17 +183,17 @@ sub run {
 		
 		$tree->ultrametricize if $opt->ultrametricize;
 
-		return( $tree->to_newick )
+		return $tree; 
 
-	} @backbone_trees;
+	} @trees;
 	
-	$log->warn("Number of rerooted trees different than number of input trees") if scalar(@backbone_trees) != scalar(@rerooted_trees);
-	
+	$log->warn("Number of rerooted trees different than number of input trees") if scalar(@trees) != scalar(@rerooted_trees);
+
 	# write output file
-	open my $out, '>', $outfile or die $!;			
-	print $out $_  . "\n" for @rerooted_trees;
-	close $out;
-
+	my $forest_rerooted = $fac->create_forest;
+	$forest->insert( @trees );
+	$ts->to_file( '-file' => $outfile, '-tree' => $forest );
+	
 	$log->info("DONE, results written to $outfile");		
 }
 
@@ -209,9 +204,8 @@ sub _get_smallest_outgroup {
 	my ($self, $treefile) = @_;
 	my $logger = $self->logger;
 	
-	# parse tree
-	my $tree = parse_tree( '-file' => $treefile, 
-						   '-format' => 'newick' );	
+	my $ts  = Bio::SUPERSMART::Service::TreeService->new;
+	my $tree = $ts->read_tree( '-file' => $treefile );	
 	$tree->resolve;
 
 	# get subtrees below root

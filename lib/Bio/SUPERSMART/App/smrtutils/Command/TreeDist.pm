@@ -21,7 +21,8 @@ smrt-utils treedist [-t <file>] [-u <file>] [-f <format>] [-d] [-h] [-v] [-w <di
 
 =head1 DESCRIPTION
 
-Calculates the distance between two phylogenetic trees. Currently supported distance measures: Robinson Foulds symmetric distance.
+Calculates the distance between two phylogenetic trees. Currently supported distance measures: Robinson Foulds symmetric distance,
+squared euclidean branch lengths distance (see Kuhner & Felsenstein, 1994).
 
 =cut
 
@@ -32,8 +33,7 @@ sub options {
 	return (
 		['tree1|t=s', "tree file", { arg => 'file' }],		
 		['tree2|u=s', "tree file to compare to", { arg => 'file' }],		
-		['treeformat|f=s', "file format of both input trees, defaults to $format_default", { default => $format_default, arg => "format" }],
-		['distance_measure|d=s', "distance measure, currntly supported: rf (Robinson Foulds), defaults to $measure_default", { default => $measure_default}],
+		['distance_measure|d=s', "distance measure, currntly supported: rf (Robinson Foulds),  eb (squared euclidean branch length distance, Kuhner and Felsenstein), defaults to $measure_default", { default => $measure_default}],
 	);	
 }
 
@@ -43,7 +43,7 @@ sub validate {
 	$self->usage_error('tree file(s) not found') if not (-e $opt->tree1 and -e $opt->tree2);
 	$self->usage_error('tree file(s) empty') if not (-s $opt->tree1 and -s $opt->tree2);
 	
-	my %measures = ( 'rf' => 1 );
+	my %measures = ( 'rf' => 1, 'eb' => 1 );
 	$self->usage_error('distance measure ' . $opt->distance_measure . ' not supported') if not ($measures{$opt->distance_measure});
 }
 
@@ -53,15 +53,9 @@ sub run {
 	my $logger = $self->logger;      	
 	my $ts = Bio::SUPERSMART::Service::TreeService->new; 	
 
-	my $tree1 = parse_tree(
-		'-file'   => $opt->tree1,
-		'-format' => $opt->treeformat,
-	    );
+	my $tree1 = $ts->read_tree( '-file'   => $opt->tree1 );
 	
-	my $tree2 = parse_tree(
-		'-file'   => $opt->tree2,
-		'-format' => $opt->treeformat,
-	    );
+	my $tree2 = $ts->read_tree( '-file'   => $opt->tree2 );
 
 	# prune tips such that both trees have the same taxa.
 	$logger->info("Pruning tips to have the same taxa in both trees");
@@ -76,8 +70,12 @@ sub run {
 		$diff = $tree1->calc_symdiff($tree2);
 		$ndiff = $tree1->calc_symdiff($tree2, 1);
 	}
-	
-	$logger->info("Distance between " . $opt->tree1 . " and " . $opt->tree2 . " : $diff, normalized by splits: $ndiff");	
+	elsif ( $opt->distance_measure eq 'eb' ) { 
+		$diff = $tree1->calc_branch_length_score($tree2);
+		$ndiff = $tree1->calc_branch_length_score($tree2, 1);				
+	}
+
+	$logger->info("Distance (measure " . $opt->distance_measure .  ") between " . $opt->tree1 . " and " . $opt->tree2 . " : $diff, normalized by splits: $ndiff");	
 	$logger->info("DONE");
 	
 }

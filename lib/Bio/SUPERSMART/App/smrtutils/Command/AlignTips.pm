@@ -31,7 +31,7 @@ sub options {
 	return (
 		['tree1|t=s', "tree file", { arg => 'file' }],		
 		['tree2|u=s', "tree file to compare to", { arg => 'file' }],				
-		['format|f=s', "file format of input and output trees, defaults to $format_default", { default => $format_default, arg => "format" }],
+		['format|f=s', "file format of output trees, defaults to $format_default", { default => $format_default, arg => "format" }],
 		['outtree1|o=s', "outfile 1: filename to export tree1 with reordered tip labels, defaults to <tree1>-sorted", { arg => 'file' }],
 		['outtree2|q=s', "outfile 2: filename to export tree2 with reordered tip labels, defaults to <tree2>-sorted", { arg => 'file' }],		
 		['prune|p', "prune tips such that both trees have the same taxa" ],
@@ -53,15 +53,9 @@ sub run {
 
 	my $logger = $self->logger;      	
 	my $ts = Bio::SUPERSMART::Service::TreeService->new; 	
-
-	my $tree1 = parse_tree(
-		'-file'   => $opt->tree1,
-		'-format' => $opt->format,
-	    );
-	my $tree2 = parse_tree(
-		'-file'   => $opt->tree2,
-		'-format' => $opt->format,
-	    );
+   
+	my $tree1 = $ts->read_tree( '-file'   => $opt->tree1 );
+	my $tree2 = $ts->read_tree( '-file'   => $opt->tree2 );
   
 	if ( $opt->prune ) {
 		# prune tips such that both trees have the same taxa.
@@ -114,7 +108,7 @@ sub _get_outfilenames {
 		$out1 .= '-sorted' . $suffix; 
 	}
 	if ( ! $out2 ) {
-		($out2 = $opt->tree1) =~ s/\.[^.]+$//;
+		($out2 = $opt->tree2) =~ s/\.[^.]+$//;
 		$out2 .= '-sorted' . $suffix;
 	}
 

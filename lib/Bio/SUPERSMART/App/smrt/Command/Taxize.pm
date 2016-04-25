@@ -115,8 +115,19 @@ sub run {
 		@names = $mts->expand_taxa( \@names, $expand_rank || "species" );
 	}
 	
-	my @taxa_table = $mts->make_taxa_table( \@names, $opt->binomials_only );
-	$mts->write_taxa_file( '-file' => $opt->outfile, '-table' => \@taxa_table, '-all_ranks' => $opt->all_ranks );
+	my @taxa_table = $mts->make_taxa_table( '-taxon_names' => \@names, '-binomial' => $opt->binomials_only, 
+											'-all_ranks' => $opt->all_ranks, '-expand_rank' => lc($opt->expand_rank) );
+
+	if ( ! scalar (@taxa_table) ) {
+		my $msg = 'Taxa table does not contain any rows. ' .
+			'Either taxon names could not be resolved or higher level taxa were not expanded. ' . 
+			'Use --expand_rank to expand higher-level taxa or --all_ranks to include higher taxa in table.';			
+		$log->fatal($msg);
+		return 0;
+	}
+
+	$mts->write_taxa_file( '-file' => $opt->outfile, '-table' => \@taxa_table ); 
+
 
 	$log->info("DONE, results written to " . $opt->outfile);
 	return 1;

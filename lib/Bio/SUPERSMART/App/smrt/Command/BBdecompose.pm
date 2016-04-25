@@ -150,7 +150,7 @@ sub run{
 		my %ingroup  = map { $_ => 1 } @{ $clade->{'ingroup'} };
 		my %outgroup = map { $_ => 1 } @{ $clade->{'outgroup'} };
 		my %exemplars = map { $_ => 1 } @{ $clade->{'exemplars'} };
-
+		
 		my $mindens = $config->CLADE_MIN_DENSITY;
 		my $maxdist = $config->CLADE_MAX_DISTANCE;
 
@@ -187,7 +187,7 @@ sub run{
 			_write_outgroup($i,[keys %outgroup],$workdir) if $add_outgroup;
 			# write taxa file to clade directory
 			@names = map { $mts->find_node($_)->taxon_name } @set;
-			my @taxa_table = $mts->make_taxa_table( \@names );
+			my @taxa_table = $mts->make_taxa_table( '-taxon_names' => \@names );
 			my $taxafile = "clade$i/species.tsv";
 			$mts->write_taxa_file( '-file' => $taxafile, '-table' => \@taxa_table );
 		}

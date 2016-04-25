@@ -26,19 +26,21 @@ sub _output_ok {
 	ok ( -s $outfile, "outfile not empty" );
 }
 
-my $matrix = "$Bin/testdata/supermatrix.phy";
-
+my $matrix = "$Bin/testdata/supermatrix-pantherinae.phy";
+my $taxafile = "$Bin/testdata/species-pantherinae.tsv";
 my $workdir = tempdir( CLEANUP => 1, 'DIR' => $ENV{HOME} );
 
 my ($fh, $outfile) = tempfile( 'CLEANUP' => 1, 'DIR' => $workdir );
 
-# test inference with examl and bootstrapping
-my $result = test_app( Bio::SUPERSMART::App::smrt=> [ 'bbinfer',  '-s',   $matrix, '-o', $outfile, '-w', $workdir ]);
+# test inference with examl
+my $result = test_app( Bio::SUPERSMART::App::smrt=> [ 'bbinfer',  '-s',   $matrix, '-t', $taxafile, '-o', $outfile, '-w', $workdir ]);
+print "RESULT : " . $result->output . "\n";
 _output_ok ( $result, $outfile );
 
-# test inference with raxml 
-$result = test_app( Bio::SUPERSMART::App::smrt=> [ 'bbinfer',  '-s', $matrix, '-i', 'raxml', '-o', $outfile, '-w', $workdir]);
-_output_ok ( $result, $outfile );
+# takes quite long, that's why currently commented out
+# test inference with raxml from random starttree
+#$result = test_app( Bio::SUPERSMART::App::smrt=> [ 'bbinfer',  '-s', $matrix, '-i', 'raxml', '-m', '-b', 10, '-o', $outfile, '-w', $workdir]);
+#_output_ok ( $result, $outfile );
 
 # test inference with exabayes
 $config->EXABAYES_NUMGENS(1000);
