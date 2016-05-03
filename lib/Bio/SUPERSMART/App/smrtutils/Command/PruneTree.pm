@@ -33,7 +33,9 @@ sub options {
 	my ($self, $opt, $args) = @_;
 	my $outfile_default = 'pruned.nex';
 	return (
-		['tree|t=s', 'file name of input tree', { arg => 'file', mandatory => 1}],
+		['tree|t=s', 'file name of input tree(s)', { arg => 'file', mandatory => 1}],
+		['format|f=s', 
+		 'provide format of input tree(s) file since detecting formats of many trees can take a long time. Supported formats: newick, nexus, figtree', {} ],
 		['outfile|o=s', "name of the output file, defaults to '$outfile_default'", {default => $outfile_default, arg => 'file'}],
 		['taxa|g=s', 'one or multiple taxa to be pruned from the tree', {} ],
 		['keep|k', "keep the taxa given in 'taxa' argument and remove all other taxa", {} ],
@@ -65,7 +67,7 @@ sub run {
 	my $ts = Bio::SUPERSMART::Service::TreeService->new;
 	my $mts = Bio::SUPERSMART::Service::MarkersAndTaxaSelector->new;
 
-	my $tree = $ts->read_tree( '-file' => $treefile );
+	my $tree = $ts->read_tree( '-file' => $treefile, '-format' => $opt->format );
 	my $ntax_initial = $tree->get_ntax;
 
 	if ( $taxa ) {
@@ -74,9 +76,8 @@ sub run {
 		for my $n (@names) {
 			# taxa to prune could be higher level, so search all child taxa until lowest rank
 			my %all_taxa = map {$_=~s/_/|/g; $_=~s/\ /_/g; $_=~s/\'|\"//g;  $_=>1} $mts->expand_taxa([$n], 'Forma');
-
+			
 			# select the taxa which are present in the tree
-
 			for my $node ( @{$tree->get_terminals} ) {
 				my $terminal_name = $node->get_name;
 				$terminal_name =~s/\'|\"//g;
