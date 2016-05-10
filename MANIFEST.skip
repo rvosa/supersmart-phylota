@@ -9,3 +9,4 @@ phylota\.komodoproject
 taxonomy-search-.*
 blib\/
 pm_to_blib
+experimental\/

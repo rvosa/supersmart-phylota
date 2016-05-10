@@ -1,0 +1,17 @@
+cd $SUPERSMART_HOME
+git pull --quiet
+commit=`git log -1 | head -1 | cut -f 2 -d ' '`
+hash=${commit:0:10}
+cd - >/dev/null
+sudo cpanm --notest --quiet --sudo git://github.com/rvosa/bio-phylo.git >/dev/null
+VERSION=`perl -MBio::SUPERSMART -e 'print $Bio::SUPERSMART::VERSION'`
+export PS1="\[\e[0;32m\]SUPERSMART $VERSION - $hash\[\e[m\] \[\e[1;34m\]\w\[\e[m\] \[\e[1;32m\]\$\[\e[m\] "
+
+# phylota data is in the wrong location. with this cludge we move it to the right spot.
+if [ ! -f $SUPERSMART_HOME/data/phylota.sqlite ]; then
+	if [ -f $HOME/SUPERSMART/data/phylota.sqlite ]; then
+		mv $HOME/SUPERSMART/data/phylota.sqlite $SUPERSMART_HOME/data/phylota.sqlite
+	else
+		perl -MBio::Phylo::Util::Logger -e 'Bio::Phylo::Util::Logger::ERROR("PhyLoTA data not found!")'
+	fi
+fi

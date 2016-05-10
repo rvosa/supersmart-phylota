@@ -1,0 +1,5 @@
+NFos	FossilName	CrownvsStem	CalibratedTaxon	MinAge	MaxAge	BestPracticeScore	NUsrcrFos	DcrFos
+1	cal1	crown	Syngnathus	20	20
+2	cal2	crown	Ctenolabrus	10	100
+3	cal3	crown	Pomatoschistus	10	100
+4	cal4	crown	Labrus		10	100

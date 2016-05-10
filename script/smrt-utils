@@ -1,0 +1,4 @@
+#!/usr/bin/perl
+use Bio::SUPERSMART::App::smrtutils;
+
+Bio::SUPERSMART::App::smrtutils->run;

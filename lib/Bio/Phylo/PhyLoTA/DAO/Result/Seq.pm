@@ -116,23 +116,48 @@ __PACKAGE__->set_primary_key("gi");
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration
-use Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector;
+use Bio::SUPERSMART::Service::MarkersAndTaxaSelector;
+use Bio::PrimarySeq;
 
-my $mts = Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector->new;
+my $mts = Bio::SUPERSMART::Service::MarkersAndTaxaSelector->new;
+
+=head2 get_id
+
+Alias for C<gi>
+
+=cut
 
 sub get_id {
 	shift->gi;
 }
 
+=head2 id
+
+Alias for C<gi>
+
+=cut
+
 sub id {
 	shift->gi;
 }
+
+=head2 get_taxon
+
+Returns associated taxon, i.e. L<Bio::Phylo::PhyLoTA::DAO::Result::Node>
+
+=cut
 
 sub get_taxon {
 	my $self = shift;
 	my $ti = $self->ti;
 	return $mts->find_node($ti);
 }
+
+=head2 get_char
+
+Returns raw sequence data, depending on context as an array or a string.
+
+=cut
 
 sub get_char {
 	my $self = shift;
@@ -145,11 +170,45 @@ sub get_char {
 	}
 }
 
+=head2 get_entities
+
+Returns raw sequence data as an array reference.
+
+=cut
+
 sub get_entities {
 	my @char = shift->get_char;
 	return \@char;
 }
 
+=head2 get_name
+
+Alias for C<def>
+
+=cut
+
 sub get_name { shift->def }
+
+=head2 to_primary_seq
+
+Converts object to Bio::PrimarySeq
+
+=cut
+
+sub to_primary_seq {
+	my $self = shift;
+	my $gi   = $self->gi;
+	my $ti   = $self->ti;	
+	my %args = ( @_, 'gi' => $gi, 'taxon' => $ti );
+	
+	# e.g. "gi|${gi}|mrca|${mrca}|seed_gi|${seed_gi}|taxon|${ti}"
+	my $id = join '|', map { $_ => $args{$_ } } sort { $a cmp $b } keys %args;
+	return Bio::PrimarySeq->new( 
+		'-display_id' => $id,
+		'-seq'        => $self->seq, 
+		'-name'       => $gi,
+		'-type'       => 'dna'
+	);	
+}
 
 1;

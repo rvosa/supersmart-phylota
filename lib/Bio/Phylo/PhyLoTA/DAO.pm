@@ -15,7 +15,6 @@ __PACKAGE__->load_namespaces;
 # Created by DBIx::Class::Schema::Loader v0.07002 @ 2012-05-26 14:28:40
 # DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:qy8gwA4ReJ1Jez7iqtYMBQ
 
-
 # You can replace this text with custom content, and it will be preserved on regeneration
 
 =head1 NAME
@@ -42,23 +41,56 @@ Bio::Phylo::PhyLoTA::DAO - The database schema
 
 =head1 DESCRIPTION
 
-We use a relational schema implemented in MySQL with a small number of tables.
-The 'seqs' table is used across all releases of the database. Other tables have
-a suffix consisting of '_xx' indicating the GenBank release number.
+The pipeline uses a relational schema implemented in MySQL with a small number of tables.
+These tables are mapped to object classes inside the Bio::Phylo::PhyLoTA::DAO::* 
+namespace, principally using the code generator from L<DBIx::Class>. This package
+represents the schema as a whole, through which different tables can be queried, as
+shown in the SYNOPSIS. Note that this provides a fairly verbose API, and that a more
+concise equivalent one is provided by L<Bio::SUPERSMART::Service>, which delegates
+to this one.
 
-The 'nodes_xx' table is constructed in part from NCBI's taxonomy flatfiles and
-in part from calculations and summaries built by us. The 'seqs' table is data
-taken directly from GenBank sequence flatfiles. The 'clusters_xx' contains
-summary information obtained by the clustering pipeline, and information about
-individual clusters is stored in 'cigi_xx'. Summary statistics on the entire
-cluster set are calculated and stored in 'summary_stats'.
+=head1 METHODS
+
+=over
+
+=item new
+
+The constructor returns a singleton object and takes no arguments.
+
+=back
 
 =cut
 
-use Bio::Phylo::PhyLoTA::DBH;
+use Bio::Phylo::Util::Logger ':levels';
+
 my $SINGLETON;
+my $log = Bio::Phylo::Util::Logger->new;
+my $config   = Bio::SUPERSMART::Config->new;
+
 sub new {
-	$SINGLETON ||= shift->connect( sub { Bio::Phylo::PhyLoTA::DBH->new }, { limit_dialect => 'LimitXY' } );
+	my $package = shift;	
+	if ( not $SINGLETON ) {
+		$log->info("first call to constructor");
+				
+		my %args  = ();		
+		$args{'rdbms'}    = $config->RDBMS;
+		$args{'database'} = $config->DATABASE_FILE;
+		$args{'host'}     = $config->HOST;
+		$args{'user'}     = $config->USER;
+		$args{'pass'}     = undef;		
+		$args{'limit_dialect'}  = 'LimitXY';
+		
+		# create "dsn string" template, insert values
+		my $dsn_tmpl  = 'DBI:%s:database=%s;host=%s';		
+
+		$args{'dsn'} = sprintf($dsn_tmpl, @args{qw[rdbms database host]});		
+
+		$SINGLETON = $package->connect( \%args);
+		
+	}
+	else {
+		$log->info("additional, no-op call to singleton constuctor");
+	}	
 	return $SINGLETON;
 }
 1;

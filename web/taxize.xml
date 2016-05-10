@@ -1,0 +1,41 @@
+<tool id="smrt_taxize" name="taxize" version="1.0.0">  
+    <description>smrt taxize description</description>
+
+	<stdio>
+      <exit_code range="1:" err_level="fatal" />
+	</stdio>
+	
+
+    <command>
+	  smrt taxize
+        --root_taxa $input1
+		--outfile $taxafile
+    </command>
+    <inputs>
+        <param name="input1" type="text" label="root_taxon"/>		
+    </inputs>
+    <outputs>
+        <data name="taxafile" format="tabular" label="taxafile"/>
+    </outputs>    
+	
+  
+<help>
+
+.. class:: warningmark
+
+**WARNING:** kkkk
+
+-----
+
+**What it does**
+
+AAA
+
+-----
+
+**Example**
+
+qqq
+
+    </help>
+</tool>

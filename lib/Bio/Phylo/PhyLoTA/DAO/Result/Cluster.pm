@@ -230,11 +230,31 @@ __PACKAGE__->belongs_to(
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration
-use Bio::Phylo::PhyLoTA::Config;
+use Bio::SUPERSMART::Config;
+
+=head2 table
+
+Getter/setter that maps this ORM class onto the correct version (184) of the underlying
+database table.
+
+=cut
+
 sub table {
 	my $class = shift;
 	my $table = shift;
-	my $release = Bio::Phylo::PhyLoTA::Config->new->currentGBRelease;
+	my $release = Bio::SUPERSMART::Config->new->currentGBRelease;
 	$class->SUPER::table( $table . '_' . $release );
 }
+
+=head2 clinfo
+
+Serializes to a unique identifier string
+
+=cut
+
+sub clinfo {
+	my $c = shift;
+	return join '-', $c->seed_gi, $c->ti_root->ti, $c->ci, $c->cl_type;
+}
+
 1;

@@ -5,44 +5,34 @@ use lib 'lib';
 use ExtUtils::MakeMaker;
 
 WriteMakefile(
-	'NAME' => 'Bio::Phylo::PhyLoTA',
+	'NAME'          => 'Bio::SUPERSMART',
+	'ABSTRACT_FROM' => 'lib/Bio/SUPERSMART.pm',
+	'VERSION_FROM'  => 'lib/Bio/SUPERSMART.pm',
+	'AUTHOR'        => 'http://www.supersmart-project.org/#people',
+	'LICENSE'       => 'mit',	
 	'PREREQ_PM' => {
 		'DBIx::Class'           => 0,
-		'Getopt::Long'          => 0,
-		'Pod::Usage'            => 0,
-		'Bio::Phylo'            => 0,
+		'DBI'                   => 0,
 		'Template'              => 0,
 		'Config::Tiny'          => 0,
-		'DBI'                   => 0,
-		'DBD::mysql'            => 0,
 		'Moose'                 => 0,
-		'Bio::Species'          => 0,
 		'XML::Twig'             => 0,
 		'HTML::Parser'          => 0,
 		'JSON'                  => 0,
-		'Parallel::MPI::Simple' => 0,
+		'Math::Random'          => 0,
+		'App::Cmd'              => 0,
+		'String::RewritePrefix' => 0,
+		'IO::String'            => 0,
+		'Statistics::R'         => 0,
+		'Parallel::ForkManager' => 0,
+		# 'Parallel::MPI::Simple' => 0,
+		
+		# XXX would be good if there was some way to define a dependency on
+		# git repositories such that `cpanm --installdeps .` would be able
+		# to pick it up. Doesn't work here, but maybe in the extended
+		# meta merge stuff?
+		# 'BioPerl'               => 0,
+		# 'BioPerl-Run'           => 0,
+		# 'Bio::Phylo'            => 0, 
 	}
 );
-
-
-sub MY::postamble {
-	my %args = %{ shift(@_) };	
-	my $result;
-	eval {
-		require Template;
-		require Bio::Phylo::PhyLoTA::Config;
-		$args{'conf'} = Bio::Phylo::PhyLoTA::Config->new('conf/phylota.ini');
-		my $tt = Template->new();
-		$tt->process('Makefile.tmpl',\%args,\$result) || die $tt->error;
-	};
-	if ( $@ ) {
-		warn "*** Couldn't create extended Makefile.\n",
-		     "*** Re-run $0 after resolving missing dependencies.\n",
-		     "*** The error message we got was:\n $@";
-		return undef;
-	}
-	else {
-		return $result;
-	}
-}
-

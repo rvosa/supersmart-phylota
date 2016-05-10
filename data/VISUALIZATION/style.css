@@ -1,0 +1,51 @@
+line.painted, circle.painted {
+    stroke: red !important;
+}
+td.painted {
+    color: red !important;
+}
+.sectionHeader {
+    font-weight: bold !important;
+}
+.link, a {
+    cursor: pointer !important;
+    fill: blue !important;
+}
+.itemTitle {
+    font-weight: bold;
+}
+text {
+    font-family: Verdana;
+    font-size: 10px;
+}
+text.painted {
+    fill: red !important;
+}
+rect {
+    fill: white;
+    stroke: black;
+}
+th, td {
+    text-align: left;
+    font: 10px Verdana;
+    padding-left: 5px;
+    padding-right: 5px;
+    white-space: nowrap;
+}
+th {
+    padding-top: 5px;
+    padding-bottom: 5px;
+}
+th.widget {
+    text-align: right;
+    background-color: navy;
+    vertical-align: middle
+}
+table {
+    background-color: white;
+    border: 1px solid black;
+    padding-bottom: 5px;
+    -webkit-box-shadow: 5px 5px 5px 0px rgba(0,0,0,0.44);
+    -moz-box-shadow: 5px 5px 5px 0px rgba(0,0,0,0.44);
+    box-shadow: 5px 5px 5px 0px rgba(0,0,0,0.44);
+}

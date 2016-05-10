@@ -1,0 +1,2121 @@
+<beast>
+
+  <!-- the names of all distinct rows across alignments as a flat list, distinguish between in and outgroup -->
+
+  <taxa id="taxa">
+		<taxon id="taxon_202457_1"/>
+		<taxon id="taxon_221704_1"/>
+		<taxon id="taxon_230833_1"/>
+		<taxon id="taxon_70814_1"/>
+		<taxon id="taxon_867332_1"/>
+		<taxon id="taxon_867333_1"/>
+		<taxon id="taxon_867334_1"/>
+		<taxon id="taxon_9523_1"/>
+	  </taxa>  
+  <taxa id="ingroup">
+		<taxon idref="taxon_202457_1"/>
+		<taxon idref="taxon_221704_1"/>
+		<taxon idref="taxon_230833_1"/>
+		<taxon idref="taxon_70814_1"/>
+		<taxon idref="taxon_867332_1"/>
+		<taxon idref="taxon_867333_1"/>
+		<taxon idref="taxon_867334_1"/>
+		<taxon idref="taxon_9523_1"/>
+	  </taxa>
+  
+    
+  <!-- coalescent process with constant population size -->
+  <constantSize id="constant" units="substitutions">
+    <populationSize>
+      <parameter id="constant.popSize" lower="0.0" upper="Infinity" value="0.005"/>
+    </populationSize>
+  </constantSize> 
+  
+  <!-- data and model settings for all the alignments -->
+                        <alignment dataType="nucleotide" id="clade2/cluster4.fa">
+                                <!-- aligned sequence data for http://ncbi.nlm.nih.gov/nuccore/302448774 -->
+          <sequence><taxon idref="taxon_202457_1"/>TACCCCCATGTTTGGCTGGAACATGAAGCTGACCTCAGAGGACTACAGAAATGTCACCTTCCTTTCATGCCGGTTCCCTTCCGTCATGAGCATGGACTACATGGTATACTTCAGCTTCTTCACCTGGATTTGCATTCCCCTGGTCATCATGTGTGCAATCTATCTTGACATCTTTTACATCATCCGGAACAAACTCAGTCAGAACTTCTCTAACTCCAAAGAGACGGGTGCATTTTATGGACGGGAGTTCAAGACGGCGAAGTCCCTGTTTCTGGTGCTTTTCTTGTTTGCGTTGTCATGGCTGCCTTTATCCATCATCAACTGCATCACCTACTTTCATGGTGAAGTACCACAGCTTGTGCTGTACCTGGGCATCCTGCTGTCCCATGCCAACTCCATGATGAACCCTATC</sequence>
+                                        <!-- aligned sequence data for http://ncbi.nlm.nih.gov/nuccore/302448771 -->
+          <sequence><taxon idref="taxon_221704_1"/>-----------------------------------------------------------------------------------------------------------------GCTTCTTCACCTGGATTTTCATTCCCCTGGTCATCATGTGTGCAATCTATCTTGACATCTTTTACATCATCCGGAACAAACTCAGACAGAACTTGTCTAACTCCAAAGAGACAGGTGCATTTTACGGACGGGAGTTCAAGACGGCGAAGTCCCTGTTTCTGGTGCTTTTCTTGTTTGCTTTGTCATGGCTGCCTTTGTCCATTATCAACTGCATCACCTACTTCCATGGCGAGGTGCCACAGCTTGTGCTGTACTTGGGTATCCTGCTGTCCCATGCCAACTCCAT-------------</sequence>
+                                        <!-- aligned sequence data for http://ncbi.nlm.nih.gov/nuccore/302448775 -->
+          <sequence><taxon idref="taxon_230833_1"/>-ACCCCCATGTTTGGCTGGAACATGAAGCTGACCTCAGAGGACTACAGAAATGTCACCTTCCTTTCATGCCGGTTCCCTTCCGTCATGAGCATGGACTACATGGTATACTTCAGCTTCTTCACCTGGATTTGCATTCCCCTGGTCATCATGTGTGCAATCTATCTTGACATCTTTTACATCATCCGGAACAAACTCAGTCAGAACTTCTCTAACTCCAAAGAGACGGGTGCATTTTATGGACGGGAGTTCAAGACGGCGAAGTCCCTGTTTCTGGTGCTTTTCTTGTTTGCGTTGTCATGGCTGCCTTTATCCATCATCAACTGCATCACCTACTTTCATGGTGAAGTACCACAGCTTGTGCTGTACCTGGGCATCCTGCTGTCCCATGCCAACTCCATGATGAACCCTATC</sequence>
+                                        <!-- aligned sequence data for http://ncbi.nlm.nih.gov/nuccore/302448778 -->
+          <sequence><taxon idref="taxon_70814_1"/>------------TGGCTGGAACATGAAGCTGACCTCAGAGGACTACAGAAATGTCGCCTTCCTTTCATGCCAGTTCCCTTCCGTCATGAGCATGGACTACATGGTATACTTCAGCTTCTTCACCTGGATTTGCATTCCGCTGGTGATCATGTGTGCAATCTATCTTGACATCTTTTACATCATCCGGAACAAACTCAGTCAGAACTTCTCTAACTCCAAAGAGACGGGTGCATTTTATGGACGGGAGTTCAAGACGGCGAAGTCCCTGTTTCTGGTGCTTTTCCTGTTTGCGTTGTCATGGCTGCCTTTATCCATCATCAACTGCATCACCTACTTTCATGGTGAAGTACCACAGCTTGTGCTGTACTTGGGCATCCTGCTGT-----------------------------</sequence>
+                                        <!-- aligned sequence data for http://ncbi.nlm.nih.gov/nuccore/302448772 -->
+          <sequence><taxon idref="taxon_867332_1"/>TACCCCCATGTTTGGCTGGAACATGAAGCTGACCTCAGAGSACTACAGAAATGTCACCTTCCTTTCATGCCGGTTCCCTTCCGTCATGAGCATGGACTACATGGTATACTTCAGCTTCTTCACCTGGATTTGCATTCCCCTGGTCATCATGTGTGCAATCTATCTTGACATCTTTTACATCATCCGGAACAAACTCAGTCAGAACTTCTCTAACTCCAAAGAGACRGGTGCATTTTAYGGACGGGAGTTCAAGACGGCGAAGTCCCTGTTTCTGGTGCTTTTCTTGTTTGCKTTGTCATGGCTGCCTTTATCCATCATCAACTGCATCACCTACTTTCATGGTGAAGTACCACAGCTTGTGCTGTACCTGGGCATCCTGCTGTCCCATGCCAACTCCATGATGAACCCTATC</sequence>
+                                        <!-- aligned sequence data for http://ncbi.nlm.nih.gov/nuccore/302448773 -->
+          <sequence><taxon idref="taxon_867333_1"/>----------TTTGGCTGGAACATGAAGCTGACCTCAGAGGACTACAGAAATGTCA-CTTCCTTTCATGCCAGTTCCCTTCCGTCATGAGCATGGACTACATGGTATACTTCAGCTTCTTCACCTGGATTTGCATTCCGCTGGTGATCATGTGTGCAATCTATCTTGACATCTTTTACATCATCCGGAACAAACTCAGTCAGAACTTCTCTAACTCCAAAGAGACGGGTGCATTTTATGGACGGGAGTTCAAGACGGCGAAGTCCCTGTTTCTGGTGCTTTTCCTGTTTGCGTTGTCATGGCTGCCTTTATCCATCATCAACTGCATCACCTACTTTCATGGTGAAGTACCACAGCTTGTGCTGTACTTGGGCATCCTGCTGT-----------------------------</sequence>
+                                        <!-- aligned sequence data for http://ncbi.nlm.nih.gov/nuccore/302448777 -->
+          <sequence><taxon idref="taxon_867334_1"/>-----------------------------------------ACTACAGAAATGTCACCTTCCTTTCATGCCAGTTCCCTTCCGTCATGAGCATGGACTACATGGTATACTTCAGCTTCTTCACCTGGATTTGCATTCCGCTGGTGATCATGTGTGCAATCTATCTTGACATCTTTTACATCATCCGGAACAAACTCAGTCAGAACTTCTCTAACTCCAAAGAGACGGGTGCATTTTATGGACGGGAGTTCAAGACGGCGAAGTCCCTGTTTCTGGTGCTTTTCCTGTTTGCGTTGTCATGGCTGCCTTTATCCATCATCAACTGCATCACCTACTTTCATGGTGA-GTACCACAGCTTGTGCTGTACTTGG-----------------------------------------</sequence>
+                                        <!-- aligned sequence data for http://ncbi.nlm.nih.gov/nuccore/302448776 -->
+          <sequence><taxon idref="taxon_9523_1"/>----------TTTGGCTGGAACATGAAGCTGACCTCAGAGGACTACAGAAATGTCA-CTTCCTTTCATGCCGGTTCCCTTCCGTCATGAGCATGGACTACATGGTATACTTCAGCTTCTTCACCTGGATTTGCATTCCCCTGGTCATCATGTGTGCAATCTATCTTGACATCTTTTACATCATCCGGAACAAACTCAGTCAGAACTTCTCTAACTCCAAAGAGACGGGTGCATTTTATGGACGGGAGTTCAAGACGGCGAAGTCCCTGTTTCTGGTGCTTTTCTTGTTTGCGTTGTCATGGCTGCCTTTATCCATCATCAACTGCATCACCTACTTTCATGGTGAAGTACCACAGCTTGTGCTGTACCTGG-CATCC-----------------------------------</sequence>
+              
+    </alignment>
+    
+    <!-- site patterns -->
+    <patterns from="1" id="clade2/cluster4.fa.patterns">
+      <alignment idref="clade2/cluster4.fa"/>
+    </patterns>
+    
+    <!-- coalescent starting tree -->
+    <coalescentTree id="clade2/cluster4.fa.startingTree" rootHeight="0.02">
+      <constrainedTaxa>
+		<taxa idref="taxa"/>
+ 		<tmrca monophyletic="true"> 
+		  <taxa idref="ingroup"/> 
+		</tmrca>
+	  </constrainedTaxa>
+      <constantSize idref="constant"/>
+    </coalescentTree> 
+    
+    <!-- tree model -->
+    <treeModel id="clade2/cluster4.fa.treeModel">
+      <coalescentTree idref="clade2/cluster4.fa.startingTree"/>
+      <rootHeight>
+        <parameter id="clade2/cluster4.fa.treeModel.rootHeight"/>
+      </rootHeight>
+      <nodeHeights internalNodes="true">
+        <parameter id="clade2/cluster4.fa.treeModel.internalNodeHeights"/>
+      </nodeHeights>
+      <nodeHeights internalNodes="true" rootNode="true">
+        <parameter id="clade2/cluster4.fa.treeModel.allInternalNodeHeights"/>
+      </nodeHeights>
+    </treeModel>
+
+	<!-- constrain ingroup to be monophyletic -->   
+	<tmrcaStatistic id="tmrca.ingroup.clade2/cluster4.fa" includeStem="false"> 
+      <mrca>
+		<taxa idref="ingroup"/>   
+      </mrca>                                                   
+      <treeModel idref="clade2/cluster4.fa.treeModel"/>
+	</tmrcaStatistic>
+	<monophylyStatistic id="monophyly.ingroup.clade2/cluster4.fa">
+      <mrca>
+		<taxa idref="ingroup"/>
+      </mrca>
+      <treeModel idref="clade2/cluster4.fa.treeModel"/>
+	</monophylyStatistic>
+	
+    <!-- coalescent likelihood -->
+    <coalescentLikelihood id="clade2/cluster4.fa.coalescent">
+      <model><constantSize idref="constant"/></model>
+      <populationTree><treeModel idref="clade2/cluster4.fa.treeModel"/></populationTree>
+    </coalescentLikelihood>
+
+    <!-- strict clock parameters -->
+    <strictClockBranchRates id="clade2/cluster4.fa.branchRates">
+      <rate>
+        
+          <parameter id="clade2/cluster4.fa.clock.rate" value="1.0"/>
+        
+      </rate>
+    </strictClockBranchRates>
+    
+    <!-- HKY85 substitution model parameters -->
+    <HKYModel id="clade2/cluster4.fa.hky">
+      <frequencies>
+        <frequencyModel dataType="nucleotide">
+          <alignment idref="clade2/cluster4.fa"/>
+          <frequencies>
+            <parameter dimension="4" id="clade2/cluster4.fa.frequencies"/>
+          </frequencies>
+        </frequencyModel>
+      </frequencies>
+      <kappa>
+        <parameter id="clade2/cluster4.fa.kappa" lower="0.0" value="2.0"/>
+      </kappa>
+    </HKYModel>
+
+    <!-- site model: HKY85+G -->
+    <siteModel id="clade2/cluster4.fa.siteModel">
+      <gammaShape gammaCategories="4">
+        <parameter id="clade2/cluster4.fa.alpha" lower="0.0" value="0.5"/>
+      </gammaShape>
+      <substitutionModel>
+        <HKYModel idref="clade2/cluster4.fa.hky"/>
+      </substitutionModel>
+    </siteModel>
+
+    <!-- tree likelihood model -->  
+    <treeLikelihood id="clade2/cluster4.fa.treeLikelihood" useAmbiguities="false">
+      <patterns idref="clade2/cluster4.fa.patterns"/>
+      <treeModel idref="clade2/cluster4.fa.treeModel"/>
+      <siteModel idref="clade2/cluster4.fa.siteModel"/>
+      <strictClockBranchRates idref="clade2/cluster4.fa.branchRates"/>
+    </treeLikelihood>
+                      <alignment dataType="nucleotide" id="clade2/cluster5.fa">
+                                <!-- aligned sequence data for http://ncbi.nlm.nih.gov/nuccore/302448855 -->
+          <sequence><taxon idref="taxon_202457_1"/>TTGTGCTAATTGTGAGAAAATATGCTACTTTGATCAAACTAGAATGAAGGAAATAAAAAGACACTGTGGCTCAACTTGTAATAAAGAGCAGCTCATCCTCACAGCTTTTTGATTGTTGCTATAGTTATCTTTTCAACATGGGATGCACAATACAGTTAACATTTCATTACCAGTAGCCTGTTGCGTGCTTATTGTTAAAAGGAATTTAACATACAAGTTTTTGTATGGCTTGTTCGCCTAATTCCGATTTCTTGTGCTGACTGGCATGAGACAGGGAGCTGGATTGTATTAAACTGGTTTTATTGTGATGTGACTATGATGGATGTGACAAGGGCCTCTATTATTCGCTGGGGAGTGTGGCCGTTAATGAAGCCATTAGCTGAGCTAAGGCAAGTGAAGAAAATAGGGAAATTACCATTATTCTGAAGCCATTAAGTTGTAATCCACCACTTTCTCTCCTTATTCAAAAAGGCATCTTCTTTTTAAGGCCTCCCT</sequence>
+                                        <!-- aligned sequence data for http://ncbi.nlm.nih.gov/nuccore/302448849 -->
+          <sequence><taxon idref="taxon_221704_1"/>TTGTGCTAATTGTGAGAAAATATGCTACTTTGATCAAACTAGAATGAAGGAAATAAAAAGACACTGTGGCTCAACTTGTAATAAAGAGCAGCTCATCCTCACAGCTTTTTGATTGTTGCTATAGTTATCTTTTCAACATGGGATGCACAATACAGTTAACATTTCATTACCAGTAGCCTGTTGCGTGCTTATTGTTAAAAGGAATTTAACATACAAGTTTTTGTATGGCTTGTTCACCTAATTCCGATTCCTCGTGCTGACTGGCATGAGACAGGGAGCTGGATTGTATTAAACTGGTTTTATTGTGATGTGACTATGATGGATGTGACAAGGGCCTCTATTATTCGCTGGGGAGTGTGGCCGTTAATGAAGCCATTAGCTGAGCTAAGGCAAGTGAAGAAAATAGGGAAATTACCATTATTCTGAAGCCATTAAGTTGTAATCCACCACTTTCTCTCCTTATTCAAAAAGGCATCTTCTTTTTAAG--------</sequence>
+                                        <!-- aligned sequence data for http://ncbi.nlm.nih.gov/nuccore/302448858 -->
+          <sequence><taxon idref="taxon_230833_1"/>TTGTGCTAATTGTGAGAAAATATGCTACTTTGATCAAACTAGAATGAAGGAAATAAAAAGACACTGTGGCTCAACTTGTAATAAAGAGCAGCTCATCCTCACAGCTTTTTGATTGTTGCTATAGTTATCTTTTCAACATGGGATGCACAATACAGTTAACATTTCATTACCAGTAGCCTGTTGCGTGCTTATTGTTAAAAGGAATTTAACATACAAGTTTTTGTATGGCTTGTTCGCCTAATTCCGATTTCTCGTGCTGACTGGCATGAGACAGGGAGCTGGATTGTATTAAACTGGTTTTATTGTGATGTGACTATGATGGATGTGACAAGGGCCTCTATTATTCGCTGGGGAGTGTGGCCGTTAATGAAGCCATTAGCTGAGCTAAGGCAAGTGAAGAAAATAGGGAAATTACCATTATTCTGAAGCCATTAAGTTGTAATCCACCACTTTCTCTCCTTATTCAAAAAGGCATCTTCTTTTTAAGGCCT----</sequence>
+                                        <!-- aligned sequence data for http://ncbi.nlm.nih.gov/nuccore/302448867 -->
+          <sequence><taxon idref="taxon_70814_1"/>TTGTGCTAATTGTGAGAAAATATGCTACTTTGATCAAACTAGAATGAAGGAAATAAAAAGACACTGTGGCTCAACTTGTAATAAAGAGCAGCTCATCCTCACAGCTTTTTGATTGTCGCTATAGTTATCTTTTCAACATGGGATGCACAATACAGTTAACATTTCATTACCAGTAGCCTGTTGCGTGCTTATTGTTAAAAGGAATTTAACATACAAGTTTTTGTATGGATTGTTCGCCTAATTCCGATTTCTCGTGCTGACTGGCATGAGACAGGGAGCTGGATTCTATTAAACTGGTTTTATTGTGATGTGACTATGATGGATGTGACAAGGGCCTCTATTATTCGCTGGGGAGCGTGGCCGTTAATGAAGCCATTAGCTGAGCTAAGGCAAGTGAAGAAAATAGGGAAATTACCATTATTCTGAAGCCATTAAGTTGTAATCCACCACTTTCTCTCCTTATTCAAAAAGGCATCTTCTTTTTAA---------</sequence>
+                                        <!-- aligned sequence data for http://ncbi.nlm.nih.gov/nuccore/302448851 -->
+          <sequence><taxon idref="taxon_867332_1"/>TTGTGCTAATTGTGAGAAAATATGCTACTTTGATCAAACTAGAATGAAGGAAATAAAAAGACACTGTGGCTCAACTTGTAATAAAGAGCAGCTCATCCTCACAGCTTTTTGATTGTTGCTATAGTTATCTTTTCAACATGGGATGCACAATACAGTTAACATTTCATTACCAGTAGCCTGTTGCGTGCTTATTGTTAAAAGGAATTTAACATACAAGTTTTTGTATGGCTTGTTCGCCTAATTCCGATTTCTCGTGCTGACTGGCATGAGACAGGGAGCTGGATTGTATTAAACTGGTTTTATTGTAATGTGACTATGATGGATGTGACAAGGGCCTCTATTATTCGCTGGGGAGTGTGGCCGTTAATGAAGCCATTAGCTGAGCTAAGGCAAGTGAAGAAAATAGGGAAATTACCATTATTCTGAAGCCATTAAGTTGTAATCCACCACTTTCTCTCCTTATTCAAAAAGGCATCTTCTTTTTAAGGCCTCCCT</sequence>
+                                        <!-- aligned sequence data for http://ncbi.nlm.nih.gov/nuccore/302448853 -->
+          <sequence><taxon idref="taxon_867333_1"/>TTGTGCTAATTGTGAGAAAATATGCTACTTTGATCAAACTAGAATGAAGGAAATAAAAAGACACTGTGGCTCAACTTGTAATAAAGAGCAGCTCATCCTCACAGCTTTTTGATTGTCGCTATAGTTATCTTTTCAACATGGGATGCACAATACAGTTAACATTTCATTACCAGTAGCCTGTTGCGTGCTTATTGTTAAAAGGAATTTAACATACAAGTTTTTGTATGGATTGTTCGCCTAATTCCGATTTCTCGTGCTGACTGGCATGAGACAGGGAGCTGGATTCTATTAAACTGGTTTTATTGTGATGTGACTATGATGGATGTGACAAGGGCCTCTATTATTCGCTGGGGAGCGTGGCCGTTAATGAAGCCATTAGCTGAGCTAAGGCAAGTGAAGAAAATAGGGAAATTACCATTATTCTGAAGCCATTAAGTTGTAATCCACCACTTTCTCTCCTTATTCAAAAAGGCATCTTCTTTTTAA---------</sequence>
+                                        <!-- aligned sequence data for http://ncbi.nlm.nih.gov/nuccore/302448873 -->
+          <sequence><taxon idref="taxon_867334_1"/>TTGTGCTAATTGTGAGAAAATATGCTACTTTGATCAAACTAGAATGAAGGAAATAAAAAGACACTGTGGCTCAACTTGTAATAAAGAGCAGCTCATCCTCACAGCTTTTTGATTGTCGCTATAGTTATCTTTTCAACATGGGATGCACAATACAGTTAACATTTCATTACCAGTAGCCTGTTGCGTGCTTATTGTTAAAAGGAATTTAACATACAAGTTTTTGTATGGATTGTTCGCCTAATTCCGATTTCTCGTGCTGACTGGCATGAGACAGGGAGCTGGATTGTATTAAACTGGTTTTATTGTGATGTGACTATGATGGATGTGACAAGGGCCTCTATTATTCGCTGGGGAGTGTGGCCGTTAATGAAGCCATTAGCTGAGCTAAGGCAAGTGAAGAAAATAGGGAAATTACCATTATTCTGAAGCCATTAAGTTGTAATCCACCACTTTCTCTCCTTATTCAAAAAGGCATCTTCTTTTTAA---------</sequence>
+                                        <!-- aligned sequence data for http://ncbi.nlm.nih.gov/nuccore/302448869 -->
+          <sequence><taxon idref="taxon_9523_1"/>TTGTGCTAATTGTGAGAAAATATGCTACTTTGATCAAACTAGAATGAAGGAAATAAAAAGACACTGTGGCTCAACTTGTAATAAAGAGCAGCTCATCCTCACAGCTTTTTGATTGTTGCTATAGTTATCTTTTCAACATGGGATGCACAATACAGTTAACATTTCATTACCAGTAGCCTGTTGCGTGCTTATTGTTAAAAGGAATTTAACATACAAGTTTTTGTATGGCTTGTTCGCCTAATTCCGATTTCTTGTGCTGACTGGCATGAGACAGGGAGCTGGATTGTATTAAACTGGTTTTATTGTGATGTGACCATGATGGATGTGACAAGGGCCTCTATTATTCGCTGGGGAGTGTGGCCGTTAATGAAGCCATTAGCTGAGCTAAGGCAAGTGAAGAAAATAGGGAAATTACCATTATTCTGAAGCCATTAAGTTGTAATCCACCACTTTCTCTCCTTATTCAAAAAGGCATCTTCTTTTTAAGG-------</sequence>
+              
+    </alignment>
+    
+    <!-- site patterns -->
+    <patterns from="1" id="clade2/cluster5.fa.patterns">
+      <alignment idref="clade2/cluster5.fa"/>
+    </patterns>
+    
+    <!-- coalescent starting tree -->
+    <coalescentTree id="clade2/cluster5.fa.startingTree" rootHeight="0.02">
+      <constrainedTaxa>
+		<taxa idref="taxa"/>
+ 		<tmrca monophyletic="true"> 
+		  <taxa idref="ingroup"/> 
+		</tmrca>
+	  </constrainedTaxa>
+      <constantSize idref="constant"/>
+    </coalescentTree> 
+    
+    <!-- tree model -->
+    <treeModel id="clade2/cluster5.fa.treeModel">
+      <coalescentTree idref="clade2/cluster5.fa.startingTree"/>
+      <rootHeight>
+        <parameter id="clade2/cluster5.fa.treeModel.rootHeight"/>
+      </rootHeight>
+      <nodeHeights internalNodes="true">
+        <parameter id="clade2/cluster5.fa.treeModel.internalNodeHeights"/>
+      </nodeHeights>
+      <nodeHeights internalNodes="true" rootNode="true">
+        <parameter id="clade2/cluster5.fa.treeModel.allInternalNodeHeights"/>
+      </nodeHeights>
+    </treeModel>
+
+	<!-- constrain ingroup to be monophyletic -->   
+	<tmrcaStatistic id="tmrca.ingroup.clade2/cluster5.fa" includeStem="false"> 
+      <mrca>
+		<taxa idref="ingroup"/>   
+      </mrca>                                                   
+      <treeModel idref="clade2/cluster5.fa.treeModel"/>
+	</tmrcaStatistic>
+	<monophylyStatistic id="monophyly.ingroup.clade2/cluster5.fa">
+      <mrca>
+		<taxa idref="ingroup"/>
+      </mrca>
+      <treeModel idref="clade2/cluster5.fa.treeModel"/>
+	</monophylyStatistic>
+	
+    <!-- coalescent likelihood -->
+    <coalescentLikelihood id="clade2/cluster5.fa.coalescent">
+      <model><constantSize idref="constant"/></model>
+      <populationTree><treeModel idref="clade2/cluster5.fa.treeModel"/></populationTree>
+    </coalescentLikelihood>
+
+    <!-- strict clock parameters -->
+    <strictClockBranchRates id="clade2/cluster5.fa.branchRates">
+      <rate>
+        
+          <parameter id="clade2/cluster5.fa.clock.rate" value="1.0" lower="0.0" upper="Infinity"/>
+        
+      </rate>
+    </strictClockBranchRates>
+    
+    <!-- HKY85 substitution model parameters -->
+    <HKYModel id="clade2/cluster5.fa.hky">
+      <frequencies>
+        <frequencyModel dataType="nucleotide">
+          <alignment idref="clade2/cluster5.fa"/>
+          <frequencies>
+            <parameter dimension="4" id="clade2/cluster5.fa.frequencies"/>
+          </frequencies>
+        </frequencyModel>
+      </frequencies>
+      <kappa>
+        <parameter id="clade2/cluster5.fa.kappa" lower="0.0" value="2.0"/>
+      </kappa>
+    </HKYModel>
+
+    <!-- site model: HKY85+G -->
+    <siteModel id="clade2/cluster5.fa.siteModel">
+      <gammaShape gammaCategories="4">
+        <parameter id="clade2/cluster5.fa.alpha" lower="0.0" value="0.5"/>
+      </gammaShape>
+      <substitutionModel>
+        <HKYModel idref="clade2/cluster5.fa.hky"/>
+      </substitutionModel>
+    </siteModel>
+
+    <!-- tree likelihood model -->  
+    <treeLikelihood id="clade2/cluster5.fa.treeLikelihood" useAmbiguities="false">
+      <patterns idref="clade2/cluster5.fa.patterns"/>
+      <treeModel idref="clade2/cluster5.fa.treeModel"/>
+      <siteModel idref="clade2/cluster5.fa.siteModel"/>
+      <strictClockBranchRates idref="clade2/cluster5.fa.branchRates"/>
+    </treeLikelihood>
+                      <alignment dataType="nucleotide" id="clade2/cluster12.fa">
+                                <!-- aligned sequence data for http://ncbi.nlm.nih.gov/nuccore/302451166 -->
+          <sequence><taxon idref="taxon_202457_1"/>TGGCTCTGGCTCTGTACTCATTTTTCAATTTAGTTCTTTGGTAAGAACAGGTTACAATTTTAAATCCATCTCTTGTAGTATAGAGTGGCTTAGACTGCMTATTATGCTATGAATGTCTATTTGTATCCTAGTGCTGCCTCCTCCCCAGGAAACATAGCAGAGGCCACACAGAGTACAACAGCATTTAATGGTCAAAAATGGTTGTACACTATTACAGTCAGCCACAGAAACTGTGTTGGAGGACAAGACCCAATCCTTCCCCACACCAGGCAAAGCAGTATTGGACATAAGCTGGCATGGGGCTGGGTCCATGTCCTCATCCCTCAGGCCTGAGGGGAGACCACCTTCTAATAACCAACCCCCAGCTACCACTCTGTATTCATCAGGGGAGGGGTATAAACCCCACATGCAAGAAGAACCCTTGCCCCCAGTGTCAAATGGGATGGGGATGCTAGAGTTACAGTAAAGGGGAAACCCTATGTAAGCTGTTAGCAGAGTTCACAGGGGTAGGGATTACCCCTGTTCTCCAGTTCCCAAATGTGCTCACTTTCCCAGCTTCTTCATCCGTTCATCAATGCTGGCAAAGTTCCCCTCAACTGTGGCCAGGTTTTCA</sequence>
+                                        <!-- aligned sequence data for http://ncbi.nlm.nih.gov/nuccore/302451163 -->
+          <sequence><taxon idref="taxon_221704_1"/>--------------------------AATTTAGTTCTTTGGTAAGAACAGGTTACAATTTTAAATCCATCTCTTGTAGTATAGAGTGGCTTAGACTGCCTATTATGCTATGAATGTCTATTTGTATCCTAGTGCTGCCTCCTCCCCAGGAAACATAGCAGAGGCCACACAGAGTACAACAGCATTTAATGGTCAAAAATGGTTGTACACTATTACAGTCAGCCACAGAAACTGTGTTGGAGGACAAGACCCAATCCTTCCCCACACCAGGCAAAGCAGTATTGGACATAAGCTGGCATGGGGCTGGGTCCATGTCCTCATCCCTCAGGCCTGAGGGGAGACCACCTTCTAATAACCAACCCCCAGCTACCACTCTGTATTCATCAGGGGAGGGGTATAAACCCCACATGCAAGAAGAACCCTTGCCCCCAGTGTCAAATGGGATGGGGATGCTAGAGTTACAGTAAAGGGGAAACCCTATGTAAGCTGTTAGCAGAGTTCACAGGGGTAGGGATTACCCCTGTTCTCCAGTTCCCAAATGTGCTCACTTTCCCAGCTTCTTCATCCGTTCATCAATGCTGGCAAAGTTCCCCTCAACTG--------------</sequence>
+                                        <!-- aligned sequence data for http://ncbi.nlm.nih.gov/nuccore/302451167 -->
+          <sequence><taxon idref="taxon_230833_1"/>--------------------------AATTTAGTTCTTTGGTAAGAACAGGTTACAATTTTAAATCCATCTCTTGTAGTATAGAGTGGCTTAGACTGCCTATTATGCTATGAATGTCTATTTGTATCCTAGTGCTGCCTCCTCCCCAGGAAACATAGCAGAGGCCACACAGAGTACAACAGCATTTAATGGTCAAAAATGGTTGTACACTATTACAGTCAACCACAGAAACTGTGTTGGAGGACAAGACCCAATCCTTCCCCACACCAGGCAAAGCAGTATTGGACATAAGCTGGCATGGGGCTGGGTCCACGTCTTCATCCCTCAGGCCTGAGGGGAGACCACCTTCTAATAACCAACCCCCAGCTACCACTCTGTATTCATCAGGGGAGGGGTATAAACCCCACATGCAAGAAGAACCCTTGCCCCCAGTGTCAAATGGGATGGGGATGCTAGAGTTACAGTAAAGGGGAAACCCTATGTAAGCTGTTAGCAGAGTTCACAGGGGTAGGGATTACCCCTGTTCTCCAGTTCCCAAATGTGCTCACTTTCCCAGCTTCTTCATCCGTTCATCAATGCTGGCAAAGTTCCCCTCAACTGTGGCCAGGTTTTCA</sequence>
+                                        <!-- aligned sequence data for http://ncbi.nlm.nih.gov/nuccore/302451170 -->
+          <sequence><taxon idref="taxon_70814_1"/>------------TGTACTCATTTTTCAATTTAGTTCTTTGGTAAGAACAGGTTACAA-TTTAAATCCATCTCTTGTAGTATAGAGTGGCTTAGACTGCCTATTATGCTATGAATGTCTATTTGTATCCTAGTGCTGCCTCCTCCCCAGGAAACATAGCAGAGGCCACACAGAGTACAACAGCATTTAATGGTCAAAAATGGTTGTACACTATTACAGTCAGCCACAGAAACTGTGTTGGAGGACAAGACCCAATCCTTCCCCACACCAGGCAAAGCAGTATTGGACATAAGCTGGCATGGGGCTGGGTCCACGTCCTCATCCCTCAGGCCTGAGGGGAGACCACCTTCTAATAACCAACCCCCAGCTACCACTCTGTATTCATCAGGGGAGGGGTATAAACCCCACATGCAAGAAAAACCCTTGCCCCCAGTTTCAAATGGGATGGGGATGCTAGAGTTACGGTAAAGGGGAAACCCTATGTAAGCTGTTAGCAGAGTTCACAGGGGTAGGGATTACCCCTGTTCTCCAGTTCCCAAATGTGCTCACTTTCCCAGCTTCTTCATCCGTTCATCAATGCTGGCAAAGTTCCCCTCAACTG--------------</sequence>
+                                        <!-- aligned sequence data for http://ncbi.nlm.nih.gov/nuccore/302451164 -->
+          <sequence><taxon idref="taxon_867332_1"/>--------GCTCTGTACTCATTTTTCAATTTAGTTCTTTGGTAAGAACAGGTTACAATTTTAAATCCATCTCTTGTAGTATAGAGTGGCTTAGACTGCCTATTATGCTATGAATGTCTATTTGTATCCTAGTGCTGCCTCCTCCCCAGGAAACATAGCAGAGGCCACACAGAGTACAACAGCATTTAATGGTCAAAAATGGTTGTACACTATTACAGTCAACCACAGAAACTGTGTTGGAGGACAAGACCCAATCCTTCCCCACACCAGGCAAAGCAGTATTGGACATAAGCTGGCATGGGGCTGGGTCCACGTCTTCATCCCTCAGGCCTGAGGGGAGACCACCTTCTAATAACCAACCCCCAGCTACCACTCTGTATTCATCAGGGGAGGGGTATAAACCCCACATGCAAGAAGAACCCTTGCCCCCAGTGTCAAATGGGATGGGGATGCTAGAGTTACAGTAAAGGGGAAACCCTATGTAAGCTGTTAGCAGAGTTCACAGGGGTAGGGATTACCCCTGTTCTCCAGTTCCCAAATGTGCTCACTTTCCCAGCTTCTTCATCCGTTCATCAATGCTGGCAAAGTTCCCCTCAACTGTGGCCAGGTTTTCA</sequence>
+                                        <!-- aligned sequence data for http://ncbi.nlm.nih.gov/nuccore/302451165 -->
+          <sequence><taxon idref="taxon_867333_1"/>-----------CTGTACTCATTTTTCAATTTAGTTCTTTGGTAAGAACAGGTTACAA-TTTAAATCCATCTCTTGTAGTATAGAGTGGCTTAGACTGCCTATTATGCTATGAATGTCTATTTGTATCCTAGTGCTGCCTCCTCCCCAGGAAACATAGCAGAGGCCACACAGAGTACAACAGCATTTAATGGTCAAAAATGGTTGTACACTATTACAGTCAGCCACAGAAACTGTGTTGGAGGACAAGACCCAATCCTTCCCTACACCAGGCAAAGCAGTATTGGACATAAGCTGGCATGGGGCTGGGTCCACGTCCTCATCCCTCAGGCCTGAGGGGAGACCACCTTCTAATAACCAACCCCCAGCTACCACTCTGTATTCATCAGGGGAGGGGTATAAACCCCACATGCAAGAAGAACCCTTGCCCCCAGTGTCAAATGGGATGGGGATGCTAGAGTTACAGTAAAGGGGAAACCCTATGTAAGCTGTTAGCAGAGTTCACAGAGGTAGGGATTACCCCTGTTCTCCAGTTCCCAAATGTGCTCACTTTCCCAGCTTCTTCATCCGTTCATCAATGCTGGCAAAGTTCCCCTCAACT---------------</sequence>
+                                        <!-- aligned sequence data for http://ncbi.nlm.nih.gov/nuccore/302451169 -->
+          <sequence><taxon idref="taxon_867334_1"/>--------GCTCTGTACTCATTTTTCAATTTAGTTCTTTGGTAAGAACAGGTTACAA-TTTAAATCCATCTCTTGTAGTGTAGAGTGGCTTAGACTGCCTATTATGCTATGAATGTCTATTTGTATCCTAGTGCTGCCTCCTCCCCAGGAAACATAGCAGAGGCCACACAGAGTACAACAGCATTTAATGGTCAAAAATGGTTGTACACTATTACAGTCAGCCACAGAAACTGTGTTGGAGGACAAGACCCAATCCTTCCCCACACCAGGCAAAGCAGTATTGGACATAAGCTGACATGGGGCTGGGTCCACGTCCTCATCCCTCAGGCCTGAGGGGAGACCACCTTCTAATAACCAACCCCCAGCTACCACTCTGTATTCATCAGGGGAGGGGTATAAACCCCACATGCAAGAAGAACCCTTGCCCCCAGTGTCAAATGGGATGGGGATGCTAGAGTTACAGTAAAGGGGAAACCCTATGTAAGCTGTTAGCAGAGTTCACAGGGGTAGGGATTACTCCTGTTCTCCAGTTCCCAAATGTGCTCACTTTCCCAGCTTCTTCATCCGTTCATCAATGCTGGCAAAGTTCCCCTCAACTGT-------------</sequence>
+                                        <!-- aligned sequence data for http://ncbi.nlm.nih.gov/nuccore/302451168 -->
+          <sequence><taxon idref="taxon_9523_1"/>--------GCTCTGTACTCATTTTTCAATTTAGTTCTTTGGTAAGAACAGGTTACAATTTTAAATCCATCTCTTGTAGTATAGAGTGGCTTAGACTGCCTATTATGCTATGAATGTCTATTTGTATCCTAGTGCTGCCTCYTCCCCAGGAAACATAGCAGAGGCCACACAGAGTACAACAGCATTTAATGGTCAAAAAYGGTTGTACACTATTACAGTCAGCCACAGAAACTGTGTCGGAGGACAAGACCCAATCCTTCCCCACACCAGGCAAAGCAGTATTGGACATAAGCTGGCATGGGGCTGGGTCCATGTCCTCATCCCTCAGGCCTGAGGGGAGACCACCTTCTAATAACCAACCCCCAGCTACCACTCTGTATTCATCAGGGGAGGGGTATAAACCCCACATGCAAGAAGAACCCTTGCCCCCAGTGTCAAATGGGATGGGGATGCTAGAGTTACAGTAAAGGGGAAACCCTATGTAAGCTGTTAGCAGAGTTCACAGGGGTASGGATTACCCCTGTTCTCCAGTTCCCAAATGTGCTCACTTTCCCAGCTTCTTCATCCGTTCATCAATGCTGGCAAAGTTCCCCTCAACTGTGG-----------</sequence>
+              
+    </alignment>
+    
+    <!-- site patterns -->
+    <patterns from="1" id="clade2/cluster12.fa.patterns">
+      <alignment idref="clade2/cluster12.fa"/>
+    </patterns>
+    
+    <!-- coalescent starting tree -->
+    <coalescentTree id="clade2/cluster12.fa.startingTree" rootHeight="0.02">
+      <constrainedTaxa>
+		<taxa idref="taxa"/>
+ 		<tmrca monophyletic="true"> 
+		  <taxa idref="ingroup"/> 
+		</tmrca>
+	  </constrainedTaxa>
+      <constantSize idref="constant"/>
+    </coalescentTree> 
+    
+    <!-- tree model -->
+    <treeModel id="clade2/cluster12.fa.treeModel">
+      <coalescentTree idref="clade2/cluster12.fa.startingTree"/>
+      <rootHeight>
+        <parameter id="clade2/cluster12.fa.treeModel.rootHeight"/>
+      </rootHeight>
+      <nodeHeights internalNodes="true">
+        <parameter id="clade2/cluster12.fa.treeModel.internalNodeHeights"/>
+      </nodeHeights>
+      <nodeHeights internalNodes="true" rootNode="true">
+        <parameter id="clade2/cluster12.fa.treeModel.allInternalNodeHeights"/>
+      </nodeHeights>
+    </treeModel>
+
+	<!-- constrain ingroup to be monophyletic -->   
+	<tmrcaStatistic id="tmrca.ingroup.clade2/cluster12.fa" includeStem="false"> 
+      <mrca>
+		<taxa idref="ingroup"/>   
+      </mrca>                                                   
+      <treeModel idref="clade2/cluster12.fa.treeModel"/>
+	</tmrcaStatistic>
+	<monophylyStatistic id="monophyly.ingroup.clade2/cluster12.fa">
+      <mrca>
+		<taxa idref="ingroup"/>
+      </mrca>
+      <treeModel idref="clade2/cluster12.fa.treeModel"/>
+	</monophylyStatistic>
+	
+    <!-- coalescent likelihood -->
+    <coalescentLikelihood id="clade2/cluster12.fa.coalescent">
+      <model><constantSize idref="constant"/></model>
+      <populationTree><treeModel idref="clade2/cluster12.fa.treeModel"/></populationTree>
+    </coalescentLikelihood>
+
+    <!-- strict clock parameters -->
+    <strictClockBranchRates id="clade2/cluster12.fa.branchRates">
+      <rate>
+        
+          <parameter id="clade2/cluster12.fa.clock.rate" value="1.0" lower="0.0" upper="Infinity"/>
+        
+      </rate>
+    </strictClockBranchRates>
+    
+    <!-- HKY85 substitution model parameters -->
+    <HKYModel id="clade2/cluster12.fa.hky">
+      <frequencies>
+        <frequencyModel dataType="nucleotide">
+          <alignment idref="clade2/cluster12.fa"/>
+          <frequencies>
+            <parameter dimension="4" id="clade2/cluster12.fa.frequencies"/>
+          </frequencies>
+        </frequencyModel>
+      </frequencies>
+      <kappa>
+        <parameter id="clade2/cluster12.fa.kappa" lower="0.0" value="2.0"/>
+      </kappa>
+    </HKYModel>
+
+    <!-- site model: HKY85+G -->
+    <siteModel id="clade2/cluster12.fa.siteModel">
+      <gammaShape gammaCategories="4">
+        <parameter id="clade2/cluster12.fa.alpha" lower="0.0" value="0.5"/>
+      </gammaShape>
+      <substitutionModel>
+        <HKYModel idref="clade2/cluster12.fa.hky"/>
+      </substitutionModel>
+    </siteModel>
+
+    <!-- tree likelihood model -->  
+    <treeLikelihood id="clade2/cluster12.fa.treeLikelihood" useAmbiguities="false">
+      <patterns idref="clade2/cluster12.fa.patterns"/>
+      <treeModel idref="clade2/cluster12.fa.treeModel"/>
+      <siteModel idref="clade2/cluster12.fa.siteModel"/>
+      <strictClockBranchRates idref="clade2/cluster12.fa.branchRates"/>
+    </treeLikelihood>
+                      <alignment dataType="nucleotide" id="clade2/cluster13.fa">
+                                <!-- aligned sequence data for http://ncbi.nlm.nih.gov/nuccore/302451245 -->
+          <sequence><taxon idref="taxon_202457_1"/>---TCTGAGTGCCAAGAATTAATGCTATTTGAAAGTACAAACTGAACCTGCCAAGCTTCGGACAGCTAAGATAATCCTAATTATTTTAAATGTTAGTGAGAAGGGCAGCAGTTCCACTCTGGAAAAGAGTTCTATTGTGAAACATTAAATATATGCTAAGTGGTATTGATTGCCCATGATTTTATTTCCAAACACTATGGTTATCATGAAGTGGAAGAATTTCTTGTTTAAGAAATTTTCATGAGCTTTTCATCAGATTCTTTCTTAGGGCTGCAAA--CTAGGAAACTGAAGAGGCCAGCAGTTTTGTTTGTCTGCCTTGGCAGTCAGGATCTAGATGAAGAGCTGCTAACAACTGAAAAATGCCACTTGCATTTAATTTTAAAATGGTTTCTTAGGAGTTTAATAGTATTTAACATAGAGAGGAAGAAAAAATGTTTTTAAAGCATGAATATCCTGTTTTCTCACATCACTGGAAAAGAATTACTCGTTCCAGTCCATTGACTTCCAACAGATCATTCAAGTTAAAAGTCAGGGGTCTTT</sequence>
+                                        <!-- aligned sequence data for http://ncbi.nlm.nih.gov/nuccore/302451239 -->
+          <sequence><taxon idref="taxon_221704_1"/>--------------------------------------------------------------------------TCCTAATTATTTTAAATGTTAGTGAGAAGGGCAGCAGTTCCACTCTGGAAAAGAGTTCTATTGTGAAACATTAAATATATGCTAAGTGGTATTGATTGCCCATGATTTTATTTCCAAACACTATGGTTATCATGAAGTGGAAGAATTTCTTGTTTAAGAAATTTTCATGAGCTTTTCATCAGATTCTTTCTTAGGGCTGCAAA--CTAGGAAACTGAAGAGGCCAGCAGTTTTGTTTGTCTGCCTTGGCAGTCAGGATCTAGATGAAGAGCTGCTAACAACTGAAAAATGCCACTTGCATTTAATTTTAAAATGGTTTCTTAGGAGTTTAATAGTATTTAACATAGAGAGGAAGAAAAAATGTTTTTAAAGCATGAATATCCTGTTTTCTCACATCACTGGAAAAGAATTACTCGTTCCAGTCCATTGACTTCCAACAGATCATTCAAGTTAAAAGTCAGGG------</sequence>
+                                        <!-- aligned sequence data for http://ncbi.nlm.nih.gov/nuccore/302451248 -->
+          <sequence><taxon idref="taxon_230833_1"/>TGTTCTGAGTGCCAAGAATTAATGCTATTTGAAAGTACAAACTGAACCTGCCAAGCTTCGGACAGCTAAGATAATCCTAATTATTTTAAATGTTAGTGAGAAGGGCAGCAGTTCCACTCTGGAAAAGAGTTCTATTGTGAAACATTAAATATATGCTAAGTGGTATTGATTGCCCATGATTTTATTTCCAAACACTATGGTTATCATGAAGTGGAAGAATTTCTTGTTTAAGAAATTTTCATGAGCTTTTCATCAGATTCTTTCTTAGGGCTGCAAA--CTAGGAAACTGAAGAGGCCAGCAGTTTTGTTTGTCTGCCTTGGCAGTCAGGATCTAGATGAAGAGCTGCTAACAACTGAAAAATGCCACTTGCATTTAATTTTAAAATGGTTTCTTAGGAGTTTAATAGTATTTAACATAGAGAGGAAGAAAAAATGTTTTTAAAGCATGAATATCCTGTTTTCTCACATCACTGGAAAAGAATTACTCGTTCCAGTCCATTGACTTCCAACAGATCATTCAAGTTAAAAGTCAGGGGTCTTT</sequence>
+                                        <!-- aligned sequence data for http://ncbi.nlm.nih.gov/nuccore/302451256 -->
+          <sequence><taxon idref="taxon_70814_1"/>--------------AGAATTAATGCTATTTGAAAGTACAAACTGAACCTGCCAAGCTTCGGACAGCTAAGATAATCCTAATTATTTTAAATGTTAGTGAGAAGGGCAGCAGTTCCACTCTGGAAAAGAGTTCTATTGTGAAACATTAAATATATGCTAAATGGTATTGATTGCCCATGATTTTATTTCCAAACACTATGGTTATCATGAAGTGGAAGAATTTCTTGTTTAAGAAATTTTCATGAGCTTTTCATCAGATTCTTTCTTAGGGCTGCAAACTCTAGGAAACTGAAGAGGCCAGCAGTTTTGTTTGTCTGCCTTGGCAGTCAGGATCTAGATGAAGAGCTGCTAACAACTGAAAAATGCCACTTGCATTTAATTTTAAAATGGTTTCTTAGGAGTTTAATAGTATTTAACATAGAGAGGAAGAAAAAATGTTTTTAAAGCATGAATATCCTGTTTTCTCACATCACTGGAAAAGAATTATTCRTTCCAGTCCATTGACTTCCAACAGATCATTCAAGTTAAAAGTCAGGG------</sequence>
+                                        <!-- aligned sequence data for http://ncbi.nlm.nih.gov/nuccore/302451241 -->
+          <sequence><taxon idref="taxon_867332_1"/>TGTTCTGAGTGCCAAGAATTAATGCTATTTGAAAGTACAAACTGAACCTGCCAAGCTTCGGACAGCTAAGATAATCCTAATTATTTTAAATGTTAGTGAGAAGGGCAGCAGTTCCACTCTGGAAAAGAGTTCTATTGTGAAACATTAAATATATGCTAAGTGGTATTGATTGCCCATGATTTTATTTCCAAACACTATGGTTATCATGAAGTGGAAGAATTTCTTGTTTAAGAAATTTTCATGAGCTTTTCATCAGATTCTTTCTTAGGGCTGCAAA--CTAGGAAACTGAAGAGGCCAGCAGTTTTGTTTGTCTGCCTTGGCAGTCAGGATCTAGATGAAGAGCTGCTAACAACTGAAAAATGCCACTTGCATTTAATTTTAAAATGGTTTCTTAGGAGTTTAATAGTATTTAACATAGAGAGGAAGAAAAAATGTTTTTAAAGCATGAATATCCTGTTTTCTCACATCACTGGAAAAGAATTACTCGTTCCAGTCCATTGACTTCCAACAGATCATTCAAGTTAAAAGTCAGGGGTCTTT</sequence>
+                                        <!-- aligned sequence data for http://ncbi.nlm.nih.gov/nuccore/302451243 -->
+          <sequence><taxon idref="taxon_867333_1"/>-----------------------------------------CTGAACCTGCCAAGCTTCGGACAGCTAAGATAATCCTAATTATTTTAAATGTTAGTGAGAAGGGCAGCAGTTCCACTCTGGAAAAGAGTTCTATTGTGAAACATTAAATATATGCTAAATGGTATTGATTGCCCATGATTTTATTTCCAAACACTATGGTTATCATGAAGTGGAAGAATTTCTTGTTTAAGAAATTTTCATGAGCTTTTCATCAGATTCTTTYTTAGGGCTGCAAACTCTAGGAAACTGAAGAGGCCAGCAGTTTTGTTTATCTGCCTTGGCAGTCAGGATCTAGATGAAGAGCTGCTAACAACTGAAAAATGCCACTTGCATTTAATTTTAAAATGGTTTCTTAGGAGTTTAATAGTATTTAACATAGAGAGGAAGAAAAAATGTTTTTAAAGCATGAATATCCTGTTTTCTCACATCACTGGAAAAGAATTATTCATTCCAGTCCATTGACTTCCAACAGATCATTCAAGTTAAAAGTCAGGG------</sequence>
+                                        <!-- aligned sequence data for http://ncbi.nlm.nih.gov/nuccore/302451262 -->
+          <sequence><taxon idref="taxon_867334_1"/>--------------------------------------AAACTGAACCTGCCAAGCTTCGGACAGCTAAGATAATCCTAATTATTTTAAATGTTAGTGAGAAGGGCAGCAGTTCCACTCTGGAAAAGAGTTCTATTGTTAAACATTAAATATATGCTAAATGGTATTGATTGCCCATGATTTTATTTCCAAACACTATGGTTATCATGAAGTGGAAGAATTTCTTGTTTAAGAAATTTTCATGAGCTTTTCATCAGATTCTTTCTTAGGGCTGCAAACTCTAGGAAACTGAAGAGGCCAGCAGTTTTGTTTGTCTGCCTTGGCAGTCAGGATCTAGATGAAGAGCTGCTAACAACTGAAAAATGCCACTTGCATTTAATTTTAAAATGGTTTCTTAGGAGTTTAATAGTATTTAACATAGAGAGGAAGAAAAAATGTTTTTAAAGCATGAATATCCTGTTTTCTCACATCACTGGAAAAGAATTATTCGTTCCAGTCCATTGACTTCCAACAGATCATTCAAGTTAAAAGTCAGGG------</sequence>
+                                        <!-- aligned sequence data for http://ncbi.nlm.nih.gov/nuccore/302451258 -->
+          <sequence><taxon idref="taxon_9523_1"/>---------------------------------------AACTGAACCTGCCAAGCTTCGGACAGCTAAGATAATCCTAATTATTTTAAATGTTAGTGAGAAGGGCAGCAGTTCCACTCTGGAAAAGAGTTCTATTGTGAAACATTAAATATATGCTAAGTGGTATTGATTGCCCATGATTTTATTTCCAAACACTATGGTTATCATGAAGTGGAAGAATTTCTTGTTTAAGAAATTTTCATGAGCTTTTCATCAGATTCTTTCTTAGGGCTGCAAA--CTAGGAAACTGAAGAGGCCAGCAGTTTTGTTTGTCTGCCTTGGCAGTYAGGATCTAGATGAAGAGCTGCTAACAACTGAAAAATGCCACTTGCATTTAATTTTAAAATGGTTTCTTAGGAGTTTAATAGTATTTAACATAGAGAGGAAGAAAAAATGTTTTTAAAGCATGAATATCCTGTTTTCTCACATCACTGGAAAAGAATTACTCGTTCCAGTCCATTGACTTCCAACAGATCATTCAAGTTAAAAGTCAGGG------</sequence>
+              
+    </alignment>
+    
+    <!-- site patterns -->
+    <patterns from="1" id="clade2/cluster13.fa.patterns">
+      <alignment idref="clade2/cluster13.fa"/>
+    </patterns>
+    
+    <!-- coalescent starting tree -->
+    <coalescentTree id="clade2/cluster13.fa.startingTree" rootHeight="0.02">
+      <constrainedTaxa>
+		<taxa idref="taxa"/>
+ 		<tmrca monophyletic="true"> 
+		  <taxa idref="ingroup"/> 
+		</tmrca>
+	  </constrainedTaxa>
+      <constantSize idref="constant"/>
+    </coalescentTree> 
+    
+    <!-- tree model -->
+    <treeModel id="clade2/cluster13.fa.treeModel">
+      <coalescentTree idref="clade2/cluster13.fa.startingTree"/>
+      <rootHeight>
+        <parameter id="clade2/cluster13.fa.treeModel.rootHeight"/>
+      </rootHeight>
+      <nodeHeights internalNodes="true">
+        <parameter id="clade2/cluster13.fa.treeModel.internalNodeHeights"/>
+      </nodeHeights>
+      <nodeHeights internalNodes="true" rootNode="true">
+        <parameter id="clade2/cluster13.fa.treeModel.allInternalNodeHeights"/>
+      </nodeHeights>
+    </treeModel>
+
+	<!-- constrain ingroup to be monophyletic -->   
+	<tmrcaStatistic id="tmrca.ingroup.clade2/cluster13.fa" includeStem="false"> 
+      <mrca>
+		<taxa idref="ingroup"/>   
+      </mrca>                                                   
+      <treeModel idref="clade2/cluster13.fa.treeModel"/>
+	</tmrcaStatistic>
+	<monophylyStatistic id="monophyly.ingroup.clade2/cluster13.fa">
+      <mrca>
+		<taxa idref="ingroup"/>
+      </mrca>
+      <treeModel idref="clade2/cluster13.fa.treeModel"/>
+	</monophylyStatistic>
+	
+    <!-- coalescent likelihood -->
+    <coalescentLikelihood id="clade2/cluster13.fa.coalescent">
+      <model><constantSize idref="constant"/></model>
+      <populationTree><treeModel idref="clade2/cluster13.fa.treeModel"/></populationTree>
+    </coalescentLikelihood>
+
+    <!-- strict clock parameters -->
+    <strictClockBranchRates id="clade2/cluster13.fa.branchRates">
+      <rate>
+        
+          <parameter id="clade2/cluster13.fa.clock.rate" value="1.0" lower="0.0" upper="Infinity"/>
+        
+      </rate>
+    </strictClockBranchRates>
+    
+    <!-- HKY85 substitution model parameters -->
+    <HKYModel id="clade2/cluster13.fa.hky">
+      <frequencies>
+        <frequencyModel dataType="nucleotide">
+          <alignment idref="clade2/cluster13.fa"/>
+          <frequencies>
+            <parameter dimension="4" id="clade2/cluster13.fa.frequencies"/>
+          </frequencies>
+        </frequencyModel>
+      </frequencies>
+      <kappa>
+        <parameter id="clade2/cluster13.fa.kappa" lower="0.0" value="2.0"/>
+      </kappa>
+    </HKYModel>
+
+    <!-- site model: HKY85+G -->
+    <siteModel id="clade2/cluster13.fa.siteModel">
+      <gammaShape gammaCategories="4">
+        <parameter id="clade2/cluster13.fa.alpha" lower="0.0" value="0.5"/>
+      </gammaShape>
+      <substitutionModel>
+        <HKYModel idref="clade2/cluster13.fa.hky"/>
+      </substitutionModel>
+    </siteModel>
+
+    <!-- tree likelihood model -->  
+    <treeLikelihood id="clade2/cluster13.fa.treeLikelihood" useAmbiguities="false">
+      <patterns idref="clade2/cluster13.fa.patterns"/>
+      <treeModel idref="clade2/cluster13.fa.treeModel"/>
+      <siteModel idref="clade2/cluster13.fa.siteModel"/>
+      <strictClockBranchRates idref="clade2/cluster13.fa.branchRates"/>
+    </treeLikelihood>
+                      <alignment dataType="nucleotide" id="clade2/cluster17.fa">
+                                <!-- aligned sequence data for http://ncbi.nlm.nih.gov/nuccore/302452256 -->
+          <sequence><taxon idref="taxon_202457_1"/>-------CTAATTTTGATGAACTAAAAATGGTTCCTGAAGGTCAGATTCATGTACAGTGAATGTTCTCCACTGTTGTGGTGGGCATGTTTCATGCGTGGGGATGTTGGTGTGCAAGTTTCGTGTGTTTGGAAAACACTAGCTAGAACATTCGAAAAATTTCATTAACCCAGCTCTGGAAGGTCATCTATGAATTCTTCCTATTCCAGTGGCCTTTTAAATGTAGATGTAGATACACTGTAATTTAAAACAGATGGGCATGTCTCAGTATTTTCATATGCAAAATGGGACAGATGTATATGAATGGATAAATTATCCTTTTAAAAAGATACTTTGTAGCACGAAATATCACCAATGATTGGAACAGTGAACCTGCATTCAGTCTAGGGCAAACACCAGGGAGACATTATCAAAACATCTAAACTATCCACAAACTAATTCCAATTAGTCTACTTTGTCTTGATACAGAAAAAACCTTTTTGATTTTTAAATATGTATTGGGTGCCAATCCATATCCTTTGAGCTGCTAAAGCCAGCATATCACAATAGAAGTTTACTTTTCCTTGAGAGT</sequence>
+                                        <!-- aligned sequence data for http://ncbi.nlm.nih.gov/nuccore/302452250 -->
+          <sequence><taxon idref="taxon_221704_1"/>-------CTAATTTTGATGAACTAAAAATGGTTCCTGAAGGTCAGATTCATGTACAGTGAATGTTCTCCACTGTTGTGGTGGGCATGTTTCATGCGTGGGGATGTTGGTGTGCAAGTTTCGTGTGTTTGGAAAACACTAGCTAGAACATTCGAAAAATTTCATTAACCCAGCTCTGGAAGGTCATCTATGAATTCTTCCTATTCCAGTGGCCTTTTAAATGTAGATGTAGATACACTGTAATTTAAAACAGATGGGCATGTCTCAGTATTTTCATATGCAAAATGGGACAGATGTATATGAATGGATAAATTATCCTTTTAAAAAGATACTTTGTAGCACGAAATATCACCAATGATTGGAACAGTGAACCTGCATTCAGTCTAGGGCAAACACCAGGGAGACATTATCAAAACATCTAAACTATCCACAAACTAATTCCAATTAGTCTACTTTGTCTTGATACAGAAAAAACCTTTTTGATTTTTAAATATGTATTGGGTGCCAATCCATATCCTTTGAGCTGCTAAAGCCAGCATA-------------------------------</sequence>
+                                        <!-- aligned sequence data for http://ncbi.nlm.nih.gov/nuccore/302452259 -->
+          <sequence><taxon idref="taxon_230833_1"/>AGCATCACTAATTTTGATGAACTAAAAATGGTTCCTGAAGGTCAGATTCATGTACAGTGAATGTTCTCCACTGTTGTGGTGGGCATGTTTCATGCGTGGGGATGTTGGTGTGCAAGTTTCGTGTGTTTGGAAAACACTAGCTAGAACATTCGAAAAATTTCATTAACCCAGCTCTGGAAGGTCATCTATGAATTCTTCCTATTCCAGTGGCCTTTTAAATGTAGATGTAGATACACTGTAATTTAAAACAGATGGGCATGTCTCAGTATTTTCATATGCAAAATGGGACAGATGTATATGAATGGATAAATTATCCTTTTAAAAAGATACTTTGTAGCACGAAATATCACCAATGATTGGAACAGTGAACCTGCATTCAGTCTAGGGCAAACACCAGGGAGACATTATCAAAACATCTAAACTATCCACAAACTAATTCCAATTAGTCTACTTTGTCTTGATACAGAAAAAACCTTTTTGATTTTTAAATATGTATTGGGTGCCAATCCATATCCTTTGAGCTGCTAAAGCCAGCATATCACAATAGAAGTTTACTTTTCCTTG-----</sequence>
+                                        <!-- aligned sequence data for http://ncbi.nlm.nih.gov/nuccore/302452268 -->
+          <sequence><taxon idref="taxon_70814_1"/>-------------TTGATGAACTAAAAATGGTTCCTGAAGGTCAGATTCATGTACAGTGAATGTTCTCCACTGTTGTGGTGGGCATGTTTCATGTGTGGGGATGTTGGTGTGCAAGTTTCGTGTGTTTGGAAAACACTAGCTAGAACATTCGAAAAATTTCATTAACCCAGCTCTGGAAGGTCATCTATGAATTCTTCCTATTCCAGTGGCCTTTTAAATGTAGATGTAGATACACTGTAATTTAAAACAGATGGGCATGTCTGAATATTTTCATATGCAAAATGGGACAGATGTATATGAACGGATAAATTATCCTTTTAAAAAGATACTTTGTAGCACGAAATATCACCAATGATTGGAACAGTGAACCTGCATTCAGTCTAGGGCAAACACCAGGGAGACATTATCAAAACATCTAAACTATCTACAAACTAATTCCAATTAGTCTACTTTGTCTTCATACAGAAAAAACTTTTTTGATTTTTAAATATGTATTGGGTGCCAATCCGTATCCTTTGAGCTGCTAAAGCCAGCATATCACAATAGAAGTTTACTTTTCC--------</sequence>
+                                        <!-- aligned sequence data for http://ncbi.nlm.nih.gov/nuccore/302452252 -->
+          <sequence><taxon idref="taxon_867332_1"/>AGCATCACTAATTTTGATGAACTAAAAATGGTTCCTGAAGGTCAGATTCATGTACAGTGAATGTTCTCCACTGTTGTGGTGGGCATGTTTCATGCGTGGGGATGTTGGTGTGCAAGTTTCGTGTGTTTGGAAAACACTAGCTAGAACATTCGAAAAATTTCATTAACCCAGCTCTGGAAGGTCATCTATGAATTCTTCCTATTCCAGTGGCCTTTTAAATGTAGATGTAGATACACTGTAATTTAAAACAGATGGGCATGTCTCAGTATTTTCATATGCAAAATGGGACAGATGTATATGAATGGATAAATTATCCTTTTAAAAAGATACTTTGTAGCACGAAATATCACCAATGATTGGAACAGTGAACCTGCATTCAGTCTAGGGCAAACACCAGGGAGACATTATCAAAACATCTAAACTATCCACAAACTAATTCCAATTAGTCTACTTTGTCTTGATACAGAAAAAACCTTTTTGATTTTTAAATATGTATTGGGTGCCAATCCATATCCTTTGAGCTGCTAAAGCCAGCATATCACAATAGAAGTTTACTTTTCCTTG-----</sequence>
+                                        <!-- aligned sequence data for http://ncbi.nlm.nih.gov/nuccore/302452254 -->
+          <sequence><taxon idref="taxon_867333_1"/>-------------TTGATGAACTAAAAATGGTTCCTGAAGGTCAGATTCATGTACAGTGAATGTTCTCCACTGTTGTGGTGGGCATGTTTCATGTGTGGGGATGTTGGTGTGCAAGTTTCGTGTGTTTGGAAAACACTAGCTAGAACATTCGAAAAATTTCATTAACCCAGCTCTGGAAGGTCATCTATGAATTCTTCCTATTCCAGTGGCCTTTTAAATGTAGATGTAGATACACTGTAATTTAAAACAGATGGGCATGTCTGAATATTTTCATATGCAAAATGGGACAGATGTATATGAACGGATAAATTATCCTTTTAAAAAGATACTTTGTAGCACGAAATATCACCAATGATTGGAACAGTGAACCTGCATTCAGTCTAGGGCAAACACCAGGGAGACATTATCAAAACATCTAAACTATCTACAAACTAATTCCAATTAGTCTACTTTGTCTTCATACAGAAAAAACTTTTTTGATTTTTAAATATGTATTGGGTGCCAATCCGTATCCTTTGAGCTGCTAAAGCCAGCATATCACAATAGAAGTTTACTTTTCC--------</sequence>
+                                        <!-- aligned sequence data for http://ncbi.nlm.nih.gov/nuccore/302452273 -->
+          <sequence><taxon idref="taxon_867334_1"/>-------------TTGATGAACTAAAAATGGTTCCTGAAGGTCAGATTCATGTACAGTGAATGTTCTCCACTGTTGTGGTGGGCATGTTTCATGTGTGGGGATGTTGGTGTGCAAGTTTCGTGTGTTTGGAAAACACTAGCTAGAACATTCGAAAAATTTCATTAACCCAGCTCTGGAAGGTCATCTATGAATTCTTCCTATTCCAGTGGCCTTTTAAATGTAGATGTAGATACACTGTAATTTAAAACAGATGGGCATGTCTGAATATTTTCATATGCAAAATGGGACAGATGTATATGAACGGATAAATTATCCTTTTAAAAAGATACTTTGTAGCACGAAATATCACCAATGATTGGAACAGTGAACCTGCATTCAGTCTAGGGCAAACACCAGGGAGACAT--TCAAAACATCTAAACTATCTACAAACTAATTCCAATTAGTCTACTTTGTCTTCATACAGAAAAAACTTTTTTGATTTTTAAATATGTATTGGGTGCCAATCCGTATCCTTTGAGCTGCTAAAGCCAGCATATCACAATAGAAGTTTACTTTTCC--------</sequence>
+                                        <!-- aligned sequence data for http://ncbi.nlm.nih.gov/nuccore/302452270 -->
+          <sequence><taxon idref="taxon_9523_1"/>-------------TTGATGAACTAAAAATGGTTCCTGAAGGTCAGATTCATGTACAGTGAATGTTCTCCACTGTTGTGGTGGGCATGTTTCATGCGTGGGGATGTTGGTGTGCAAGTTTCGTGTGTTTGGAAAACACTAGCTAGAACATTCGAAAAATTTCATTAACCCAGCTCTGGAAGGTCATCTATGAATTCTTCCTATTCCAGTGGCCTTTTAAATGTAGATGTAGATACACTGTAATTTAAAACAGATGGGCATGTCTCAGTATTTTCATATGCAAAATGGGACAGATGTATATGAATGGATAAATTATCCTTTTAAAAAGATACTTTGTAGCACGAAATATCACCAATGATTGGAACAGTGAACCTGCATTCAGTCTAGGGCAAACACCAGGGAGACATTATCAAAACATCTAAACTATCCACAAACTAATTCCAATTAGTCTACTTTGTCTTGATACAGAAAAAACCTTTTTGATTTTTAAATATGTATTGGGTGCCAATCCATATCCTTTGAGCTGCTAAAGCCAGCATATCACAATAGAAGTTTACTTTTCC--------</sequence>
+              
+    </alignment>
+    
+    <!-- site patterns -->
+    <patterns from="1" id="clade2/cluster17.fa.patterns">
+      <alignment idref="clade2/cluster17.fa"/>
+    </patterns>
+    
+    <!-- coalescent starting tree -->
+    <coalescentTree id="clade2/cluster17.fa.startingTree" rootHeight="0.02">
+      <constrainedTaxa>
+		<taxa idref="taxa"/>
+ 		<tmrca monophyletic="true"> 
+		  <taxa idref="ingroup"/> 
+		</tmrca>
+	  </constrainedTaxa>
+      <constantSize idref="constant"/>
+    </coalescentTree> 
+    
+    <!-- tree model -->
+    <treeModel id="clade2/cluster17.fa.treeModel">
+      <coalescentTree idref="clade2/cluster17.fa.startingTree"/>
+      <rootHeight>
+        <parameter id="clade2/cluster17.fa.treeModel.rootHeight"/>
+      </rootHeight>
+      <nodeHeights internalNodes="true">
+        <parameter id="clade2/cluster17.fa.treeModel.internalNodeHeights"/>
+      </nodeHeights>
+      <nodeHeights internalNodes="true" rootNode="true">
+        <parameter id="clade2/cluster17.fa.treeModel.allInternalNodeHeights"/>
+      </nodeHeights>
+    </treeModel>
+
+	<!-- constrain ingroup to be monophyletic -->   
+	<tmrcaStatistic id="tmrca.ingroup.clade2/cluster17.fa" includeStem="false"> 
+      <mrca>
+		<taxa idref="ingroup"/>   
+      </mrca>                                                   
+      <treeModel idref="clade2/cluster17.fa.treeModel"/>
+	</tmrcaStatistic>
+	<monophylyStatistic id="monophyly.ingroup.clade2/cluster17.fa">
+      <mrca>
+		<taxa idref="ingroup"/>
+      </mrca>
+      <treeModel idref="clade2/cluster17.fa.treeModel"/>
+	</monophylyStatistic>
+	
+    <!-- coalescent likelihood -->
+    <coalescentLikelihood id="clade2/cluster17.fa.coalescent">
+      <model><constantSize idref="constant"/></model>
+      <populationTree><treeModel idref="clade2/cluster17.fa.treeModel"/></populationTree>
+    </coalescentLikelihood>
+
+    <!-- strict clock parameters -->
+    <strictClockBranchRates id="clade2/cluster17.fa.branchRates">
+      <rate>
+        
+          <parameter id="clade2/cluster17.fa.clock.rate" value="1.0" lower="0.0" upper="Infinity"/>
+        
+      </rate>
+    </strictClockBranchRates>
+    
+    <!-- HKY85 substitution model parameters -->
+    <HKYModel id="clade2/cluster17.fa.hky">
+      <frequencies>
+        <frequencyModel dataType="nucleotide">
+          <alignment idref="clade2/cluster17.fa"/>
+          <frequencies>
+            <parameter dimension="4" id="clade2/cluster17.fa.frequencies"/>
+          </frequencies>
+        </frequencyModel>
+      </frequencies>
+      <kappa>
+        <parameter id="clade2/cluster17.fa.kappa" lower="0.0" value="2.0"/>
+      </kappa>
+    </HKYModel>
+
+    <!-- site model: HKY85+G -->
+    <siteModel id="clade2/cluster17.fa.siteModel">
+      <gammaShape gammaCategories="4">
+        <parameter id="clade2/cluster17.fa.alpha" lower="0.0" value="0.5"/>
+      </gammaShape>
+      <substitutionModel>
+        <HKYModel idref="clade2/cluster17.fa.hky"/>
+      </substitutionModel>
+    </siteModel>
+
+    <!-- tree likelihood model -->  
+    <treeLikelihood id="clade2/cluster17.fa.treeLikelihood" useAmbiguities="false">
+      <patterns idref="clade2/cluster17.fa.patterns"/>
+      <treeModel idref="clade2/cluster17.fa.treeModel"/>
+      <siteModel idref="clade2/cluster17.fa.siteModel"/>
+      <strictClockBranchRates idref="clade2/cluster17.fa.branchRates"/>
+    </treeLikelihood>
+                      <alignment dataType="nucleotide" id="clade2/cluster18.fa">
+                                <!-- aligned sequence data for http://ncbi.nlm.nih.gov/nuccore/302453162 -->
+          <sequence><taxon idref="taxon_202457_1"/>---------------------------------------------------------------------------------------TGATAACCGCTGTAGCTTATACCCCCTCTGAGGCTCAGATTGGATAATTTGGAATTTAAATAATAAAAAAGGAACAAGCTGACATGACAATAAGGTAACACTTTAGCTTGTTCTGAGCCAATACACCCATTTGCTCTCAGTGAAACAGCTGAATATAATCAAATTAAATACAATTCCTATTACAAAAGAAGAAAGACCAAGGCTGTTCCAATAAACCAATTCTCCTGCCTAGTTAAACTGCAAAACCTTCAGGAAAGGTTTTGAAAGCATGACCCATCAGTTCTAATTTTTAAAACTTATCCTTTCAGTCAACACTAGAAAAAGGCCCATTCCAACTTTTATCTTTGCTACAAAGTGCTGTTATCTTGGCTTGATGTCAGGAGCTCTATCTCTCTTTCTGCTGACAAGCAGAGACGAGAAAGATAAGATTGGAAACGAATCTCACTTCTCTGAGTAAATAAATAATCAATACTCATCTAAATGTAAATGAGAAGGTAGCCCCCTCTGATAACAGCACTCTTATCAGAGAGCCAATTTTCTTCAGACATTTGGCCTCAACCAAATCACCATCATTCA</sequence>
+                                        <!-- aligned sequence data for http://ncbi.nlm.nih.gov/nuccore/302453157 -->
+          <sequence><taxon idref="taxon_221704_1"/>-----------CTTATAACTCTTCCTCCAGGGGCAACTATAATAATTTTCTGCTTGATCTTAATATAAGCACTGAACTATATTCAAGTGATAACCGCTGTAGCTTATACCCCCTCTGAGGCTCAGATTGGATAATTTGGAATTTAAATAATAAAAAAGGAACAAGCTGACATGACAATAAGGTAACACTTTAGCTTGTTCTGAGCCAATACACCCATTTGCTCTCAGTGAAACAGCTGAATATAATCAAATTAAATACAATTCCTATTACAAAAGAAGAAAGACCAAGGCTGTTCCAATAAACCAATTCTCCTGCCTAGTTAAACTGCAAAACCTTCAGGAAAGGTTTTGAAAGCATGACCCATCAGTTCTAATTTTTAAAACTTATCCTTTCAGTCAACACTAGAAAAAGGCCCATTCCAACTTTTATCTTTGCTACAAAGTGCTGTTATCTTGGCTTGATGTCAGGAGCTCTATCTCTCTTTCTGCTGACAAGCAGAGACGAGAAAGATAAGATTGGAAACGAATCTCACTTCTCTGAGTAAATAAATAATCAATACTCATCTAAATGTAAATGAGAAGGTAGCCCCCTTTGATAACAGCACTCTTATCAGAGAGCCAATTTTCTTCAGACATTTGGCCTCAACCAAATCAC---------</sequence>
+                                        <!-- aligned sequence data for http://ncbi.nlm.nih.gov/nuccore/302453163 -->
+          <sequence><taxon idref="taxon_230833_1"/>CAGCTCCATCGCTTATAACTCTTCCTCCAGGGGCAACTATAATAATTTTCTGCTTGATCTTAATATAAGCACTAAACTATATTCAAGTGATAACCGCTGTAGCTTATACCCCCTCTGAGGCTCAGATTGGATAATTTGGAATTTAAATAATAAAAAAGGAACAAGCTGACATGACAATAAGGTAACACTTTAGCTTGTTCTGAGCCAATACACCCATTTGCTCTCAGTGAAACAGCTGAATATAATCAAATTAAATACAATTCCTATTACAAAAGAAGAAAGACCAAGGCTGTTCCAATAAACCAATTCTCCTGCCTAGTTAAACTGCAAAACCTTCAGGAAAGGTTTTGAAAGCATGACCCATCAGTTCTAATTTTTAAAACTTATCCTTTCAGTCAACACTAGAAAAAGGCCCATTCCAACTTTTATCTTTGCTACAAAGTGCTGTTATCTTGGCTTGATGTCAGGAGCTCTATCTCTCTTTCTGCTGACAAGCAGAGACGAGAAAGATAAGATTGGAAACGAATCTCACTTCTCTGAGTAAATAAATAATCAATACTCATCTAAATGTAAATGAGAAGGTAGCCCCCTCTGATAACAGCACTCTTATCAGAGAGCCAATTTTCTTCAGACATTTGGCCTCAACCAAATCACCATCATTCA</sequence>
+                                        <!-- aligned sequence data for http://ncbi.nlm.nih.gov/nuccore/302453172 -->
+          <sequence><taxon idref="taxon_70814_1"/>-----CCATCGCTTATAACTCTTCCTCCAGGGGCAACTATAATAATTTTCTGCTTGATCTTAATATAAGCACTGAACTATATTCAAGTGATAACCGCTGTAGCTTATACCCCCTCTGAGGCTCAGATTGGATAATTTGGAATTTAAATAATAAAAAAGGAACAAGCTGACATGACAATAAGGTCACACTTTAGCTTCTTCTGAGCCAATACACCCATTTGCTCTCAGTGAAACAGCTGAATATAATCAAATTAAATACAATTCCTATTACAAAAGAAGAAAGACCAAGGCTGTTCCAATAAACCAATTCTCCTGCCTAGTTAAACTGCAAAACCTTCAGGAAAGGTTTTGAAAGCATGACCCATCAGTTCTAATTTTTAAAACTTATCCTTTCAGTCAACACTAGAAAAAGGCCCATTCCAACTTTTATCTTTGCTACAAAGTGCTGTTATCTTGGCTTGATGTCAGGAGCTCTATCTCTCTTTCTGCTGACAAGCAGAGACGAGAAAGATAAGATTGGAAACGAATCTCACTTCTCTGAGTAAATAAATAATCAATACTCATCTAAATGTAAATGAGAAGGTAGCCCCCTCTGATAACAGCACTCTTATCAGAGAGCCAATTTTCTTCAGACATTTGGCCTCAACCAAATCA----------</sequence>
+                                        <!-- aligned sequence data for http://ncbi.nlm.nih.gov/nuccore/302453159 -->
+          <sequence><taxon idref="taxon_867332_1"/>CAGCTCCATCGCTTATAACTCTTCCTCCAGGGGCAACTATAATAATTTTCTGCTTGATCTTAATATAAGCACTAAACTATATTCAAGTGATAACCGCTGTAGCTTATACCCCCTCTGAGGCTCAGATTGGATAATTTGGAATTTAAATAATAAAAAAGGAACAAGCTGACATGACAATAAGGTAACACTTTAGCTTGTTCTGAGCCAATACACCCATTTGCTCTCAGTGAAACAGCTGAATATAATCAAATTAAATACAATTCCTATTACAAAAGAAGAAAGACCAAGGCTGTTCCAATAAACCAATTCTCCTGCCTAGTTAAACTGCAAAACCTTCAGGAAAGGTTTTGAAAGCATGACCCATCAGTTCTAATTTTTAAAACTTATCCTTTCAGTCAACACTAGAAAAAGGCCCATTCCAACTTTTATCTTTGCTACAAAGTGCTGTTATCTTGGCTTGATGTCAGGAGCTCTATCTCTCTTTCTGCTGACAAGCAGAGACGAGAAAGATAAGATTGGAAACGAATCTCACTTCTCTGAGTAAATAAATAATCAATACTCATCTAAATGTAAATGAGAAGGTAGCCCCCTCTGATAACAGCACTCTTATCAGAGAGCCAATTTTCTTCAGACATTTGGCCTCAACCAAATCACCATCATTCA</sequence>
+                                        <!-- aligned sequence data for http://ncbi.nlm.nih.gov/nuccore/302453160 -->
+          <sequence><taxon idref="taxon_867333_1"/>CAGCTCCATCGCTTATAACTCTTCCTCCAGGGGCAACTATAATAATTTTCTGCTTGATCTTAATATAAGCACTGAACTATATTCAAGTGATAACCGCTGTAGCTTATACCCCCTCTGAGGCTCAGATTGGATAATTTGGAATTTAAATAATAAAAAAGGAACAAGCTGACATGACAATAAGGTCACACTTTAGCTTCTTCTGAGCCAATACACCCATTTGCTCTCAGTGAAACAGCTGRATATAATCAAATTAAATACAATTCCTATTACAAAAGAAGAAAGACCAAGGCTGTTCCAATAAACCAATTCTCCTGCCTAGTTAAACTGCAAAACCTTCAGGAAAGGTTTTGAAAGCATGACCCATCAGTTCTAATTTTTAAAACTTATCCTTTCAGTCAACACTAGAAAAAGGCCCATTCCAACTTTTATCTTTGCTACAAAGTGCTGTTATCTTGGCTTGATGTCAGGAGCTCTATCTCTCTTTCTGCTGACAAGCAGAGACGAGAAAGATAAGATTGGAAACGAATCTCACTTCTCTGAGTAAATAAATAATCAATACTCATCTAAATGTAAATGAGAAGGTAGCCCCCTCTGATAACAGCWCTCTTATCAGAGAGCCAATTTTCTTCAGACATTTGGCCTCAACCAAATCA----------</sequence>
+                                        <!-- aligned sequence data for http://ncbi.nlm.nih.gov/nuccore/302453176 -->
+          <sequence><taxon idref="taxon_867334_1"/>------CATCGCTTATAACTCTTCCTCCAGGGGCAACTATAATAATTTTCTGCTTGATCTTAATATAAGCACTGAACTATATTCAAGTGATAACCGCTGTAGCTTATACCCCCTCTGAGGCTCAGATTGGATAATTTGGAATTTAAATAATAAAAAAGGAACAAGCTGACATGACAATAAGGTCACACTTTAGCTTCTTCTGAGCCAATACACCCATTTGCTCTCAGTGAAACAGCTGAATATAATCAAATTAAATACAATTCCTATTACAAAAGAAGAAAGACCAAGGCTGTTCCAATAAACCAATTCTCCTGCCTAGTTAAACTGCAAAACCTTCAGGAAAGGTTTTGAAAGCATGACCCATCAGTTCTAATTTTTAAAACTTATCCTTTCAGTCAACACTAGAAAAAGGCCCATTCCAACTTTTATCTTTGCTACAAAGTGCTGTTATCTTGGCTTGATGTCAGGAGCTCTATCTCTCTTTCTGCTGACAAGCAGAGACGAGAAAGATAAGATTGGAAACGAATCTCACTTCTCTGAGTAAATAAATAATCAATACTCATCTAAATGTAAATGAGAAGGTAGCCCCCTCTGATAACAGCACTCTTATCAGAGAGCCAATTTTCTTCAGACATTTGGCCTCAACCAAATCACC--------</sequence>
+                                        <!-- aligned sequence data for http://ncbi.nlm.nih.gov/nuccore/302453174 -->
+          <sequence><taxon idref="taxon_9523_1"/>--------TCGCTTATAACTCTTCCTCCAGGGGCAACTATAATAATTTTCTGCTTGATCTTAATATAAGCACTGAACTATATTCAAGTGATAACCGCTGTAGCTTATACCCCCTCTGAGGCTCAGATTGGATAATTTGGAATTTAAATAATAAAAAAGGAACAAGCTGACATGACAATAAGGTAACACTTTAGCTTGTTCTGAGCCAATACWCCCATTTGCTCTCAGTGAAACAGCTGAATATAATCAAATTAAATACAATTCCTATTACAAAAGAAGAAAGAYCAAGGCTGTTCCAATAAACCAATTCTCCTGCCTAGTTAAACTGCAAAACCTTCAGGAAAGGTTTTGAAAGCATGACCCATCAGTTCTAATTTTTAAAACTTATCCTTTCAGTCAACACTAGAAAAAGGCCCATTCCAACTTTTATCTTTGCTACAAAGTGCTGTTATCTTGGCTTGATGTCAGGAGCTCTATCTCTCTTTCTGCTGACAAGCAGAGACGAGAAAGATAAGATTGGAAACGAATCTCACTTCTCTGAGTAAATAAATAATCAATACTCATCTAAATGTAAATGAGAAGGTAGCCCCCTCTGATAACAGCACTCTTATCAGAGAGCCAATTTTCTTCAGACATTTGGCCTCAACCAAATCA----------</sequence>
+              
+    </alignment>
+    
+    <!-- site patterns -->
+    <patterns from="1" id="clade2/cluster18.fa.patterns">
+      <alignment idref="clade2/cluster18.fa"/>
+    </patterns>
+    
+    <!-- coalescent starting tree -->
+    <coalescentTree id="clade2/cluster18.fa.startingTree" rootHeight="0.02">
+      <constrainedTaxa>
+		<taxa idref="taxa"/>
+ 		<tmrca monophyletic="true"> 
+		  <taxa idref="ingroup"/> 
+		</tmrca>
+	  </constrainedTaxa>
+      <constantSize idref="constant"/>
+    </coalescentTree> 
+    
+    <!-- tree model -->
+    <treeModel id="clade2/cluster18.fa.treeModel">
+      <coalescentTree idref="clade2/cluster18.fa.startingTree"/>
+      <rootHeight>
+        <parameter id="clade2/cluster18.fa.treeModel.rootHeight"/>
+      </rootHeight>
+      <nodeHeights internalNodes="true">
+        <parameter id="clade2/cluster18.fa.treeModel.internalNodeHeights"/>
+      </nodeHeights>
+      <nodeHeights internalNodes="true" rootNode="true">
+        <parameter id="clade2/cluster18.fa.treeModel.allInternalNodeHeights"/>
+      </nodeHeights>
+    </treeModel>
+
+	<!-- constrain ingroup to be monophyletic -->   
+	<tmrcaStatistic id="tmrca.ingroup.clade2/cluster18.fa" includeStem="false"> 
+      <mrca>
+		<taxa idref="ingroup"/>   
+      </mrca>                                                   
+      <treeModel idref="clade2/cluster18.fa.treeModel"/>
+	</tmrcaStatistic>
+	<monophylyStatistic id="monophyly.ingroup.clade2/cluster18.fa">
+      <mrca>
+		<taxa idref="ingroup"/>
+      </mrca>
+      <treeModel idref="clade2/cluster18.fa.treeModel"/>
+	</monophylyStatistic>
+	
+    <!-- coalescent likelihood -->
+    <coalescentLikelihood id="clade2/cluster18.fa.coalescent">
+      <model><constantSize idref="constant"/></model>
+      <populationTree><treeModel idref="clade2/cluster18.fa.treeModel"/></populationTree>
+    </coalescentLikelihood>
+
+    <!-- strict clock parameters -->
+    <strictClockBranchRates id="clade2/cluster18.fa.branchRates">
+      <rate>
+        
+          <parameter id="clade2/cluster18.fa.clock.rate" value="1.0" lower="0.0" upper="Infinity"/>
+        
+      </rate>
+    </strictClockBranchRates>
+    
+    <!-- HKY85 substitution model parameters -->
+    <HKYModel id="clade2/cluster18.fa.hky">
+      <frequencies>
+        <frequencyModel dataType="nucleotide">
+          <alignment idref="clade2/cluster18.fa"/>
+          <frequencies>
+            <parameter dimension="4" id="clade2/cluster18.fa.frequencies"/>
+          </frequencies>
+        </frequencyModel>
+      </frequencies>
+      <kappa>
+        <parameter id="clade2/cluster18.fa.kappa" lower="0.0" value="2.0"/>
+      </kappa>
+    </HKYModel>
+
+    <!-- site model: HKY85+G -->
+    <siteModel id="clade2/cluster18.fa.siteModel">
+      <gammaShape gammaCategories="4">
+        <parameter id="clade2/cluster18.fa.alpha" lower="0.0" value="0.5"/>
+      </gammaShape>
+      <substitutionModel>
+        <HKYModel idref="clade2/cluster18.fa.hky"/>
+      </substitutionModel>
+    </siteModel>
+
+    <!-- tree likelihood model -->  
+    <treeLikelihood id="clade2/cluster18.fa.treeLikelihood" useAmbiguities="false">
+      <patterns idref="clade2/cluster18.fa.patterns"/>
+      <treeModel idref="clade2/cluster18.fa.treeModel"/>
+      <siteModel idref="clade2/cluster18.fa.siteModel"/>
+      <strictClockBranchRates idref="clade2/cluster18.fa.branchRates"/>
+    </treeLikelihood>
+                      <alignment dataType="nucleotide" id="clade2/cluster19.fa">
+                                <!-- aligned sequence data for http://ncbi.nlm.nih.gov/nuccore/302453425 -->
+          <sequence><taxon idref="taxon_202457_1"/>-GGCAGATAGCTACCACCACCACAGGGTGCTAAAGAAACAGTGATAGAAAGTTTTTTTGATCAGGAAGGATAATGAATGCTGGAAAAACCAATCAAAATCTCTGTGTGATGAGAGTGATAAGTGGTCAAGAGATTACTGAGAAACTCTTTTTCTATAATACTAAATTGTGATTATAAGAAATAGTCCAAATGTTTCTGAAGAATTTTCAATGTTGTATATAGAAAATACAGAATTTCATGGTGATATCAGAAATGTAAATATTGTACAATATTGTCATGTACAAGCGTACCTAATGCACACTTTATCTTTTATTGTACAAAGAAATAGTGTACAAAATTCTTTGGTTTCTATGGAGTACACCTACCAGAGACTACCAGTGTAAAGTGATAAATAAAAATACAACCTAAATGCTTTTCTATGATAATGTAAAAGATGCTGTTTTTGTATTTAACAGCAGAGAAGAGGCATGATGATGTAATATCTGAATTATGACATACACTGCACACCACTGAGTGTCCATTTATATTGTCTGTTTGGAATGAACCTTGCCTGGAAG</sequence>
+                                        <!-- aligned sequence data for http://ncbi.nlm.nih.gov/nuccore/302453422 -->
+          <sequence><taxon idref="taxon_221704_1"/>--------AGCTACCACCACCACAGGGTGCTAAAGAAACAGTGATAGAAAGTTCTTTTGATCAGGAAGGATAATGAATGCTGGAAAAACCAATCAAAATCTCTGTGTGATGAGAGTGATAAGTGGTCAAGAGATTACTGAGAAACTCTTTTTCTATAATACTAAATTGTGATTATAAGAAATAGTCCAAATGTTTCTGAAGAATTTTCAATGTTGTATATAGAAAATACAGAATTTCATGGTGATATCAGAAATGTAAATATTGTACAATATTGTCATGTACAAGCGTACCTAATGCACACTTTATCTTTTATTGTACAAAGAAATAGTGTACAAAATTCTTTGGTTTCTATGGAGTACACCTACCAGAGACTACCAGTGTAAAGTGATAAATAAAAATACAACCTAAATGCTTTTCTATGATAATGTAAAAGATGCTGTTTTTGTATTTAACAGCAGAGAAGAGGCATGATGATGTAATATCTGAATTATGACATACACTGCACACCACTGAGTGTCCATTTATATTGTCTGTTTGGAATGAACCT----------</sequence>
+                                        <!-- aligned sequence data for http://ncbi.nlm.nih.gov/nuccore/302453426 -->
+          <sequence><taxon idref="taxon_230833_1"/>TGGCAGATAGCTACCACCACCACAGGGTGCTAAAGAAACAGTGATAGAAAGTTTTTTTGATCAGGAAGGATAATGAATGCTGGAAAAACCAATCAAAATCTCTGTGTGATGAGAGTGATAAGTGGTCAAGAGATTACTGAGAAACTCTTTTTCTATAATACTAAATTGTGATTATAAGGAATAGTCCAAATGTTTCTGAAGAATTTTCAATGTTGTATATAGAAAATACAGAATTTCATGGTGATATCAGAAATGTAAATATTGTACAATATTGTCATGTACAAGCGTACCTAATGCACACTTTATCTTTTATTGTACAAAGAAATAGTGTACAAAATTCTTTGGTTTCTATGGAGTACACCTACCAGAGACTACCAGTGTAAAGTGATAAATAAAAATACAACCTAAATGCTTTTCTATGATAATGTAAAAGATGCTGTTTTTGTATTTAACAGCAGAGAAGAGGCATGATGATGTAATATCTGATTTATGACATACACTGCACACCACTGAGTGTCCATTTATATTGTCTGTTTGGAATGAACCTTGCCTGGAAG</sequence>
+                                        <!-- aligned sequence data for http://ncbi.nlm.nih.gov/nuccore/302453429 -->
+          <sequence><taxon idref="taxon_70814_1"/>----------------CCACCACAGGGTGCTAAAGAAACAGTGATAGAAAGTTTTTTTGATCAGGAAGGATAATGAATGCTGGAAAAACCAATCAAAATCTCTGTGTGATGAGAGTGATAAGTGGTCAAGAGATTACTGAGAAACTCTTTTTCTATAATACTAAATTGTGATTATAAGAAATAGTCCAAATGTTTCTGAAGAATTTTCAGTGTTGTATATAGAAAATACAGAATTTCATGGTGATATCAGAAATGTAAATATTGTACAATATTGTCATGTACAAGCGTACCTAATGCACACTTTATCTTTTATTGTACAAAGAAATAGTGTACAAAATTCTTTGGTTTCTATGGAGTACACCTACCAGAGACTACCAGTGTAAAGTGATAAATAAAAATACAACCTAAATGCTTTTCTATGATAATGTAAAAGATGCTGTTTTTGTATTTAACAGCAGAGAAGAGGCATGATGATGTAATATCTGAATTATGACATACACTGCACACCACTGAGTGTCCATTTATATTGTCTGTTTGGAATGAAC------------</sequence>
+                                        <!-- aligned sequence data for http://ncbi.nlm.nih.gov/nuccore/302453423 -->
+          <sequence><taxon idref="taxon_867332_1"/>TGGCAGATAGCTACCACCACCACAGGGTGCTAAAGAAACAGTGATAGAAAGTTTTTTTGATCAGGAAGGATAATGAATGCTGGAAAAACCAATCAAAATCTCTGTGTGATGAGAGTGATAAGTGGTCAAGAGATTACTGAGAAACTCTTTTTCTATAATACTAAATTGTGATTATAAGGAATAGTCCAAATGTTTCTGAAGAATTTTCAATGTTGTATATAGAAAATACAGAATTTCATGGTGATATCAGAAATGTAAATATTGTACAATATTGTCATGTACAAGCGTACCTAATGCACACTTTATCTTTTATTGTACAAAGAAATAGTGTACAAAATTCTTTGGTTTCTATGGAGTACACCTACCAGAGACTACCAGTGTAAAGTGATAAATAAAAATACAACCTAAATGCTTTTCTATGATAATGTAAAAGATGCTGTTTTTGTATTTAACAGCAGAGAAGAGGCATGATGATGTAATATCTGATTTATGACATACACTGCACACCACTGAGTGTCCATTTATATTGTCTGTTTGGAATGAACCTTGCCTGGAAG</sequence>
+                                        <!-- aligned sequence data for http://ncbi.nlm.nih.gov/nuccore/302453424 -->
+          <sequence><taxon idref="taxon_867333_1"/>--------------CACCACCACAGGGTGCTAAAGAAACAGTGATAGAAAGTTTTTTTGATCAGGAAGGATAATGAATGCTGGAAAAACCAATCAAAATCTCTGTGTGATGAGAGTGATAAGTGGTCAAGAGATTACTGAGAAACTCTTTTTCTATAATACTAAATTGTGATTATAAGAAATAGTCCAAATGTTTCTGAAGAATTTTCAATGTTGTATATAGAAAATACAGAATTTCATGGTGATATCAGAAGTGTAAATATTGTACAATATTGTCATGTACAAGCGTACCTAATGCACACTTTATCTTTTATTGTACAAAGAAATAGTGTACAAAATTCTTTGGTTTCTATGGAGTACACCTACCAGAGACTACCAGTGTAAAGTGATAAATAAAAATACAACCTAAATGCTTTTCTATGATAATGTAAAAGATGCTGTTTTTGTATTTAACAGCAGAGAAGAGGCATGATGATGTAATATCTGAATTATGACATACACTGCACACCACTGAGTGTCCATTTATATTGTCTGTTTGGAATGAA-------------</sequence>
+                                        <!-- aligned sequence data for http://ncbi.nlm.nih.gov/nuccore/302453428 -->
+          <sequence><taxon idref="taxon_867334_1"/>--------------CACCACCACAGGGTGCTAAAGAAACAGTGATAGAAAGTTTTTTTGATCAGGAAGGATAATGAATGCTGGARAAACCAATCAAAATCTCTGTGTGATGAGAGTGATAAGTGGTCAAGAGATTACTGAGAAACTCTTTTTCTATAATACTAAATTGTGATTATAAGAAATAGTCCAAATGTTTCTGAAGAATTTTCAATGTTGTATATAGAAAATACAGAATTTCATGGTGATATCAGAAATGTAAATATTGTACAATATTGTCATGTACAAGCGTACCTAATGCACACTTTATCTTTTATTGTACAAAGAAATAGTGTACAAAATTCTTTGGTTTCTATGGAGTACACCTACCAGAGACTACCAGTGTAAAGTGATAAATAAAAATACAACCTAAATGCTTTTCTATGATAATGTAAAAGATGCTGTTTTTGTATTTAACAGCAGAGAAGAGGCATGATGATGTAATATCTGAATTATGACATACACTGCACACCACTGAGTGTCCATTTATATTGTCTGTTTGGAATGAAC------------</sequence>
+                                        <!-- aligned sequence data for http://ncbi.nlm.nih.gov/nuccore/302453427 -->
+          <sequence><taxon idref="taxon_9523_1"/>--------------CACCACCACAGGGTGCTAAAGAAACAGTGATAGAAAGTTTTTTTGATCAGGAAGGATAATGAATGCTGGAAAAACCAATCAAAATCTCTGTGTGATGAGAGTGATAAGTGGTCAAGAGATTACTGAGAAACTCTTTTTCTATAATACTAAATTGTGATTATAAGAAATAGTCCAAATGTTTCTGAAGAATTTTCAATGTTGTATATAGAAAATACAGAATTTCATGGTGATATCAGAAATGTAAATATTGTACAATATTGTCATGTACAAGCGTACCTAATGCACACTTTATCTTTTATTGTACAAAGAAATAGTGTACAAAATTCTTTGGTTTCTATGGAGTACACCTACCAGAGACTACCAGTGTAAAGTGATAAATAAAAATACAACCTAAATGCTTTTCTATGATAATGTAAAAGATGCTGTTTTTGTATTTAACAGCAGAGAAGAGGCATGATGATGTAATATCTGAATTATGACATACACTGCACACCACTGAGTGTCCATTTATATTGTCTGTTTGGAATGAA-------------</sequence>
+              
+    </alignment>
+    
+    <!-- site patterns -->
+    <patterns from="1" id="clade2/cluster19.fa.patterns">
+      <alignment idref="clade2/cluster19.fa"/>
+    </patterns>
+    
+    <!-- coalescent starting tree -->
+    <coalescentTree id="clade2/cluster19.fa.startingTree" rootHeight="0.02">
+      <constrainedTaxa>
+		<taxa idref="taxa"/>
+ 		<tmrca monophyletic="true"> 
+		  <taxa idref="ingroup"/> 
+		</tmrca>
+	  </constrainedTaxa>
+      <constantSize idref="constant"/>
+    </coalescentTree> 
+    
+    <!-- tree model -->
+    <treeModel id="clade2/cluster19.fa.treeModel">
+      <coalescentTree idref="clade2/cluster19.fa.startingTree"/>
+      <rootHeight>
+        <parameter id="clade2/cluster19.fa.treeModel.rootHeight"/>
+      </rootHeight>
+      <nodeHeights internalNodes="true">
+        <parameter id="clade2/cluster19.fa.treeModel.internalNodeHeights"/>
+      </nodeHeights>
+      <nodeHeights internalNodes="true" rootNode="true">
+        <parameter id="clade2/cluster19.fa.treeModel.allInternalNodeHeights"/>
+      </nodeHeights>
+    </treeModel>
+
+	<!-- constrain ingroup to be monophyletic -->   
+	<tmrcaStatistic id="tmrca.ingroup.clade2/cluster19.fa" includeStem="false"> 
+      <mrca>
+		<taxa idref="ingroup"/>   
+      </mrca>                                                   
+      <treeModel idref="clade2/cluster19.fa.treeModel"/>
+	</tmrcaStatistic>
+	<monophylyStatistic id="monophyly.ingroup.clade2/cluster19.fa">
+      <mrca>
+		<taxa idref="ingroup"/>
+      </mrca>
+      <treeModel idref="clade2/cluster19.fa.treeModel"/>
+	</monophylyStatistic>
+	
+    <!-- coalescent likelihood -->
+    <coalescentLikelihood id="clade2/cluster19.fa.coalescent">
+      <model><constantSize idref="constant"/></model>
+      <populationTree><treeModel idref="clade2/cluster19.fa.treeModel"/></populationTree>
+    </coalescentLikelihood>
+
+    <!-- strict clock parameters -->
+    <strictClockBranchRates id="clade2/cluster19.fa.branchRates">
+      <rate>
+        
+          <parameter id="clade2/cluster19.fa.clock.rate" value="1.0" lower="0.0" upper="Infinity"/>
+        
+      </rate>
+    </strictClockBranchRates>
+    
+    <!-- HKY85 substitution model parameters -->
+    <HKYModel id="clade2/cluster19.fa.hky">
+      <frequencies>
+        <frequencyModel dataType="nucleotide">
+          <alignment idref="clade2/cluster19.fa"/>
+          <frequencies>
+            <parameter dimension="4" id="clade2/cluster19.fa.frequencies"/>
+          </frequencies>
+        </frequencyModel>
+      </frequencies>
+      <kappa>
+        <parameter id="clade2/cluster19.fa.kappa" lower="0.0" value="2.0"/>
+      </kappa>
+    </HKYModel>
+
+    <!-- site model: HKY85+G -->
+    <siteModel id="clade2/cluster19.fa.siteModel">
+      <gammaShape gammaCategories="4">
+        <parameter id="clade2/cluster19.fa.alpha" lower="0.0" value="0.5"/>
+      </gammaShape>
+      <substitutionModel>
+        <HKYModel idref="clade2/cluster19.fa.hky"/>
+      </substitutionModel>
+    </siteModel>
+
+    <!-- tree likelihood model -->  
+    <treeLikelihood id="clade2/cluster19.fa.treeLikelihood" useAmbiguities="false">
+      <patterns idref="clade2/cluster19.fa.patterns"/>
+      <treeModel idref="clade2/cluster19.fa.treeModel"/>
+      <siteModel idref="clade2/cluster19.fa.siteModel"/>
+      <strictClockBranchRates idref="clade2/cluster19.fa.branchRates"/>
+    </treeLikelihood>
+                      <alignment dataType="nucleotide" id="clade2/cluster25.fa">
+                                <!-- aligned sequence data for http://ncbi.nlm.nih.gov/nuccore/302454677 -->
+          <sequence><taxon idref="taxon_202457_1"/>CCAGAGTTATCATGGCCAATCTGGACAGTAGTAAGCTTCCCCAAGTTCTGGCACTGTTAGAGAATAGAGAAGATGAGGTAGGTCAGGAAAATCAGAAAAAAGAACAGCAGTCCTCGGAGGCACAGATCTGACTGGCTGCCTGCAACCTGAGCAACTGCAGGGGTAGGCTCTACATACCGCCAGAACTGTGGCACAGCACTATCTCATATCTGGGGCGGCCCAAGGCTGAGAAAGAAAATGCTGCTACCTAGAAAAAGAATAGGGCCTGGGAACAAGAGGTTCTGGAGGTGGGTTCTGAGGTCTCTGGGAACAGGTAGGTGGGCTGAGCAGCTGAAAGAACTCTTGGGAACTTCACGACACACTATGCATGGAAAGACGAGCAAGTCCAGACAAGTAAGTGCCTTTGAGACAGACACTGTTTAGACAGGGTAGGATCCCTCTCCTCAGGGTCAGTCCTTGGTTCCAGCCTCAGATCATCTCAGGAAGATCAGCTCTGCTGACGCATTACACGGTACATAGCAAGGCCTCTGGAAAATCCTGCAGAAAACTCCCCAAAGGAGCTGTTCCAAACTCAGATCCCCACAGAGCTGTGGCCCCAAATAACACATACCTCGAAGGTCATCTCAAGCACATTCCTGGGAATCTGCAGGATCTGTGTCTCACCCAGTTCTCCTGATATACAGATCCACGGGTTGGCAGTGAACATGGAGCCCCCCAGCTTCTTGC</sequence>
+                                        <!-- aligned sequence data for http://ncbi.nlm.nih.gov/nuccore/302454673 -->
+          <sequence><taxon idref="taxon_221704_1"/>CCAGAGTTATCATGGCCAATCTGGACAGTAGTAAGCTTCCCCAAGTTCTGGCACTGTTAGAGAATAGAGAAGATGAGGTAGGTCAGGAAAATCAGAAAAAAGAACAGCAGTCCTCGGAGGCACAGATCTGACTGGCTGCCTGCAACCTGAGCAACTGCAGGGGTAGGCTCTACATACCGCCAGAACTGTGGCACAGCACTATCTCATATCTGGGGCGGCCCAAGGCTGAGAAAGAAAATGCTGCTACCTAGAAAAAGAATAGGGCCTGGGAACAAGAGGTTCTGGAGGTGGGTTCTGAGGTCTCTGGGAACAGGTAGGTGGGCTGAGCAGCTGAAAGAACTCTTGGGAACTTCACGACACACTATGCATGGAAAGACGAGCAAGTCCAGACAAGTAAGTGCCTTTGAGACAGACACTGTTTAGACAGGGTAGGATCCCTCTCCTCAGGGTCAGTCCTTGGTTCCAGCCTCAGATCATCTCAGGAAGATCAGCTCTGCTGACGCATTACACGGTACATAGCAAGGCCTCTGGAAAATCCTGCAGAAAACTCCCCAAAGGAGCTGTTCCAAACTCAGATCCCCACAGAGCTGTGGCCCCAAATAACACATACCTCGAAGGTCATCTC-----------------------------------------------------------------------------------------------------</sequence>
+                                        <!-- aligned sequence data for http://ncbi.nlm.nih.gov/nuccore/302454678 -->
+          <sequence><taxon idref="taxon_230833_1"/>CCAGAGTTATCATGGCCAATCTGGACAGTAGTAAGCTTCCCCAAGTTCTGGCACTGTTAGAGAATAGAGAAGATGAGGTAGGTCAGGAAAATCAGAAAAAAGAACAGCAGTCCTCGGAGGCACAGATCTGACTGGCTGCCTGCAACCTGAGCAACTGCAGGGGTAGGCTCTACATACCGCCAGAACTGTGGCACAGCACTATCTCATATCTGGGGCGGCCCAAGGCTGAGAAAGAAAATGCTGCTACCTAGAAAAAGAATAGGGCCTGGGAACAAGAGGTTCTGGAGGTGGGTTCTGAGGTCTCTGGGAACAGGTAGGTGGGCTGAGCAGCTGAAAGAACTCTTGGGAACTTCACGACACACTATGCATGGAAAGACGAGCAAGTCCAGACAAGTAAGTGCCTTTGAGACAGACACTGTTTAGACAGGGTAGGATCCCTCTCCTCAGGGTCAGTCCTTGGTTCCAGCCTCAGATCATCTCAGGAAGATCAGCTCTGCTGACGCATTACACGGTACATAGCAAGGCCTCTGGAAAACCCTGCAGAAAACTCCCCAAAGGAGCTGTTCCAAACTCAGATCCCCACAGAGCTGTGGCCCCAAATAACACATACCTCGAAGGTCATCTCAAGCACATTCCTGGGAATCTGCAGGATCTGTGTCTCACCCAGTTCTCCTGATATACAGATCCACGGGTTGGCAGTGAACATGGAGCCCCCCAGCTTCTTGC</sequence>
+                                        <!-- aligned sequence data for http://ncbi.nlm.nih.gov/nuccore/302454684 -->
+          <sequence><taxon idref="taxon_70814_1"/>---------------CCAATCTGGACAGTAGTAAGCTTCCCCAAGTTCTGGCACTGTTAGAGAATAGAGAAGATGAGGTAGGTCAGGAAAATCAGAGAAAAGAACAGCAGTCCTTGGAGGCACAGATCTGACTGGCTGCCCGCAACCTGAGCAACTGCAGGGGTAGGCTCTACATACCGCCAGAACTGTGGCACAGCACTATCTCA----TGGGGCGGCCCAAGGCTGAGAAAGAAAATGCTGCTACCTAGAAAAAGAATAGGGCCTGGGAACAAGAGGTTCTGGAGGTGGGTTCTGAGGTCTCTGGGAACAGGTAGGTGGGCTGAGCAGCTGAAAGAACTCTTGGGAACTTCACGACACACTATGCATGGAAAGACGAGCAAGTCCAGACAAGTAAGTGCCTTTGAGACAGACACTGTTTAGACAGGGTAGGGTCCCTCTCCTCAGGGTCAGTCCTTGGTTCCAGCCTCAGATCATCTCAGGAAGATCAGCTCTGCTGATGCATTACACTGTACATAGCAAGGCCTCTGGAAAACCCTGCAGAAAACTCCCCAAAGGAGCTGTTCCAAACTCAGATCCCCACAGAGCTGTGGCCCCAAATAATACATACCTCGAAGGTCATCTCTAGCACATTCCTGGGAATCTGCAGGATCTGTGTCTCACCCAGTTCTCCTGATATACAGATCCACGGGTTGGCAGTGAACATGGAGCCCCCCA---------</sequence>
+                                        <!-- aligned sequence data for http://ncbi.nlm.nih.gov/nuccore/302454674 -->
+          <sequence><taxon idref="taxon_867332_1"/>CCAGAGTTATCATGGCCAATCTGGACAGTAGTAAGCTTCCCCAAGTTCTGGCACTGTTAGAGAATAGAGAAGATGAGGTAGGTCAGGAAAATCAGAAAAAAGAACAGCAGTCCTCGGAGGCATAGATCTGACTGGCTGCCTGCAACCTGAGCAACTGCAGGGGTAGGCTCTACATACCGCCAGAACTGTGGCACAGCACTATCTCATATCTGGGGCGGCCCAAGGCTGAGAAAGAAAATGCTGCTACCTAGAAAAAGAATAGGGCCTGGGAACAAGAGGTTCTGGAGGTGGGTTCTGAGGTCTCTGGGAACAGGTAGGTGGGCTGAGCAGCTGAAAGAACTCTTGGGAACTTCACGACACACTATGCATGGAAAGACGAGCAAGTCCAGACAAGTAAGTGCCTTTGAGACAGACACTGTTTAGACAGGGTAGGATCCCTCTCCTCAGGGTCAGTCCTTGGTTCCAGCCTCAGATCATCTCAGGAAGATCAGCTCTGCTGACGCATTACACGGTACATAGCAAGGCCTCTGGAAAACCCTGCAGAAAACTCCCCAAAGGAGCTGTTCCAAACTCAGATCCCCACAGAGCTGTGGCCCCAAATAACACATACCTCGAAGGTCATCTCAAGCACATTCCTGGGAATCTGCAGGATCTGTGTCTCACCCAGTTCTCCTGATATACAGATCCACGGGTTGGCAGTGAACATGGAGCCCCCCAGCTTCTTGC</sequence>
+                                        <!-- aligned sequence data for http://ncbi.nlm.nih.gov/nuccore/302454676 -->
+          <sequence><taxon idref="taxon_867333_1"/>-----------ATGGCCAATCTGGACAGTAGTAAGCTTCCCCAAGTTCTGGCACTGTTAGAGAATAGAGAAGATGAGGTAGGTCAGGAAAATCAGAGAAAAGAACAGCAGTCCTCGGAGGCACAGATCTGACTGGCTGCCCGCAACCTGAGCAACTGCAGGGGTAGGCTCTACATACCGCCAGAACTGTGGCACAGCACTATCTCA----TGGGGCGGCCCAAGGCTGAGAAAGAAAATGCTGCTACCTAGAAAAAGAATAGGGCCTGGGAACAAGAGGTTCTGGAGGTGGGTTCTGAGGTCTCTGGGAACAGGTAGGTGGGCTGAGCAGCTGAAAGAACTCTTGGGAACTTCACGACACACTATGCATGGAAAGACGAGCAAGTCCAGACAAGTAAGTGCCTTTGAGACAGACACTGTTTAGACAGGGTAGGGTCCCTCTCCTCAGGGTCAGTCCTTGGTTCCAGCCTCAGATCATCTCAGGAAGATCAGCTCTGCTGATGCATTACACTGTACATAGCAAGGCCTCTGGAAAACCCTGCAGAAAACTCCCCAAAGGAGCTGTTCCAAACTCAGATCCCCACAGAGCTGTGGCCCCAAATAATACATACCTCGAAGGTCATCTCTAGCACATTCCTGGGAATCTGCAGGATCTGTGTCTCACCCAGTTCTCCTGATATACAGATCCACGGGTTGGCAGTGAACATGGAGCCCCCCA---------</sequence>
+                                        <!-- aligned sequence data for http://ncbi.nlm.nih.gov/nuccore/302454682 -->
+          <sequence><taxon idref="taxon_867334_1"/>---------------CCAATCTGGACAGTAGTAAGCTTCCCCAAGTTCTGGCACTGTTAGAGAATAGAGAAGATGAGGTAGGTCAGGAAAATCAGAGAAAAGAACAGCAGTCCTCGGAGGCACAGATCTGACTGGCTGCCTGCAACCTGAGCAACTGCAGGGGTAGGCTCTACATACCGCCAGAACTGTGGCACAGCACTATCTCA----TGGGGCGGCCCAAGGCTGAGAAAGAAAATGCTGCTACCTAGAAAAAGAATAGGGCCTGGGAACAAGAGGTTCTGGAGGTGGGTTCTGAGGTCTCTGGGAACAGGTAGGTGGGCTAAGCAGCTGAAAGAACTCTTGGGAACTTCACGACACACTATGCATGGAAAGACGAGCAAGTCCAGACAAGTAAGTGCCTTTGAGACAGACACTGTTTAGACAGGGTAGGGTCCCTCTCCTCAGGGTCAGTCCTTGGTTCCAGCCTCAGATCATCTCAGGAAGATCAGCTCTGCTGATGCATTACACTGTACATAGCAAGGCCTCTGGAAAACCCTGCAGAAAACTCCCCAAAGGAGTTGTTCCAAACTCAGATCCCCACAGAGCTGTGGCCCCAAATAACACATACCTCGAAGGTCATCTCTAGCACATTCCTGGGAATCTGCAGGATCTGTGTCTCACCCAGTTCTCCTGATATACAGATCCAYGGGTTGGCAGTGAACATGGAGCCCCCCA---------</sequence>
+                                        <!-- aligned sequence data for http://ncbi.nlm.nih.gov/nuccore/302454679 -->
+          <sequence><taxon idref="taxon_9523_1"/>---------------CCAATCTGGACAGTAGTAAGCTTCCCCAAGTTCTGGCACTGTTAGAGAATAGAGAAGATGAGGTAGGTCAGGAAAATCAGAAAAAAGAACAGCAGTCCTCGGAGGCACAGATCTGACTGGCTGCCTGCAACCTGAGCAACTGCAGGGGTAGGCTCTACATACCGCCAGAACTGTGGCACAGCACTATCTCATATCTGGGGCGGCCCAAGGCTGAGAAAGAAAATGCTGCTACCTAGAAAAAGAATAGGGCCTGGGAACAAGAGGTTCTGGAGGTGGGTTCTGAGGTCTCTGGGAACAGGTAGGTGGGCTRAGCAGCTGAAAGAACTCTTGGGAACTTCACGACACACTATGCATGGAAAGACRAGCAAGTCCAGACAAGTAAGTGCCTTTGAGACAGACACTGTTTAGACAGGGTAGGATCCCTCTCCTCAGGGTCAGTCCTTGGTTCCAGCCTCAGATCATCTCAGGAAGATCAGCTCTGCTGACGCATTACACGGTACATAGCAAGGCCTCTGGAAAATCCTGCAGAAAACTCCCCAAAGGAGCTGTTCCAAACTCAGATCCCCACAGAGCTGTGGCCCCAAATAACACATACCTCGAAGGTCATCTCAAGCACATTCCTGGGAATCTGCAGGATCTGTGTCTCACCCAGTTCTCCTGATATACAGATCCACGGGTTGGCAGTGAACATGGAGCCCCCCA---------</sequence>
+              
+    </alignment>
+    
+    <!-- site patterns -->
+    <patterns from="1" id="clade2/cluster25.fa.patterns">
+      <alignment idref="clade2/cluster25.fa"/>
+    </patterns>
+    
+    <!-- coalescent starting tree -->
+    <coalescentTree id="clade2/cluster25.fa.startingTree" rootHeight="0.02">
+      <constrainedTaxa>
+		<taxa idref="taxa"/>
+ 		<tmrca monophyletic="true"> 
+		  <taxa idref="ingroup"/> 
+		</tmrca>
+	  </constrainedTaxa>
+      <constantSize idref="constant"/>
+    </coalescentTree> 
+    
+    <!-- tree model -->
+    <treeModel id="clade2/cluster25.fa.treeModel">
+      <coalescentTree idref="clade2/cluster25.fa.startingTree"/>
+      <rootHeight>
+        <parameter id="clade2/cluster25.fa.treeModel.rootHeight"/>
+      </rootHeight>
+      <nodeHeights internalNodes="true">
+        <parameter id="clade2/cluster25.fa.treeModel.internalNodeHeights"/>
+      </nodeHeights>
+      <nodeHeights internalNodes="true" rootNode="true">
+        <parameter id="clade2/cluster25.fa.treeModel.allInternalNodeHeights"/>
+      </nodeHeights>
+    </treeModel>
+
+	<!-- constrain ingroup to be monophyletic -->   
+	<tmrcaStatistic id="tmrca.ingroup.clade2/cluster25.fa" includeStem="false"> 
+      <mrca>
+		<taxa idref="ingroup"/>   
+      </mrca>                                                   
+      <treeModel idref="clade2/cluster25.fa.treeModel"/>
+	</tmrcaStatistic>
+	<monophylyStatistic id="monophyly.ingroup.clade2/cluster25.fa">
+      <mrca>
+		<taxa idref="ingroup"/>
+      </mrca>
+      <treeModel idref="clade2/cluster25.fa.treeModel"/>
+	</monophylyStatistic>
+	
+    <!-- coalescent likelihood -->
+    <coalescentLikelihood id="clade2/cluster25.fa.coalescent">
+      <model><constantSize idref="constant"/></model>
+      <populationTree><treeModel idref="clade2/cluster25.fa.treeModel"/></populationTree>
+    </coalescentLikelihood>
+
+    <!-- strict clock parameters -->
+    <strictClockBranchRates id="clade2/cluster25.fa.branchRates">
+      <rate>
+        
+          <parameter id="clade2/cluster25.fa.clock.rate" value="1.0" lower="0.0" upper="Infinity"/>
+        
+      </rate>
+    </strictClockBranchRates>
+    
+    <!-- HKY85 substitution model parameters -->
+    <HKYModel id="clade2/cluster25.fa.hky">
+      <frequencies>
+        <frequencyModel dataType="nucleotide">
+          <alignment idref="clade2/cluster25.fa"/>
+          <frequencies>
+            <parameter dimension="4" id="clade2/cluster25.fa.frequencies"/>
+          </frequencies>
+        </frequencyModel>
+      </frequencies>
+      <kappa>
+        <parameter id="clade2/cluster25.fa.kappa" lower="0.0" value="2.0"/>
+      </kappa>
+    </HKYModel>
+
+    <!-- site model: HKY85+G -->
+    <siteModel id="clade2/cluster25.fa.siteModel">
+      <gammaShape gammaCategories="4">
+        <parameter id="clade2/cluster25.fa.alpha" lower="0.0" value="0.5"/>
+      </gammaShape>
+      <substitutionModel>
+        <HKYModel idref="clade2/cluster25.fa.hky"/>
+      </substitutionModel>
+    </siteModel>
+
+    <!-- tree likelihood model -->  
+    <treeLikelihood id="clade2/cluster25.fa.treeLikelihood" useAmbiguities="false">
+      <patterns idref="clade2/cluster25.fa.patterns"/>
+      <treeModel idref="clade2/cluster25.fa.treeModel"/>
+      <siteModel idref="clade2/cluster25.fa.siteModel"/>
+      <strictClockBranchRates idref="clade2/cluster25.fa.branchRates"/>
+    </treeLikelihood>
+                      <alignment dataType="nucleotide" id="clade2/cluster2.fa">
+                                <!-- no sequence data for 202457_1 in alignment clade2/cluster2.fa -->
+          <sequence><taxon idref="taxon_202457_1"/>NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN</sequence>
+                                        <!-- aligned sequence data for http://ncbi.nlm.nih.gov/nuccore/302454847 -->
+          <sequence><taxon idref="taxon_221704_1"/>-------CCTTGAGGATTACTTAAATGGCCCCTTCACTGTGATTGTGAAGGAGTCTTGTGATGGAATGGGAGATGTGAGTGAGAAGCATGGGAGTGGGCCAGTAGTCCCAGAAAAGGCAGTCCGTTTTTCATTCACAATCATGAAAATTACTATAGCCCACAACTCTCAGAAGATGAAAGTGTTTGAAGAAGCCAAACCTAACTCTGAACTGTGTTGCAAGCCATTGTGCCTTATGCTGGCAGATGAGTCTGACCATGAGACCCTGACTGCCATCCTGAGTCCTCTCATTGCTGAGAGGGAGGCCATGAAGAGCAGTGAATTAATGCTTGAGATGGGAGGCATTCTCCGGACTTTCAAGTTCATCTTCAGGGGCACTGGATATGATGAAAAACTTGTGCGGGAAGTGGAAGGCCTTGAGGCTTCTGGCTCAGTCTACATCTGTACTCTTTGTGATGCTACCCGTCTGGAAGCCTCTCAAAATCTTGTCTTCCACTCTATAACCAGAAGCCATGCCGAGAACCTGGAGCGTTATGAGGTCTGGCGTTCCAACCCTTACCATGAGTCTGTGGAAGAACTGCGGGATCGGGTGAAAGGGGTCTCAGCCAAACCTTTCATTGAGACAGTCCCTTCCATAGATGCCCTCCACTGTGACATTGGCAATGCGGCTGAGTTCTACAAGATCTTCCAGCTAGAGATAGGGGAGGTGTATAAGAATCCCAATGCTTCCAAAGAGGAAAGGAAAAGGTGGCAGACCACACTGGACAAGCATCTCCGGAAAAAGATGAACCTCAAACCAATCATGAGGATGAATGGCAACTTTGCCAGGAAGCTCATGACCAAAGAGACTGTGGATGCGGTTTGTGAGTTAATTCCTTCTGAGGAGAGGCACGAGGCTCTGAGGGAGCTGATGGATCTTTACCTGAAGATGAAACCAGTATGGCGGTCATCATGCCCTGCTAAAGAGTGCCCAGAATCCCTCTGCCAGTACAGTTTCAATTCACAGCGTTTTGCTGAGCTCCTTTCTACCAAGTTCAAGTATAGATATGAGGGGAAAATCAC-----------------</sequence>
+                                        <!-- aligned sequence data for http://ncbi.nlm.nih.gov/nuccore/302454850 -->
+          <sequence><taxon idref="taxon_230833_1"/>CCCAAGACCTTGAGGATTACTTAAATGGCCCCTTCACTGTGATTGTGAAGGAGTCTTGTGATGGAATGGGAGATGTGAGTGAGAAGCATGGGAGTGGGCCAGTAGTCCCAGAAAAGGCAGTCCGTTTTTCATTCACAATCATGAAAATTACTATAGCCCACAACTCTCAGAAGATGAAAGTGTTTGAAGAAGCCAAACCTAACTCTGAACTGTGTTGCAAGCCATTGTGCCTTATGCTGGCAGATGAGTCTGACCACGAGACCCTGACTGCCATCCTGAGTCCTCTCATTGCTGAGAGGGAGGCCATGAAGAGCAGTGAATTAATGCTTGAGATGGGAGGCATTCTCCGGACTTTCAAGTTCATCTTCAGGGGCACTGGATATGATGAAAAACTTGTGCGGGAAGTGGAAGGCCTTGAGGCTTCTGGCTCAGTCTACATCTGTACTCTTTGTGATGCTACCCGTCTGGAAGCCTCTCAAAATCTTGTCTTCCACTCTATAACCAGAAGCCATGCCGAGAACCTGGAACGTTATGAGGTCTGGCGTTCCAACCCTTACCATGAGTCTGTGGAAGAACTGCGGGATCGGGTGAAAGGGGTCTCAGCCAAACCTTTCATTGAGACAGTCCCTTCCATAGATGCCCTCCACTGTGACATTGGCAATGCGGCTGAGTTCTACAAGATCTTCCAGCTAGAGATAGGGGAGGTGTATAAGAATCCCAATGCTTCCAAAGAGGAAAGGAAAAGGTGGCAGACCACACTGGACAAGCATCTCCGGAAAAAGATGAACCTCAAACCAATCATGAGGATGAATGGCAACTTTGCCAGGAAGCTCATGACCAAAGAGACTGTGGATGCGGTTTGTGAGTTAATTCCTTCTGAGGAGAGGCACGAGGCTCTGAGGGAGCTGATGGAACTTTACCTGAAGATGAAACCAGTATGGCGGTCATCATGCCCTGCTAAAGAGTGCCCAGAATCCCTCTGCCAGTACAGTTTCAATTCACAGCGTTTTGCTGAGCTCCTTTCTACCAAGTTCAAGTATAGATATGAGGGGAAAATCACCAATTATTTTCACAAAA</sequence>
+                                        <!-- aligned sequence data for http://ncbi.nlm.nih.gov/nuccore/302454853 -->
+          <sequence><taxon idref="taxon_70814_1"/>-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------GCCATCCTGAGTCCTCTCATTGCTGAGAGGGAGCCCATGAAGACCAGTGAATTAATGCTTGAGATGGGAGGCATTCTCCGGACTTTCAAGTTCATCTTCAGGGGCACTGGATATGATGAAAAACTTGTGCGGGAAGTGGAAGGCCTTGAGGCTTCTGGCTCAGTCTACATCTGTACTCTTTGTGATGCTACCCGTCTGGAAGCCTCTCAAAATCTTGTCTTCCACTCTATAACCAGAAGCCATGCAGAGAACCTGGAACGTTATGAAGTCTGGCGTTCCAACCCTTACCATGAGTCTGTGGAAGAACTGCGGGATCGGGTGAAAGGGGTCTCAGCCAAACCTTTCATTGAGACAGTCCCTTCCATAGATGCCCTCCACTGTGACATTGGCAATGCGGCTGAGTTCTACAAGATCTTCCAGCTAGAGATAGGGGAGGTGTATAAGAATCCCAATGCTTCCAAAGAGGAAAGGAAAAGGTGGCAGACCACACTGGACAAGCATCTCCGGAAAAAGATGAACCTCAAACCAATCATGAGGATGAATGGCAACTTTGCCAGGAAGCTCATGACCAAAGAGACTGTGGATGCGGTTTGTGAGTTAATTCCTTCTGAGGAGAGGCACGAGGCTCTGAGGGAGCTGATGGATCTTTACCTGAAGATGAAACCAGTATGGCGGTCATCATGCCCTGCTAAAGAATGCCCAGAATCCCTCTGCCAGTACAGTTTCAATTCACAGCGTTTTGCTGAGCTCCTTTCTACCAAGTTCAAGTATAGATATGAGGGGAAAATCACCAATTATTTTCA-----</sequence>
+                                        <!-- aligned sequence data for http://ncbi.nlm.nih.gov/nuccore/302454848 -->
+          <sequence><taxon idref="taxon_867332_1"/>CCCAAGACCTTGAGGATTACTTAAATGGCCCCTTCACTGTGATTGTGAAGGAGTCTTGTGATGGAATGGGAGATGTGAGTGAGAAGCATGGGAGTGGGCCAGTAGTCCCAGAAAAGGCAGTCCGTTTTTCATTCACAATCATGAAAATTACTATAGCCCACAACTCTCAGAAGATGAAAGTGTTTGAAGAAGCCAAACCTAACTCTGAACTGTGTTGCAAGCCATTGTGCCTTATGCTGGCAGATGAGTCTGACCACGAGACCCTGACTGCCATCCTGAGTCCTCTCATTGCTGAGAGGGAGGCCATGAAGAGCAGTGAATTAATGCTTGAGATGGGAGGCATTCTCCGGACTTTCAAGTTCATCTTCAGGGGCACTGGATATGATGAAAAACTTGTGCGGGAAGTGGAAGGCCTTGAGGCTTCTGGCTCAGTCTACATCTGTACTCTTTGTGATGCTACCCGTCTGGAAGCCTCTCAAAATCTTGTCTTCCACTCTATAACCAGAAGCCATGCCGAGAACCTGGAACGTTATGAGGTCTGGCGTTCCAACCCTTACCATGAGTCTGTGGAAGAACTGCGGGATCGGGTGAAAGGGGTCTCAGCCAAACCTTTCATTGAGACAGTCCCTTCCATAGATGCCCTCCACTGTGACATTGGCAATGCGGCTGAGTTCTACAAGATCTTCCAGCTAGAGATAGGGGAGGTGTATAAGAATCCCAATGCTTCCAAAGAGGAAAGGAAAAGGTGGCAGACCACACTGGACAAGCATCTCCGGAAAAAGATGAACCTCAAACCAATCATGAGGATGAATGGCAACTTTGCCAGGAAGCTCATGACCAAAGAGACTGTGGATGCGGTTTGTGAGTTAATTCCTTCTGAGGAGAGGCACGAGGCTCTGAGGGAGCTGATGGAACTTTACCTGAAGATGAAACCAGTATGGCGGTCATCATGCCCTGCTAAAGAGTGCCCAGAATCCCTCTGCCAGTACAGTTTCAATTCACAGCGTTTTGCTGAGCTCCTTTCTACCAAGTTCAAGTATAGATATGAGGGGAAAATCACCAATTATTTTCACAAAA</sequence>
+                                        <!-- aligned sequence data for http://ncbi.nlm.nih.gov/nuccore/302454849 -->
+          <sequence><taxon idref="taxon_867333_1"/>CCCAAGACCTTGAGGATTACTTAAATGGCCCCTTCACTGTGATTGTGAAGGAGTCTTGTGATGGAATGGGAGATGTGAGTGAGAAGCATGGGAGTGGGCCAGTAGTCCCAGAAAAGGCAGTCCGTTTTTCATTCACAATCATGAAAATTACTATAACCCACAACTCTCAGAACATGAAAGTGTTTGAAGAAGCCAAACCTAACTCTGAACTGTGTTGCAAGCCATTGTGCCTTATGCTGGCAGATGAGTCTGACCACGAGACCCTGACTGCCATCCTGAGTCCTCTCATTGCTGAGAGGGAGGCCATGAAGAGCAGTGAATTAATGCTTGAGATGGGAGGCATTCTCCGGACTTTCAAGTTCATCTTCAGGGGCACTGGATATGATGAAAAACTTGTGCGGGAAGTGGAAGGCCTTGAGGCTTCTGGCTCAGTCTACATCTGTACTCTTTGTGATGCTACCCGTCTGGAAGCCTCTCAAAATCTTGTCTTCCACTCTATAACCAGAAGCCATGCAGAGAACCTGGAACGTTATGAAGTCTGGCGTTCCAACCCTTACCATGAGTCTGTGGAAGAACTGCGGGATCGGGTGAAAGGGGTCTCAGCCAAACCTTTCATTGAGACAGTCCCTTCCATAGATGCCCTCCACTGTGACATTGGCAATGCGGCTGAGTTCTACAAGATCTTCCAGCTAGAGATAGGGGAGGTGTATAAGAATCCCAATGCTTCCAAAGAGGAAAGGAAAAGGTGGCAGACCACACTGGACAAGCATCTCCGGAAAAAGATGAACCTCAAACCAATCATGAGGATGAATGGCAACTTTGCCAGGAAGCTCATGACCAAAGAGACTGTGGATGCGGTTTGTGAGTTAATTCCTTCTGAGGAGAGGCACGAGGCTCTGAGGGAGCTGATGGATCTTTACCTGAAGATGAAACCAGTATGGCGGTCATCATGCCCTGCTAAAGAATGCCCAGAATCCCTCTGCCAGTACAGTTTCAATTCACAGCGTTTTGCTGAGCTCCTTTCTACCAAGTTCAAGTATAGATATGAGGGGAAAATCACCAATTATTTTCAC----</sequence>
+                                        <!-- aligned sequence data for http://ncbi.nlm.nih.gov/nuccore/302454852 -->
+          <sequence><taxon idref="taxon_867334_1"/>CCCAAGACCTTGAGGATTACTTAAATGGCCCCTTCACTGTGATTGTGAAGGAGTCTTGTGATGGAATGGGAGATGTGAGTGAGAAGCATGGGAGTGGGCCAGTAGTCCCAGAAAAGGCAGTCCGTTTTTCATTCACAATCATGAAAATTACTATAACCCACAACTCTCAGAACATGAAAGTGTTTGAAGAAGCCAAACCTAACTCTGAACTGTGTTGCAAGCCATTGTGCCTTATGCTGGCAGATGAGTCTGACCACGAGACCCTGACTGCCATCCTGAGTCCTCTCATTGCTGAGAGGGAGGCCATGAAGAGCAGTGAATTAATGCTTGAGATGGGAGGCATTCTACGGACTTTCAAGTTCATCTTCAGGGGCACTGGATATGATGAAAAACTTGTGCGGGAAGTGGAAGGCCTTGAGGCTTCTGGCTCAGTCTACATCTGTACTCTTTGTGATGCTACCCGTCTGGAAGCCTCTCAAAATCTTGTCTTCCACTCTATAACCAGAAGCCATGCAGAGAACCTGGAACGTTATGAAGTCTGGCGTTCCAACCCTTACCATGAGTCTGTGGAAGAACTGCGGGATCGGGTGAAAGGGGTCTCAGCCAAACCTTTCATTGAGACAGTCCCTTCCATAGATGCCCTCCACTGTGACATTGGCAATGCGGCTGAGTTCTACAAGATCTTCCAGCTAGAGATAGGGGAGGTGTATAAGAATCCCAACGCTTCCAAAGAGGAAAGGAAAAGGTGGCAGACCACACTGGACAAGCATCTCCGGAAAAAGATGAACCTCAAACCAATCATGAGGATGAATGGCAACTTTGCCAGGAAGCTCATGACCAAAGAGACTGTGGATGCGGTTTGTGAGTTAATTCCTTCTGAGGAGAGGCACGAGGCTCTGAGGGAGCTGATGGATCTTTACCTGAAGATGAAACCAGTATGGCGGTCATCATGCCCGGCTAAAGAATGCCCAGAATCCCTCTGCCAGTACAGTTTCAATTCACAGCGTTTTGCTGAGCTCCTTTCTACCAAGTTCAAGTATAGATATGAGGGGAAAATCACCAATTATTTTCACAAAA</sequence>
+                                        <!-- aligned sequence data for http://ncbi.nlm.nih.gov/nuccore/302454851 -->
+          <sequence><taxon idref="taxon_9523_1"/>CCCAAGACCTTGAGGATTACTTAAATGGCCCCTTCACTGTGATTGTGAAGGAGTCTTGTGATGGAATGGGAGATGTGAGTGAGAAGCATGGGAGTGGGCCAGTAGTCCCAGAAAAGGCAGTCCGTTTTTCATTCACAATCATGAAAATTACTATAGCCCACAACTCTCAGAACATGAAAGTGTTTGAAGAAGCCAAACCTAACTCTGAACTGTGTTGCAAGCCATTGTGCCTTATGCTGGCAGATGAGTCTGACCACGAGACCCTGACTGCCATCCTGAGTCCTCTCATTGCTGAGAGGGAGGCCATGAAGAGCAGTGAATTAATGCTTGAGATGGGAGGCATTCTCCGGACTTTCAAGTTCATCTTCAGGGGCACTGGATATGATGAAAAACTTGTGCGGGAAGTGGAAGGCCTTGAGGCTTCTGGCTCAGTCTACATCTGTACTCTTTGTGATGCTACCCGTCTGGAAGCCTCTCAAAATCTTGTCTTCCACTCTATAACCAGAAGCCATGCCGAGAACCTGGAGCGTTATGAGGTCTGGCGTTCCAACCCTTACCATGAGTCTGTGGAAGAACTGCGGGATCGGGTGAAAGGGGTCTCAGCCAAACCTTTCATTGAGACAGTCCCTTCCATAGATGCCCTCCACTGTGACATTGGCAATGCGGCTGAGTTCTACAAGATCTTCCAGCTAGAGATAGGGGAGGTGTATAAGAATCCCAATGCTTCCAAAGAGGAAAGGAAAAGGTGGCAGACCACACTGGACAAGCATCTCCGGAAAAAGATGAACCTCAAACCAATCATGAGGATGAATGGCAACTTTGCCAGGAAGCTCATGACCAAAGAGACTGTGGATGCGGTTTGTGAGTTAATTCCTTCTGAGGAGAGGCACGAGGCTCTGAGGGAGCTGATGGATCTTTACCTGAAGATGAAACCAGTATGGCGGTCATCATGCCCTGCTAAAGAGTGCCCAGAATCCCTCTGCCAGTACAGTTTCAATTCACAGCGTTTTGCTGAGCTCCTTTCTACCAAGTTCAAGTATAGATATGAGGGGAAAATCACCAATTATTTTCACAAAA</sequence>
+              
+    </alignment>
+    
+    <!-- site patterns -->
+    <patterns from="1" id="clade2/cluster2.fa.patterns">
+      <alignment idref="clade2/cluster2.fa"/>
+    </patterns>
+    
+    <!-- coalescent starting tree -->
+    <coalescentTree id="clade2/cluster2.fa.startingTree" rootHeight="0.02">
+      <constrainedTaxa>
+		<taxa idref="taxa"/>
+ 		<tmrca monophyletic="true"> 
+		  <taxa idref="ingroup"/> 
+		</tmrca>
+	  </constrainedTaxa>
+      <constantSize idref="constant"/>
+    </coalescentTree> 
+    
+    <!-- tree model -->
+    <treeModel id="clade2/cluster2.fa.treeModel">
+      <coalescentTree idref="clade2/cluster2.fa.startingTree"/>
+      <rootHeight>
+        <parameter id="clade2/cluster2.fa.treeModel.rootHeight"/>
+      </rootHeight>
+      <nodeHeights internalNodes="true">
+        <parameter id="clade2/cluster2.fa.treeModel.internalNodeHeights"/>
+      </nodeHeights>
+      <nodeHeights internalNodes="true" rootNode="true">
+        <parameter id="clade2/cluster2.fa.treeModel.allInternalNodeHeights"/>
+      </nodeHeights>
+    </treeModel>
+
+	<!-- constrain ingroup to be monophyletic -->   
+	<tmrcaStatistic id="tmrca.ingroup.clade2/cluster2.fa" includeStem="false"> 
+      <mrca>
+		<taxa idref="ingroup"/>   
+      </mrca>                                                   
+      <treeModel idref="clade2/cluster2.fa.treeModel"/>
+	</tmrcaStatistic>
+	<monophylyStatistic id="monophyly.ingroup.clade2/cluster2.fa">
+      <mrca>
+		<taxa idref="ingroup"/>
+      </mrca>
+      <treeModel idref="clade2/cluster2.fa.treeModel"/>
+	</monophylyStatistic>
+	
+    <!-- coalescent likelihood -->
+    <coalescentLikelihood id="clade2/cluster2.fa.coalescent">
+      <model><constantSize idref="constant"/></model>
+      <populationTree><treeModel idref="clade2/cluster2.fa.treeModel"/></populationTree>
+    </coalescentLikelihood>
+
+    <!-- strict clock parameters -->
+    <strictClockBranchRates id="clade2/cluster2.fa.branchRates">
+      <rate>
+        
+          <parameter id="clade2/cluster2.fa.clock.rate" value="1.0" lower="0.0" upper="Infinity"/>
+        
+      </rate>
+    </strictClockBranchRates>
+    
+    <!-- HKY85 substitution model parameters -->
+    <HKYModel id="clade2/cluster2.fa.hky">
+      <frequencies>
+        <frequencyModel dataType="nucleotide">
+          <alignment idref="clade2/cluster2.fa"/>
+          <frequencies>
+            <parameter dimension="4" id="clade2/cluster2.fa.frequencies"/>
+          </frequencies>
+        </frequencyModel>
+      </frequencies>
+      <kappa>
+        <parameter id="clade2/cluster2.fa.kappa" lower="0.0" value="2.0"/>
+      </kappa>
+    </HKYModel>
+
+    <!-- site model: HKY85+G -->
+    <siteModel id="clade2/cluster2.fa.siteModel">
+      <gammaShape gammaCategories="4">
+        <parameter id="clade2/cluster2.fa.alpha" lower="0.0" value="0.5"/>
+      </gammaShape>
+      <substitutionModel>
+        <HKYModel idref="clade2/cluster2.fa.hky"/>
+      </substitutionModel>
+    </siteModel>
+
+    <!-- tree likelihood model -->  
+    <treeLikelihood id="clade2/cluster2.fa.treeLikelihood" useAmbiguities="false">
+      <patterns idref="clade2/cluster2.fa.patterns"/>
+      <treeModel idref="clade2/cluster2.fa.treeModel"/>
+      <siteModel idref="clade2/cluster2.fa.siteModel"/>
+      <strictClockBranchRates idref="clade2/cluster2.fa.branchRates"/>
+    </treeLikelihood>
+                      <alignment dataType="nucleotide" id="clade2/cluster8.fa">
+                                <!-- aligned sequence data for http://ncbi.nlm.nih.gov/nuccore/302449721 -->
+          <sequence><taxon idref="taxon_202457_1"/>TGTTTATATCTAAATGTGTGGATTCCAGCACCTAAACCAAAAAATGCCACTGTAATGATATGGATTTATGGTGGTGGTTTTCAAACTGGAACATCATCTTTACATGTTTATGATGGCAAGTTTCTTGCTCGGGTCGAAAGAGTTATTGTAGTGTCAATGAACTACAGGGTGGGTGCCCTAGGATTCTTAGCTTTGCCTGGAAATCCTGAGGCTCCAGGAAACATGGGTTTATTTGATCAACG--GTTGGCTCTTCAGTGGGTTCAAAAAAATATAGCAGCCTTTGGTGGAAATCCTMAAAGTGTAACTCTTTTTGGAGAAAGTGCAGGAGCAGCTTCAGTTAGTCTGCATTTGCTTTCTCCTGGAAGCCATTCCTTGTTCACCAGAGCCATTCTGCAAAGTGGATCCTCTAATGCTCCTTGGGCAGTAAYGTCTCTTTACGAAGCTAGGAACAGAACGTTGGCCTTAGCTAAATTTACTGGTTGCTCTAGAGAAAATGAGACTGAATTAGTCAAATGCCTTCAAAACAAAGATCCCCAAGAAATTCTTCTGAATGAAGCATTTGTCGTCCCCTATGGAACTCTCTTGTCAGTAAACTTTGGTCCAAYGGTGGATGGTGATTTTCTCACTGACATGCCAGACATATTACTTGAACTTGGACAATTWAAAAAAACCCAGATTTTGGTAGGTGTTAATAAAGATGAAGGGACAGCTTTTTTAGTCTATGGTGCTCCTGGCTTCAGCAAAGATAACAATAGTTTCATAACTAGAAAAGAATTTCAGGAAGGCTTAAAAATRTTTTTTCCAGGAGTGAGTGAGTTTGGAAAGGAATCCATTCTTTTTCATTACACAGACTGGGTAGATGATCAGAGACCTGAAAACTACCGTGAGGCCTTGGATGATGTTGTTGGGGATTACAATATCATATGCCCGGCCTTGGAGTTTAC-CAAGAAGTTCTCAGAATGGGGAAATAATGCCTTTTTCTACTATTTTGAACACCG</sequence>
+                                        <!-- no sequence data for 221704_1 in alignment clade2/cluster8.fa -->
+          <sequence><taxon idref="taxon_221704_1"/>NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN</sequence>
+                                        <!-- aligned sequence data for http://ncbi.nlm.nih.gov/nuccore/302449722 -->
+          <sequence><taxon idref="taxon_230833_1"/>TGTTTATATCTAAATGTGTGGATTCCAGCACCTAAACCAAAAAATGCCACTGTAATGATATGGATTTATGGTGGTGGTTTTCAAACTGGAACATCATCTTTACATGTTTATGATGGCAAGTTTCTTGCTCGGGTCGAAAGAGTTATTGTAGTGTCAATGAACTACAGGGTGGGTGCCCTAGGATTCTTAGCTTTGCCTGGAAATCCTGAGGCTCCAGGAAACATGGGTTTATTTGATCAACG--GTTGGCTCTTCAGTGGGTTCAAAAAAATATAGCAGCCTTTGGTGGAAATCCTCAAAGTGTAACTCTTTTTGGAGAAAGTGCAGGAGCAGCTTCAGTTAGTCTGCATTTGMTTTCTCCTGGAAGCCATTCCTTGTTCACCAGAGCCATTCTGCAAAGTGGATCCTCTAATGCTCCTTGGGCAGTAACGTCTCTTTACGAAGCTAGGAACAGAACGTTGGCCTTAGCTAAATTTACTGGTTGCTCTAGAGAAAATGAGACTGAATTAGTCAAATGCCTTCAAAACAAAGATCCCCAAGAAATTCTTCTGAATGAAGCATTTGTCGTCCCCTATGGAACTCTCCTGTCAGTAAACTTTGGTCCAACGGTGGATGGTGATTTTCTCACTGACATGCCAGACATATTACTTGAACTTGGACAATTTAAAAAAACCCAGATTTTGGTAGGTGTTAATAAAGATGAAGGGACAGCTTTTTTAGTCTATGGTGCTCCTGGCTTCAGCAAAGATAACAATAGTTTCATAACTAGAAAAGAATTTCAGGAAGGCTTAAAAATATTTTTTCCAGGAGTGAGTGAGTTTGGAAAGGAATCCATTCTTTTTCATTACGCAGACTGGGTGGATGATCAGAGACCTGAAAACTACCGTGAGGCCTTGGATGATGTTGTTGGGGATTACAATATCATATGCCCGGCCTTGGAGTTTAC-CAAGAAGTTCTCAGAATGGGGAAATAATGCCTTTTTCTACTATTTTGAACACCG</sequence>
+                                        <!-- aligned sequence data for http://ncbi.nlm.nih.gov/nuccore/302449817 -->
+          <sequence><taxon idref="taxon_70814_1"/>-----------------------------------------AAATGCCACTGTAATGATATGGATTTATGGTGGTGGTTTTCAAACTGGAACATCATCTTTACATGTTTATGATGGCAAGTTTCTTGCTCGGGTCGAAAGAGTTATTGTAGTGTCAATGAACTACAGGGTGGGTGCCCTAGGATTCTTAGCTTTGCCAGGAAATCCTGAGGCTCCAGGAAACATGGGTTTATTTGATCAACG--CTTGGCTCTTCAGTGGGTTCAAAAAAATATAGCAGCCTTTGGTGGAAATCCTAAAAGTGTGACTCTTTTTGGAGAAAGTGCAGGAGCAGCTTCAGTTAGTCTGCATTTGCTTTCTCCTGGAAGCCATTCCTTGTTCACCAGAGCCATTCTGCAAAGTGGATCCTCTAATGCTCCTTGGGCAGTAACATCTCTTTACGAAGCTAGGAACAGAACGTTGGCCTTAGCTAAATTTACTGGTTGCTCTAGAGAAAATGAGACTGAATTAGTCAAATGCCTTCAAAACAAAGATCCCCAAGAAATTCTTCTGAATGAAGCATTTGTCGTCCCCTATGGAACTCTCTTGTCAGTAAACATTGGTCCAACGGTGGATGGTGATTTTCTCACTGACATGCCAGACATATTACTTGAACTTGGACAATTTAAAAAAACCCAGATTTTGGTAGGTGTTAACAAAGACGAAGGGACAGCTTTTTTAGTCTATGGTGCTCCTGGCTTCAGCAAAGATAACAATAGTTTCATAACTAGAAAAGAATTTCAGGAAGGCTTAAAAATATTTTTTCCAGGAGTGAGTGAGTTTGGAAAGGAATCCATTCTTTTTCATTACACAGACTGGGTAGATGATCAGAGACCTGAAAACTACCGTGAGGCCTTGGATGATGTTGTTGGGGATTACAATATCATATGCCCGGCCTTGGAGTTTACGCAAGAAGTTCTCAGAATGGGGAAATAATGCCTTTTTCTACTATTTGA-------</sequence>
+                                        <!-- aligned sequence data for http://ncbi.nlm.nih.gov/nuccore/302449724 -->
+          <sequence><taxon idref="taxon_867332_1"/>TGTTTATATCTAAATGTGTGGATTCCAGCACCTAAACCAAAAAATGCCACTGTAATGATATGGATTTATGGTGGTGGTTTTCAAACTGGAACATCATCTTTACATGTTTATGATGGCAAGTTTCTTGCTCGGGTCGAAAGAGTTATTGTAGTGTCAATGAACTACAGGGTGGGTGCCCTAGGATTCTTAGCTTTGCCTGGAAATCCTGAGGCTCCAGGAAACATGGGTTTATTTGATCAACG--GTTGGCTCTTCAGTGGGTTCAAAAAAATATAGCAGCCTTTGGTGGAAATCCTCAAAGTGTAACTCTTTTTGGAGAAAGTGCAGGAGCAGCTTCAGTTAGTCTGCATTTGCTTTCTCCTGGAAGCCATTCCTTGTTCACCAGAGCCATTCTGCAAAGTGGATCCTCTAATGCTCCTTGGGCAGTAACGTCTCTTTACGAAGCTAGGAACAGAACGTTGGCCTTAGCTAAATTTACTGGTTGCTCTAGAGAAAATGAGACTGAATTAGTCAAATGCCTTCAAAACAAAGATCCCCAAGAAATTCTTCTGAATGAAGCATTTGTCGTCCCCTATGGAACTCTCCTGTCAGTAAACTTTGGTCCAACGGTGGATGGTGATTTTCTCACTGACATGCCAGACATATTACTTGAACTTGGACAATTTAAAAAAACCCAGATTTTGGTAGGTGTTAATAAAGATGAAGGGACAGCTTTTTTAGTCTATGGTGCTCCTGGCTTCAGCAAAGATAACAATAGTTTCATAACTAGAAAAGAATTTCAGGAAGGCTTAAAAATATTTTTTCCAGGAGTGAGTGAGTTTGGAAAGGAATCCATTCTTTTTCATTACGCAGACTGGGTGGATGATCAGAGACCTGAAAACTACCGTGAGGCCTTGGATGATGTTGTKGGGGATTACAATATCATATGCCCGGCCTTGGAGTTTAC-CAAGAAGTTCTCAGAATGGGGAAATAATGCCTTTTTCTACTATTTTGAACACCG</sequence>
+                                        <!-- aligned sequence data for http://ncbi.nlm.nih.gov/nuccore/302449813 -->
+          <sequence><taxon idref="taxon_867333_1"/>---------------------------------AAACCAAAAAATGCCACTGTAATGATATGGATTTATGGTGGTGGTTTTCAAACTGGAACATCATCTTTACATGTTTATGATGGCAAGTTTCTTGCTCGGGTCGAAAGAGTTATTGTAGTGTCAATGAACTACAGGGTGGGTGCCCTAGGATTCTTAGCTTTGCCAGGAAATCCTGAGGCTCCAGGAAACATGGGTTTATTTGATCAACG--CTTGGCTCTTCAGTGGGTTCAAAAAAATATAGCAGCCTTTGGTGGAAATCCTAAAAGTGTGACTCTTTTTGGAGAAAGTGCAGGAGCAGCTTCAGTTAGTCTGCATTTGCTTTCTCCTGGAAGCCATTCCTTGTTCACCAGAGCCATTCTGCAAAGTGGATCCTCTAATGCTCCTTGGGCAGTGACATCTCTTTACGAAGCTAGGAACAGAACGTTGGCCTTAGCTAAATTTACTGGTTGCTCTAGAGAAAATGAGACTGAATTAGTCAAATGCCTTCAAAACAAAGATCCCCAAGAAATTCTTCTGAATGAAGCATTTGTCGTCCCCTATGGAACTCTCTTGTCAGTAAACTTTGGTCCAACGGTGGATGGTGATTTTCTCACTGACATGCCAGACATATTACTTGAACTTGGACAATTTAAAAAAACCCAGATTTTGGTAGGTGTTAACAAAGACGAAGGGACAGCTTTTTTAGTCTATGGTGCTCCTGGCTTCAGCAAAGATAACAATAGTTTCATAACTAGAAAAGAATTTCAGGAAGGCTTAAAAATATTTTTTCCAGGAGTGAGTGAGTTTGGAAAGGAATCCATTCTTTTTCATTACACAGACTGGGTAGATGATCAGAGACCTGAAAACTACCGTGAGGCCTTGGATGATGTTGTTGGGGATTACAATATCATATGCCCGGCCTTGGAGTTTACGCAAGAAGTTCTCAGAATGGGGAAATAATGCCTTTTTCTACTATTTGA-------</sequence>
+                                        <!-- aligned sequence data for http://ncbi.nlm.nih.gov/nuccore/302449821 -->
+          <sequence><taxon idref="taxon_867334_1"/>------------------------------------------------------------------------GGTGGTTTTCAAACTGGAACATCATCTTTACATGTTTATGATGGCAAGTTTCTTGCTCGGGTCGAAAGAGTTATTGTAGTGTCAATGAACTACAGGGTGGGTGCCCTAGGATTCTTAGCTTTGCCAGGAAATCCTGAGGCTCCAGGAAACATGGGTTTATTTGATCAAGGTTGTTGGCTCTTCAGTGGGTTCAAAAAAATATAGCAGCCTTTGGTGGAAATCCTAAAAGTGTGACTCTTTTTGGAGAAAGTGCAGGAGCAGCTTCAGTTAGTCTGCATTTGCTTTCTCCTGGAAGCCATTCCTTGTTCACCAGAGCCATTCTGCAAAGTGGATCCTCTAATGCTCCTTGGGCAGTAACATCTCTTTACGAAGCTAGGAACAGAACGTTGGCCTTAGCTAAATTTACTGGTTGCTCTAGAGAAAATGAGACTGAATTAGTCAAATGCCTTCAAAACAAAGATCCCCAAGAAATTCTTCTGAATGAAGCATTTGTCGTCCCCTATGGAACTCTCTTGTCAGTAAACTTTGGTCCAACGGTGGATGGTGATTTTCTCACTGACATGCCAGACATATTACTTGAACTTGGACAATTTAAAAAAACCCAGATTTTGGTAGGTGTTAACAAAGATGAAGGGACAGCTTTTTTAGTCTATGGTGCTCCTGGCTTCAGCAAAGATAACAATAGTTTCATAACTAGAAAAGAATTTCAGGAAGGCTTAAAAATATTTTTTCCAGGAGTGAGTGAGTTTGGAAAGGAATCCATTCTTTTTCATTACACAGACTGGGTAGATGATCAGAGACCTGAAAACTACCGTGAGGCCTTGGATGATGTTGTTGGGGATTACAATATCATATGCCCGGCCTTGGAGTTTACGCAAGAAGTTCTCAGAATGGGGAAATAATGCCTTTTTCTACTATTTGA-------</sequence>
+                                        <!-- aligned sequence data for http://ncbi.nlm.nih.gov/nuccore/302449812 -->
+          <sequence><taxon idref="taxon_9523_1"/>---------------------------------AAACCAAAAAATGCCACTGTAATGATATGGATTTATGGTGGTGGTTTTCAAACTGGAACATCATCTTTACATGTTTATGATGGCAAGTTTCTTGCTCGGGTCGAAAGAGTTATTGTAGTGTCAATGAACTACAGGGTGGGTGCCCTAGGATTCTTAGCTTTGCCTGGAAATCCTGAGGCTCCAGGAAACATRGGTTTATTTGATCAACG--GTTGGCTCTTCAGTGGGTTCAAAAAAATATAGCAGCCTTTGGTGGAAATCCTAAAAGTGTAACTCTTTTTGGAGAAAGTGCAGGAGCAGCTTCAGTTAGTCTGCATTTGCTTTCTCCTGGAAGCCATTCCTTGTTCACCAGAGCCATTCTGCAAAGTGGATCCTCTAATGCTCCTTGGGCAGTAACGTCTCTTTACGAAGCTAGGAACAGAACGTTGGCCTTAGCTAAATTTACTGGTTGCTCTAGAGAAAATGAGACTGAATTAGTCAAATGCCTTCAAAACAAAGATCCCCAAGAAATTCTTCTGAATGAACCATTTGTCGTCCCCTATGGAACTCTCTTGTCAGTAAACTTTGGTCCAACGGTGGATGGTGATTTTCTCACTGACATGCCAGACATATTACTTGAACTTGGACAATTTAAAAAAACCCAGATTTTGGTAGGTGTTAATAAAGATGAAGGGACAGCTTTTTTAGTCTATGGTGCTCCTGGCTTCAGCAAAGATAACAATAGTTTCATAACTAGAAAAGAATTTCAGGAAGGCTTAAAAATATTTTTTCCAGGAGTGAGTGAGTTTGGAAAGGAATCCATTCTTTTTCATTACACAGACTGGGTAGATGATCAGAGACCTGAAAACTACCGTGAGGCCTTGGATGATGTTGTTGGGGATTACAATATCATATGCCCGGCCTTGGAGTTTACGCAAGAAGTTCTCAGAATGGGGAAATAATGCCTTTTTCTACTATTTGA-------</sequence>
+              
+    </alignment>
+    
+    <!-- site patterns -->
+    <patterns from="1" id="clade2/cluster8.fa.patterns">
+      <alignment idref="clade2/cluster8.fa"/>
+    </patterns>
+    
+    <!-- coalescent starting tree -->
+    <coalescentTree id="clade2/cluster8.fa.startingTree" rootHeight="0.02">
+      <constrainedTaxa>
+		<taxa idref="taxa"/>
+ 		<tmrca monophyletic="true"> 
+		  <taxa idref="ingroup"/> 
+		</tmrca>
+	  </constrainedTaxa>
+      <constantSize idref="constant"/>
+    </coalescentTree> 
+    
+    <!-- tree model -->
+    <treeModel id="clade2/cluster8.fa.treeModel">
+      <coalescentTree idref="clade2/cluster8.fa.startingTree"/>
+      <rootHeight>
+        <parameter id="clade2/cluster8.fa.treeModel.rootHeight"/>
+      </rootHeight>
+      <nodeHeights internalNodes="true">
+        <parameter id="clade2/cluster8.fa.treeModel.internalNodeHeights"/>
+      </nodeHeights>
+      <nodeHeights internalNodes="true" rootNode="true">
+        <parameter id="clade2/cluster8.fa.treeModel.allInternalNodeHeights"/>
+      </nodeHeights>
+    </treeModel>
+
+	<!-- constrain ingroup to be monophyletic -->   
+	<tmrcaStatistic id="tmrca.ingroup.clade2/cluster8.fa" includeStem="false"> 
+      <mrca>
+		<taxa idref="ingroup"/>   
+      </mrca>                                                   
+      <treeModel idref="clade2/cluster8.fa.treeModel"/>
+	</tmrcaStatistic>
+	<monophylyStatistic id="monophyly.ingroup.clade2/cluster8.fa">
+      <mrca>
+		<taxa idref="ingroup"/>
+      </mrca>
+      <treeModel idref="clade2/cluster8.fa.treeModel"/>
+	</monophylyStatistic>
+	
+    <!-- coalescent likelihood -->
+    <coalescentLikelihood id="clade2/cluster8.fa.coalescent">
+      <model><constantSize idref="constant"/></model>
+      <populationTree><treeModel idref="clade2/cluster8.fa.treeModel"/></populationTree>
+    </coalescentLikelihood>
+
+    <!-- strict clock parameters -->
+    <strictClockBranchRates id="clade2/cluster8.fa.branchRates">
+      <rate>
+        
+          <parameter id="clade2/cluster8.fa.clock.rate" value="1.0" lower="0.0" upper="Infinity"/>
+        
+      </rate>
+    </strictClockBranchRates>
+    
+    <!-- HKY85 substitution model parameters -->
+    <HKYModel id="clade2/cluster8.fa.hky">
+      <frequencies>
+        <frequencyModel dataType="nucleotide">
+          <alignment idref="clade2/cluster8.fa"/>
+          <frequencies>
+            <parameter dimension="4" id="clade2/cluster8.fa.frequencies"/>
+          </frequencies>
+        </frequencyModel>
+      </frequencies>
+      <kappa>
+        <parameter id="clade2/cluster8.fa.kappa" lower="0.0" value="2.0"/>
+      </kappa>
+    </HKYModel>
+
+    <!-- site model: HKY85+G -->
+    <siteModel id="clade2/cluster8.fa.siteModel">
+      <gammaShape gammaCategories="4">
+        <parameter id="clade2/cluster8.fa.alpha" lower="0.0" value="0.5"/>
+      </gammaShape>
+      <substitutionModel>
+        <HKYModel idref="clade2/cluster8.fa.hky"/>
+      </substitutionModel>
+    </siteModel>
+
+    <!-- tree likelihood model -->  
+    <treeLikelihood id="clade2/cluster8.fa.treeLikelihood" useAmbiguities="false">
+      <patterns idref="clade2/cluster8.fa.patterns"/>
+      <treeModel idref="clade2/cluster8.fa.treeModel"/>
+      <siteModel idref="clade2/cluster8.fa.siteModel"/>
+      <strictClockBranchRates idref="clade2/cluster8.fa.branchRates"/>
+    </treeLikelihood>
+     
+  
+  <!-- species normalization -->
+  <species id="species">
+                    
+                                                                                                                                                                                                            
+                            <!-- reference to the species http://ncbi.nlm.nih.gov/taxonomy/230833 -->
+          <sp id="230833">
+                      <!-- reference to a distinct row name across all alignments -->
+            <taxon idref="taxon_230833_1"/>
+                    </sp>
+                    
+                                                                                                                                                                                          
+                            <!-- reference to the species http://ncbi.nlm.nih.gov/taxonomy/202457 -->
+          <sp id="202457">
+                      <!-- reference to a distinct row name across all alignments -->
+            <taxon idref="taxon_202457_1"/>
+                    </sp>
+                    
+                                                                                                                                                                                                            
+                            <!-- reference to the species http://ncbi.nlm.nih.gov/taxonomy/867333 -->
+          <sp id="867333">
+                      <!-- reference to a distinct row name across all alignments -->
+            <taxon idref="taxon_867333_1"/>
+                    </sp>
+                    
+                                                                                                                                                                                                            
+                            <!-- reference to the species http://ncbi.nlm.nih.gov/taxonomy/70814 -->
+          <sp id="70814">
+                      <!-- reference to a distinct row name across all alignments -->
+            <taxon idref="taxon_70814_1"/>
+                    </sp>
+                    
+                                                                                                                                                                                                            
+                            <!-- reference to the species http://ncbi.nlm.nih.gov/taxonomy/867332 -->
+          <sp id="867332">
+                      <!-- reference to a distinct row name across all alignments -->
+            <taxon idref="taxon_867332_1"/>
+                    </sp>
+                    
+                                                                                                                                                                                                            
+                            <!-- reference to the species http://ncbi.nlm.nih.gov/taxonomy/9523 -->
+          <sp id="9523">
+                      <!-- reference to a distinct row name across all alignments -->
+            <taxon idref="taxon_9523_1"/>
+                    </sp>
+                    
+                                                                                                                                                                                                            
+                            <!-- reference to the species http://ncbi.nlm.nih.gov/taxonomy/867334 -->
+          <sp id="867334">
+                      <!-- reference to a distinct row name across all alignments -->
+            <taxon idref="taxon_867334_1"/>
+                    </sp>
+                    
+                                                                                                                                                                                          
+                            <!-- reference to the species http://ncbi.nlm.nih.gov/taxonomy/221704 -->
+          <sp id="221704">
+                      <!-- reference to a distinct row name across all alignments -->
+            <taxon idref="taxon_221704_1"/>
+                    </sp>
+                      <geneTrees id="geneTrees">
+      
+        
+        <!-- reference to the tree model for clade2/cluster4.fa -->
+        <treeModel idref="clade2/cluster4.fa.treeModel"/>
+      
+        
+        <!-- reference to the tree model for clade2/cluster5.fa -->
+        <treeModel idref="clade2/cluster5.fa.treeModel"/>
+      
+        
+        <!-- reference to the tree model for clade2/cluster12.fa -->
+        <treeModel idref="clade2/cluster12.fa.treeModel"/>
+      
+        
+        <!-- reference to the tree model for clade2/cluster13.fa -->
+        <treeModel idref="clade2/cluster13.fa.treeModel"/>
+      
+        
+        <!-- reference to the tree model for clade2/cluster17.fa -->
+        <treeModel idref="clade2/cluster17.fa.treeModel"/>
+      
+        
+        <!-- reference to the tree model for clade2/cluster18.fa -->
+        <treeModel idref="clade2/cluster18.fa.treeModel"/>
+      
+        
+        <!-- reference to the tree model for clade2/cluster19.fa -->
+        <treeModel idref="clade2/cluster19.fa.treeModel"/>
+      
+        
+        <!-- reference to the tree model for clade2/cluster25.fa -->
+        <treeModel idref="clade2/cluster25.fa.treeModel"/>
+      
+        
+        <!-- reference to the tree model for clade2/cluster2.fa -->
+        <treeModel idref="clade2/cluster2.fa.treeModel"/>
+      
+        
+        <!-- reference to the tree model for clade2/cluster8.fa -->
+        <treeModel idref="clade2/cluster8.fa.treeModel"/>
+      
+    </geneTrees>
+  </species>
+
+  <!-- species tree: provides per branch demographic function -->  
+  <speciesTree constantRoot="true" id="sptree">
+    <species idref="species"/>
+    <sppSplitPopulations value="0.02">
+      <parameter id="speciesTree.splitPopSize"/>
+    </sppSplitPopulations>
+  </speciesTree>
+
+  <!-- species tree: birth/death model -->
+  <birthDeathModel id="birthDeath" units="substitutions">
+    <birthMinusDeathRate>
+      <parameter id="species.birthDeath.meanGrowthRate" lower="0.0" upper="Infinity" value="1.0"/>
+    </birthMinusDeathRate>
+    <relativeDeathRate>
+      <parameter id="species.birthDeath.relativeDeathRate" lower="0.0" upper="1.0" value="0.5"/>
+    </relativeDeathRate>
+  </birthDeathModel>
+
+  <!-- species tree: likelihood -->
+  <speciationLikelihood id="speciation.likelihood">
+    <model>
+      <birthDeathModel idref="birthDeath"/>
+    </model>
+    <speciesTree>
+      <speciesTree idref="sptree"/>
+    </speciesTree>
+  </speciationLikelihood>
+  <tmrcaStatistic id="speciesTree.rootHeight" name="speciesTree.rootHeight">
+    <speciesTree idref="sptree"/>
+    <mrca>
+      <taxa>
+        
+          
+            
+              <!-- reference to species 230833 -->
+              <sp idref="230833"/>
+            
+          
+            
+              <!-- reference to species 202457 -->
+              <sp idref="202457"/>
+            
+          
+            
+              <!-- reference to species 867333 -->
+              <sp idref="867333"/>
+            
+          
+            
+              <!-- reference to species 70814 -->
+              <sp idref="70814"/>
+            
+          
+            
+              <!-- reference to species 867332 -->
+              <sp idref="867332"/>
+            
+          
+            
+              <!-- reference to species 9523 -->
+              <sp idref="9523"/>
+            
+          
+            
+              <!-- reference to species 867334 -->
+              <sp idref="867334"/>
+            
+          
+            
+              <!-- reference to species 221704 -->
+              <sp idref="221704"/>
+            
+          
+        
+      </taxa>
+    </mrca>
+  </tmrcaStatistic>
+  <speciesCoalescent id="species.coalescent">
+    <species idref="species"/>
+    <speciesTree idref="sptree"/>
+  </speciesCoalescent>
+
+  <!-- species tree: gamma2 + gamma4 -->  
+  <mixedDistributionLikelihood id="species.popSize">
+    <distribution0>
+      <gammaDistributionModel>
+        <scale><parameter id="species.popMean" lower="0.0" value="0.01"/></scale>
+        <shape>2</shape>
+      </gammaDistributionModel>
+    </distribution0>
+    <distribution1>
+      <gammaDistributionModel>
+        <shape>4</shape>
+        <scale><parameter idref="species.popMean"/></scale>
+      </gammaDistributionModel>
+    </distribution1>
+    <data>
+      <parameter idref="speciesTree.splitPopSize"/>
+    </data>
+    <indicators>
+                                                                                                                                                                                                                                                                                                                                            <parameter value="1 1 1 1 1 1 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0"/>
+    </indicators>
+  </mixedDistributionLikelihood>
+  
+  <!-- proposal mechanisms -->
+  <operators id="operators">
+                
+      <!-- proposal mechanisms for clade2/cluster4.fa -->
+      <!-- operators for the substitution process -->
+      <scaleOperator scaleFactor="0.75" weight="0.1">
+        <parameter idref="clade2/cluster4.fa.alpha"/>
+      </scaleOperator>
+      <scaleOperator scaleFactor="0.75" weight="0.1">
+        <parameter idref="clade2/cluster4.fa.kappa"/>
+      </scaleOperator>
+      <deltaExchange delta="0.01" weight="1">
+        <parameter idref="clade2/cluster4.fa.frequencies"/>
+      </deltaExchange>
+      <!-- operators for the tree topology -->
+      <subtreeSlide gaussian="true" size="0.001" weight="15">
+        <treeModel idref="clade2/cluster4.fa.treeModel"/>
+      </subtreeSlide>
+      <narrowExchange weight="15">
+        <treeModel idref="clade2/cluster4.fa.treeModel"/>
+      </narrowExchange>
+      <wideExchange weight="3">
+        <treeModel idref="clade2/cluster4.fa.treeModel"/>
+      </wideExchange>
+      <wilsonBalding weight="3">
+        <treeModel idref="clade2/cluster4.fa.treeModel"/>
+      </wilsonBalding>
+      <scaleOperator scaleFactor="0.75" weight="3">
+        <parameter idref="clade2/cluster4.fa.treeModel.rootHeight"/>
+      </scaleOperator>
+      <uniformOperator weight="30">
+        <parameter idref="clade2/cluster4.fa.treeModel.internalNodeHeights"/>
+      </uniformOperator>
+      
+        <upDownOperator scaleFactor="0.75" weight="3">
+          <up></up>
+         <down><parameter idref="clade2/cluster4.fa.treeModel.allInternalNodeHeights"/></down>
+        </upDownOperator>
+      
+            
+      <!-- proposal mechanisms for clade2/cluster5.fa -->
+      <!-- operators for the substitution process -->
+      <scaleOperator scaleFactor="0.75" weight="0.1">
+        <parameter idref="clade2/cluster5.fa.alpha"/>
+      </scaleOperator>
+      <scaleOperator scaleFactor="0.75" weight="0.1">
+        <parameter idref="clade2/cluster5.fa.kappa"/>
+      </scaleOperator>
+      <deltaExchange delta="0.01" weight="1">
+        <parameter idref="clade2/cluster5.fa.frequencies"/>
+      </deltaExchange>
+      <!-- operators for the tree topology -->
+      <subtreeSlide gaussian="true" size="0.001" weight="15">
+        <treeModel idref="clade2/cluster5.fa.treeModel"/>
+      </subtreeSlide>
+      <narrowExchange weight="15">
+        <treeModel idref="clade2/cluster5.fa.treeModel"/>
+      </narrowExchange>
+      <wideExchange weight="3">
+        <treeModel idref="clade2/cluster5.fa.treeModel"/>
+      </wideExchange>
+      <wilsonBalding weight="3">
+        <treeModel idref="clade2/cluster5.fa.treeModel"/>
+      </wilsonBalding>
+      <scaleOperator scaleFactor="0.75" weight="3">
+        <parameter idref="clade2/cluster5.fa.treeModel.rootHeight"/>
+      </scaleOperator>
+      <uniformOperator weight="30">
+        <parameter idref="clade2/cluster5.fa.treeModel.internalNodeHeights"/>
+      </uniformOperator>
+      
+        <!-- operators for the strict clock -->
+        <scaleOperator scaleFactor="0.75" weight="3">
+          <parameter idref="clade2/cluster5.fa.clock.rate"/>
+        </scaleOperator>
+        <upDownOperator scaleFactor="0.75" weight="3">
+          <up><parameter idref="clade2/cluster5.fa.clock.rate"/></up>
+          <down><parameter idref="clade2/cluster5.fa.treeModel.allInternalNodeHeights"/></down>
+        </upDownOperator>
+      
+            
+      <!-- proposal mechanisms for clade2/cluster12.fa -->
+      <!-- operators for the substitution process -->
+      <scaleOperator scaleFactor="0.75" weight="0.1">
+        <parameter idref="clade2/cluster12.fa.alpha"/>
+      </scaleOperator>
+      <scaleOperator scaleFactor="0.75" weight="0.1">
+        <parameter idref="clade2/cluster12.fa.kappa"/>
+      </scaleOperator>
+      <deltaExchange delta="0.01" weight="1">
+        <parameter idref="clade2/cluster12.fa.frequencies"/>
+      </deltaExchange>
+      <!-- operators for the tree topology -->
+      <subtreeSlide gaussian="true" size="0.001" weight="15">
+        <treeModel idref="clade2/cluster12.fa.treeModel"/>
+      </subtreeSlide>
+      <narrowExchange weight="15">
+        <treeModel idref="clade2/cluster12.fa.treeModel"/>
+      </narrowExchange>
+      <wideExchange weight="3">
+        <treeModel idref="clade2/cluster12.fa.treeModel"/>
+      </wideExchange>
+      <wilsonBalding weight="3">
+        <treeModel idref="clade2/cluster12.fa.treeModel"/>
+      </wilsonBalding>
+      <scaleOperator scaleFactor="0.75" weight="3">
+        <parameter idref="clade2/cluster12.fa.treeModel.rootHeight"/>
+      </scaleOperator>
+      <uniformOperator weight="30">
+        <parameter idref="clade2/cluster12.fa.treeModel.internalNodeHeights"/>
+      </uniformOperator>
+      
+        <!-- operators for the strict clock -->
+        <scaleOperator scaleFactor="0.75" weight="3">
+          <parameter idref="clade2/cluster12.fa.clock.rate"/>
+        </scaleOperator>
+        <upDownOperator scaleFactor="0.75" weight="3">
+          <up><parameter idref="clade2/cluster12.fa.clock.rate"/></up>
+          <down><parameter idref="clade2/cluster12.fa.treeModel.allInternalNodeHeights"/></down>
+        </upDownOperator>
+      
+            
+      <!-- proposal mechanisms for clade2/cluster13.fa -->
+      <!-- operators for the substitution process -->
+      <scaleOperator scaleFactor="0.75" weight="0.1">
+        <parameter idref="clade2/cluster13.fa.alpha"/>
+      </scaleOperator>
+      <scaleOperator scaleFactor="0.75" weight="0.1">
+        <parameter idref="clade2/cluster13.fa.kappa"/>
+      </scaleOperator>
+      <deltaExchange delta="0.01" weight="1">
+        <parameter idref="clade2/cluster13.fa.frequencies"/>
+      </deltaExchange>
+      <!-- operators for the tree topology -->
+      <subtreeSlide gaussian="true" size="0.001" weight="15">
+        <treeModel idref="clade2/cluster13.fa.treeModel"/>
+      </subtreeSlide>
+      <narrowExchange weight="15">
+        <treeModel idref="clade2/cluster13.fa.treeModel"/>
+      </narrowExchange>
+      <wideExchange weight="3">
+        <treeModel idref="clade2/cluster13.fa.treeModel"/>
+      </wideExchange>
+      <wilsonBalding weight="3">
+        <treeModel idref="clade2/cluster13.fa.treeModel"/>
+      </wilsonBalding>
+      <scaleOperator scaleFactor="0.75" weight="3">
+        <parameter idref="clade2/cluster13.fa.treeModel.rootHeight"/>
+      </scaleOperator>
+      <uniformOperator weight="30">
+        <parameter idref="clade2/cluster13.fa.treeModel.internalNodeHeights"/>
+      </uniformOperator>
+      
+        <!-- operators for the strict clock -->
+        <scaleOperator scaleFactor="0.75" weight="3">
+          <parameter idref="clade2/cluster13.fa.clock.rate"/>
+        </scaleOperator>
+        <upDownOperator scaleFactor="0.75" weight="3">
+          <up><parameter idref="clade2/cluster13.fa.clock.rate"/></up>
+          <down><parameter idref="clade2/cluster13.fa.treeModel.allInternalNodeHeights"/></down>
+        </upDownOperator>
+      
+            
+      <!-- proposal mechanisms for clade2/cluster17.fa -->
+      <!-- operators for the substitution process -->
+      <scaleOperator scaleFactor="0.75" weight="0.1">
+        <parameter idref="clade2/cluster17.fa.alpha"/>
+      </scaleOperator>
+      <scaleOperator scaleFactor="0.75" weight="0.1">
+        <parameter idref="clade2/cluster17.fa.kappa"/>
+      </scaleOperator>
+      <deltaExchange delta="0.01" weight="1">
+        <parameter idref="clade2/cluster17.fa.frequencies"/>
+      </deltaExchange>
+      <!-- operators for the tree topology -->
+      <subtreeSlide gaussian="true" size="0.001" weight="15">
+        <treeModel idref="clade2/cluster17.fa.treeModel"/>
+      </subtreeSlide>
+      <narrowExchange weight="15">
+        <treeModel idref="clade2/cluster17.fa.treeModel"/>
+      </narrowExchange>
+      <wideExchange weight="3">
+        <treeModel idref="clade2/cluster17.fa.treeModel"/>
+      </wideExchange>
+      <wilsonBalding weight="3">
+        <treeModel idref="clade2/cluster17.fa.treeModel"/>
+      </wilsonBalding>
+      <scaleOperator scaleFactor="0.75" weight="3">
+        <parameter idref="clade2/cluster17.fa.treeModel.rootHeight"/>
+      </scaleOperator>
+      <uniformOperator weight="30">
+        <parameter idref="clade2/cluster17.fa.treeModel.internalNodeHeights"/>
+      </uniformOperator>
+      
+        <!-- operators for the strict clock -->
+        <scaleOperator scaleFactor="0.75" weight="3">
+          <parameter idref="clade2/cluster17.fa.clock.rate"/>
+        </scaleOperator>
+        <upDownOperator scaleFactor="0.75" weight="3">
+          <up><parameter idref="clade2/cluster17.fa.clock.rate"/></up>
+          <down><parameter idref="clade2/cluster17.fa.treeModel.allInternalNodeHeights"/></down>
+        </upDownOperator>
+      
+            
+      <!-- proposal mechanisms for clade2/cluster18.fa -->
+      <!-- operators for the substitution process -->
+      <scaleOperator scaleFactor="0.75" weight="0.1">
+        <parameter idref="clade2/cluster18.fa.alpha"/>
+      </scaleOperator>
+      <scaleOperator scaleFactor="0.75" weight="0.1">
+        <parameter idref="clade2/cluster18.fa.kappa"/>
+      </scaleOperator>
+      <deltaExchange delta="0.01" weight="1">
+        <parameter idref="clade2/cluster18.fa.frequencies"/>
+      </deltaExchange>
+      <!-- operators for the tree topology -->
+      <subtreeSlide gaussian="true" size="0.001" weight="15">
+        <treeModel idref="clade2/cluster18.fa.treeModel"/>
+      </subtreeSlide>
+      <narrowExchange weight="15">
+        <treeModel idref="clade2/cluster18.fa.treeModel"/>
+      </narrowExchange>
+      <wideExchange weight="3">
+        <treeModel idref="clade2/cluster18.fa.treeModel"/>
+      </wideExchange>
+      <wilsonBalding weight="3">
+        <treeModel idref="clade2/cluster18.fa.treeModel"/>
+      </wilsonBalding>
+      <scaleOperator scaleFactor="0.75" weight="3">
+        <parameter idref="clade2/cluster18.fa.treeModel.rootHeight"/>
+      </scaleOperator>
+      <uniformOperator weight="30">
+        <parameter idref="clade2/cluster18.fa.treeModel.internalNodeHeights"/>
+      </uniformOperator>
+      
+        <!-- operators for the strict clock -->
+        <scaleOperator scaleFactor="0.75" weight="3">
+          <parameter idref="clade2/cluster18.fa.clock.rate"/>
+        </scaleOperator>
+        <upDownOperator scaleFactor="0.75" weight="3">
+          <up><parameter idref="clade2/cluster18.fa.clock.rate"/></up>
+          <down><parameter idref="clade2/cluster18.fa.treeModel.allInternalNodeHeights"/></down>
+        </upDownOperator>
+      
+            
+      <!-- proposal mechanisms for clade2/cluster19.fa -->
+      <!-- operators for the substitution process -->
+      <scaleOperator scaleFactor="0.75" weight="0.1">
+        <parameter idref="clade2/cluster19.fa.alpha"/>
+      </scaleOperator>
+      <scaleOperator scaleFactor="0.75" weight="0.1">
+        <parameter idref="clade2/cluster19.fa.kappa"/>
+      </scaleOperator>
+      <deltaExchange delta="0.01" weight="1">
+        <parameter idref="clade2/cluster19.fa.frequencies"/>
+      </deltaExchange>
+      <!-- operators for the tree topology -->
+      <subtreeSlide gaussian="true" size="0.001" weight="15">
+        <treeModel idref="clade2/cluster19.fa.treeModel"/>
+      </subtreeSlide>
+      <narrowExchange weight="15">
+        <treeModel idref="clade2/cluster19.fa.treeModel"/>
+      </narrowExchange>
+      <wideExchange weight="3">
+        <treeModel idref="clade2/cluster19.fa.treeModel"/>
+      </wideExchange>
+      <wilsonBalding weight="3">
+        <treeModel idref="clade2/cluster19.fa.treeModel"/>
+      </wilsonBalding>
+      <scaleOperator scaleFactor="0.75" weight="3">
+        <parameter idref="clade2/cluster19.fa.treeModel.rootHeight"/>
+      </scaleOperator>
+      <uniformOperator weight="30">
+        <parameter idref="clade2/cluster19.fa.treeModel.internalNodeHeights"/>
+      </uniformOperator>
+      
+        <!-- operators for the strict clock -->
+        <scaleOperator scaleFactor="0.75" weight="3">
+          <parameter idref="clade2/cluster19.fa.clock.rate"/>
+        </scaleOperator>
+        <upDownOperator scaleFactor="0.75" weight="3">
+          <up><parameter idref="clade2/cluster19.fa.clock.rate"/></up>
+          <down><parameter idref="clade2/cluster19.fa.treeModel.allInternalNodeHeights"/></down>
+        </upDownOperator>
+      
+            
+      <!-- proposal mechanisms for clade2/cluster25.fa -->
+      <!-- operators for the substitution process -->
+      <scaleOperator scaleFactor="0.75" weight="0.1">
+        <parameter idref="clade2/cluster25.fa.alpha"/>
+      </scaleOperator>
+      <scaleOperator scaleFactor="0.75" weight="0.1">
+        <parameter idref="clade2/cluster25.fa.kappa"/>
+      </scaleOperator>
+      <deltaExchange delta="0.01" weight="1">
+        <parameter idref="clade2/cluster25.fa.frequencies"/>
+      </deltaExchange>
+      <!-- operators for the tree topology -->
+      <subtreeSlide gaussian="true" size="0.001" weight="15">
+        <treeModel idref="clade2/cluster25.fa.treeModel"/>
+      </subtreeSlide>
+      <narrowExchange weight="15">
+        <treeModel idref="clade2/cluster25.fa.treeModel"/>
+      </narrowExchange>
+      <wideExchange weight="3">
+        <treeModel idref="clade2/cluster25.fa.treeModel"/>
+      </wideExchange>
+      <wilsonBalding weight="3">
+        <treeModel idref="clade2/cluster25.fa.treeModel"/>
+      </wilsonBalding>
+      <scaleOperator scaleFactor="0.75" weight="3">
+        <parameter idref="clade2/cluster25.fa.treeModel.rootHeight"/>
+      </scaleOperator>
+      <uniformOperator weight="30">
+        <parameter idref="clade2/cluster25.fa.treeModel.internalNodeHeights"/>
+      </uniformOperator>
+      
+        <!-- operators for the strict clock -->
+        <scaleOperator scaleFactor="0.75" weight="3">
+          <parameter idref="clade2/cluster25.fa.clock.rate"/>
+        </scaleOperator>
+        <upDownOperator scaleFactor="0.75" weight="3">
+          <up><parameter idref="clade2/cluster25.fa.clock.rate"/></up>
+          <down><parameter idref="clade2/cluster25.fa.treeModel.allInternalNodeHeights"/></down>
+        </upDownOperator>
+      
+            
+      <!-- proposal mechanisms for clade2/cluster2.fa -->
+      <!-- operators for the substitution process -->
+      <scaleOperator scaleFactor="0.75" weight="0.1">
+        <parameter idref="clade2/cluster2.fa.alpha"/>
+      </scaleOperator>
+      <scaleOperator scaleFactor="0.75" weight="0.1">
+        <parameter idref="clade2/cluster2.fa.kappa"/>
+      </scaleOperator>
+      <deltaExchange delta="0.01" weight="1">
+        <parameter idref="clade2/cluster2.fa.frequencies"/>
+      </deltaExchange>
+      <!-- operators for the tree topology -->
+      <subtreeSlide gaussian="true" size="0.001" weight="15">
+        <treeModel idref="clade2/cluster2.fa.treeModel"/>
+      </subtreeSlide>
+      <narrowExchange weight="15">
+        <treeModel idref="clade2/cluster2.fa.treeModel"/>
+      </narrowExchange>
+      <wideExchange weight="3">
+        <treeModel idref="clade2/cluster2.fa.treeModel"/>
+      </wideExchange>
+      <wilsonBalding weight="3">
+        <treeModel idref="clade2/cluster2.fa.treeModel"/>
+      </wilsonBalding>
+      <scaleOperator scaleFactor="0.75" weight="3">
+        <parameter idref="clade2/cluster2.fa.treeModel.rootHeight"/>
+      </scaleOperator>
+      <uniformOperator weight="30">
+        <parameter idref="clade2/cluster2.fa.treeModel.internalNodeHeights"/>
+      </uniformOperator>
+      
+        <!-- operators for the strict clock -->
+        <scaleOperator scaleFactor="0.75" weight="3">
+          <parameter idref="clade2/cluster2.fa.clock.rate"/>
+        </scaleOperator>
+        <upDownOperator scaleFactor="0.75" weight="3">
+          <up><parameter idref="clade2/cluster2.fa.clock.rate"/></up>
+          <down><parameter idref="clade2/cluster2.fa.treeModel.allInternalNodeHeights"/></down>
+        </upDownOperator>
+      
+            
+      <!-- proposal mechanisms for clade2/cluster8.fa -->
+      <!-- operators for the substitution process -->
+      <scaleOperator scaleFactor="0.75" weight="0.1">
+        <parameter idref="clade2/cluster8.fa.alpha"/>
+      </scaleOperator>
+      <scaleOperator scaleFactor="0.75" weight="0.1">
+        <parameter idref="clade2/cluster8.fa.kappa"/>
+      </scaleOperator>
+      <deltaExchange delta="0.01" weight="1">
+        <parameter idref="clade2/cluster8.fa.frequencies"/>
+      </deltaExchange>
+      <!-- operators for the tree topology -->
+      <subtreeSlide gaussian="true" size="0.001" weight="15">
+        <treeModel idref="clade2/cluster8.fa.treeModel"/>
+      </subtreeSlide>
+      <narrowExchange weight="15">
+        <treeModel idref="clade2/cluster8.fa.treeModel"/>
+      </narrowExchange>
+      <wideExchange weight="3">
+        <treeModel idref="clade2/cluster8.fa.treeModel"/>
+      </wideExchange>
+      <wilsonBalding weight="3">
+        <treeModel idref="clade2/cluster8.fa.treeModel"/>
+      </wilsonBalding>
+      <scaleOperator scaleFactor="0.75" weight="3">
+        <parameter idref="clade2/cluster8.fa.treeModel.rootHeight"/>
+      </scaleOperator>
+      <uniformOperator weight="30">
+        <parameter idref="clade2/cluster8.fa.treeModel.internalNodeHeights"/>
+      </uniformOperator>
+      
+        <!-- operators for the strict clock -->
+        <scaleOperator scaleFactor="0.75" weight="3">
+          <parameter idref="clade2/cluster8.fa.clock.rate"/>
+        </scaleOperator>
+        <upDownOperator scaleFactor="0.75" weight="3">
+          <up><parameter idref="clade2/cluster8.fa.clock.rate"/></up>
+          <down><parameter idref="clade2/cluster8.fa.treeModel.allInternalNodeHeights"/></down>
+        </upDownOperator>
+      
+    
+    <!-- combined up/down operator -->
+    <upDownOperator scaleFactor="0.75" weight="30">
+      <up>
+                                                                                      <parameter idref="clade2/cluster5.fa.clock.rate"/>
+                                                            <parameter idref="clade2/cluster12.fa.clock.rate"/>
+                                                            <parameter idref="clade2/cluster13.fa.clock.rate"/>
+                                                            <parameter idref="clade2/cluster17.fa.clock.rate"/>
+                                                            <parameter idref="clade2/cluster18.fa.clock.rate"/>
+                                                            <parameter idref="clade2/cluster19.fa.clock.rate"/>
+                                                            <parameter idref="clade2/cluster25.fa.clock.rate"/>
+                                                            <parameter idref="clade2/cluster2.fa.clock.rate"/>
+                                                            <parameter idref="clade2/cluster8.fa.clock.rate"/>
+                                    <parameter idref="species.birthDeath.meanGrowthRate"/>
+      </up>
+      <down>
+        <speciesTree idref="sptree"/>
+        <parameter idref="species.popMean"/>
+        <parameter idref="speciesTree.splitPopSize"/>
+                  
+            <parameter idref="clade2/cluster4.fa.treeModel.allInternalNodeHeights"/>
+                  
+            <parameter idref="clade2/cluster5.fa.treeModel.allInternalNodeHeights"/>
+                  
+            <parameter idref="clade2/cluster12.fa.treeModel.allInternalNodeHeights"/>
+                  
+            <parameter idref="clade2/cluster13.fa.treeModel.allInternalNodeHeights"/>
+                  
+            <parameter idref="clade2/cluster17.fa.treeModel.allInternalNodeHeights"/>
+                  
+            <parameter idref="clade2/cluster18.fa.treeModel.allInternalNodeHeights"/>
+                  
+            <parameter idref="clade2/cluster19.fa.treeModel.allInternalNodeHeights"/>
+                  
+            <parameter idref="clade2/cluster25.fa.treeModel.allInternalNodeHeights"/>
+                  
+            <parameter idref="clade2/cluster2.fa.treeModel.allInternalNodeHeights"/>
+                  
+            <parameter idref="clade2/cluster8.fa.treeModel.allInternalNodeHeights"/>
+              </down>
+    </upDownOperator>
+    <!-- operators for the diversification process -->
+    <scaleOperator scaleFactor="0.75" weight="3">
+      <parameter idref="species.birthDeath.relativeDeathRate"/>
+    </scaleOperator>
+    <scaleOperator scaleFactor="0.5" weight="94">
+      <parameter idref="speciesTree.splitPopSize"/>
+    </scaleOperator>
+    <scaleOperator scaleFactor="0.9" weight="5">
+      <parameter idref="species.popMean"/>
+    </scaleOperator>
+    <scaleOperator scaleFactor="0.75" weight="3">
+      <parameter idref="species.birthDeath.meanGrowthRate"/>
+    </scaleOperator>
+    <nodeReHeight weight="94">
+      <species idref="species"/>
+      <speciesTree idref="sptree"/>
+    </nodeReHeight>
+  </operators>
+  
+  <!-- mcmc settings -->
+  <mcmc autoOptimize="true" chainLength="30000000" id="mcmc">
+  
+    <!-- posterior -->
+    <posterior id="posterior">
+    
+      <!-- priors -->
+      <prior id="prior">
+        <speciesCoalescent idref="species.coalescent"/>
+        <mixedDistributionLikelihood idref="species.popSize"/>
+        <speciationLikelihood idref="speciation.likelihood"/>
+        
+          
+          <!-- priors for clade2/cluster4.fa -->
+          <logNormalPrior mean="1.0" meanInRealSpace="false" offset="0.0" stdev="1.25">
+            <parameter idref="clade2/cluster4.fa.kappa"/>
+          </logNormalPrior>
+          <exponentialPrior mean="0.5" offset="0.0">
+            <parameter idref="clade2/cluster4.fa.alpha"/>
+          </exponentialPrior>
+          <coalescentLikelihood idref="clade2/cluster4.fa.coalescent"/>
+		  <booleanLikelihood>
+			<monophylyStatistic idref="monophyly.ingroup.clade2/cluster4.fa"/>
+		  </booleanLikelihood>
+        
+          
+          <!-- priors for clade2/cluster5.fa -->
+          <logNormalPrior mean="1.0" meanInRealSpace="false" offset="0.0" stdev="1.25">
+            <parameter idref="clade2/cluster5.fa.kappa"/>
+          </logNormalPrior>
+          <exponentialPrior mean="0.5" offset="0.0">
+            <parameter idref="clade2/cluster5.fa.alpha"/>
+          </exponentialPrior>
+          <coalescentLikelihood idref="clade2/cluster5.fa.coalescent"/>
+		  <booleanLikelihood>
+			<monophylyStatistic idref="monophyly.ingroup.clade2/cluster5.fa"/>
+		  </booleanLikelihood>
+        
+          
+          <!-- priors for clade2/cluster12.fa -->
+          <logNormalPrior mean="1.0" meanInRealSpace="false" offset="0.0" stdev="1.25">
+            <parameter idref="clade2/cluster12.fa.kappa"/>
+          </logNormalPrior>
+          <exponentialPrior mean="0.5" offset="0.0">
+            <parameter idref="clade2/cluster12.fa.alpha"/>
+          </exponentialPrior>
+          <coalescentLikelihood idref="clade2/cluster12.fa.coalescent"/>
+		  <booleanLikelihood>
+			<monophylyStatistic idref="monophyly.ingroup.clade2/cluster12.fa"/>
+		  </booleanLikelihood>
+        
+          
+          <!-- priors for clade2/cluster13.fa -->
+          <logNormalPrior mean="1.0" meanInRealSpace="false" offset="0.0" stdev="1.25">
+            <parameter idref="clade2/cluster13.fa.kappa"/>
+          </logNormalPrior>
+          <exponentialPrior mean="0.5" offset="0.0">
+            <parameter idref="clade2/cluster13.fa.alpha"/>
+          </exponentialPrior>
+          <coalescentLikelihood idref="clade2/cluster13.fa.coalescent"/>
+		  <booleanLikelihood>
+			<monophylyStatistic idref="monophyly.ingroup.clade2/cluster13.fa"/>
+		  </booleanLikelihood>
+        
+          
+          <!-- priors for clade2/cluster17.fa -->
+          <logNormalPrior mean="1.0" meanInRealSpace="false" offset="0.0" stdev="1.25">
+            <parameter idref="clade2/cluster17.fa.kappa"/>
+          </logNormalPrior>
+          <exponentialPrior mean="0.5" offset="0.0">
+            <parameter idref="clade2/cluster17.fa.alpha"/>
+          </exponentialPrior>
+          <coalescentLikelihood idref="clade2/cluster17.fa.coalescent"/>
+		  <booleanLikelihood>
+			<monophylyStatistic idref="monophyly.ingroup.clade2/cluster17.fa"/>
+		  </booleanLikelihood>
+        
+          
+          <!-- priors for clade2/cluster18.fa -->
+          <logNormalPrior mean="1.0" meanInRealSpace="false" offset="0.0" stdev="1.25">
+            <parameter idref="clade2/cluster18.fa.kappa"/>
+          </logNormalPrior>
+          <exponentialPrior mean="0.5" offset="0.0">
+            <parameter idref="clade2/cluster18.fa.alpha"/>
+          </exponentialPrior>
+          <coalescentLikelihood idref="clade2/cluster18.fa.coalescent"/>
+		  <booleanLikelihood>
+			<monophylyStatistic idref="monophyly.ingroup.clade2/cluster18.fa"/>
+		  </booleanLikelihood>
+        
+          
+          <!-- priors for clade2/cluster19.fa -->
+          <logNormalPrior mean="1.0" meanInRealSpace="false" offset="0.0" stdev="1.25">
+            <parameter idref="clade2/cluster19.fa.kappa"/>
+          </logNormalPrior>
+          <exponentialPrior mean="0.5" offset="0.0">
+            <parameter idref="clade2/cluster19.fa.alpha"/>
+          </exponentialPrior>
+          <coalescentLikelihood idref="clade2/cluster19.fa.coalescent"/>
+		  <booleanLikelihood>
+			<monophylyStatistic idref="monophyly.ingroup.clade2/cluster19.fa"/>
+		  </booleanLikelihood>
+        
+          
+          <!-- priors for clade2/cluster25.fa -->
+          <logNormalPrior mean="1.0" meanInRealSpace="false" offset="0.0" stdev="1.25">
+            <parameter idref="clade2/cluster25.fa.kappa"/>
+          </logNormalPrior>
+          <exponentialPrior mean="0.5" offset="0.0">
+            <parameter idref="clade2/cluster25.fa.alpha"/>
+          </exponentialPrior>
+          <coalescentLikelihood idref="clade2/cluster25.fa.coalescent"/>
+		  <booleanLikelihood>
+			<monophylyStatistic idref="monophyly.ingroup.clade2/cluster25.fa"/>
+		  </booleanLikelihood>
+        
+          
+          <!-- priors for clade2/cluster2.fa -->
+          <logNormalPrior mean="1.0" meanInRealSpace="false" offset="0.0" stdev="1.25">
+            <parameter idref="clade2/cluster2.fa.kappa"/>
+          </logNormalPrior>
+          <exponentialPrior mean="0.5" offset="0.0">
+            <parameter idref="clade2/cluster2.fa.alpha"/>
+          </exponentialPrior>
+          <coalescentLikelihood idref="clade2/cluster2.fa.coalescent"/>
+		  <booleanLikelihood>
+			<monophylyStatistic idref="monophyly.ingroup.clade2/cluster2.fa"/>
+		  </booleanLikelihood>
+        
+          
+          <!-- priors for clade2/cluster8.fa -->
+          <logNormalPrior mean="1.0" meanInRealSpace="false" offset="0.0" stdev="1.25">
+            <parameter idref="clade2/cluster8.fa.kappa"/>
+          </logNormalPrior>
+          <exponentialPrior mean="0.5" offset="0.0">
+            <parameter idref="clade2/cluster8.fa.alpha"/>
+          </exponentialPrior>
+          <coalescentLikelihood idref="clade2/cluster8.fa.coalescent"/>
+		  <booleanLikelihood>
+			<monophylyStatistic idref="monophyly.ingroup.clade2/cluster8.fa"/>
+		  </booleanLikelihood>
+        
+
+        <!-- diversification priors -->
+        <logNormalPrior mean="-7.0" stdev="2.0">
+          <parameter idref="species.popMean"/>
+        </logNormalPrior> 
+        <logNormalPrior mean="4.6" stdev="2.0">
+          <parameter idref="species.birthDeath.meanGrowthRate"/>
+        </logNormalPrior>
+        <betaPrior shape="1.0" shapeB="1.0">
+          <parameter idref="species.birthDeath.relativeDeathRate"/>
+        </betaPrior>
+
+      </prior>
+      
+      <!-- likelihood -->
+      <likelihood id="likelihood">
+        
+                
+          <treeLikelihood idref="clade2/cluster4.fa.treeLikelihood"/>
+        
+                
+          <treeLikelihood idref="clade2/cluster5.fa.treeLikelihood"/>
+        
+                
+          <treeLikelihood idref="clade2/cluster12.fa.treeLikelihood"/>
+        
+                
+          <treeLikelihood idref="clade2/cluster13.fa.treeLikelihood"/>
+        
+                
+          <treeLikelihood idref="clade2/cluster17.fa.treeLikelihood"/>
+        
+                
+          <treeLikelihood idref="clade2/cluster18.fa.treeLikelihood"/>
+        
+                
+          <treeLikelihood idref="clade2/cluster19.fa.treeLikelihood"/>
+        
+                
+          <treeLikelihood idref="clade2/cluster25.fa.treeLikelihood"/>
+        
+                
+          <treeLikelihood idref="clade2/cluster2.fa.treeLikelihood"/>
+        
+                
+          <treeLikelihood idref="clade2/cluster8.fa.treeLikelihood"/>
+        
+      </likelihood>
+    </posterior>
+    
+    <!-- operators -->
+    <operators idref="operators"/>
+    
+    <!-- where to log parameters -->
+    <log fileName="/gulo/glob/hannesh/projects/Primates/results/2015-11-06_2/clade2/clade2.log" logEvery="1000">
+      <posterior idref="posterior"/>
+      <prior idref="prior"/>
+      <likelihood idref="likelihood"/>
+      <parameter idref="species.popMean"/>
+      <parameter idref="speciesTree.splitPopSize"/>
+      <parameter idref="species.birthDeath.meanGrowthRate"/>
+      <parameter idref="species.birthDeath.relativeDeathRate"/>
+      
+        
+        <parameter idref="clade2/cluster4.fa.treeModel.rootHeight"/>
+        <parameter idref="clade2/cluster4.fa.kappa"/>
+        <parameter idref="clade2/cluster4.fa.frequencies"/>
+        <parameter idref="clade2/cluster4.fa.clock.rate"/>
+        <treeLikelihood idref="clade2/cluster4.fa.treeLikelihood"/>
+        <coalescentLikelihood idref="clade2/cluster4.fa.coalescent"/>
+      
+        
+        <parameter idref="clade2/cluster5.fa.treeModel.rootHeight"/>
+        <parameter idref="clade2/cluster5.fa.kappa"/>
+        <parameter idref="clade2/cluster5.fa.frequencies"/>
+        <parameter idref="clade2/cluster5.fa.clock.rate"/>
+        <treeLikelihood idref="clade2/cluster5.fa.treeLikelihood"/>
+        <coalescentLikelihood idref="clade2/cluster5.fa.coalescent"/>
+      
+        
+        <parameter idref="clade2/cluster12.fa.treeModel.rootHeight"/>
+        <parameter idref="clade2/cluster12.fa.kappa"/>
+        <parameter idref="clade2/cluster12.fa.frequencies"/>
+        <parameter idref="clade2/cluster12.fa.clock.rate"/>
+        <treeLikelihood idref="clade2/cluster12.fa.treeLikelihood"/>
+        <coalescentLikelihood idref="clade2/cluster12.fa.coalescent"/>
+      
+        
+        <parameter idref="clade2/cluster13.fa.treeModel.rootHeight"/>
+        <parameter idref="clade2/cluster13.fa.kappa"/>
+        <parameter idref="clade2/cluster13.fa.frequencies"/>
+        <parameter idref="clade2/cluster13.fa.clock.rate"/>
+        <treeLikelihood idref="clade2/cluster13.fa.treeLikelihood"/>
+        <coalescentLikelihood idref="clade2/cluster13.fa.coalescent"/>
+      
+        
+        <parameter idref="clade2/cluster17.fa.treeModel.rootHeight"/>
+        <parameter idref="clade2/cluster17.fa.kappa"/>
+        <parameter idref="clade2/cluster17.fa.frequencies"/>
+        <parameter idref="clade2/cluster17.fa.clock.rate"/>
+        <treeLikelihood idref="clade2/cluster17.fa.treeLikelihood"/>
+        <coalescentLikelihood idref="clade2/cluster17.fa.coalescent"/>
+      
+        
+        <parameter idref="clade2/cluster18.fa.treeModel.rootHeight"/>
+        <parameter idref="clade2/cluster18.fa.kappa"/>
+        <parameter idref="clade2/cluster18.fa.frequencies"/>
+        <parameter idref="clade2/cluster18.fa.clock.rate"/>
+        <treeLikelihood idref="clade2/cluster18.fa.treeLikelihood"/>
+        <coalescentLikelihood idref="clade2/cluster18.fa.coalescent"/>
+      
+        
+        <parameter idref="clade2/cluster19.fa.treeModel.rootHeight"/>
+        <parameter idref="clade2/cluster19.fa.kappa"/>
+        <parameter idref="clade2/cluster19.fa.frequencies"/>
+        <parameter idref="clade2/cluster19.fa.clock.rate"/>
+        <treeLikelihood idref="clade2/cluster19.fa.treeLikelihood"/>
+        <coalescentLikelihood idref="clade2/cluster19.fa.coalescent"/>
+      
+        
+        <parameter idref="clade2/cluster25.fa.treeModel.rootHeight"/>
+        <parameter idref="clade2/cluster25.fa.kappa"/>
+        <parameter idref="clade2/cluster25.fa.frequencies"/>
+        <parameter idref="clade2/cluster25.fa.clock.rate"/>
+        <treeLikelihood idref="clade2/cluster25.fa.treeLikelihood"/>
+        <coalescentLikelihood idref="clade2/cluster25.fa.coalescent"/>
+      
+        
+        <parameter idref="clade2/cluster2.fa.treeModel.rootHeight"/>
+        <parameter idref="clade2/cluster2.fa.kappa"/>
+        <parameter idref="clade2/cluster2.fa.frequencies"/>
+        <parameter idref="clade2/cluster2.fa.clock.rate"/>
+        <treeLikelihood idref="clade2/cluster2.fa.treeLikelihood"/>
+        <coalescentLikelihood idref="clade2/cluster2.fa.coalescent"/>
+      
+        
+        <parameter idref="clade2/cluster8.fa.treeModel.rootHeight"/>
+        <parameter idref="clade2/cluster8.fa.kappa"/>
+        <parameter idref="clade2/cluster8.fa.frequencies"/>
+        <parameter idref="clade2/cluster8.fa.clock.rate"/>
+        <treeLikelihood idref="clade2/cluster8.fa.treeLikelihood"/>
+        <coalescentLikelihood idref="clade2/cluster8.fa.coalescent"/>
+      
+    </log>
+    
+    <!-- where to log output species trees -->
+    <logTree 
+      fileName="/gulo/glob/hannesh/projects/Primates/results/2015-11-06_2/clade2/clade2.nex" 
+      id="species.treeFileLog" 
+      logEvery="1000" 
+      nexusFormat="true" 
+      sortTranslationTable="true">
+      <speciesTree idref="sptree"/>
+      <posterior idref="posterior"/>
+    </logTree>
+    
+  </mcmc>
+</beast>

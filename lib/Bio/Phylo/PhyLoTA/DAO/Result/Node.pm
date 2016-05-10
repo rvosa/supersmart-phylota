@@ -206,20 +206,33 @@ __PACKAGE__->has_many(
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration
-use Bio::Phylo::PhyLoTA::Config;
+use Bio::SUPERSMART::Config;
 use Bio::Phylo::Forest::NodeRole;
-use Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector;
+use Bio::SUPERSMART::Service::MarkersAndTaxaSelector;
 push @Bio::Phylo::PhyLoTA::DAO::Result::Node::ISA, 'Bio::Phylo::Forest::NodeRole';
 
-my $mts = Bio::Phylo::PhyLoTA::Service::MarkersAndTaxaSelector->new;
+my $mts = Bio::SUPERSMART::Service::MarkersAndTaxaSelector->new;
 my %tree;
+
+=head2 table
+
+Getter/setter that maps this ORM class onto the correct version (184) of the underlying
+database table.
+
+=cut
 
 sub table {
 	my $class = shift;
 	my $table = shift;
-	my $release = Bio::Phylo::PhyLoTA::Config->new->currentGBRelease;
+	my $release = Bio::SUPERSMART::Config->new->currentGBRelease;
 	$class->SUPER::table( $table . '_' . $release );
 }
+
+=head2 get_parent
+
+Returns direct parent node.
+
+=cut
 
 sub get_parent {
 	my $self = shift;
@@ -232,7 +245,19 @@ sub get_parent {
 	return;
 }
 
+=head2 set_parent
+
+This is a no-op: the tree structure is immutable.
+
+=cut
+
 sub set_parent { return shift }
+
+=head2 get_children
+
+Returns array ref of direct children.
+
+=cut
 
 sub get_children {
 	my $self = shift;
@@ -241,11 +266,71 @@ sub get_children {
 	return \@children;
 }
 
+=head2 get_siblings
+
+Returns array ref of siblings
+
+=cut
+
+sub get_siblings {
+	my $self = shift;
+
+	return [ grep { $_->ti != $self->ti } @{ $self->get_parent->get_children } ];
+}
+
+=head2 get_descendants_at_rank
+
+Given a taxonomic rank, gets all the decendants of the
+invocant which are of that rank.
+
+=cut
+
+sub get_descendants_at_rank {
+	my ( $self, $rank ) = @_;
+	
+	my @result;
+	my @queue = ($self);
+	while (@queue) {
+		my $current = shift (@queue);
+		if ( $current->rank eq $rank ) {
+			push @result, $current;
+		}
+		if ( my @ch = @{$current->get_children} ) {
+			push @queue, @ch;
+		} 
+	}
+	return \@result;
+} 
+
+=head2 get_branch_length 
+
+Returns nothing: in this implementation (i.e. a taxonomy) there are no branch lengths
+
+=cut
+
 sub get_branch_length { return }
+
+=head2 set_branch_length
+
+This is a no-op: the tree structure is immutable.
+
+=cut
 
 sub set_branch_length { return shift }
 
+=head2 get_id
+
+Alias for C<ti>.
+
+=cut
+
 sub get_id { shift->ti }
+
+=head2 set_tree
+
+Stores a reference to the containing tree, if any.
+
+=cut
 
 sub set_tree {
 	my ( $self, $tree ) = @_;
@@ -253,7 +338,19 @@ sub set_tree {
 	return $self;
 }
 
+=head2 get_tree
+
+Returns a reference to the containing tree, if any.
+
+=cut
+
 sub get_tree { $tree{ shift->get_id } }
+
+=head2 get_name
+
+Alias for taxon_name
+
+=cut
 
 sub get_name { shift->taxon_name }
 

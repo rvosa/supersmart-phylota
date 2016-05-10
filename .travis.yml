@@ -1,0 +1,22 @@
+language: perl
+perl:
+  - "5.16"
+  #- "5.14"
+  #- "5.12"
+  #- "5.10"
+  #- "5.8"
+env:
+  global:
+    - SUPERSMART_HOME=/home/vagrant/supersmart
+    - PATH="$PATH:/home/vagrant/supersmart/tools/bin:$TRAVIS_BUILD_DIR"
+    - LD_LIBRARY_PATH=/usr/lib:/usr/lib64:/usr/local/lib
+    - FACTER_ci=travis
+install:
+  - sudo useradd -d /home/vagrant -m vagrant
+  - sudo apt-get update
+  - sudo apt-get -y install puppet
+  - travis_wait 60 sudo -E puppet apply -v conf/manifests/default.pp
+  - cpanm --notest --installdeps .
+  - cpanm --notest git://github.com/rvosa/bio-phylo.git
+  - cpanm --notest git://github.com/bioperl/bioperl-live.git@v1.6.x
+  - cpanm --notest git://github.com/bioperl/bioperl-run.git

@@ -1,13 +1,14 @@
+#!/usr/bin/perl
 use strict;
 use warnings;
 use Bio::Phylo::Matrices::Matrix;
 use Test::More 'no_plan';
 
 # this tests if we can use the SequenceGetter package
-use_ok('Bio::Phylo::PhyLoTA::Service::SequenceGetter');
+use_ok('Bio::SUPERSMART::Service::SequenceGetter');
 
 # this just tests that we can create a new SequenceGetter object
-my $sg=new_ok('Bio::Phylo::PhyLoTA::Service::SequenceGetter');
+my $sg=new_ok('Bio::SUPERSMART::Service::SequenceGetter');
 
 # this fetches the smallest containing cluster around the seed
 # sequence with gi 326632174, which is a lemur cytb sequence
@@ -31,12 +32,6 @@ my $align = $sg->align_sequences(@filtered);
 my $matrix = Bio::Phylo::Matrices::Matrix->new_from_bioperl($align);
 ok($matrix->get_nchar == 1140);
 
-# this is our output file
-my $filename='/Users/karin-saranilsson/Desktop/deleteme.nex';
-
-# open a file handle
-open my $fh,'>',$filename or die $!;
-
 # this part is a brief song and dance to make mesquite happy: a nexus
 # file according to mesquite must start with a taxa block and the rows
 # in the subsequence matrix must be in the same order as the taxa in the
@@ -48,5 +43,5 @@ my @sorted = sort { $a->get_name cmp $b->get_name } @{ $matrix->get_entities };
 $matrix->clear;
 $matrix->insert($_) for @sorted;
 
-# now print out the nexus statements to our $filename
-print $fh "#NEXUS\n",$taxa->to_nexus,$matrix->to_nexus;
+# now print out the nexus statements
+print "#NEXUS\n",$taxa->to_nexus,$matrix->to_nexus;
